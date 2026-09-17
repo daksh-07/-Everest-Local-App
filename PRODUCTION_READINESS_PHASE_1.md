@@ -162,6 +162,8 @@ Launch blockers are:
 - AI provider configuration and policy validation before enabling Ask Everest.
 - Production monitoring/logging/error tracking and operational alerting.
 
-## Validation baseline
+## Validation
 
-Before Phase 1 hardening, GitHub Actions run #84 passed all repository validation jobs. Post-hardening changes require the final GitHub Actions run on the resulting `main` commit to be the authoritative release gate. The final response for this phase records that run separately so no check is claimed PASS without actual GitHub evidence.
+- Baseline GitHub Actions run #84 was green before Phase 1 hardening.
+- GitHub Actions run #93 on commit `1acbe6633bff237b40f4b8ed0394d9d5ad8f3798` passed the complete mobile validation job and the Supabase Edge Function job after the Phase 1 hardening changes.
+- A report-only commit is used after that verification so the repository documentation records the verified result; the newest GitHub Actions run for that documentation commit remains the final gate for the current `main` head.
