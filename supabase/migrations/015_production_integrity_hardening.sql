@@ -89,7 +89,7 @@ $$;
 grant execute on function public.update_booking_status(uuid,public.booking_status) to authenticated;
 
 -- Hard account deletion is only safe when there are no retained records whose foreign keys
--- intentionally preserve transaction/audit history. Active financial/work records are blocked.
+-- intentionally preserve transaction/audit history. The client can use this read-only preflight.
 create or replace function public.can_delete_my_account() returns boolean
 language plpgsql
 security definer
@@ -114,4 +114,5 @@ begin
   return true;
 end;
 $$;
-revoke execute on function public.can_delete_my_account() from anon,authenticated;
+revoke execute on function public.can_delete_my_account() from anon;
+grant execute on function public.can_delete_my_account() to authenticated;
