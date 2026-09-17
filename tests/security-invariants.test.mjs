@@ -97,3 +97,20 @@ test('repository contains no obvious committed private-key or Stripe-secret lite
   assert.doesNotMatch(text, /sk_(?:live|test)_[A-Za-z0-9]+/);
   assert.doesNotMatch(text, /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/);
 });
+
+test('native release configuration has the required scheme and platform identifiers', async () => {
+  const appConfig = JSON.parse(await readFile(join(root, 'app.json'), 'utf8')).expo;
+  assert.equal(appConfig.scheme, 'everestlocal');
+  assert.match(appConfig.ios?.bundleIdentifier ?? '', /^[a-z][a-z0-9]*(?:\.[a-z0-9]+)+$/i);
+  assert.equal(appConfig.ios?.bundleIdentifier, appConfig.android?.package);
+});
+
+test('EAS release profiles are present and production auto-increments versions', async () => {
+  const eas = JSON.parse(await readFile(join(root, 'eas.json'), 'utf8'));
+  assert.equal(eas.build?.preview?.distribution, 'internal');
+  assert.equal(eas.build?.production?.autoIncrement, true);
+});
+
+test('mobile source does not reference trusted server-only credential variables', () => {
+  assert.doesNotMatch(clientText, /SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET|AI_API_KEY/);
+});
