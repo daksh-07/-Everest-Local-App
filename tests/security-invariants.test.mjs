@@ -68,7 +68,7 @@ test('client code never attempts to write the authenticated profile role', () =>
 test('checkout client sends only server-authoritative checkout inputs', async () => {
   const commerceFiles = appAndLibFiles.filter((file) => file.endsWith('commerce.ts'));
   const commerceText = (await Promise.all(commerceFiles.map((file) => readFile(file, 'utf8')))).join('\n');
-  const match = commerceText.match(/export async function checkout[\s\S]*?\n\}/);
+  const match = commerceText.match(/export async function checkout\b[\s\S]*?(?=export async function myOrders\b)/);
   assert.ok(match, 'checkout function must exist');
   const body = match[0];
   assert.doesNotMatch(body, /(?:price|total|inventory|stock|delivery_fee|marketplace_fee|tax)\s*:/i);
