@@ -20,8 +20,9 @@ async function walk(dir) {
   return files;
 }
 
-const migrationFiles = (await walk(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
-const migrationText = (await Promise.all(migrationFiles.map((file) => readFile(file, 'utf8')))).join('\n');
+const allMigrationFiles = (await walk(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
+const migrationFiles = allMigrationFiles.filter((file) => /^\d{3}_.+\.sql$/i.test(file.split('/').at(-1)));
+const migrationText = (await Promise.all(allMigrationFiles.map((file) => readFile(file, 'utf8')))).join('\n');
 const appAndLibFiles = (await Promise.all([walk(appDir), walk(libDir)])).flat();
 const clientText = (await Promise.all(appAndLibFiles.map((file) => readFile(file, 'utf8')))).join('\n');
 
