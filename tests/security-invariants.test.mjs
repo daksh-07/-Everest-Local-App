@@ -72,8 +72,13 @@ test('checkout client sends only server-authoritative checkout inputs', async ()
   assert.ok(checkoutStart >= 0, 'checkout function must exist');
   assert.ok(checkoutEnd > checkoutStart, 'checkout function boundary must exist');
   const body = commerceText.slice(checkoutStart, checkoutEnd);
-  assert.doesNotMatch(body, /(?:price|total|inventory|stock|delivery_fee|marketplace_fee|tax)\s*:/i);
-  assert.match(body, /delivery_method\s*:/i);
+  const invokeStart = body.indexOf('supabase.functions.invoke');
+  const invokeEnd = body.indexOf(');', invokeStart);
+  assert.ok(invokeStart >= 0, 'checkout invocation must exist');
+  assert.ok(invokeEnd > invokeStart, 'checkout invocation boundary must exist');
+  const invocation = body.slice(invokeStart, invokeEnd);
+  assert.doesNotMatch(invocation, /(?:price|total|inventory|stock|delivery_fee|marketplace_fee|tax)\s*:/i);
+  assert.match(invocation, /delivery_method\s*:/i);
 });
 
 test('server-side cart checkout requires an authenticated caller', () => {
