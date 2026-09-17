@@ -1,6 +1,6 @@
 import { supabase,requireSupabaseConfig } from './supabase';
 import type { Order } from './types';
-type CartProduct={id:string;name:string;price:number;sale_price:number|null;status:string;business_id:string};export interface CartItem{id:string;quantity:number;product_id:string;products:CartProduct|null};
+type CartProduct={id:string;name:string;price:number;sale_price:number|null;status:string;business_id:string;delivery_eligible:boolean;pickup_available:boolean};export interface CartItem{id:string;quantity:number;product_id:string;products:CartProduct|null};
 export type ProductDeliveryMethod='PICKUP'|'EVEREST_DELIVERY'|'SAME_DAY';
 export async function getOrCreateCart(){requireSupabaseConfig();const {data:{user}}=await supabase.auth.getUser();if(!user)throw new Error('Authentication required');const {data:existing}=await supabase.from('carts').select('id').eq('customer_id',user.id).maybeSingle();if(existing)return existing.id;const {data,error}=await supabase.from('carts').insert({customer_id:user.id}).select('id').single();if(error)throw new Error(error.message);return data.id;}
 export async function addToCart(productId:string,quantity=1){if(!Number.isInteger(quantity)||quantity<1)throw new Error('Invalid quantity');const cartId=await getOrCreateCart();const {data,error}=await supabase.from('cart_items').upsert({cart_id:cartId,product_id:productId,quantity},{onConflict:'cart_id,product_id'}).select().single();if(error)throw new Error(error.message);return data;}
