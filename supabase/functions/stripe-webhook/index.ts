@@ -1,8 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@18.5.0?target=deno';
 
-type StripeMetadata={order_id?:string};
+type StripeMetadata={order_id?:string;payment_kind?:string;service_payment_id?:string;booking_id?:string};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
+
 Deno.serve(async req=>{
  if(req.method!=='POST')return json({error:'Method not allowed'},405);
  const secret=Deno.env.get('STRIPE_SECRET_KEY'),webhookSecret=Deno.env.get('STRIPE_WEBHOOK_SECRET'),url=Deno.env.get('SUPABASE_URL'),service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -17,27 +18,40 @@ Deno.serve(async req=>{
  try{
   const object=event.data.object as Stripe.Checkout.Session|Stripe.PaymentIntent;
   const metadata=(object.metadata??{}) as StripeMetadata;
+  const isService=metadata.payment_kind==='service';
   const orderId=metadata.order_id;
-  if(event.type==='checkout.session.completed'){
-   const session=event.data.object as Stripe.Checkout.Session;
-   // A Checkout Session can complete before funds settle for asynchronous payment
-   // methods. Only a paid session may finalize the order here; payment_intent.succeeded
-   // remains the authoritative completion path for deferred settlement.
-   if(session.payment_status==='paid'){
+  const servicePaymentId=metadata.service_payment_id;
+  const successEvents=event.type==='payment_intent.succeeded'||event.type==='checkout.session.completed';
+  const failureEvents=event.type==='payment_intent.payment_failed'||event.type==='payment_intent.canceled'||event.type==='checkout.session.expired'||event.type==='checkout.session.async_payment_failed';
+
+  if(isService){
+   if(!servicePaymentId){await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:false});return json({error:'Missing service payment metadata'},400);}
+   if(successEvents){
+    if(event.type==='checkout.session.completed' && (event.data.object as Stripe.Checkout.Session).payment_status!=='paid'){
+      // Deferred payment methods settle through payment_intent.succeeded.
+    }else{
+      const {error}=await db.rpc('process_stripe_service_success',{p_payment_id:servicePaymentId});
+      if(error)throw error;
+    }
+   }else if(failureEvents){
+    const {error}=await db.rpc('process_stripe_service_failure',{p_payment_id:servicePaymentId});
+    if(error)throw error;
+   }
+  }else if(successEvents){
+   if(event.type==='checkout.session.completed' && (event.data.object as Stripe.Checkout.Session).payment_status!=='paid'){
+     // Deferred payment methods settle through payment_intent.succeeded.
+   }else{
     if(!orderId){await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:false});return json({error:'Missing order metadata'},400);}
     const {error}=await db.rpc('process_stripe_order_success',{p_order_id:orderId});
     if(error)throw error;
    }
-  } else if(event.type==='payment_intent.succeeded'){
-   if(!orderId){await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:false});return json({error:'Missing order metadata'},400);}
-   const {error}=await db.rpc('process_stripe_order_success',{p_order_id:orderId});
-   if(error)throw error;
-  } else if(event.type==='payment_intent.payment_failed'||event.type==='payment_intent.canceled'||event.type==='checkout.session.expired'||event.type==='checkout.session.async_payment_failed'){
+  }else if(failureEvents){
    if(!orderId){await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:false});return json({error:'Missing order metadata'},400);}
    const {error}=await db.rpc('process_stripe_order_failure',{p_order_id:orderId});
    if(error)throw error;
   }
-  const {error:auditError}=await db.from('audit_logs').insert({action:'stripe:'+event.id,entity_type:'stripe_event',entity_id:null,metadata:{type:event.type,order_id:orderId??null}});
+
+  const {error:auditError}=await db.from('audit_logs').insert({action:'stripe:'+event.id,entity_type:'stripe_event',entity_id:null,metadata:{type:event.type,order_id:orderId??null,service_payment_id:servicePaymentId??null,booking_id:metadata.booking_id??null}});
   if(auditError)throw auditError;
   const {error:finishError}=await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:true});
   if(finishError)throw finishError;
