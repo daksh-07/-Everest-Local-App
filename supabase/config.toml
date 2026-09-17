@@ -1,0 +1,16 @@
+project_id = "bmwbljefnamvjnmuvkvv"
+
+[functions.account-delete]
+verify_jwt = true
+
+[functions.assistant]
+verify_jwt = true
+
+[functions.checkout]
+verify_jwt = true
+
+[functions.service-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
