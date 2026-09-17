@@ -20,9 +20,7 @@ async function walk(dir) {
   return files;
 }
 
-const migrationFiles = (await walk(migrationsDir))
-  .filter((file) => file.endsWith('.sql'))
-  .sort();
+const migrationFiles = (await walk(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
 const migrationText = (await Promise.all(migrationFiles.map((file) => readFile(file, 'utf8')))).join('\n');
 const appAndLibFiles = (await Promise.all([walk(appDir), walk(libDir)])).flat();
 const clientText = (await Promise.all(appAndLibFiles.map((file) => readFile(file, 'utf8')))).join('\n');
@@ -59,14 +57,22 @@ test('client code does not write authoritative payment/order/delivery records di
   assert.deepEqual(matches, []);
 });
 
-test('client code never attempts to change the authenticated profile role', () => {
-  assert.doesNotMatch(clientText, /profiles[\s\S]{0,500}(?:role\s*[:=]|update\s*\([^)]*role)/i);
+test('client code never attempts to write the authenticated profile role', () => {
+  const profileWritePatterns = [
+    /from\(['"]profiles['"]\)[\s\S]{0,300}\.(?:insert|update|upsert)\s*\(/i,
+    /profiles[\s\S]{0,300}\.(?:insert|update|upsert)\s*\([\s\S]{0,300}\brole\s*:/i,
+  ];
+  assert.equal(profileWritePatterns.some((pattern) => pattern.test(clientText)), false);
 });
 
-test('checkout client contract contains no client-supplied price, total, stock, or fee fields', () => {
-  const commerce = clientText.match(/export async function checkout[\s\S]*?\n\}/)?.[0] ?? '';
-  assert.notEqual(commerce, '');
-  assert.doesNotMatch(commerce, /(?:price|total|inventory|stock|delivery_fee|marketplace_fee|tax)\s*:/i);
+test('checkout client sends only server-authoritative checkout inputs', async () => {
+  const commerceFiles = appAndLibFiles.filter((file) => file.endsWith('commerce.ts'));
+  const commerceText = (await Promise.all(commerceFiles.map((file) => readFile(file, 'utf8')))).join('\n');
+  const match = commerceText.match(/export async function checkout[\s\S]*?\n\}/);
+  assert.ok(match, 'checkout function must exist');
+  const body = match[0];
+  assert.doesNotMatch(body, /(?:price|total|inventory|stock|delivery_fee|marketplace_fee|tax)\s*:/i);
+  assert.match(body, /delivery_method\s*:/i);
 });
 
 test('server-side cart checkout requires an authenticated caller', () => {
