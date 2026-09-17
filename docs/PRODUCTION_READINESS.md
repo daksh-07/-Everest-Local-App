@@ -1,217 +1,231 @@
 # Everest Local — Production Readiness / Current State
 
-Audit date: 2026-09-17
-Repository: `daksh-07/-Everest-Local-App`
-Current engineering head at this update: `85381fe13897a37051a158f055f2aa1ebb19e862`
+Audit date: 2026-09-18  
+Repository: `daksh-07/-Everest-Local-App`  
+Current audited head: `dae1c933cc93d5a9a99f517dc0dc77fa6dded6e3`
 
 ## Status definitions
 
-- **VERIFIED** — source plus completed CI evidence supports the behavior.
-- **PARTIALLY VERIFIED** — implementation exists, but live provider/database/device execution is still required.
-- **UNVERIFIED** — the relevant runtime has not been executed in this environment.
-- **MISSING** — required MVP capability is not implemented.
-- **BLOCKED BY HUMAN CONFIGURATION** — completion requires a real external account, secret, deployed backend, device or provider.
+- **VERIFIED** — actually executed successfully with current-repository evidence or against a real runtime.
+- **PARTIALLY VERIFIED** — source and automated validation support the implementation, but live execution is still required.
+- **UNVERIFIED** — the relevant runtime or behavior has not been executed.
+- **MISSING** — required MVP capability does not exist or is materially incomplete.
+- **BLOCKED BY HUMAN CONFIGURATION** — completion requires a real external account, secret, deployed backend, provider or physical device.
 
 No fake businesses, products, reviews, orders, payments, availability or delivery records are included.
 
-## Current CI evidence
+## 1. Current code gate
 
-GitHub Actions run `35217683586` completed successfully for engineering head `85381fe13897a37051a158f055f2aa1ebb19e862`.
+The latest pre-SDK-change CI run was GitHub Actions run `#175` / `35229556450` on commit `8bd5fc53e73b4a9bafe5d253098f359a57cef905` and passed the repository validation workflow.
 
-Mobile validation passed:
-- `npm install --no-audit --no-fund`
+The current head then aligned the mobile dependency set with Expo SDK 54. CI run `#176` / `35238239481` was still in progress at the time of this document update; therefore the SDK 54 dependency change is **PARTIALLY VERIFIED** until that run completes.
+
+The workflow covers:
+
+- dependency installation
 - TypeScript
 - ESLint
 - static security/navigation audit
-- ordered migration audit (`001` through `032`)
+- migration audit
+- security invariant tests
 - Expo Doctor
 - Expo web export
+- Deno type-checking for all Edge Functions
 
-Supabase validation passed Deno type-checking for all Edge Functions.
+The repository does not have a local reproducible full-install environment in this engineering session, so GitHub Actions is the authoritative code-validation evidence.
 
-CI is source/build validation only. It does not execute a live Supabase database, Stripe account, native deep links, or real provider integrations.
+## 2. Repository architecture audit
 
-## 1. Service marketplace
+### Implemented / source-verified
 
-**Implemented / source-verified:**
+- Customer authentication/session foundation.
+- Business onboarding and verification workflow.
+- Service requests, deterministic matching, opportunities, quotes and quote acceptance.
+- Participant-scoped messaging with server-authorized conversation creation and protected message mutation.
+- Booking lifecycle and server-authorized state transitions.
+- Review eligibility and duplicate-review constraints.
+- Product management, publication controls and inventory authority.
+- Persistent cart with atomic cart creation and direct cart-row authority hardening.
+- Product checkout with server-authoritative price, inventory, business verification and fulfilment eligibility.
+- Stripe Checkout creation and signed webhook finalization architecture.
+- Order lifecycle authorization.
+- Everest Delivery request, assignment, state transitions, audit and participant notification records.
+- Account deletion Edge Function and in-app deletion entry point.
+- Ask Everest authenticated Edge Function architecture.
+- RLS and SECURITY DEFINER hardening across migrations 001–032.
+- In-app privacy, terms and account-deletion informational routes.
+- EAS preview/internal and production build profiles.
 
-Customer path: request → deterministic matching → opportunities → quote → acceptance → booking → service deposit checkout → verified Stripe webhook → booking confirmation → completion → transaction review.
+### Explicit boundaries
 
-Business path: business registration → verification → services/service areas → matched opportunities → quote → messaging → booking operations → completion.
+- No production marketplace seed/fake data.
+- No Stripe Connect/KYC/payout/transfer system.
+- No automatic refund/dispute workflow.
+- No external maps/logistics/dispatch provider.
+- No push/email/SMS provider delivery runtime.
+- No storage/media upload pipeline for verification/media.
+- No background scheduler/queue for expiry or re-matching.
+- No full advanced radius/ranking search subsystem.
+- No full moderation/disputes console.
 
-Sensitive lifecycle operations use server-authorized RPCs rather than client table writes. Quote acceptance creates the booking transactionally, and booking transitions are constrained by the backend state machine.
+These are not being treated as completed merely because adjacent architecture exists.
 
-**Remaining runtime verification:** two-account RLS tests, live Stripe service payment, native interaction, and deployed PostgreSQL execution.
+## 3. Database / Supabase
 
-## 2. Product marketplace
+### Source/automated status
 
-**Implemented / source-verified:**
+- Migration numbering 001–032: **VERIFIED by migration/security audits**.
+- Public-table RLS coverage: **VERIFIED by repository security invariant test**.
+- SECURITY DEFINER `search_path=public`: **VERIFIED by repository security invariant test**.
+- Sensitive lifecycle authority: **VERIFIED by source audit/security invariants**.
+- Cart creation concurrency: **VERIFIED by source and migration review**.
+- Checkout item snapshot cleanup: **VERIFIED by source and migration review**.
+- Product delivery checkout authority: **VERIFIED by source and migration review**.
 
-- Verified-business product discovery.
-- Product create/edit/archive/status controls.
-- Inventory adjustment through controlled RPCs.
-- Persistent customer cart.
-- Concurrency-safe cart creation.
-- Locked inventory reservation during checkout.
-- One active checkout per customer cart.
-- Server-authoritative product price, business publication state and inventory.
-- Product delivery eligibility and pickup capability are validated server-side.
-- Product checkout can select pickup or Everest Delivery and capture a delivery address.
-- Stripe Checkout is created only from persisted order items.
-- Signed Stripe webhook drives payment/order finalization.
-- Exact source cart-item IDs are snapshotted on order items so later cart edits are not deleted accidentally.
-- Customer order screen shows order and delivery state.
-- Business order screen shows fulfilment and delivery state.
+### Live status
 
-**Remaining runtime verification:** live Stripe payment/webhook, concurrent checkout against a deployed database, and cross-business/customer adversarial RLS testing.
+**BLOCKED BY HUMAN CONFIGURATION:** no production/staging Supabase target is configured for this audit. Therefore these have not been claimed as live-verified:
 
-## 3. Everest Delivery
+- clean migration application/reset;
+- live PostgreSQL constraints/triggers/functions;
+- adversarial Customer A/B and Business A/B RLS tests;
+- Admin and Delivery Driver authorization tests;
+- backup/restore and migration rollback rehearsal.
 
-**Implemented / source-verified:**
+See `docs/SUPABASE_DEPLOYMENT.md` for the exact deployment and verification procedure.
 
-- Business can request delivery only for its own paid, delivery-eligible order after `READY_FOR_PICKUP`.
-- Admin can assign an actual `DELIVERY_DRIVER` account.
-- Assigned drivers/admins can advance delivery through pickup → in transit → delivered.
-- Cancellation/failure transitions are authorized by backend state rules.
-- Paid orders are deliberately not silently cancelled when a delivery fails; a refund workflow must exist before payment reversal is performed.
-- Customer and business delivery visibility is RLS-scoped.
-- Delivery status changes generate participant notifications.
-- Delivery operations are audited.
+## 4. Authentication
 
-**Remaining runtime verification:** deployed RLS/state transitions, real driver accounts and any external logistics/maps integration.
+### Source status
 
-## 4. Ask Everest AI
+Signup/login/logout/session handling, protected routes, password recovery configuration and account deletion are implemented. The app uses the `everestlocal` native scheme.
 
-**Implemented / source-verified:**
+### Live status
 
-- AI credentials are read only by the Edge Function.
-- Mobile code never receives the AI key or service-role key.
-- Requests require authentication and are length-limited.
-- The backend supplies only RLS-visible verified businesses and active products to the model.
-- System instructions explicitly prohibit invented marketplace facts, private data, credentials and internal identifiers.
-- UI has loading, empty/fallback and error states.
+**BLOCKED BY HUMAN CONFIGURATION:** real Supabase Auth configuration plus native builds/devices are required for signup, invalid credentials, session expiry, account switching, recovery-link handling and native deep-link verification.
 
-**Remaining runtime verification:** real AI provider, timeout/availability behavior and production prompt/data evaluation. AI should not be treated as authoritative for transactions; checkout and availability remain backend-controlled.
+The web and native redirect destinations must be registered in Supabase Auth before testing.
 
-## 5. Search / discovery
+## 5. Service marketplace
 
-**Implemented:** real database-backed business/product search with verified-business/product visibility, empty states and no fake records.
+**PARTIALLY VERIFIED:** the source implements request → matching → opportunity → quote → acceptance → booking → service deposit → webhook → completion → review, with business-side onboarding, verification, service areas, quotes, messaging and booking operations.
 
-**Not yet full advanced discovery:** radius/distance search, rich price/category/availability filtering and optimized ranking are not implemented as a complete search subsystem. These are non-blocking for the current transactional MVP but remain expansion work.
+**BLOCKED BY HUMAN CONFIGURATION:** full two-customer/two-business E2E, live PostgreSQL execution, live Stripe service payment, invalid/duplicate transition testing and native interaction require a configured environment.
 
-## 6. Customer experience
+## 6. Product marketplace
 
-Core customer screens have loading/error/empty states and authenticated route protection. Cart and orders include retry/error handling, fulfilment selection and delivery tracking. Messaging handles loading/errors and uses participant-scoped backend access.
+**PARTIALLY VERIFIED:** the source implements product discovery/management, inventory controls, persistent carts, concurrency-safe cart creation, locked reservation, server-authoritative checkout, pickup/delivery selection, orders and delivery visibility.
 
-Native device interaction, keyboard behavior, accessibility, offline/reconnect behavior and physical deep-link testing still require a real runtime.
+**BLOCKED BY HUMAN CONFIGURATION:** live concurrent checkout, insufficient inventory, product-unavailable race, duplicate checkout, payment failure/expiry and webhook retry require a real database and Stripe test account.
 
-## 7. Business experience
+## 7. Stripe
 
-Business dashboard now exposes services, service areas, opportunities/quotes, bookings, products/inventory, customer orders and verification. Business booking operations use the existing server-authorized booking state machine. Customer data shown in business workflows is intentionally limited to data already authorized by the relevant RLS policies.
+### Source status
 
-Business verification documents/media upload remains outside the current MVP because storage/upload infrastructure is not configured.
+**VERIFIED at source/CI level:**
 
-## 8. Admin / trust & safety
+- secret key and webhook secret are read only by Edge Functions;
+- webhook signature verification is required;
+- Stripe event IDs are claimed/idempotently finalized;
+- order and service-payment flows are isolated by metadata and scoped idempotency;
+- product totals are built from persisted order items, not client totals;
+- service deposit amount is sourced from the authoritative booking/payment record.
 
-Admin route protection is enforced in the client as UX only; sensitive operations are server-authorized. Admin verification actions use an authorization-checked RPC and are auditable. Delivery assignment requires an actual `DELIVERY_DRIVER` role.
+### Live status
 
-The current admin UI is an operations foundation, not a complete moderation/disputes console. Advanced dispute, suspicious-activity and account-management workflows remain expansion work.
+**BLOCKED BY HUMAN CONFIGURATION:** Stripe test-mode success, failure, expiry, duplicate webhook, retry, invalid signature, concurrent checkout and service-deposit transactions have not been run against a live Stripe account.
 
-## 9. Security audit
+Refunds, disputes, Connect/KYC and payouts remain outside the current MVP.
 
-### Verified in source / CI
+## 8. Messaging / bookings / reviews
 
-- Sensitive tables have explicit RLS policies.
-- Client writes to authoritative payment, payout, audit, admin and lifecycle records are revoked where server control is required.
-- SECURITY DEFINER functions explicitly set `search_path=public`.
-- Caller identity is derived from `auth.uid()` for sensitive operations.
-- Product checkout does not trust client prices, totals, stock, product publication state or business verification state.
-- Inventory reservation/finalization is lock-protected and transactional.
-- Checkout idempotency is customer-scoped; service-payment idempotency is scoped to the exact customer/booking.
-- Stripe webhook signatures are verified before processing.
-- Stripe event IDs are claimed and completion/failure is persisted for retry handling.
-- Messaging conversation creation derives customer identity from the service request and verifies business/request relationships.
-- Message mutation is revoked; participant access is enforced by RLS.
-- Reviews are restricted to completed customer transactions.
-- Business verification changes are server-authorized.
-- No service-role or Stripe secret is bundled into Expo code.
-- Static audit rejects credential-like secrets and TypeScript suppression directives.
-- Navigation references are statically checked against Expo Router routes.
+**PARTIALLY VERIFIED:** backend authorization/state-machine architecture exists and is covered by source/security checks.
 
-### Still requires live verification
+**BLOCKED BY HUMAN CONFIGURATION:** participant isolation, duplicate operations, invalid transitions, network failure/retry and review eligibility must be exercised against a real database with separate identities.
 
-- Adversarial Customer A/B and Business A/B RLS tests.
-- Live PostgreSQL migration execution and constraint/policy behavior.
-- Live Stripe test-mode webhook and duplicate/retry behavior.
-- Native iOS/Android deep-link and authentication recovery tests.
-- Real AI provider behavior.
-- Storage policy testing if uploads are enabled.
+## 9. Everest Delivery
 
-## 10. Database / migration chain
+**PARTIALLY VERIFIED:** `READY_FOR_PICKUP` → delivery request → admin driver assignment → pickup → in transit → delivered is implemented with cancellation/failure paths, audit records and participant notification records.
 
-Current repository contains numbered migrations `001` through `032` with no numbering gap. CI now runs `scripts/migration-audit.mjs` and validates ordering, non-empty files and explicit public search paths for SECURITY DEFINER functions.
+Paid orders are not silently cancelled when delivery fails; the code does not falsely claim a refund where no refund workflow exists.
 
-Important later hardening includes:
+**BLOCKED BY HUMAN CONFIGURATION:** real driver identities, deployed RLS/state transitions, physical/operational dispatch and notification delivery.
 
-- `025_checkout_item_snapshot.sql` — exact source cart-item cleanup.
-- `026_delivery_operations.sql` — real delivery request/assignment/state operations.
-- `027_product_delivery_checkout.sql` — server-authoritative fulfilment choice and verified-business checkout validation.
-- `028_service_payment_idempotency_scope.sql` — service checkout idempotency isolation.
-- `029_delivery_payment_integrity.sql` — prevents paid-order cancellation on delivery failure without a refund workflow.
-- `030_delivery_notifications.sql` — delivery participant notifications.
-- `031_cart_creation_concurrency.sql` — atomic cart creation.
-- `032_cart_authority_hardening.sql` — prevents direct client cart-row writes.
+External maps/logistics integration is not implemented and is outside the core MVP.
 
-A clean Supabase project still needs a real `supabase db reset` / migration application run. CI cannot perform this because no target database is configured.
+## 10. Ask Everest
 
-## 11. Testing
+**PARTIALLY VERIFIED:** authentication, request length limits, server-only AI credentials, RLS-scoped marketplace retrieval and non-authoritative AI instructions are implemented.
 
-The repository currently has no dedicated integration/E2E test runner. CI provides TypeScript, ESLint, static security/navigation checks, migration checks, Expo Doctor, web bundling and Edge Function type validation.
+**BLOCKED BY HUMAN CONFIGURATION:** provider availability, timeout behavior, malformed-provider response and production prompt/data evaluation require a real AI provider configuration.
 
-The highest-value missing tests are live authorization/RLS tests, PostgreSQL migration execution, Stripe test-mode webhook scenarios, concurrent checkout, and native recovery/deep-link tests. These are environment-dependent rather than safely reproducible against this repository alone.
+## 11. Security
 
-## 12. Performance
+### Verified in source/CI
 
-The current implementation uses bounded marketplace result sets, debounced search, server-side checkout calculations and indexed transactional paths introduced by the database migrations. No speculative large optimization was added.
+- No committed Stripe secret/private key literals detected by static audits.
+- No TypeScript suppression directives accepted by the static audit.
+- Sensitive payment/order/delivery mutations are not performed directly by client code.
+- Authenticated profile role writes are blocked at client-code invariant level and protected server-side.
+- SECURITY DEFINER functions are required to pin `search_path=public`.
+- RLS is explicitly enabled on public tables detected by the security invariant test.
+- Checkout client inputs do not include client-authoritative price/total/inventory/stock/tax/fee fields.
+- Sensitive lifecycle state is server-authorized.
+- Navigation references are checked against real Expo Router routes.
 
-Further profiling should be performed against real data before changing query strategy or list virtualization.
+### Live security status
 
-## 13. Production configuration
+**BLOCKED BY HUMAN CONFIGURATION:** adversarial IDOR/RLS tests, direct-table mutation attempts and live role-boundary tests cannot be truthfully marked passed without a configured database and identities.
 
-Public mobile configuration belongs in `EXPO_PUBLIC_*` variables. Server-only credentials belong in Supabase Edge Function/server configuration. `.env.example` documents this separation.
+## 12. Native / store configuration
 
-Required real configuration before launch:
+The app is now aligned to Expo SDK 54 dependency versions. Expo's SDK 54 reference specifies Android compile/target API 36, matching Google Play's requirement from 31 August 2026 for new apps and updates. This removes the earlier SDK 53/API 35 source-level store blocker, subject to the current CI/build validation completing successfully.
 
-1. Supabase project/Auth configuration and all migrations applied.
-2. Stripe secret, webhook secret and registered webhook endpoint.
-3. Supabase Auth redirect URLs for web and `everestlocal://` native recovery.
-4. AI provider endpoint/key/model if Ask Everest is enabled.
-5. Real verified businesses/categories/services/products populated through controlled workflows.
-6. iOS/Android build signing and device testing.
-7. Notification provider configuration if push/email/SMS is enabled.
-8. Delivery/logistics infrastructure if real-world delivery is enabled.
+Physical iOS/Android builds, signing, deep links, recovery and store-console submission remain **BLOCKED BY HUMAN CONFIGURATION**.
 
-No secrets are committed.
+`eas.json` provides internal preview and production profiles. Bundle/package IDs are configured as `com.everestlocal.app`; uniqueness and signing ownership must be confirmed in the Apple/Google developer accounts.
 
-## 14. Known MVP boundaries
+## 13. Privacy / deletion / legal surfaces
 
-These are intentionally not represented as completed merely because adjacent architecture exists:
+In-app Privacy Policy, Terms and account-deletion information are present, but they are not a substitute for final operator-approved legal text and public HTTPS pages.
 
-- Stripe Connect/KYC, marketplace payouts/transfers, refunds and disputes.
-- External logistics/maps/driver dispatch integration.
-- Push/email/SMS delivery infrastructure.
-- Marketplace media/storage upload pipeline.
-- Background scheduler/queue for expiry and re-matching.
-- Full advanced search/radius/ranking subsystem.
-- Full admin disputes/moderation console.
-- Dedicated live integration/E2E test environment.
+**BLOCKED BY HUMAN CONFIGURATION:** public privacy URL, terms URL, support contact, external account-deletion web resource, Apple privacy disclosures, Google Play Data Safety declarations and final age/content declarations.
 
-These should be treated as post-core MVP infrastructure unless the launch plan explicitly requires them.
+## 14. Notifications / observability
 
-## Release assessment
+Server-side delivery notification records exist and are authorized. Actual push/email/SMS delivery is **BLOCKED BY HUMAN CONFIGURATION** because no provider is configured.
 
-**Engineering source/CI status: release-candidate level.** The core service, product checkout, inventory, messaging, booking, payment architecture and delivery workflows are implemented and the current CI gate is green.
+Dedicated client crash reporting/centralized production alerting is **MISSING** from the repository. Supabase/Edge Function logs are available as an operational primitive, but they are not equivalent to complete client crash/alert coverage.
 
-**External production status: not yet verified.** The repository cannot truthfully claim live production readiness until the target Supabase project, Stripe account/webhook, native builds/devices and any enabled AI/notification/delivery providers have been configured and exercised.
+A private beta can operate with explicit operational monitoring and support procedures; public launch should add privacy-safe crash/error monitoring and payment/webhook alerting before broad distribution.
 
-The correct next step after this code-level gate is deployment-environment validation, not adding fake data or bypassing security controls.
+## 15. Controlled marketplace seeding
+
+No fake data is present. Real Western Sydney businesses, services, products, service areas and prices must be entered through the existing controlled onboarding/admin workflows after the live environment is configured.
+
+Status: **BLOCKED BY HUMAN CONFIGURATION**.
+
+## 16. Performance / UX
+
+Source review confirms bounded marketplace queries, debounced search, loading/error/empty handling in core transactional screens, server-side checkout calculation and indexed transactional paths.
+
+**UNVERIFIED:** physical keyboard behavior, accessibility, offline/reconnect, slow-network behavior and repeated-tap behavior on real devices. These require device/runtime testing rather than speculative source rewrites.
+
+## 17. Final launch assessment
+
+The repository is **not yet externally validated production-ready**. The codebase has a strong source/CI gate, but the critical remaining evidence is environmental: live Supabase, Stripe test transactions/webhooks, native devices, Auth redirects, real identities and any enabled providers.
+
+The correct launch sequence is:
+
+1. complete SDK 54 CI validation;
+2. configure staging Supabase and apply migrations cleanly;
+3. run adversarial RLS/state-machine matrix;
+4. configure Stripe test mode and execute the payment matrix;
+5. configure Auth redirects and execute native recovery/deep-link tests;
+6. build preview iOS/Android and test core customer/business flows;
+7. configure optional AI/notification/delivery providers if included in beta scope;
+8. onboard only real verified marketplace participants;
+9. operate a controlled private beta with monitoring/support;
+10. complete store/legal/configuration gates before public submission.
+
+See `docs/FINAL_LAUNCH_GATE.md` for the binary release gate.
