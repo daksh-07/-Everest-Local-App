@@ -4,19 +4,34 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+permissions:
+  contents: read
 jobs:
-  validate:
+  validate-mobile:
+    name: Validate mobile app
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Node 20
+      - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: TypeScript
         run: npm run typecheck
       - name: Expo Doctor
         run: npx expo-doctor
+  validate-functions:
+    name: Validate Supabase functions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Edge Functions
+        run: deno check supabase/functions/*/index.ts
