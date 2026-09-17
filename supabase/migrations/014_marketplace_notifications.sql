@@ -1,6 +1,6 @@
 create or replace function public.notify_quote_change() returns trigger language plpgsql security definer set search_path=public as $$
 begin
- if old.status is distinct from new.status or old.id is null then
+ if tg_op='INSERT' or old.status is distinct from new.status then
    insert into public.notifications(user_id,kind,title,body,data) values(new.customer_id,'QUOTE_UPDATE','Quote update','A business has updated a quote for your request.',jsonb_build_object('quote_id',new.id,'status',new.status));
  end if;
  return new;
@@ -10,7 +10,7 @@ create trigger quotes_notify after insert or update on public.quotes for each ro
 
 create or replace function public.notify_booking_change() returns trigger language plpgsql security definer set search_path=public as $$
 begin
- if old.status is distinct from new.status or old.id is null then
+ if tg_op='INSERT' or old.status is distinct from new.status then
    insert into public.notifications(user_id,kind,title,body,data) values(new.customer_id,'BOOKING_UPDATE','Booking update','Your booking status has changed.',jsonb_build_object('booking_id',new.id,'status',new.status));
  end if;
  return new;
