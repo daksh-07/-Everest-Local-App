@@ -1,0 +1,13 @@
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '@/lib/supabase';
+
+export default function Admin(){
+ const [loading,setLoading]=useState(true);const [allowed,setAllowed]=useState(false);const [counts,setCounts]=useState<Record<string,number>>({});const [error,setError]=useState('');
+ useEffect(()=>{(async()=>{try{const {data:user}=await supabase.auth.getUser();if(!user.user)throw new Error('Authentication required');const {data:profile,error:pError}=await supabase.from('profiles').select('role').eq('id',user.user.id).single();if(pError)throw pError;if(profile?.role!=='ADMIN')throw new Error('Admin authorization required');setAllowed(true);const tables=['businesses','profiles','service_requests','quotes','bookings','products','orders','reviews','audit_logs'];const results=await Promise.all(tables.map(t=>supabase.from(t).select('*',{count:'exact',head:true})));setCounts(Object.fromEntries(tables.map((t,i)=>[t,results[i].count??0])));}catch(e){setError(e instanceof Error?e.message:'Unable to load admin dashboard.')}finally{setLoading(false)}})()},[]);
+ if(loading)return <SafeAreaView style={s.safe}><ActivityIndicator style={{marginTop:60}}/></SafeAreaView>;
+ if(!allowed)return <SafeAreaView style={s.safe}><View style={s.center}><Text style={s.title}>Restricted</Text><Text style={s.copy}>{error}</Text></View></SafeAreaView>;
+ return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page}><Text style={s.eyebrow}>EVEREST LOCAL</Text><Text style={s.title}>Operations</Text><Text style={s.copy}>Admin-only marketplace visibility. Sensitive mutations remain server-authorized.</Text><View style={s.grid}>{Object.entries(counts).map(([k,v])=><View style={s.card} key={k}><Text style={s.number}>{v}</Text><Text style={s.label}>{k.replace('_',' ').toUpperCase()}</Text></View>)}</View></ScrollView></SafeAreaView>
+}
+const s=StyleSheet.create({safe:{flex:1,backgroundColor:'#f8f7f4'},page:{padding:20,paddingBottom:40},center:{flex:1,padding:30,justifyContent:'center',alignItems:'center'},eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:2,color:'#777'},title:{fontSize:31,fontWeight:'900',letterSpacing:-1,marginTop:7},copy:{fontSize:13,lineHeight:20,color:'#777',marginTop:8,marginBottom:24},grid:{flexDirection:'row',flexWrap:'wrap',gap:10},card:{width:'48%',minHeight:100,backgroundColor:'#fff',borderRadius:17,borderWidth:1,borderColor:'#e5e2dc',padding:16,justifyContent:'space-between'},number:{fontSize:29,fontWeight:'900'},label:{fontSize:9,fontWeight:'900',letterSpacing:1,color:'#777'}});
