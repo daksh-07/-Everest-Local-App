@@ -25,6 +25,8 @@ jobs:
         run: npm run lint
       - name: Static security/navigation audit
         run: npm run audit
+      - name: Migration audit
+        run: npm run audit:migrations
       - name: Expo Doctor
         run: npx expo-doctor
       - name: Expo web bundle
