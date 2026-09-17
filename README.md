@@ -4,7 +4,7 @@ Everest Local is a mobile-first local services + local products marketplace buil
 
 ## Architecture
 
-- Expo SDK 53 + React Native + Expo Router + TypeScript
+- Expo SDK 54 + React Native + Expo Router + TypeScript
 - Supabase Auth with mobile session persistence via SecureStore
 - Postgres schema with RLS, constraints, indexes and server-side RPCs
 - Supabase Edge Functions for trusted checkout, Stripe webhooks and Ask Everest
@@ -23,7 +23,7 @@ Delivery: ready for pickup → business delivery request → admin driver assign
 
 Use `.env.example` as the configuration contract. `EXPO_PUBLIC_*` values are the only values intended for the mobile bundle. Service-role, Stripe secret and AI credentials belong only in the trusted backend/Edge Function environment.
 
-Apply `supabase/migrations/001_*.sql` through the latest numbered migration in order. Deploy the Edge Functions under `supabase/functions/` through Supabase tooling.
+Apply `supabase/migrations/001_*.sql` through the latest numbered migration in order. Deploy the Edge Functions under `supabase/functions/` through Supabase tooling. See `docs/SUPABASE_DEPLOYMENT.md` for the controlled deployment procedure.
 
 ## Validation
 
@@ -34,6 +34,7 @@ The GitHub Actions validation workflow runs:
 - ESLint
 - static security/navigation audit
 - ordered Supabase migration audit
+- security invariant tests
 - Expo Doctor
 - Expo web export
 - Deno type-checking for all Edge Functions
@@ -43,7 +44,7 @@ The repository does not currently include a live integration/E2E environment. Re
 ## Production requirements
 
 1. Configure Supabase Auth and the target database project.
-2. Apply all migrations and validate RLS against real Customer/Business test accounts.
+2. Apply all migrations and validate RLS against real Customer/Business/Admin/Driver test accounts.
 3. Configure Stripe secret/webhook secrets server-side and register the webhook endpoint.
 4. Exercise product and service payment success/failure/expiry/retry scenarios in Stripe test mode.
 5. Configure native/web Auth redirect URLs and test password recovery on iOS, Android and web.
@@ -51,6 +52,7 @@ The repository does not currently include a live integration/E2E environment. Re
 7. Populate real verified businesses, categories, services and products through controlled workflows.
 8. Configure notification/delivery providers if those capabilities are enabled for launch.
 9. Build/sign and test the native applications on physical devices.
+10. Complete the final launch gate in `docs/FINAL_LAUNCH_GATE.md` before public release.
 
 Never commit secrets or create fake marketplace activity to make the UI appear populated.
 
