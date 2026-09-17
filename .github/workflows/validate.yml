@@ -27,6 +27,8 @@ jobs:
         run: npm run audit
       - name: Expo Doctor
         run: npx expo-doctor
+      - name: Expo web bundle
+        run: npx expo export --platform web --output-dir dist
   validate-functions:
     name: Validate Supabase functions
     runs-on: ubuntu-latest
