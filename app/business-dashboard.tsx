@@ -1,6 +1,7 @@
 import { useEffect,useState } from 'react';
 import { ActivityIndicator,Pressable,ScrollView,StyleSheet,Text,View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { myBusiness } from '@/lib/catalog';
 import { supabase } from '@/lib/supabase';
 type Business={id:string;name:string;status:string;verification_status:string;suburb:string|null;city:string|null;state:string|null};type Counts={opportunities:number;quotes:number;bookings:number;products:number;orders:number;reviews:number};
