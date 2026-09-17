@@ -2,7 +2,7 @@
 
 Audit date: 2026-09-17  
 Repository: `daksh-07/-Everest-Local-App`  
-Audit head before this report: `d7996a384a3f6e058bf014bfd1852530e0052aed`
+Final audited application head: `36ab759e6387f342f86e9378a2b739bcab9f5a8d`
 
 ## Verification standard
 
@@ -18,7 +18,7 @@ No fake marketplace businesses, products, orders, reviews, availability, payment
 
 ### CI / static validation
 - **CODE EXISTS / REAL CI VERIFIED:** GitHub Actions validates TypeScript, ESLint, the static security/navigation audit, Expo Doctor, Expo web export, and Supabase Edge Function type-checking.
-- The latest pre-audit baseline run #84 was green. A later Phase 1 run #94 was also green before the follow-up fixes in this audit.
+- Baseline run #84 was green before Phase 1. Phase 1 run #94 was green. Post-audit application run #100 is green on the final audited application head.
 - CI is evidence of source/build health only; it is not evidence that a live Supabase/Stripe integration works end-to-end.
 
 ### Customer request and matching foundation
@@ -33,7 +33,7 @@ No fake marketplace businesses, products, orders, reviews, availability, payment
 
 ### Product checkout foundation
 - **CODE EXISTS:** Cart, transactional order creation, inventory reservation, Stripe Checkout creation and webhook processing exist.
-- **BACKEND CONNECTED:** Checkout derives product names/prices/quantities from database order items, uses a server-side Stripe secret, and uses idempotency keys. Webhook signatures are verified.
+- **BACKEND CONNECTED:** Checkout derives product names/prices/quantities from database order items, uses a server-side Stripe secret, and uses idempotency keys. Webhook signatures are verified. Expiry/cancellation/async failure paths release reservations through trusted processing.
 - **REAL-WORLD VERIFIED:** Not executed against live Supabase + Stripe test mode.
 
 ### AI foundation
@@ -55,12 +55,12 @@ No fake marketplace businesses, products, orders, reviews, availability, payment
 | Deterministic matching | Yes | Yes | No | No production scheduler/queue for expiry/re-matching. |
 | Quote lifecycle | Yes | Yes | No | Sent/accept path exists; viewed/declined/expired/cancelled UX is incomplete. |
 | Service payment | Partial | Partial | No | Deposit can create `PENDING_PAYMENT`, but there is no service-specific Stripe checkout/webhook path. Non-admin callers cannot falsely confirm unpaid bookings. |
-| Messaging | Partial | Yes for existing records | No | Conversation/message schema and participant RLS exist, but complete conversation creation and thread/composer UI are missing. |
+| Messaging | Partial | Yes for existing records | No | Conversation/message schema and participant RLS exist; complete conversation creation and thread/composer UI are missing. Messages are now immutable to clients. |
 | Reviews | Partial | Yes | No | Verified-transaction review RPC exists; creation/display UI is missing. |
 | Product marketplace | Yes | Yes | No | Current checkout is pickup-only; delivery selection/address/fees are not wired into checkout. |
 | Delivery operations | Partial | Yes | No | Delivery creation/assignment/driver workflow is not fully wired into the app. |
 | Business verification | Yes | Yes | No | Admin-controlled verification exists; document upload/storage is not implemented. |
-| Notifications | Yes | Yes for in-app records | No | Database triggers exist; push/email/SMS providers are not configured. |
+| Notifications | Yes | Yes | No | In-app notification records/triggers exist and read state uses an authorized RPC; push/email/SMS providers are not configured. |
 | Account deletion | Yes | Yes | No | Hard delete is intentionally blocked when retained marketplace/audit records require support closure. |
 | Geographic coverage | Partial | Yes | No | Several screens still default to Sydney/NSW despite scalable location fields in the schema. |
 
@@ -88,6 +88,7 @@ No fake marketplace businesses, products, orders, reviews, availability, payment
 5. **Existing Stripe session retrieval:** if a persisted Stripe Checkout Session existed but Stripe retrieval temporarily failed, the checkout catch path could release the reservation because the session-created flag was still false. The checkout function now marks an existing provider session as accepted before retrieval, retaining the reservation for webhook completion/recovery.
 6. **Abandoned/async Stripe payments:** the webhook previously handled payment success/failure but not Checkout Session expiry or async payment failure/cancellation. It now processes `checkout.session.expired`, `checkout.session.async_payment_failed`, and `payment_intent.canceled` through the same atomic reservation-release path.
 7. **Async Checkout completion:** `checkout.session.completed` is no longer treated as paid unless Stripe reports `payment_status='paid'`; deferred settlement can complete through `payment_intent.succeeded`.
+8. **Notification read regression after hardening:** client notification updates were intentionally revoked, but the existing UI still attempted a direct update. Migration 018 adds a narrow `mark_notification_read` RPC and the notification screen now uses it, preserving read-state functionality without reopening notification writes.
 
 ### Not treated as broken
 
@@ -114,7 +115,7 @@ No fake marketplace businesses, products, orders, reviews, availability, payment
 ### Hardened
 
 - Client writes to sensitive service/product/quote/opportunity lifecycle tables are revoked; controlled RPCs remain the write path.
-- Client notification writes are revoked.
+- Client notification writes are revoked; only the narrow authenticated read-state RPC can change a notification.
 - Product image public visibility follows active + verified business visibility.
 - Product publication requires verified business and available inventory.
 - Inventory reactivation checks business verification.
@@ -155,6 +156,7 @@ RLS is source-reviewed but not live-executed here. A production launch requires 
 - Atomic order/payment/inventory success processing.
 - Atomic failed/expired/cancelled reservation release.
 - PaymentIntent metadata containing order identity.
+- Async Checkout Sessions are not treated as paid until settlement is confirmed.
 
 ### Remaining
 
@@ -262,13 +264,7 @@ The primary blockers are:
 
 ## Validation evidence
 
-### Baseline
-
-- Run #84: green before the Phase 1 production-hardening work.
-- Run #94: green on commit `275679e56c71420d37d4f35b285e179c6573eb93`; both the mobile validation and Supabase function type-check jobs passed.
-
-### Audit fixes
-
-The audit fixes are committed on `main`. GitHub Actions is being used as the final source/build gate after those fixes. The exact post-fix run number is recorded here after it completes.
-
-The CI workflow itself was not modified during this audit.
+- Run #84: green baseline before Phase 1.
+- Run #94: green on `275679e56c71420d37d4f35b285e179c6573eb93`; both mobile validation and Supabase function type-check jobs passed.
+- Run #100: green on `36ab759e6387f342f86e9378a2b739bcab9f5a8d`; both jobs passed all required steps, including TypeScript, ESLint, static audit, Expo Doctor, Expo web export, and Supabase Edge Function type-check.
+- The CI workflow itself was not modified during this audit.
