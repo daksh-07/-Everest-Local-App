@@ -1,3 +1,4 @@
+/* eslint-env node */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
@@ -29,12 +30,6 @@ const clientText = (await Promise.all(appAndLibFiles.map((file) => readFile(file
 const tableNames = [...migrationText.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?public\.([a-z_][a-z0-9_]*)/gi)]
   .map((match) => match[1].toLowerCase());
 
-const sensitiveTables = [
-  'profiles', 'businesses', 'business_members', 'service_requests', 'opportunities',
-  'quotes', 'conversations', 'messages', 'bookings', 'products', 'carts', 'cart_items',
-  'orders', 'payments', 'reviews', 'deliveries', 'delivery_assignments', 'notifications',
-];
-
 test('migration sequence is contiguous', () => {
   const versions = migrationFiles.map((file) => Number(file.split('/').at(-1).slice(0, 3)));
   assert.ok(versions.length > 0);
@@ -55,12 +50,11 @@ test('every SECURITY DEFINER function pins search_path to public', () => {
 });
 
 test('client code does not write authoritative payment/order/delivery records directly', () => {
-  const forbidden = sensitiveTables
-    .filter((table) => ['payments', 'orders', 'deliveries', 'delivery_assignments'].includes(table))
-    .flatMap((table) => [
-      new RegExp(`from\\(['\"]${table}['\"]\\)\\.(?:insert|update|upsert|delete)`, 'i'),
-      new RegExp(`from\\(['\"]${table}['\"]\\)\\s*\\.\\s*(?:insert|update|upsert|delete)`, 'i'),
-    ]);
+  const authoritativeTables = ['payments', 'orders', 'deliveries', 'delivery_assignments'];
+  const forbidden = authoritativeTables.flatMap((table) => [
+    new RegExp(`from\\(['"]${table}['"]\\)\\.(?:insert|update|upsert|delete)`, 'i'),
+    new RegExp(`from\\(['"]${table}['"]\\)\\s*\\.\\s*(?:insert|update|upsert|delete)`, 'i'),
+  ]);
   const matches = forbidden.filter((pattern) => pattern.test(clientText));
   assert.deepEqual(matches, []);
 });
