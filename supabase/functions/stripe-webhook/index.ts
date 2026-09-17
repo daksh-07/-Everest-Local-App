@@ -18,11 +18,21 @@ Deno.serve(async req=>{
   const object=event.data.object as Stripe.Checkout.Session|Stripe.PaymentIntent;
   const metadata=(object.metadata??{}) as StripeMetadata;
   const orderId=metadata.order_id;
-  if(event.type==='checkout.session.completed'||event.type==='payment_intent.succeeded'){
+  if(event.type==='checkout.session.completed'){
+   const session=event.data.object as Stripe.Checkout.Session;
+   // A Checkout Session can complete before funds settle for asynchronous payment
+   // methods. Only a paid session may finalize the order here; payment_intent.succeeded
+   // remains the authoritative completion path for deferred settlement.
+   if(session.payment_status==='paid'){
+    if(!orderId){await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:false});return json({error:'Missing order metadata'},400);}
+    const {error}=await db.rpc('process_stripe_order_success',{p_order_id:orderId});
+    if(error)throw error;
+   }
+  } else if(event.type==='payment_intent.succeeded'){
    if(!orderId){await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:false});return json({error:'Missing order metadata'},400);}
    const {error}=await db.rpc('process_stripe_order_success',{p_order_id:orderId});
    if(error)throw error;
-  } else if(event.type==='payment_intent.payment_failed'){
+  } else if(event.type==='payment_intent.payment_failed'||event.type==='payment_intent.canceled'||event.type==='checkout.session.expired'||event.type==='checkout.session.async_payment_failed'){
    if(!orderId){await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:false});return json({error:'Missing order metadata'},400);}
    const {error}=await db.rpc('process_stripe_order_failure',{p_order_id:orderId});
    if(error)throw error;
