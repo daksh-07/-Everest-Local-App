@@ -26,6 +26,9 @@ Deno.serve(async req=>{
   const {data:existingPayment,error:existingPaymentError}=await admin.from('payments').select('provider_checkout_session_id').eq('order_id',orderId).eq('idempotency_key',idem).maybeSingle();
   if(existingPaymentError)throw existingPaymentError;
   if(existingPayment?.provider_checkout_session_id){
+    // The provider session already exists, so its reservation must remain intact even
+    // if Stripe retrieval temporarily fails.
+    stripeSessionCreated=true;
     const stripe=new Stripe(stripeKey,{apiVersion:'2025-07-30.basil'});
     const existingSession=await stripe.checkout.sessions.retrieve(existingPayment.provider_checkout_session_id);
     return json({orderId,orderNumber:order.order_number,total:order.total,checkoutUrl:existingSession.url,reused:true});
@@ -52,7 +55,7 @@ Deno.serve(async req=>{
   return json({orderId,orderNumber:order.order_number,total:order.total,checkoutUrl:session.url,reused:order.reused});
  }catch(error){
   // If Stripe accepted the Checkout Session, retain the reservation and pending order so the
-  // verified webhook can complete the payment even if this request failed afterward.
+  // verified webhook can complete or expire the payment safely.
   if(orderId&&!stripeSessionCreated)await userClient.rpc('release_my_order_reservations',{p_order_id:orderId});
   console.error('checkout_failed',{message:error instanceof Error?error.message:'unknown',orderId:orderId??null,stripeSessionCreated});
   return json({error:'Checkout could not be created. No payment was confirmed.'},500);
