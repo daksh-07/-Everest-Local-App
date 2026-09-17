@@ -1,6 +1,7 @@
 # Everest Local — Final Launch Gate
 
-**Audited repository head:** `581de9f87c3467c5216fb62236410137aae1eec0`  
+**Audited repository head:** `564e4094615cb59a9277d2acad459ff235acdf29`  
+**Latest full CI:** GitHub Actions run `#182` / `35239201981` — **PASS**  
 **Status:** `NOT LAUNCH READY — EXTERNAL VALIDATION REQUIRED`
 
 A gate is only `VERIFIED` when the stated evidence actually exists. A green GitHub Actions run proves source/build validation; it does not prove live Supabase, Stripe, native-device, provider or store behavior.
@@ -17,14 +18,14 @@ A gate is only `VERIFIED` when the stated evidence actually exists. A green GitH
 
 | Gate | Status | Evidence |
 |---|---|---|
-| TypeScript | PARTIALLY VERIFIED | Previous run #175 passed; SDK 54 dependency alignment is awaiting current CI completion. |
-| ESLint | PARTIALLY VERIFIED | Same boundary as TypeScript. |
-| Static security/navigation audit | PARTIALLY VERIFIED | Run #175 passed; rerun required after dependency update. |
-| Migration audit | PARTIALLY VERIFIED | Run #175 passed for migrations 001–032; rerun required after dependency update. |
-| Security invariant tests | PARTIALLY VERIFIED | Run #175 passed; rerun required after dependency update. |
-| Expo Doctor | PARTIALLY VERIFIED | Run #175 passed on SDK 53; SDK 54 result must be observed before release. |
-| Expo web export | PARTIALLY VERIFIED | Run #175 passed; SDK 54 result must be observed. |
-| Edge Function type checks | VERIFIED | Run #176 completed successfully for all Edge Functions; no dependency change affects Deno source. |
+| TypeScript | VERIFIED | Run #182 passed. |
+| ESLint | VERIFIED | Run #182 passed. |
+| Static security/navigation audit | VERIFIED | Run #182 passed. |
+| Migration audit | VERIFIED | Run #182 passed; migrations 001–032 are contiguous and non-empty. |
+| Security invariant tests | VERIFIED | Run #182 passed 11 tests, including native release configuration and server-only credential invariants. |
+| Expo Doctor | VERIFIED | Run #182 passed after aligning the project to Expo SDK 54 dependency versions. |
+| Expo web export | VERIFIED | Run #182 passed. |
+| Edge Function type checks | VERIFIED | Run #182 passed for all Edge Functions. |
 
 ## Database / authorization gates
 
@@ -123,8 +124,8 @@ Stripe Connect/KYC/payouts/transfers/refunds/disputes are **outside current MVP 
 
 | Gate | Status |
 |---|---|
-| Expo SDK 54 dependency alignment | PARTIALLY VERIFIED — CI pending at audit time |
-| Android target API 36 source requirement | PARTIALLY VERIFIED — SDK 54 supplies target API 36; native build still required |
+| Expo SDK 54 dependency alignment | VERIFIED by run #182 |
+| Android target API 36 source requirement | VERIFIED at SDK configuration level; native build still required |
 | iOS physical-device test | BLOCKED BY HUMAN CONFIGURATION |
 | Android physical-device test | BLOCKED BY HUMAN CONFIGURATION |
 | Native deep links | BLOCKED BY HUMAN CONFIGURATION |
@@ -149,21 +150,20 @@ Stripe Connect/KYC/payouts/transfers/refunds/disputes are **outside current MVP 
 
 ### Controlled private beta
 
-**Conditionally possible only after the external staging gate is completed.** The repository is not sufficient by itself to authorize real customer transactions. The minimum private-beta prerequisite is a configured Supabase environment, live RLS tests, Stripe test-mode transaction matrix, native builds/devices, Auth recovery validation and real controlled marketplace onboarding.
+**Conditionally possible after external staging validation.** The repository is code-validated, but it is not sufficient by itself to authorize real customer transactions. Minimum prerequisites are a configured Supabase environment, live RLS tests, Stripe test-mode transaction matrix, native builds/devices, Auth recovery validation and real controlled marketplace onboarding.
 
 ### Public launch
 
-**Not ready.** Public release additionally requires production backend/payment configuration, native release builds/signing, legal/privacy/support URLs and store declarations. Monitoring/alerting should be in place before broad public traffic.
+**Not ready.** Public release additionally requires production backend/payment configuration, native release builds/signing, legal/privacy/support URLs, store declarations and operational monitoring.
 
 ## Human launch sequence
 
-1. Wait for the SDK 54 CI run to pass completely.
-2. Configure a staging Supabase project and apply migrations cleanly.
-3. Execute the adversarial RLS/authorization matrix.
-4. Configure Stripe test mode and run the complete payment/webhook matrix.
-5. Configure Auth redirects and test recovery on physical iOS/Android plus web.
-6. Build internal EAS preview builds and exercise service/product/delivery flows.
-7. Configure AI/notifications/delivery providers only if included in beta scope.
-8. Add only real verified marketplace participants and real catalog/pricing data.
-9. Operate a controlled beta and record failures/operational evidence.
-10. Finalize legal/store/monitoring configuration and rerun the final gate before public submission.
+1. Configure a staging Supabase project and apply migrations cleanly.
+2. Execute the adversarial RLS/authorization matrix.
+3. Configure Stripe test mode and run the complete payment/webhook matrix.
+4. Configure Auth redirects and test recovery on physical iOS/Android plus web.
+5. Build internal EAS preview builds and exercise service/product/delivery flows.
+6. Configure AI/notifications/delivery providers only if included in beta scope.
+7. Add only real verified marketplace participants and real catalog/pricing data.
+8. Operate a controlled beta and record failures/operational evidence.
+9. Finalize legal/store/monitoring configuration and rerun the final gate before public submission.
