@@ -1,4 +1,4 @@
-import { Linking } from 'react-native';
+import * as Linking from 'expo-linking';
 import { supabase,requireSupabaseConfig } from './supabase';
 import { z } from 'zod';
 const emailSchema=z.string().trim().email().max(254);
