@@ -2,7 +2,8 @@
 
 Audit date: 2026-09-18  
 Repository: `daksh-07/-Everest-Local-App`  
-Current audited head: `dae1c933cc93d5a9a99f517dc0dc77fa6dded6e3`
+Application-code audit head: `564e4094615cb59a9277d2acad459ff235acdf29`  
+Latest full CI: GitHub Actions run `#182` / `35239201981` — **PASS**
 
 ## Status definitions
 
@@ -14,23 +15,21 @@ Current audited head: `dae1c933cc93d5a9a99f517dc0dc77fa6dded6e3`
 
 No fake businesses, products, reviews, orders, payments, availability or delivery records are included.
 
-## 1. Current code gate
+## 1. Current code gate — VERIFIED
 
-The latest pre-SDK-change CI run was GitHub Actions run `#175` / `35229556450` on commit `8bd5fc53e73b4a9bafe5d253098f359a57cef905` and passed the repository validation workflow.
+Run #182 verified the current application code after the Expo SDK 54 alignment and native release-invariant test additions:
 
-The current head then aligned the mobile dependency set with Expo SDK 54. CI run `#176` / `35238239481` was still in progress at the time of this document update; therefore the SDK 54 dependency change is **PARTIALLY VERIFIED** until that run completes.
+- npm dependency installation;
+- TypeScript;
+- ESLint;
+- static security/navigation audit;
+- migration audit for 001–032;
+- security invariant tests — 11 passing tests;
+- Expo Doctor;
+- Expo web export;
+- Deno type-checking for all Edge Functions.
 
-The workflow covers:
-
-- dependency installation
-- TypeScript
-- ESLint
-- static security/navigation audit
-- migration audit
-- security invariant tests
-- Expo Doctor
-- Expo web export
-- Deno type-checking for all Edge Functions
+The SDK 54 dependency set is now aligned to the SDK's expected React/React Native/native-module versions. The earlier Expo SDK 53 / Android API 35 source-level store constraint was removed; SDK 54 targets Android API 36.
 
 The repository does not have a local reproducible full-install environment in this engineering session, so GitHub Actions is the authoritative code-validation evidence.
 
@@ -172,6 +171,8 @@ External maps/logistics integration is not implemented and is outside the core M
 - Checkout client inputs do not include client-authoritative price/total/inventory/stock/tax/fee fields.
 - Sensitive lifecycle state is server-authorized.
 - Navigation references are checked against real Expo Router routes.
+- Native scheme/platform identifiers and EAS release profiles are covered by automated invariants.
+- Mobile source is checked for trusted server-only credential variable names.
 
 ### Live security status
 
@@ -179,7 +180,7 @@ External maps/logistics integration is not implemented and is outside the core M
 
 ## 12. Native / store configuration
 
-The app is now aligned to Expo SDK 54 dependency versions. Expo's SDK 54 reference specifies Android compile/target API 36, matching Google Play's requirement from 31 August 2026 for new apps and updates. This removes the earlier SDK 53/API 35 source-level store blocker, subject to the current CI/build validation completing successfully.
+The application is aligned to Expo SDK 54. Run #182 passed Expo Doctor and the web export with the SDK 54 dependency set. SDK 54 targets Android compile/target API 36, matching Google Play's requirement from 31 August 2026 for new apps and updates.
 
 Physical iOS/Android builds, signing, deep links, recovery and store-console submission remain **BLOCKED BY HUMAN CONFIGURATION**.
 
@@ -197,7 +198,7 @@ Server-side delivery notification records exist and are authorized. Actual push/
 
 Dedicated client crash reporting/centralized production alerting is **MISSING** from the repository. Supabase/Edge Function logs are available as an operational primitive, but they are not equivalent to complete client crash/alert coverage.
 
-A private beta can operate with explicit operational monitoring and support procedures; public launch should add privacy-safe crash/error monitoring and payment/webhook alerting before broad distribution.
+A private beta can operate with explicit operational monitoring and support procedures; public launch should add privacy-safe client crash/error monitoring and payment/webhook alerting before broad distribution.
 
 ## 15. Controlled marketplace seeding
 
@@ -213,19 +214,22 @@ Source review confirms bounded marketplace queries, debounced search, loading/er
 
 ## 17. Final launch assessment
 
-The repository is **not yet externally validated production-ready**. The codebase has a strong source/CI gate, but the critical remaining evidence is environmental: live Supabase, Stripe test transactions/webhooks, native devices, Auth redirects, real identities and any enabled providers.
+**Source/CI:** VERIFIED.  
+**External production:** NOT YET VERIFIED.  
+**Public launch:** NOT READY.
+
+The remaining evidence is environmental: live Supabase, Stripe test transactions/webhooks, native devices, Auth redirects, real identities and any enabled providers.
 
 The correct launch sequence is:
 
-1. complete SDK 54 CI validation;
-2. configure staging Supabase and apply migrations cleanly;
-3. run adversarial RLS/state-machine matrix;
-4. configure Stripe test mode and execute the payment matrix;
-5. configure Auth redirects and execute native recovery/deep-link tests;
-6. build preview iOS/Android and test core customer/business flows;
-7. configure optional AI/notification/delivery providers if included in beta scope;
-8. onboard only real verified marketplace participants;
-9. operate a controlled private beta with monitoring/support;
-10. complete store/legal/configuration gates before public submission.
+1. configure staging Supabase and apply migrations cleanly;
+2. run adversarial RLS/state-machine matrix;
+3. configure Stripe test mode and execute the payment matrix;
+4. configure Auth redirects and execute native recovery/deep-link tests;
+5. build preview iOS/Android and test core customer/business flows;
+6. configure optional AI/notification/delivery providers if included in beta scope;
+7. onboard only real verified marketplace participants;
+8. operate a controlled private beta with monitoring/support;
+9. complete store/legal/configuration gates before public submission.
 
-See `docs/FINAL_LAUNCH_GATE.md` for the binary release gate.
+See `docs/SUPABASE_DEPLOYMENT.md`, `docs/LAUNCH_READINESS.md` and `docs/FINAL_LAUNCH_GATE.md` for the operational procedures and release gate.
