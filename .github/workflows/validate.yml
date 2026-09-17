@@ -27,6 +27,8 @@ jobs:
         run: npm run audit
       - name: Migration audit
         run: npm run audit:migrations
+      - name: Security invariant tests
+        run: npm run test:security
       - name: Expo Doctor
         run: npx expo-doctor
       - name: Expo web bundle
