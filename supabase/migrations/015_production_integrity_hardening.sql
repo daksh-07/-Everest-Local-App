@@ -27,6 +27,62 @@ for select using (
   or public.is_admin()
 );
 
+-- Product publication and inventory reactivation must respect verification and stock.
+create or replace function public.set_product_status(p_product_id uuid,p_status public.product_status) returns boolean
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare bid uuid; verified boolean; available integer;
+begin
+ select business_id into bid from public.products where id=p_product_id;
+ if bid is null or not public.is_business_member(bid) then raise exception 'Not authorized'; end if;
+ select verification_status='VERIFIED' into verified from public.businesses where id=bid;
+ if p_status='ACTIVE' then
+   if not coalesce(verified,false) then raise exception 'Business verification is required before publishing products'; end if;
+   select stock_quantity-reserved_quantity into available from public.inventory where product_id=p_product_id for update;
+   if coalesce(available,0)<=0 then raise exception 'Product must have available inventory before publishing'; end if;
+ end if;
+ update public.products set status=p_status,updated_at=now() where id=p_product_id;
+ return found;
+end;
+$$;
+grant execute on function public.set_product_status(uuid,public.product_status) to authenticated;
+
+create or replace function public.adjust_inventory(p_product_id uuid,p_delta integer) returns boolean
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare bid uuid; current_stock integer; reserved integer; verified boolean;
+begin
+ select business_id into bid from public.products where id=p_product_id;
+ if bid is null then raise exception 'Product not found'; end if;
+ if not (public.is_business_member(bid) or public.is_admin()) then raise exception 'Not authorized'; end if;
+ if p_delta=0 then return true; end if;
+ select stock_quantity,reserved_quantity into current_stock,reserved from public.inventory where product_id=p_product_id for update;
+ if current_stock is null then
+   if p_delta<0 then raise exception 'Inventory cannot become negative'; end if;
+   insert into public.inventory(product_id,stock_quantity) values(p_product_id,p_delta);
+   return true;
+ end if;
+ if current_stock+p_delta<reserved then raise exception 'Stock cannot fall below reserved quantity'; end if;
+ if current_stock+p_delta<0 then raise exception 'Inventory cannot become negative'; end if;
+ update public.inventory set stock_quantity=current_stock+p_delta,updated_at=now() where product_id=p_product_id;
+ select verification_status='VERIFIED' into verified from public.businesses where id=bid;
+ update public.products
+ set status=case
+   when current_stock+p_delta-reserved<=0 then 'OUT_OF_STOCK'
+   when status='OUT_OF_STOCK' and coalesce(verified,false) then 'ACTIVE'
+   else status
+ end,
+ updated_at=now()
+ where id=p_product_id;
+ return true;
+end;
+$$;
+grant execute on function public.adjust_inventory(uuid,integer) to authenticated;
+
 -- A booking requiring payment must not be confirmed by a customer or business account.
 -- Payment confirmation must come from the trusted payment integration.
 create or replace function public.update_booking_status(
