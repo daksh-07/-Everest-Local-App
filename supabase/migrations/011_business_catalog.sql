@@ -1,4 +1,5 @@
 create unique index if not exists products_business_sku_unique on public.products(business_id,sku) where sku is not null;
+create unique index if not exists service_areas_business_location_unique on public.service_areas(business_id,suburb,city,state);
 
 create or replace function public.create_service(p_business_id uuid,p_name text,p_description text default null,p_category_id uuid default null,p_base_price numeric default null,p_duration_minutes integer default null) returns uuid language plpgsql security definer set search_path=public as $$
 declare sid uuid;
@@ -19,7 +20,7 @@ begin
  if length(trim(p_name))<2 or length(trim(p_name))>160 then raise exception 'Invalid product name'; end if;
  if p_price<0 or (p_sale_price is not null and (p_sale_price<0 or p_sale_price>p_price)) then raise exception 'Invalid product price'; end if;
  if p_stock<0 then raise exception 'Inventory cannot be negative'; end if;
- base_slug:=regexp_replace(lower(trim(p_name)),'[^a-z0-9]+','-','g');new_slug:=base_slug;
+ base_slug:=regexp_replace(lower(trim(p_name)),'[^a-z0-9]+','-','g');if base_slug='' then raise exception 'Product name must contain letters or numbers'; end if;new_slug:=base_slug;
  while exists(select 1 from public.products where slug=new_slug) loop n:=n+1;new_slug:=base_slug||'-'||n;end loop;
  insert into public.products(business_id,name,slug,description,category_id,price,sale_price,sku,status,delivery_eligible,pickup_available) values(p_business_id,trim(p_name),new_slug,nullif(trim(p_description),''),p_category_id,p_price,p_sale_price,nullif(trim(p_sku),''),'DRAFT',p_delivery_eligible,p_pickup_available) returning id into pid;
  insert into public.inventory(product_id,stock_quantity) values(pid,p_stock);
