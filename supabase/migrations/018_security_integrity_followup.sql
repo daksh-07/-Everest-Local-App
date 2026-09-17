@@ -35,3 +35,21 @@ for insert with check (
   )
 );
 revoke update, delete on public.messages from anon, authenticated;
+
+-- Notification records are server-generated, but a user may mark their own
+-- notification as read through this narrow authenticated RPC.
+create or replace function public.mark_notification_read(p_notification_id uuid) returns boolean
+language plpgsql
+security definer
+set search_path=public
+as $$
+begin
+  if auth.uid() is null then raise exception 'Authentication required'; end if;
+  update public.notifications
+  set read_at=coalesce(read_at,now())
+  where id=p_notification_id and user_id=auth.uid();
+  return found;
+end;
+$$;
+revoke execute on function public.mark_notification_read(uuid) from anon;
+grant execute on function public.mark_notification_read(uuid) to authenticated;
