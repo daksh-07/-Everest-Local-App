@@ -17,20 +17,20 @@ Deno.serve(async req=>{
  if(!bookingId)return json({error:'Booking reference is required'},400);
  const userClient=createClient(url,anon,{global:{headers:{Authorization:auth}}}),admin=createClient(url,service);
  const {data:{user}}=await userClient.auth.getUser();if(!user)return json({error:'Invalid session'},401);
- let paymentId:string|undefined;let stripeSessionCreated=false;
+ let paymentId:string|undefined;
  try{
   const {data:raw,error}=await userClient.rpc('create_service_payment',{p_booking_id:bookingId,p_idempotency_key:idem});
   if(error)throw error;
   const payment=raw as ServicePaymentResult;
   paymentId=payment.payment_id;
   if(!paymentId||payment.booking_id!==bookingId||!Number.isFinite(Number(payment.amount))||Number(payment.amount)<=0)throw new Error('Invalid service payment response');
-  const existingId=payment.provider_checkout_session_id;
   const stripe=new Stripe(stripeKey,{apiVersion:'2025-07-30.basil'});
-  if(existingId){
-   stripeSessionCreated=true;
-   const existing=await stripe.checkout.sessions.retrieve(existingId);
+  if(payment.provider_checkout_session_id){
+   const existing=await stripe.checkout.sessions.retrieve(payment.provider_checkout_session_id);
    return json({paymentId,bookingId,total:payment.amount,checkoutUrl:existing.url,reused:true});
   }
+  // The database serializes the payment attempt per booking. A stable provider idempotency
+  // key also makes concurrent callers converge on one Stripe Checkout Session.
   const session=await stripe.checkout.sessions.create({
    mode:'payment',
    line_items:[{price_data:{currency:payment.currency,product_data:{name:'Everest Local service booking deposit'},unit_amount:Math.round(Number(payment.amount)*100)},quantity:1}],
@@ -38,13 +38,12 @@ Deno.serve(async req=>{
    payment_intent_data:{metadata:{payment_kind:'service',service_payment_id:paymentId,booking_id:bookingId,customer_id:user.id}},
    success_url:`everestlocal://booking/success?booking_id=${encodeURIComponent(bookingId)}`,
    cancel_url:`everestlocal://booking/cancelled?booking_id=${encodeURIComponent(bookingId)}`,
-  },{idempotencyKey:idem});
-  stripeSessionCreated=true;
+  },{idempotencyKey:paymentId});
   const {error:updateError}=await admin.from('service_payments').update({provider_payment_id:typeof session.payment_intent==='string'?session.payment_intent:null,provider_checkout_session_id:session.id,updated_at:new Date().toISOString()}).eq('id',paymentId).eq('status','PENDING');
   if(updateError)throw updateError;
   return json({paymentId,bookingId,total:payment.amount,checkoutUrl:session.url,reused:payment.reused});
  }catch(error){
-  console.error('service_checkout_failed',{message:error instanceof Error?error.message:'unknown',bookingId,paymentId:paymentId??null,stripeSessionCreated});
+  console.error('service_checkout_failed',{message:error instanceof Error?error.message:'unknown',bookingId,paymentId:paymentId??null});
   return json({error:'Service checkout could not be created. No payment was confirmed.'},500);
  }
 });
