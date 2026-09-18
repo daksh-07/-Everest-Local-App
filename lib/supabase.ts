@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import 'react-native-url-polyfill/auto';
 import * as SecureStore from 'expo-secure-store';
 import { createClient, processLock } from '@supabase/supabase-js';
@@ -6,9 +7,40 @@ const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 class ExpoSecureStoreAdapter {
-  async getItem(key: string) { return SecureStore.getItemAsync(key); }
-  async setItem(key: string, value: string) { await SecureStore.setItemAsync(key, value); }
-  async removeItem(key: string) { await SecureStore.deleteItemAsync(key); }
+  async getItem(key: string) {
+    if (Platform.OS === 'web') {
+      try {
+        return window.localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    }
+    return SecureStore.getItemAsync(key);
+  }
+
+  async setItem(key: string, value: string) {
+    if (Platform.OS === 'web') {
+      try {
+        window.localStorage.setItem(key, value);
+      } catch {
+        // Browser storage is optional; Supabase can continue without persistence.
+      }
+      return;
+    }
+    await SecureStore.setItemAsync(key, value);
+  }
+
+  async removeItem(key: string) {
+    if (Platform.OS === 'web') {
+      try {
+        window.localStorage.removeItem(key);
+      } catch {
+        // Ignore unavailable browser storage.
+      }
+      return;
+    }
+    await SecureStore.deleteItemAsync(key);
+  }
 }
 
 export const supabaseConfigured = Boolean(url && anonKey);
