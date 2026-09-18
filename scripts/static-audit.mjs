@@ -18,16 +18,9 @@ function toRoutePath(file) {
   const relativePath = relative(appRoot, file).split(sep).join('/');
   const withoutExtension = relativePath.replace(/\.(?:tsx?|jsx?)$/, '');
   let segments = withoutExtension.split('/').filter(Boolean);
-
-  // Expo Router route groups organize files without adding a URL segment.
   segments = segments.filter((segment) => !/^\(.+\)$/.test(segment));
-
-  // _layout and other Expo Router special files do not define navigable routes.
   segments = segments.filter((segment) => segment !== '_layout' && !segment.startsWith('+'));
-
-  // Expo Router maps any index route to its parent path. app/index.tsx is '/'.
   if (segments.at(-1) === 'index') segments.pop();
-
   return segments.length === 0 ? '/' : `/${segments.join('/')}`;
 }
 
@@ -40,11 +33,9 @@ function normalizeReference(value) {
 
 function routeMatchesReference(route, reference) {
   if (route === reference) return true;
-
   const routeSegments = route.split('/').filter(Boolean);
   const referenceSegments = reference.split('/').filter(Boolean);
   if (routeSegments.length !== referenceSegments.length) return false;
-
   return routeSegments.every((segment, index) => {
     if (/^\[\[\.\.\..+\]\]$/.test(segment)) return true;
     if (/^\[\.\.\..+\]$/.test(segment)) return true;
@@ -61,11 +52,9 @@ function collectNavigationReferences(content) {
     /<Link\b[^>]*\bhref\s*=\s*["']([^"']+)["']/g,
     /<Link\b[^>]*\bhref\s*=\s*\{\s*['"]([^'"]+)['"]\s*\}/g,
   ];
-
   for (const pattern of patterns) {
     for (const match of content.matchAll(pattern)) references.push(match[1]);
   }
-
   return references;
 }
 
@@ -89,24 +78,40 @@ for (const [file, content] of text) {
   }
 }
 
+// Keep Supabase client construction behind the platform-resolved boundary.
+// This prevents a future route/component from accidentally creating a second
+// client with an undefined URL or an incompatible storage implementation.
+const supabaseClientFiles = new Set([
+  join(root, 'lib', 'supabase.web.ts'),
+  join(root, 'lib', 'supabase.native.ts'),
+]);
+for (const [file, content] of text) {
+  if (!content.includes('createClient(')) continue;
+  if (!supabaseClientFiles.has(file)) {
+    failures.push(`${relative(root, file)} creates a Supabase client outside the platform boundary`);
+  }
+}
+
+for (const [file, content] of text) {
+  if (file === join(root, 'lib', 'supabase.ts')) continue;
+  if (content.includes("from '@supabase/supabase-js'") || content.includes('from "@supabase/supabase-js"')) {
+    if (!supabaseClientFiles.has(file)) {
+      failures.push(`${relative(root, file)} imports @supabase/supabase-js outside the platform boundary`);
+    }
+  }
+}
+
 const appFiles = files.filter(
   (file) => file.startsWith(`${appRoot}${sep}`) && /\.(?:tsx?|jsx?)$/.test(file),
 );
-const routes = new Set(
-  appFiles
-    .map(toRoutePath)
-    .filter((route) => route !== null),
-);
+const routes = new Set(appFiles.map(toRoutePath));
 
 for (const [file, content] of text.filter(([file]) => file.startsWith(`${appRoot}${sep}`))) {
   for (const rawReference of collectNavigationReferences(content)) {
     const reference = normalizeReference(rawReference);
     if (!reference) continue;
-
     const exists = [...routes].some((route) => routeMatchesReference(route, reference));
-    if (!exists) {
-      failures.push(`${relative(root, file)} references missing route ${reference}`);
-    }
+    if (!exists) failures.push(`${relative(root, file)} references missing route ${reference}`);
   }
 }
 
