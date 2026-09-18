@@ -12,7 +12,7 @@ export function PwaInstallPrompt() {
       window.matchMedia?.('(display-mode: standalone)').matches || nav.standalone === true;
     const isIPhoneOrIPad =
       /iPhone|iPad|iPod/i.test(window.navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
 
     if (isStandalone || !isIPhoneOrIPad) return;
 
@@ -60,7 +60,7 @@ export function PwaInstallPrompt() {
 
 const styles = StyleSheet.create({
   wrap: {
-    position: 'fixed',
+    position: 'absolute',
     left: 16,
     right: 16,
     bottom: 96,
