@@ -4,6 +4,16 @@ import { router } from 'expo-router';
 import { exchangePasswordRecoveryCode, requestPasswordReset, signIn, signUp, updatePassword } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  return <View style={{ flex: 1, backgroundColor: '#f8f7f4', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 10 }}>Everest Local</Text>
+    <Text style={{ fontSize: 13, color: '#b42318', textAlign: 'center', marginBottom: 18 }}>{error.message || 'Unable to open sign in.'}</Text>
+    <Pressable onPress={retry} style={{ backgroundColor: '#111', borderRadius: 14, paddingHorizontal: 20, paddingVertical: 13 }}>
+      <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12 }}>TRY AGAIN</Text>
+    </Pressable>
+  </View>;
+}
+
 type Mode='login'|'signup'|'reset'|'recovery';
 export default function Auth(){const [mode,setMode]=useState<Mode>('login');const [name,setName]=useState('');const [email,setEmail]=useState('');const [password,setPassword]=useState('');const [confirmPassword,setConfirmPassword]=useState('');const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [notice,setNotice]=useState('');
  useEffect(()=>{let mounted=true;const handleUrl=async(url:string|null)=>{if(!url||!mounted)return;try{const parsed=new URL(url);const code=parsed.searchParams.get('code');if(code){setBusy(true);await exchangePasswordRecoveryCode(code);if(mounted){setMode('recovery');setPassword('');setConfirmPassword('');setError('');setNotice('Choose a new password for your account.')}}}catch(e){if(mounted)setError(e instanceof Error?e.message:'Password reset link could not be opened.')}finally{if(mounted)setBusy(false)}};void Linking.getInitialURL().then(handleUrl);const listener=Linking.addEventListener('url',event=>{void handleUrl(event.url)});const {data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{if(event==='PASSWORD_RECOVERY'&&mounted){setMode('recovery');setPassword('');setConfirmPassword('');setError('');setNotice('Choose a new password for your account.')}});return()=>{mounted=false;listener.remove();subscription.unsubscribe()}},[]);
