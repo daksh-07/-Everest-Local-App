@@ -44,16 +44,34 @@ function StartupError({ message, onRetry }: { message: string; onRetry: () => vo
   );
 }
 
+function sanitizeDebug(value: string) {
+  return value
+    .replace(/https?:\\/\\/[^\\s)]+/gi, '[url]')
+    .replace(/(anon[_-]?key|service[_-]?role|secret|password|token)=?[^\\s&]+/gi, '$1=[redacted]');
+}
+
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
-  const message = __DEV__
-    ? error.message || 'An unexpected application error occurred.'
-    : 'An unexpected application error occurred. Please try again.';
+  const pathname = usePathname();
+  const message = sanitizeDebug(error?.message || String(error) || 'Unknown runtime error.');
+  const stack = sanitizeDebug(error?.stack || '');
+  const details = [
+    `route: ${pathname}`,
+    `name: ${error?.name || 'Error'}`,
+    `message: ${message}`,
+    stack ? `stack:\\n${stack}` : '',
+  ].filter(Boolean).join('\\n\\n');
+
+  if (typeof console !== 'undefined') {
+    console.error('[Everest Local runtime error]', { pathname, name: error?.name, message, stack });
+  }
 
   return (
     <View style={styles.errorScreen}>
       <Text style={styles.eyebrow}>EVEREST LOCAL</Text>
       <Text style={styles.errorTitle}>Something went wrong loading this page.</Text>
-      <Text style={styles.errorCopy}>{message}</Text>
+      <ScrollView style={styles.errorDetails} contentContainerStyle={styles.errorDetailsContent}>
+        <Text selectable style={styles.errorCopy}>{details}</Text>
+      </ScrollView>
       <Pressable onPress={retry} style={styles.retryButton}>
         <Text style={styles.retry}>RETRY</Text>
       </Pressable>
@@ -255,6 +273,15 @@ const styles = StyleSheet.create({
     lineHeight: 31,
     fontWeight: '900',
     textAlign: 'center',
+  },
+  errorDetails: {
+    width: '100%',
+    maxWidth: 760,
+    maxHeight: 360,
+    marginTop: 14,
+  },
+  errorDetailsContent: {
+    padding: 4,
   },
   errorCopy: {
     maxWidth: 520,
