@@ -1,12 +1,72 @@
-import * as Linking from 'expo-linking';
-import { supabase,requireSupabaseConfig } from './supabase';
+import { Platform } from 'react-native';
+import { supabase, requireSupabaseConfig } from './supabase';
 import { z } from 'zod';
-const emailSchema=z.string().trim().email().max(254);
-const passwordSchema=z.string().min(8).max(128);
-export async function signUp(email:string,password:string,fullName:string){requireSupabaseConfig();const parsed=emailSchema.safeParse(email);if(!parsed.success)throw new Error('Enter a valid email address.');const validPassword=passwordSchema.safeParse(password);if(!validPassword.success)throw new Error('Password must be 8–128 characters.');if(fullName.trim().length<2||fullName.trim().length>120)throw new Error('Enter your full name.');const {data,error}=await supabase.auth.signUp({email:parsed.data.toLowerCase(),password:validPassword.data,options:{data:{full_name:fullName.trim()}}});if(error)throw new Error(error.message);return data;}
-export async function signIn(email:string,password:string){requireSupabaseConfig();const parsed=emailSchema.safeParse(email);if(!parsed.success)throw new Error('Enter a valid email address.');const validPassword=passwordSchema.safeParse(password);if(!validPassword.success)throw new Error('Password must be 8–128 characters.');const {data,error}=await supabase.auth.signInWithPassword({email:parsed.data.toLowerCase(),password:validPassword.data});if(error)throw new Error(error.message);return data;}
-export async function signOut(){requireSupabaseConfig();const {error}=await supabase.auth.signOut();if(error)throw new Error(error.message);}
-export async function requestPasswordReset(email:string){requireSupabaseConfig();const parsed=emailSchema.safeParse(email);if(!parsed.success)throw new Error('Enter a valid email address.');const {error}=await supabase.auth.resetPasswordForEmail(parsed.data.toLowerCase(),{redirectTo:Linking.createURL('auth')});if(error)throw new Error(error.message);}
-export async function exchangePasswordRecoveryCode(code:string){requireSupabaseConfig();const normalized=code.trim();if(!normalized)throw new Error('Password reset link is invalid or incomplete.');const {error}=await supabase.auth.exchangeCodeForSession(normalized);if(error)throw new Error(error.message);}
-export async function updatePassword(password:string){requireSupabaseConfig();const validPassword=passwordSchema.safeParse(password);if(!validPassword.success)throw new Error('Password must be 8–128 characters.');const {error}=await supabase.auth.updateUser({password:validPassword.data});if(error)throw new Error(error.message);}
-export async function deleteOwnAccount(){requireSupabaseConfig();const {error}=await supabase.functions.invoke('account-delete',{method:'POST'});if(error)throw new Error(error.message);}
+
+const emailSchema = z.string().trim().email().max(254);
+const passwordSchema = z.string().min(8).max(128);
+
+function passwordResetRedirect() {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return `${window.location.origin}/auth`;
+  }
+  return 'everestlocal://auth';
+}
+
+export async function signUp(email:string,password:string,fullName:string){
+  requireSupabaseConfig();
+  const parsed=emailSchema.safeParse(email);
+  if(!parsed.success)throw new Error('Enter a valid email address.');
+  const validPassword=passwordSchema.safeParse(password);
+  if(!validPassword.success)throw new Error('Password must be 8–128 characters.');
+  if(fullName.trim().length<2||fullName.trim().length>120)throw new Error('Enter your full name.');
+  const {data,error}=await supabase.auth.signUp({email:parsed.data.toLowerCase(),password:validPassword.data,options:{data:{full_name:fullName.trim()}}});
+  if(error)throw new Error(error.message);
+  return data;
+}
+
+export async function signIn(email:string,password:string){
+  requireSupabaseConfig();
+  const parsed=emailSchema.safeParse(email);
+  if(!parsed.success)throw new Error('Enter a valid email address.');
+  const validPassword=passwordSchema.safeParse(password);
+  if(!validPassword.success)throw new Error('Password must be 8–128 characters.');
+  const {data,error}=await supabase.auth.signInWithPassword({email:parsed.data.toLowerCase(),password:validPassword.data});
+  if(error)throw new Error(error.message);
+  return data;
+}
+
+export async function signOut(){
+  requireSupabaseConfig();
+  const {error}=await supabase.auth.signOut();
+  if(error)throw new Error(error.message);
+}
+
+export async function requestPasswordReset(email:string){
+  requireSupabaseConfig();
+  const parsed=emailSchema.safeParse(email);
+  if(!parsed.success)throw new Error('Enter a valid email address.');
+  const {error}=await supabase.auth.resetPasswordForEmail(parsed.data.toLowerCase(),{redirectTo:passwordResetRedirect()});
+  if(error)throw new Error(error.message);
+}
+
+export async function exchangePasswordRecoveryCode(code:string){
+  requireSupabaseConfig();
+  const normalized=code.trim();
+  if(!normalized)throw new Error('Password reset link is invalid or incomplete.');
+  const {error}=await supabase.auth.exchangeCodeForSession(normalized);
+  if(error)throw new Error(error.message);
+}
+
+export async function updatePassword(password:string){
+  requireSupabaseConfig();
+  const validPassword=passwordSchema.safeParse(password);
+  if(!validPassword.success)throw new Error('Password must be 8–128 characters.');
+  const {error}=await supabase.auth.updateUser({password:validPassword.data});
+  if(error)throw new Error(error.message);
+}
+
+export async function deleteOwnAccount(){
+  requireSupabaseConfig();
+  const {error}=await supabase.functions.invoke('account-delete',{method:'POST'});
+  if(error)throw new Error(error.message);
+}
