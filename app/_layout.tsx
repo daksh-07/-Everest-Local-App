@@ -71,7 +71,6 @@ export default function RootLayout() {
     }
 
     let active = true;
-    let profileTimer: ReturnType<typeof setTimeout> | undefined;
 
     const loadProfile = async (userId: string) => {
       try {
@@ -108,8 +107,8 @@ export default function RootLayout() {
       setReady(false);
       setRole(null);
       setProfileError('');
-      profileTimer = setTimeout(() => {
-        void loadProfile(userId);
+      setTimeout(() => {
+        if (active) void loadProfile(userId);
       }, 0);
     };
 
@@ -130,7 +129,6 @@ export default function RootLayout() {
 
     return () => {
       active = false;
-      if (profileTimer) clearTimeout(profileTimer);
       subscription.unsubscribe();
     };
   }, []);
@@ -145,7 +143,6 @@ export default function RootLayout() {
       deliveryRoutes.has(pathname);
 
     if (!needsAuth) return;
-
     if (profileError) return;
 
     if (!role) {
@@ -179,7 +176,7 @@ export default function RootLayout() {
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
       {needsProtectedAccess && profileError && ready && (
-        <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+        <View pointerEvents="box-none" style={styles.overlay}>
           <StartupError message={profileError} />
         </View>
       )}
@@ -189,8 +186,15 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  },
   errorScreen: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     backgroundColor: '#f8f7f4',
     padding: 24,
     justifyContent: 'center',
