@@ -1,35 +1,28 @@
 import 'react-native-url-polyfill/auto';
+import Constants from 'expo-constants';
 import { createClient, processLock } from '@supabase/supabase-js';
 
+const extra = (Constants.expoConfig?.extra ?? {}) as {
+  supabaseUrl?: unknown;
+  supabaseAnonKey?: unknown;
+};
 const configuredUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
 const configuredAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
-const url = configuredUrl || 'https://bmwbljefnamvjnmuvkvv.supabase.co';
-const anonKey = configuredAnonKey || 'sb_publishable_evkp_gHdu3ucFI82P8VLCw_vCjR2M2S';
+const url = configuredUrl || (typeof extra.supabaseUrl === 'string' ? extra.supabaseUrl.trim() : '');
+const anonKey = configuredAnonKey || (typeof extra.supabaseAnonKey === 'string' ? extra.supabaseAnonKey.trim() : '');
 
 const browserStorage = {
   getItem: (key: string) => {
     if (typeof window === 'undefined') return null;
-    try {
-      return window.localStorage.getItem(key);
-    } catch {
-      return null;
-    }
+    try { return window.localStorage.getItem(key); } catch { return null; }
   },
   setItem: (key: string, value: string) => {
     if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(key, value);
-    } catch {
-      return;
-    }
+    try { window.localStorage.setItem(key, value); } catch { return; }
   },
   removeItem: (key: string) => {
     if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.removeItem(key);
-    } catch {
-      return;
-    }
+    try { window.localStorage.removeItem(key); } catch { return; }
   },
 };
 
@@ -40,7 +33,7 @@ export const supabase = createClient(url, anonKey, {
     storage: browserStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
     lock: processLock,
   },
   global: { headers: { 'x-client-info': 'everest-local-web' } },
@@ -48,8 +41,6 @@ export const supabase = createClient(url, anonKey, {
 
 export function requireSupabaseConfig() {
   if (!supabaseConfigured) {
-    throw new Error(
-      'Everest Local is not configured yet. Add the public Supabase environment variables.',
-    );
+    throw new Error('Everest Local is not configured yet. Add the public Supabase environment variables.');
   }
 }
