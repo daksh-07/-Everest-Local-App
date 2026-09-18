@@ -31,13 +31,13 @@ const businessRoutes = new Set([
 const adminRoutes = new Set(['/admin']);
 const deliveryRoutes = new Set(['/delivery']);
 
-function StartupError({ message }: { message: string }) {
+function StartupError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <View style={styles.errorScreen}>
       <Text style={styles.eyebrow}>EVEREST LOCAL</Text>
       <Text style={styles.errorTitle}>Something went wrong loading this page.</Text>
       <Text style={styles.errorCopy}>{message}</Text>
-      <Pressable onPress={() => window.location.reload()} style={styles.retryButton}>
+      <Pressable onPress={onRetry} style={styles.retryButton}>
         <Text style={styles.retry}>RETRY</Text>
       </Pressable>
     </View>
@@ -68,6 +68,7 @@ export default function RootLayout() {
   const [supabaseConfigured, setSupabaseConfigured] = useState(false);
   const [role, setRole] = useState<AppRole | null>(null);
   const [startupError, setStartupError] = useState('');
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -173,7 +174,7 @@ export default function RootLayout() {
       active = false;
       unsubscribe?.();
     };
-  }, []);
+  }, [retryNonce]);
 
   useEffect(() => {
     if (!authInitialized || !supabaseConfigured || startupError) return;
@@ -218,7 +219,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
       {needsProtectedAccess && startupError && authInitialized && (
         <View pointerEvents="box-none" style={styles.overlay}>
-          <StartupError message={startupError} />
+          <StartupError message={startupError} onRetry={() => setRetryNonce((value) => value + 1)} />
         </View>
       )}
       <PwaInstallPrompt />
