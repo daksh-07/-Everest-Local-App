@@ -5,10 +5,12 @@ import { createClient, processLock } from '@supabase/supabase-js';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const isBrowser = Platform.OS === 'web' && typeof window !== 'undefined';
 
 class ExpoSecureStoreAdapter {
   async getItem(key: string) {
     if (Platform.OS === 'web') {
+      if (!isBrowser) return null;
       try {
         return window.localStorage.getItem(key);
       } catch {
@@ -20,6 +22,7 @@ class ExpoSecureStoreAdapter {
 
   async setItem(key: string, value: string) {
     if (Platform.OS === 'web') {
+      if (!isBrowser) return;
       try {
         window.localStorage.setItem(key, value);
       } catch {
@@ -32,6 +35,7 @@ class ExpoSecureStoreAdapter {
 
   async removeItem(key: string) {
     if (Platform.OS === 'web') {
+      if (!isBrowser) return;
       try {
         window.localStorage.removeItem(key);
       } catch {
