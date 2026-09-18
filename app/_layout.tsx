@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
@@ -47,10 +47,12 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
     <View style={styles.errorScreen}>
       <Text style={styles.eyebrow}>EVEREST LOCAL</Text>
       <Text style={styles.errorTitle}>This page could not be opened.</Text>
-      <Text style={styles.errorCopy}>{error.message || 'An unexpected application error occurred.'}</Text>
-      <Text accessibilityRole="button" onPress={retry} style={styles.retry}>
-        TRY AGAIN
+      <Text style={styles.errorCopy}>
+        {error.message || 'An unexpected application error occurred.'}
       </Text>
+      <Pressable onPress={retry} style={styles.retryButton}>
+        <Text style={styles.retry}>TRY AGAIN</Text>
+      </Pressable>
     </View>
   );
 }
@@ -94,7 +96,9 @@ export default function RootLayout() {
       } catch (error) {
         if (!active) return;
         setRole(null);
-        setProfileError(error instanceof Error ? error.message : 'Unable to load your account profile.');
+        setProfileError(
+          error instanceof Error ? error.message : 'Unable to load your account profile.',
+        );
       } finally {
         if (active) setReady(true);
       }
@@ -214,8 +218,12 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'center',
   },
-  retry: {
+  retryButton: {
     marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  retry: {
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.8,
