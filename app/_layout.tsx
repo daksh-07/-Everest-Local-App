@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
@@ -46,8 +46,8 @@ function StartupError({ message, onRetry }: { message: string; onRetry: () => vo
 
 function sanitizeDebug(value: string) {
   return value
-    .replace(/https?:\\/\\/[^\\s)]+/gi, '[url]')
-    .replace(/(anon[_-]?key|service[_-]?role|secret|password|token)=?[^\\s&]+/gi, '$1=[redacted]');
+    .replace(/https?:\/\/[^\s)]+/gi, '[url]')
+    .replace(/(anon[_-]?key|service[_-]?role|secret|password|token)=?[^\s&]+/gi, '$1=[redacted]');
 }
 
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
@@ -58,8 +58,8 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
     `route: ${pathname}`,
     `name: ${error?.name || 'Error'}`,
     `message: ${message}`,
-    stack ? `stack:\\n${stack}` : '',
-  ].filter(Boolean).join('\\n\\n');
+    stack ? `stack:\n${stack}` : '',
+  ].filter(Boolean).join('\n\n');
 
   if (typeof console !== 'undefined') {
     console.error('[Everest Local runtime error]', { pathname, name: error?.name, message, stack });
@@ -94,8 +94,6 @@ export default function RootLayout() {
 
     async function initializeAuth() {
       try {
-        // Deliberately loaded after the router has mounted. This keeps the initial
-        // web render independent of Supabase, SecureStore, and other auth modules.
         const { supabase, supabaseConfigured: configured } = await import('@/lib/supabase');
 
         if (!active) return;
