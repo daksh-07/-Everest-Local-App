@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
-import { supabase, supabaseConfigured } from '@/lib/supabase';
 import type { AppRole } from '@/lib/types';
 
 const protectedRoutes = new Set([
@@ -36,22 +35,27 @@ function StartupError({ message }: { message: string }) {
   return (
     <View style={styles.errorScreen}>
       <Text style={styles.eyebrow}>EVEREST LOCAL</Text>
-      <Text style={styles.errorTitle}>Account access is temporarily unavailable.</Text>
+      <Text style={styles.errorTitle}>Something went wrong loading this page.</Text>
       <Text style={styles.errorCopy}>{message}</Text>
+      <Pressable onPress={() => window.location.reload()} style={styles.retryButton}>
+        <Text style={styles.retry}>RETRY</Text>
+      </Pressable>
     </View>
   );
 }
 
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  const message = __DEV__
+    ? error.message || 'An unexpected application error occurred.'
+    : 'An unexpected application error occurred. Please try again.';
+
   return (
     <View style={styles.errorScreen}>
       <Text style={styles.eyebrow}>EVEREST LOCAL</Text>
-      <Text style={styles.errorTitle}>This page could not be opened.</Text>
-      <Text style={styles.errorCopy}>
-        {error.message || 'An unexpected application error occurred.'}
-      </Text>
+      <Text style={styles.errorTitle}>Something went wrong loading this page.</Text>
+      <Text style={styles.errorCopy}>{message}</Text>
       <Pressable onPress={retry} style={styles.retryButton}>
-        <Text style={styles.retry}>TRY AGAIN</Text>
+        <Text style={styles.retry}>RETRY</Text>
       </Pressable>
     </View>
   );
@@ -60,81 +64,119 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
 export default function RootLayout() {
   const pathname = usePathname();
   const router = useRouter();
-  const [ready, setReady] = useState(!supabaseConfigured);
+  const [authInitialized, setAuthInitialized] = useState(false);
+  const [supabaseConfigured, setSupabaseConfigured] = useState(false);
   const [role, setRole] = useState<AppRole | null>(null);
-  const [profileError, setProfileError] = useState('');
+  const [startupError, setStartupError] = useState('');
 
   useEffect(() => {
-    if (!supabaseConfigured) {
-      setReady(true);
-      return;
-    }
-
     let active = true;
+    let unsubscribe: (() => void) | undefined;
 
-    const loadProfile = async (userId: string) => {
+    async function initializeAuth() {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', userId)
-          .maybeSingle();
+        // Deliberately loaded after the router has mounted. This keeps the initial
+        // web render independent of Supabase, SecureStore, and other auth modules.
+        const { supabase, supabaseConfigured: configured } = await import('@/lib/supabase');
+
+        if (!active) return;
+        setSupabaseConfigured(configured);
+
+        if (!configured) {
+          setAuthInitialized(true);
+          return;
+        }
+
+        const loadProfile = async (userId: string) => {
+          try {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', userId)
+              .maybeSingle();
+
+            if (!active) return;
+
+            if (error) {
+              setRole(null);
+              setStartupError(error.message);
+            } else if (data?.role) {
+              setRole(data.role as AppRole);
+              setStartupError('');
+            } else {
+              setRole(null);
+              setStartupError('Your account profile is not ready yet. Please try again shortly.');
+            }
+          } catch (error) {
+            if (!active) return;
+            setRole(null);
+            setStartupError(
+              error instanceof Error ? error.message : 'Unable to load your account profile.',
+            );
+          } finally {
+            if (active) setAuthInitialized(true);
+          }
+        };
+
+        const scheduleProfileLoad = (userId: string) => {
+          setAuthInitialized(false);
+          setRole(null);
+          setStartupError('');
+          setTimeout(() => {
+            if (active) void loadProfile(userId);
+          }, 0);
+        };
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
         if (!active) return;
 
-        if (error) {
-          setRole(null);
-          setProfileError(error.message);
-        } else if (data?.role) {
-          setRole(data.role as AppRole);
-          setProfileError('');
+        if (session?.user.id) {
+          void loadProfile(session.user.id);
         } else {
-          setRole(null);
-          setProfileError('Your account profile is not ready yet. Please try again shortly.');
+          setAuthInitialized(true);
         }
+
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+          if (!active) return;
+
+          if (!nextSession?.user.id) {
+            setRole(null);
+            setStartupError('');
+            setAuthInitialized(true);
+            return;
+          }
+
+          scheduleProfileLoad(nextSession.user.id);
+        });
+
+        unsubscribe = () => subscription.unsubscribe();
       } catch (error) {
         if (!active) return;
-        setRole(null);
-        setProfileError(
-          error instanceof Error ? error.message : 'Unable to load your account profile.',
+        setSupabaseConfigured(false);
+        setAuthInitialized(true);
+        setStartupError(
+          error instanceof Error
+            ? error.message
+            : 'Authentication services could not be initialized.',
         );
-      } finally {
-        if (active) setReady(true);
       }
-    };
+    }
 
-    const scheduleProfileLoad = (userId: string) => {
-      setReady(false);
-      setRole(null);
-      setProfileError('');
-      setTimeout(() => {
-        if (active) void loadProfile(userId);
-      }, 0);
-    };
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user.id) {
-        if (active) {
-          setRole(null);
-          setProfileError('');
-          setReady(true);
-        }
-        return;
-      }
-
-      scheduleProfileLoad(session.user.id);
-    });
+    void initializeAuth();
 
     return () => {
       active = false;
-      subscription.unsubscribe();
+      unsubscribe?.();
     };
   }, []);
 
   useEffect(() => {
-    if (!ready || !supabaseConfigured) return;
+    if (!authInitialized || !supabaseConfigured || startupError) return;
 
     const needsAuth =
       protectedRoutes.has(pathname) ||
@@ -143,7 +185,6 @@ export default function RootLayout() {
       deliveryRoutes.has(pathname);
 
     if (!needsAuth) return;
-    if (profileError) return;
 
     if (!role) {
       router.replace('/auth');
@@ -163,7 +204,7 @@ export default function RootLayout() {
     if (businessRoutes.has(pathname) && role !== 'BUSINESS' && role !== 'ADMIN') {
       router.replace('/');
     }
-  }, [pathname, ready, role, profileError, router]);
+  }, [pathname, authInitialized, supabaseConfigured, role, startupError, router]);
 
   const needsProtectedAccess =
     protectedRoutes.has(pathname) ||
@@ -175,9 +216,9 @@ export default function RootLayout() {
     <>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
-      {needsProtectedAccess && profileError && ready && (
+      {needsProtectedAccess && startupError && authInitialized && (
         <View pointerEvents="box-none" style={styles.overlay}>
-          <StartupError message={profileError} />
+          <StartupError message={startupError} />
         </View>
       )}
       <PwaInstallPrompt />
