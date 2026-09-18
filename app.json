@@ -8,7 +8,7 @@
     "scheme": "everestlocal",
     "ios": { "supportsTablet": true, "bundleIdentifier": "com.everestlocal.app" },
     "android": { "package": "com.everestlocal.app" },
-    "web": { "bundler": "metro" },
+    "web": { "bundler": "metro", "output": "single" },
     "plugins": ["expo-router"]
   }
 }
