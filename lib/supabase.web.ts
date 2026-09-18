@@ -1,12 +1,10 @@
 import 'react-native-url-polyfill/auto';
 import { createClient, processLock } from '@supabase/supabase-js';
 
-const url =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ??
-  'https://bmwbljefnamvjnmuvkvv.supabase.co';
-const anonKey =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
-  'sb_publishable_evkp_gHdu3ucFI82P8VLCw_vCjR2M2S';
+const configuredUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
+const configuredAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
+const url = configuredUrl || 'https://bmwbljefnamvjnmuvkvv.supabase.co';
+const anonKey = configuredAnonKey || 'sb_publishable_evkp_gHdu3ucFI82P8VLCw_vCjR2M2S';
 
 const browserStorage = {
   getItem: (key: string) => {
