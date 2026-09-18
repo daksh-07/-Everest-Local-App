@@ -1,15 +1,11 @@
 import 'react-native-url-polyfill/auto';
-import Constants from 'expo-constants';
 import { createClient, processLock } from '@supabase/supabase-js';
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from './supabase.config';
 
-const extra = (Constants.expoConfig?.extra ?? {}) as {
-  supabaseUrl?: unknown;
-  supabaseAnonKey?: unknown;
-};
 const configuredUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
 const configuredAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
-const url = configuredUrl || (typeof extra.supabaseUrl === 'string' ? extra.supabaseUrl.trim() : '');
-const anonKey = configuredAnonKey || (typeof extra.supabaseAnonKey === 'string' ? extra.supabaseAnonKey.trim() : '');
+const url = configuredUrl || SUPABASE_URL;
+const anonKey = configuredAnonKey || SUPABASE_PUBLISHABLE_KEY;
 
 const browserStorage = {
   getItem: (key: string) => {
