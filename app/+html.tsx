@@ -1,11 +1,10 @@
-import { ScrollViewStyleReset, useServerDocumentContext } from 'expo-router/html';
-import type { ReactNode } from 'react';
+import { ScrollViewStyleReset } from 'expo-router/html';
+import type { PropsWithChildren } from 'react';
 
-export default function Root({ children }: { children: ReactNode }) {
-  const { bodyAttributes, bodyNodes, headNodes, htmlAttributes } = useServerDocumentContext();
-
+// Web-only root HTML document used for static Expo Router rendering.
+export default function Root({ children }: PropsWithChildren) {
   return (
-    <html lang="en" {...htmlAttributes}>
+    <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
@@ -24,12 +23,8 @@ export default function Root({ children }: { children: ReactNode }) {
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.svg" />
         <ScrollViewStyleReset />
-        {headNodes}
       </head>
-      <body {...bodyAttributes}>
-        {children}
-        {bodyNodes}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
