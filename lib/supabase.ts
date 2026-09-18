@@ -11,11 +11,11 @@ const browserStorage = {
   },
   setItem(key: string, value: string) {
     if (typeof window === 'undefined') return;
-    try { window.localStorage.setItem(key, value); } catch {}
+    try { window.localStorage.setItem(key, value); } catch { return; }
   },
   removeItem(key: string) {
     if (typeof window === 'undefined') return;
-    try { window.localStorage.removeItem(key); } catch {}
+    try { window.localStorage.removeItem(key); } catch { return; }
   },
 };
 
