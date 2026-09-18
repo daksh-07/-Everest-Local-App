@@ -21,7 +21,7 @@ export default function Root({ children }: PropsWithChildren) {
           content="A local services and products marketplace for discovering verified businesses, requesting services, booking work and shopping locally."
         />
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon-192.svg" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>
