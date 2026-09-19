@@ -3,6 +3,7 @@ import { join, relative, sep } from 'node:path';
 
 const root = process.cwd();
 const appRoot = join(root, 'app');
+const clientRoots = [appRoot, join(root, 'components'), join(root, 'lib')];
 const files = [];
 
 async function walk(dir) {
@@ -12,6 +13,10 @@ async function walk(dir) {
     if (entry.isDirectory()) await walk(path);
     else files.push(path);
   }
+}
+
+function isClientSource(file) {
+  return clientRoots.some((directory) => file === directory || file.startsWith(`${directory}${sep}`));
 }
 
 function toRoutePath(file) {
@@ -78,22 +83,22 @@ for (const [file, content] of text) {
   }
 }
 
-// Keep Supabase client construction behind the platform-resolved boundary.
-// This prevents a future route/component from accidentally creating a second
-// client with an undefined URL or an incompatible storage implementation.
+// Keep browser/mobile Supabase client construction behind the platform-resolved
+// boundary. Server-side Edge Functions and tooling intentionally construct their
+// own clients and are outside the Expo client dependency graph.
 const supabaseClientFiles = new Set([
   join(root, 'lib', 'supabase.web.ts'),
   join(root, 'lib', 'supabase.native.ts'),
 ]);
 for (const [file, content] of text) {
-  if (!content.includes('createClient(')) continue;
+  if (!isClientSource(file) || !content.includes('createClient(')) continue;
   if (!supabaseClientFiles.has(file)) {
     failures.push(`${relative(root, file)} creates a Supabase client outside the platform boundary`);
   }
 }
 
 for (const [file, content] of text) {
-  if (file === join(root, 'lib', 'supabase.ts')) continue;
+  if (!isClientSource(file) || file === join(root, 'lib', 'supabase.ts')) continue;
   if (content.includes("from '@supabase/supabase-js'") || content.includes('from "@supabase/supabase-js"')) {
     if (!supabaseClientFiles.has(file)) {
       failures.push(`${relative(root, file)} imports @supabase/supabase-js outside the platform boundary`);
