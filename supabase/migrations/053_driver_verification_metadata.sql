@@ -204,5 +204,5 @@ begin
   return true;
 end;
 $$;
-revoke execute on function public.admin_set_driver_credential_details(uuid,text,date,text,text,text,date,text,text,text) from public,anon;
+revoke execute on function public.admin_set_driver_credential_details(uuid,text,date,text,text,text,text,date,text,text,text) from public,anon;
 grant execute on function public.admin_set_driver_credential_details(uuid,text,date,text,text,text,text,date,text,text,text) to authenticated;
