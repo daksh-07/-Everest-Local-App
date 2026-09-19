@@ -59,7 +59,7 @@ export default function BusinessProfile() {
       {rating!==null&&<Text style={s.rating}>★ {rating.toFixed(1)} · {reviewCount} review{reviewCount===1?'':'s'}</Text>}
     </View>
     {business.description&&<Text style={s.copy}>{business.description}</Text>}
-    <View style={s.actions}><Pressable style={s.actionPrimary} onPress={()=>router.push('/request')}><Text style={s.actionPrimaryText}>POST REQUEST</Text></Pressable><Pressable style={s.actionSecondary} onPress={()=>router.push('/search?tab=SERVICES')}><Text style={s.actionSecondaryText}>VIEW SERVICES</Pressable></View>
+    <View style={s.actions}><Pressable style={s.actionPrimary} onPress={()=>router.push('/request')}><Text style={s.actionPrimaryText}>POST REQUEST</Text></Pressable><Pressable style={s.actionSecondary} onPress={()=>router.push('/search?tab=SERVICES')}><Text style={s.actionSecondaryText}>VIEW SERVICES</Text></Pressable></View>
     <Text style={s.heading}>Services</Text>
     {services.length?services.map(item=><View key={item.id} style={s.card}><Text style={s.cardTitle}>{item.name}</Text>{item.description&&<Text style={s.meta}>{item.description}</Text>}<Text style={s.price}>{item.base_price!=null?`From $${Number(item.base_price).toFixed(2)} AUD`:'Quote required'}{item.duration_minutes? ` · ${item.duration_minutes} min`:''}</Text></View>):<View style={s.emptyInline}><Text style={s.meta}>No active services listed.</Text></View>}
     <Text style={s.heading}>Products</Text>
