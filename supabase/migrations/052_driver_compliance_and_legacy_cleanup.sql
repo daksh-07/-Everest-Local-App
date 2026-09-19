@@ -320,6 +320,12 @@ begin
   jurisdiction:=a.compliance_jurisdiction;
   if not exists(select 1 from public.driver_compliance_requirements where jurisdiction_code=jurisdiction and active=true) then
     blocking:=blocking||jsonb_build_array('COMPLIANCE_JURISDICTION_NOT_CONFIGURED');
+  else
+    insert into public.driver_compliance_checks(application_id,jurisdiction_code,requirement_code)
+    select a.id,jurisdiction,r.requirement_code
+    from public.driver_compliance_requirements r
+    where r.jurisdiction_code=jurisdiction and r.active=true
+    on conflict do nothing;
   end if;
   select * into v from public.driver_verifications where application_id=a.id;
   select * into dv from public.driver_vehicles where application_id=a.id;
@@ -416,7 +422,7 @@ begin
             and not exists(select 1 from public.driver_declarations d where d.application_id=a.id and d.declaration_key=t.declaration_key and d.declaration_version=t.version))
   then blocking:=blocking||jsonb_build_array('DECLARATIONS'); end if;
 
-  foreach days in array[30,14,7] loop
+  foreach days in array array[30,14,7] loop
     if v.licence_expiry is not null and v.licence_expiry-current_date=days then expires_soon:=expires_soon||jsonb_build_array(jsonb_build_object('credential','LICENCE','days',days,'expires_at',v.licence_expiry));
     end if;
     if dv.registration_expiry is not null and dv.registration_expiry-current_date=days then expires_soon:=expires_soon||jsonb_build_array(jsonb_build_object('credential','REGISTRATION','days',days,'expires_at',dv.registration_expiry)); end if;
@@ -766,11 +772,13 @@ create or replace function public.driver_is_operational(p_user_id uuid default a
 returns boolean
 language plpgsql stable security definer set search_path=public
 as $$
-declare result jsonb;
+declare result jsonb; aid uuid;
 begin
   if auth.uid() is null then raise exception 'Authentication required'; end if;
   if p_user_id<>auth.uid() and not public.is_admin() then raise exception 'Not authorized'; end if;
-  result:=public.evaluate_driver_compliance((select id from public.driver_applications where user_id=p_user_id));
+  select id into aid from public.driver_applications where user_id=p_user_id;
+  if aid is null then return false; end if;
+  result:=public.evaluate_driver_compliance(aid);
   return coalesce(result->'overall'->>'status'='APPROVED',false)
     and jsonb_array_length(result->'overall'->'blockingItems')=0;
 end;
