@@ -34,6 +34,8 @@ export type DriverDocument = {
   uploaded_at: string;
   expires_at: string | null;
   rejection_reason: string | null;
+  document_number: string | null;
+  issuing_jurisdiction: string | null;
 };
 
 export type DriverVehicle = {
@@ -49,6 +51,7 @@ export type DriverVehicle = {
   ownership_status: 'OWNER' | 'AUTHORISED_USER' | 'EMPLOYER_VEHICLE';
   registration_expiry: string | null;
   registration_status: 'PENDING' | 'CURRENT' | 'EXPIRED' | 'SUSPENDED' | 'CANCELLED' | 'REJECTED';
+  registration_restrictions: string | null;
   ctp_provider: string | null;
   ctp_expiry: string | null;
   status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED' | 'EXPIRED';
@@ -66,8 +69,10 @@ export type DriverVerification = {
   licence_number: string | null;
   licence_class: string | null;
   licence_expiry: string | null;
+  licence_restrictions: string | null;
   insurance_provider: string | null;
   insurance_policy_reference: string | null;
+  insurance_type: 'CTP' | 'ADDITIONAL_MOTOR' | 'COMMERCIAL_BUSINESS_USE' | 'OTHER' | null;
   insurance_expiry: string | null;
 };
 
@@ -86,12 +91,18 @@ export type DriverApplication = {
   availability: string | null;
   notes: string | null;
   status_reason: string | null;
+  compliance_jurisdiction: string;
   submitted_at: string;
   last_submitted_at: string | null;
   verification: DriverVerification | null;
   vehicle: DriverVehicle | null;
   documents: DriverDocument[];
+  declarations: DriverDeclaration[];
 };
+
+export type DriverDeclaration = { declaration_key: string; declaration_version: string; declaration_text: string; accepted_at: string };
+export type DriverCompliance = { jurisdiction: string; identity: any; licence: any; vehicle: any; registration: any; ctp: any; insurance: any; overall: { status: DriverStatus; blockingItems: string[]; expiresSoon: Array<{ credential: string; days: number; expires_at: string }> } };
+
 
 export type DriverVerificationRequirements = {
   require_identity_review: boolean;
@@ -119,25 +130,27 @@ export async function getDriverApplication(): Promise<DriverApplication | null> 
   requireSupabaseConfig();
   const userId = await currentUserId();
   const { data: application, error } = await supabase.from('driver_applications')
-    .select('id,status,legal_first_name,legal_last_name,date_of_birth,address_line,postcode,suburb,city,state,service_area,availability,notes,status_reason,submitted_at,last_submitted_at')
+    .select('id,status,legal_first_name,legal_last_name,date_of_birth,address_line,postcode,suburb,city,state,service_area,availability,notes,status_reason,compliance_jurisdiction,submitted_at,last_submitted_at')
     .eq('user_id', userId).maybeSingle();
   if (error) throw new Error(error.message);
   if (!application) return null;
 
   const [verificationResult, vehicleResult, documentsResult] = await Promise.all([
-    supabase.from('driver_verifications').select('identity_status,licence_status,registration_status,insurance_status,verification_method,verification_provider,verification_reference,licence_jurisdiction,licence_number,licence_class,licence_expiry,insurance_provider,insurance_policy_reference,insurance_expiry').eq('application_id', application.id).maybeSingle(),
-    supabase.from('driver_vehicles').select('id,registration_plate,registration_state,make,model,year,colour,vehicle_type,vin,ownership_status,registration_expiry,registration_status,ctp_provider,ctp_expiry,status').eq('application_id', application.id).maybeSingle(),
-    supabase.from('driver_documents').select('id,document_type,storage_path,mime_type,size_bytes,status,uploaded_at,expires_at,rejection_reason').eq('application_id', application.id).neq('status','REPLACED').order('uploaded_at',{ascending:false}),
+    supabase.from('driver_verifications').select('identity_status,licence_status,registration_status,insurance_status,verification_method,verification_provider,verification_reference,licence_jurisdiction,licence_number,licence_class,licence_expiry,licence_restrictions,insurance_provider,insurance_policy_reference,insurance_type,insurance_expiry').eq('application_id', application.id).maybeSingle(),
+    supabase.from('driver_vehicles').select('id,registration_plate,registration_state,make,model,year,colour,vehicle_type,vin,ownership_status,registration_expiry,registration_restrictions,registration_status,ctp_provider,ctp_expiry,status').eq('application_id', application.id).maybeSingle(),
+    supabase.from('driver_documents').select('id,document_type,storage_path,mime_type,size_bytes,status,uploaded_at,expires_at,rejection_reason,document_number,issuing_jurisdiction').eq('application_id', application.id).neq('status','REPLACED').order('uploaded_at',{ascending:false}),
   ]);
   if (verificationResult.error) throw new Error(verificationResult.error.message);
   if (vehicleResult.error) throw new Error(vehicleResult.error.message);
   if (documentsResult.error) throw new Error(documentsResult.error.message);
 
+  const { data: declarations } = await supabase.from('driver_declarations').select('declaration_key,declaration_version,declaration_text,accepted_at').eq('application_id', application.id).order('accepted_at',{ascending:true});
   return {
     ...application,
     verification: verificationResult.data as DriverVerification | null,
     vehicle: vehicleResult.data as DriverVehicle | null,
     documents: (documentsResult.data ?? []) as DriverDocument[],
+    declarations: (declarations ?? []) as DriverDeclaration[],
   };
 }
 
@@ -182,15 +195,17 @@ export async function submitDriverApplication() {
   if (data !== true) throw new Error('Driver application could not be submitted.');
 }
 
-export async function saveDriverVerificationDetails(input: { licenceJurisdiction: string; licenceNumber: string; licenceClass: string; licenceExpiry: string; insuranceProvider: string; insurancePolicyReference: string; insuranceExpiry: string; }) {
+export async function saveDriverVerificationDetails(input: { licenceJurisdiction: string; licenceNumber: string; licenceClass: string; licenceExpiry: string; licenceRestrictions: string; insuranceProvider: string; insurancePolicyReference: string; insuranceType: 'CTP'|'ADDITIONAL_MOTOR'|'COMMERCIAL_BUSINESS_USE'|'OTHER'|''; insuranceExpiry: string; }) {
   requireSupabaseConfig();
   const { error } = await supabase.rpc('save_driver_verification_details', {
     p_licence_jurisdiction: input.licenceJurisdiction,
     p_licence_number: input.licenceNumber,
     p_licence_class: input.licenceClass,
     p_licence_expiry: input.licenceExpiry,
+    p_licence_restrictions: input.licenceRestrictions.trim() || null,
     p_insurance_provider: input.insuranceProvider.trim() || null,
     p_insurance_policy_reference: input.insurancePolicyReference.trim() || null,
+    p_insurance_type: input.insuranceType || null,
     p_insurance_expiry: input.insuranceExpiry || null,
   });
   if (error) throw new Error(error.message);
@@ -207,6 +222,7 @@ export async function saveDriverVehicle(input: {
   vin: string;
   ownershipStatus: DriverVehicle['ownership_status'];
   registrationExpiry: string;
+  registrationRestrictions: string;
   ctpProvider: string;
   ctpExpiry: string;
 }) {
@@ -222,6 +238,7 @@ export async function saveDriverVehicle(input: {
     p_vin: input.vin.trim() || null,
     p_ownership_status: input.ownershipStatus,
     p_registration_expiry: input.registrationExpiry || null,
+    p_registration_restrictions: input.registrationRestrictions.trim() || null,
     p_ctp_provider: input.ctpProvider.trim() || null,
     p_ctp_expiry: input.ctpExpiry || null,
   });
@@ -261,6 +278,8 @@ export async function uploadDriverDocument(input: {
   documentType: DriverDocumentType;
   asset: UploadAsset;
   expiresAt?: string | null;
+  documentNumber?: string;
+  issuingJurisdiction?: string;
 }) {
   requireSupabaseConfig();
   const userId = await currentUserId();
@@ -281,6 +300,8 @@ export async function uploadDriverDocument(input: {
       p_mime_type: mimeType,
       p_size_bytes: size,
       p_expires_at: input.expiresAt ?? null,
+      p_document_number: input.documentNumber?.trim() || null,
+      p_issuing_jurisdiction: input.issuingJurisdiction?.trim() || null,
     });
     if (error) throw error;
     if (typeof data !== 'string') throw new Error('Document registration returned an invalid reference.');
@@ -381,4 +402,24 @@ export async function adminSetDriverCredentialDetails(applicationId: string, inp
     p_reference: input.reference ?? null,
   });
   if (error) throw new Error(error.message);
+}
+
+export async function acceptDriverDeclaration(declarationKey: string) {
+  requireSupabaseConfig();
+  const { error } = await supabase.rpc('accept_driver_declaration', { p_declaration_key: declarationKey });
+  if (error) throw new Error(error.message);
+}
+
+export async function getDriverCompliance(applicationId: string): Promise<DriverCompliance> {
+  requireSupabaseConfig();
+  const { data, error } = await supabase.rpc('evaluate_driver_compliance', { p_application_id: applicationId });
+  if (error) throw new Error(error.message);
+  return data as DriverCompliance;
+}
+
+export async function getDriverComplianceRequirements() {
+  requireSupabaseConfig();
+  const { data, error } = await supabase.rpc('get_driver_compliance_requirements');
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Array<{requirement_code:string;title:string;description:string;required:boolean;source_type:string;source_name:string|null;source_url:string|null;source_notes:string|null}>;
 }
