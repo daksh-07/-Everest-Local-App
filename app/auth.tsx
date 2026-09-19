@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { AuthRolePicker } from '@/components/AuthRolePicker';
 
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   return (
@@ -32,6 +33,7 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
 }
 
 type Mode = 'login' | 'signup' | 'reset' | 'recovery';
+type AuthIntent = 'CUSTOMER' | 'BUSINESS' | 'DELIVERY_DRIVER';
 type Provider = 'google' | 'apple';
 
 function presentAuthError(error: unknown, fallback: string) {
@@ -197,6 +199,7 @@ function PrimaryButton({
 
 export default function Auth() {
   const [mode, setMode] = useState<Mode>('login');
+  const [intent, setIntent] = useState<AuthIntent>('CUSTOMER');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -207,6 +210,11 @@ export default function Auth() {
   const [socialBusy, setSocialBusy] = useState<Provider | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+
+  async function routeAfterAuth(selectedIntent: AuthIntent) {
+    const { resolvePostAuthRoute } = await import('@/lib/access');
+    router.replace(await resolvePostAuthRoute(selectedIntent) as never);
+  }
   const entryOpacity = useRef(new Animated.Value(0)).current;
   const entryY = useRef(new Animated.Value(12)).current;
 
@@ -380,7 +388,7 @@ export default function Auth() {
           <Animated.View style={[s.content, { opacity: entryOpacity, transform: [{ translateY: entryY }] }]}>
             <Brand />
 
-            <View style={s.hero}>
+            <AuthRolePicker selectedRole={intent} onChange={setIntent} />\n\n            <View style={s.hero}>
               <Text style={s.title}>{title}</Text>
               <Text style={s.copy}>{copy}</Text>
             </View>
@@ -489,7 +497,7 @@ export default function Auth() {
             <PrimaryButton
               label={busy ? (mode === 'login' ? 'Signing in…' : mode === 'signup' ? 'Creating account…' : mode === 'reset' ? 'Sending…' : 'Updating…') : primaryLabel}
               loading={busy}
-              disabled={busy || !!socialBusy}
+              disabled={busy || !!socialBusy || !intent}
               onPress={() => void submit()}
             />
 
@@ -793,7 +801,7 @@ const s = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
-  footer: {
+  roleRequired: { color: '#77736c', fontSize: 12, lineHeight: 18, marginBottom: 10, textAlign: 'center' },\n  footer: {
     color: '#aaa69e',
     fontSize: 9,
     fontWeight: '700',
