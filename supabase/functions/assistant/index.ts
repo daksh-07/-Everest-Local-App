@@ -21,6 +21,7 @@ function action(kind: ActionKind, id: string | undefined, title: string, query =
     kind === 'OPEN_MESSAGE' ? (id ? `/messages?conversationId=${encodeURIComponent(id)}` : '/messages') :
     kind === 'VIEW_QUOTE' ? '/quotes' :
     kind === 'OPEN_OPPORTUNITIES' ? '/opportunities' :
+    kind === 'OPEN_DRIVER_APPLICATION' ? '/driver-verification' :
     kind === 'VIEW_PRODUCT' && id ? `/product?id=${encodeURIComponent(id)}` :
     `/search?q=${q}`;
   return { kind, id, title, href };
@@ -60,11 +61,16 @@ Deno.serve(async (req) => {
     if (membershipError) throw membershipError;
     const businessIds = (membershipRows ?? []).map(item => item.business_id);
 
-    const [profileResult, driverApplicationResult, driverVerificationResult, driverVehicleResult, businessResult, serviceResult, productResult, requestResult, quoteResult, bookingResult, orderResult, conversationResult] = await Promise.all([
+    const { data: driverApplication, error: driverApplicationError } = await client
+      .from('driver_applications')
+      .select('id,status,status_reason,submitted_at,last_submitted_at')
+      .eq('user_id', authData.user.id)
+      .maybeSingle();
+    if (driverApplicationError) throw driverApplicationError;
+
+    const [profileResult, driverVehicleResult, businessResult, serviceResult, productResult, requestResult, quoteResult, bookingResult, orderResult, conversationResult] = await Promise.all([
       client.from('profiles').select('role,suburb,city,state').eq('id', authData.user.id).maybeSingle(),
-      client.from('driver_applications').select('id,status,status_reason,submitted_at,last_submitted_at').eq('user_id', authData.user.id).maybeSingle(),
-      client.from('driver_verifications').select('identity_status,licence_status,registration_status,insurance_status,licence_expiry,insurance_expiry,verification_method').maybeSingle(),
-      client.from('driver_vehicles').select('status,registration_status,registration_expiry,ctp_expiry').maybeSingle(),
+      client.from('driver_vehicles').select('status,registration_status,registration_expiry,ctp_expiry').eq('user_id', authData.user.id).maybeSingle(),
       client.from('businesses').select('id,name,description,suburb,city,state,verification_status').eq('status','ACTIVE').eq('verification_status','VERIFIED').limit(100),
       client.from('services').select('id,business_id,name,description,base_price,duration_minutes,businesses(name,suburb,city,state)').eq('active',true).limit(100),
       client.from('products').select('id,business_id,name,description,price,sale_price,delivery_eligible,pickup_available,status,businesses(name,suburb,city,state)').in('status',['ACTIVE','OUT_OF_STOCK']).limit(100),
@@ -74,6 +80,17 @@ Deno.serve(async (req) => {
       client.from('orders').select('id,order_number,business_id,status,payment_status,total,delivery_method,created_at').eq('customer_id',authData.user.id).order('created_at',{ascending:false}).limit(20),
       client.from('conversations').select('id,business_id,request_id,booking_id,quote_id,created_at').eq('customer_id',authData.user.id).order('created_at',{ascending:false}).limit(20),
     ]);
+
+    let driverVerificationResult = { data: null as Record<string, unknown> | null, error: null as { message: string } | null };
+    if (driverApplication?.id) {
+      const result = await client
+        .from('driver_verifications')
+        .select('identity_status,licence_status,registration_status,insurance_status,licence_expiry,insurance_expiry,verification_method')
+        .eq('application_id', driverApplication.id)
+        .maybeSingle();
+      driverVerificationResult = result;
+    }
+    if (driverVerificationResult.error) throw driverVerificationResult.error;
 
     let businessOpportunities: unknown[] = [];
     let businessQuotes: unknown[] = [];
@@ -98,6 +115,7 @@ Deno.serve(async (req) => {
 
     const publicErrors = [businessResult.error, serviceResult.error, productResult.error].filter(Boolean);
     if (profileResult.error) throw profileResult.error;
+    if (driverVehicleResult.error) throw driverVehicleResult.error;
     if (publicErrors.length) throw publicErrors[0];
 
     const businesses = businessResult.data ?? [];
@@ -118,9 +136,6 @@ Deno.serve(async (req) => {
     const validBookingIds = new Set([...bookings, ...businessBookings].map(item => (item as {id:string}).id));
     const validQuoteIds = new Set([...quotes, ...businessQuotes].map(item => (item as {id:string}).id));
     const validConversationIds = new Set([...conversations, ...businessConversations].map(item => (item as { id: string }).id));
-    const validBusinessOrderIds = new Set(businessOrders.map(item => (item as {id:string}).id));
-    const validBusinessBookingIds = new Set(businessBookings.map(item => (item as {id:string}).id));
-    const validBusinessQuoteIds = new Set(businessQuotes.map(item => (item as {id:string}).id));
 
     const fallbackActions: Action[] = [];
     const businessMatches = businesses.filter(item => matches(`${item.name} ${item.description ?? ''} ${item.suburb ?? ''} ${item.city ?? ''}`, message)).slice(0,5);
@@ -130,7 +145,7 @@ Deno.serve(async (req) => {
     for (const item of businessMatches) fallbackActions.push(action('VIEW_BUSINESS', item.id, item.name));
     for (const item of productMatches.slice(0,3)) fallbackActions.push(action('VIEW_PRODUCT', item.id, item.name));
     if (/request|hire|book|quote|plumber|cleaner|detail|mechanic|landscap|tradie|service/i.test(message)) fallbackActions.push(action('CREATE_REQUEST', undefined, 'Post a service request'));
-    if (/driver|delivery driver|licence|license|vehicle registration|rego|driver application/i.test(message) && driverApplicationResult.data) fallbackActions.push(action('OPEN_DRIVER_APPLICATION', undefined, 'Open driver verification'));
+    if (/driver|delivery driver|licence|license|vehicle registration|rego|driver application/i.test(message) && driverApplication) fallbackActions.push(action('OPEN_DRIVER_APPLICATION', undefined, 'Open driver verification'));
     if (/job|opportunit|work request/i.test(message) && businessOpportunities.length) fallbackActions.push(action('OPEN_OPPORTUNITIES', undefined, 'View business opportunities'));
     if (/order|delivery|purchase|bought/i.test(message) && (orders[0] || businessOrders[0])) { const order = (orders[0] ?? businessOrders[0]) as {id:string;order_number:string}; fallbackActions.push(action('VIEW_ORDER', order.id, `Order ${order.order_number}`)); }
     if (/booking|appointment|scheduled/i.test(message) && (bookings[0] || businessBookings[0])) fallbackActions.push(action('VIEW_BOOKING', (bookings[0] ?? businessBookings[0] as {id:string}).id, 'View booking'));
@@ -144,7 +159,7 @@ Deno.serve(async (req) => {
       productMatches.length ? `I found ${productMatches.length} product match${productMatches.length === 1 ? '' : 'es'}.` : '',
       !businessMatches.length && !serviceMatches.length && !productMatches.length ? 'I could not find a matching public marketplace record yet.' : '',
     ].filter(Boolean);
-    if (/driver|delivery driver|licence|license|vehicle registration|rego|driver application/i.test(message) && driverApplicationResult.data) fallbackLines.push('Your driver application status is ' + driverApplicationResult.data.status.replaceAll('_',' ') + '.');
+    if (/driver|delivery driver|licence|license|vehicle registration|rego|driver application/i.test(message) && driverApplication) fallbackLines.push('Your driver application status is ' + driverApplication.status.replaceAll('_',' ') + '.');
 
     if (!aiUrl || !aiKey || !model) {
       return json({
@@ -160,13 +175,13 @@ Never invent businesses, services, products, prices, reviews, availability, deli
 Private records belong only to the authenticated user. Never infer or expose another person's data.
 If a fact is absent, say it is unavailable rather than guessing.
 Return ONLY valid JSON: {"message":"string","actions":[{"kind":"VIEW_BUSINESS|VIEW_PRODUCT|CREATE_REQUEST|VIEW_ORDER|VIEW_BOOKING|OPEN_MESSAGE|VIEW_QUOTE|OPEN_OPPORTUNITIES|OPEN_SEARCH|OPEN_DRIVER_APPLICATION","id":"exact supplied id when required","title":"short button title","query":"optional search query"}]}
-Action ids MUST come from the supplied records. CREATE_REQUEST and OPEN_SEARCH do not require ids.
+Action ids MUST come from the supplied records. CREATE_REQUEST, OPEN_SEARCH and OPEN_DRIVER_APPLICATION do not require ids.
 Keep the answer concise.`;
 
     const context = JSON.stringify({
       authenticated_user: { role: profileResult.data?.role ?? null, location: { suburb: profileResult.data?.suburb ?? null, city: profileResult.data?.city ?? null, state: profileResult.data?.state ?? null } },
       public_marketplace: { businesses, services: compactServices, products: compactProducts },
-      authenticated_driver_verification: driverApplicationResult.data ? { application_status: driverApplicationResult.data.status, status_reason: driverApplicationResult.data.status_reason, submitted_at: driverApplicationResult.data.submitted_at, verification: driverVerificationResult.data, vehicle: driverVehicleResult.data } : null,
+      authenticated_driver_verification: driverApplication ? { application_status: driverApplication.status, status_reason: driverApplication.status_reason, submitted_at: driverApplication.submitted_at, verification: driverVerificationResult.data, vehicle: driverVehicleResult.data } : null,
       authenticated_user_records: { requests, quotes, bookings, orders, conversations },
       authenticated_business_records: { opportunities: businessOpportunities, quotes: businessQuotes, bookings: businessBookings, orders: businessOrders, conversations: businessConversations },
     });
