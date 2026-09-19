@@ -97,7 +97,7 @@ export type DriverApplication = {
   notes: string | null;
   status_reason: string | null;
   compliance_jurisdiction: string;
-  submitted_at: string;
+  submitted_at: string | null;
   last_submitted_at: string | null;
   verification: DriverVerification | null;
   vehicle: DriverVehicle | null;
