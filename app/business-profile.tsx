@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,7 +19,7 @@ export default function BusinessProfile() {
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState('');
 
-  async function load() {
+  const load = useCallback(async () => {
     if (typeof id !== 'string' || !id) { setError('Business not found.'); setLoading(false); return; }
     setLoading(true); setError('');
     try {
