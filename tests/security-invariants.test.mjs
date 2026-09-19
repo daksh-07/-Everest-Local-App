@@ -197,6 +197,8 @@ test('driver delivery authorization checks active verification server-side', () 
   const deliveryBlocks = migrationText.split(/(?=create\s+(?:or\s+replace\s+)?function\b)/i).filter(block => /assign_delivery_driver\s*\(|update_delivery_status\s*\(/i.test(block));
   assert.ok(deliveryBlocks.length >= 2);
   assert.ok(deliveryBlocks.some(block => /driver_is_operational/i.test(block)));
+  assert.match(migrationText, /accept_delivery_assignment\s*\([\s\S]{0,1600}driver_is_operational/i);
+  assert.match(migrationText, /Accept the delivery before pickup/i);
   assert.ok(deliveryBlocks.some(block => /not exists\(select 1 from public\.delivery_assignments/i.test(block)));
 });
 
