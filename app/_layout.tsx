@@ -25,7 +25,12 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
   return <View style={styles.errorScreen}><Text style={styles.eyebrow}>EVEREST LOCAL</Text><Text style={styles.errorTitle}>Something went wrong loading this page.</Text><ScrollView style={styles.errorDetails} contentContainerStyle={styles.errorDetailsContent}><Text selectable style={styles.errorCopy}>{details}</Text></ScrollView><Pressable onPress={retry} style={styles.retryButton}><Text style={styles.retry}>RETRY</Text></Pressable></View>;
 }
 
-function GlobalAskButton({ pathname }: { pathname: string }) {\n  if (['/assistant','/auth','/messages','/cart'].includes(pathname)) return null;\n  return <Pressable accessibilityRole="button" accessibilityLabel="Ask Everest" onPress={() => router.push('/assistant')} style={styles.askButton}><Text style={styles.askButtonText}>✦ Ask Everest</Text></Pressable>;\n}\n\nexport default function RootLayout() {
+function GlobalAskButton({ pathname }: { pathname: string }) {
+  if (['/assistant','/auth','/messages','/cart'].includes(pathname)) return null;
+  return <Pressable accessibilityRole="button" accessibilityLabel="Ask Everest" onPress={() => router.push('/assistant')} style={styles.askButton}><Text style={styles.askButtonText}>✦ Ask Everest</Text></Pressable>;
+}
+
+export default function RootLayout() {
   const pathname=usePathname(); const router=useRouter();
   const [authInitialized,setAuthInitialized]=useState(false); const [supabaseConfigured,setSupabaseConfigured]=useState(false); const [role,setRole]=useState<AppRole|null>(null);\n  const [hasBusinessAccess,setHasBusinessAccess]=useState(false); const [startupError,setStartupError]=useState(''); const [retryNonce,setRetryNonce]=useState(0);
   useEffect(()=>{let active=true;let unsubscribe:(()=>void)|undefined;
