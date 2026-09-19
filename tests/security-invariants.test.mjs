@@ -135,6 +135,14 @@ test('new auth RPCs do not retain implicit PUBLIC execution', () => {
     'get_my_access_context',
     'create_business_profile',
     'admin_set_verification',
+    'save_driver_application',
+    'submit_driver_application',
+    'save_driver_vehicle_details',
+    'save_driver_verification_details',
+    'register_driver_document',
+    'admin_set_driver_verification',
+    'admin_set_driver_document_status',
+    'admin_set_driver_vehicle_verification',
   ]) {
     assert.match(
       migrationText,
@@ -150,6 +158,7 @@ test('business and driver entry routes are protected by the root router', async 
   assert.match(layout, /driver-onboarding/);
   assert.match(layout, /driver-dashboard/);
   assert.match(layout, /delivery/);
+  assert.match(layout, /driver-verification/);
 });
 
 test('mobile source does not reference trusted server-only credential variables', () => {
