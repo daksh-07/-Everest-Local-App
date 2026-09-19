@@ -15,6 +15,10 @@ function relationName(value: ServiceResult['businesses']) {
   return Array.isArray(value) ? value[0]?.name : value?.name;
 }
 
+function escapeIlike(value: string) {
+  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
 export default function Search() {
   const params = useLocalSearchParams<{ q?: string; tab?: string }>();
   const [q, setQ] = useState(typeof params.q === 'string' ? params.q : '');
@@ -32,7 +36,7 @@ export default function Search() {
     setError('');
     try {
       const text = q.trim();
-      const pattern = text ? `%\${text}%` : null;
+      const pattern = text ? `%${escapeIlike(text)}%` : null;
       const businessQuery = supabase.from('businesses').select('id,name,slug,description,logo_url,category_id,verification_status,suburb,city,state').eq('status', 'ACTIVE').eq('verification_status', 'VERIFIED').limit(50);
       const serviceQuery = supabase.from('services').select('id,business_id,name,description,base_price,duration_minutes,businesses(name,suburb,city,state)').eq('active', true).limit(50);
       const productQuery = supabase.from('products').select('id,business_id,name,description,price,sale_price,status,delivery_eligible,pickup_available,businesses(name,suburb,city,state),inventory(stock_quantity,reserved_quantity)').eq('status', 'ACTIVE').limit(50);
@@ -114,7 +118,7 @@ export default function Search() {
           {businesses.length ? businesses.map(b => <Pressable key={b.id} style={s.result} onPress={() => router.push(`/business-profile?id=${b.id}`)}><View style={s.icon}><Ionicons name="business-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{b.name}</Text><Text style={s.resultCopy}>{[b.suburb,b.city,b.state].filter(Boolean).join(', ') || 'Local business'}</Text>{b.verification_status === 'VERIFIED' && <Text style={s.verified}>✓ VERIFIED</Text>}</View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>) : <Empty text="No verified businesses matched this search."/>}
         </Section>}
         {show('SERVICES') && <Section title={`Services ${visibleCounts.services ? `(${visibleCounts.services})` : ''}`}>
-          {services.length ? services.map(item => <View style={s.result} key={item.id}><View style={s.icon}><Ionicons name="construct-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{item.name}</Text><Text style={s.resultCopy}>{relationName(item.businesses) || 'Verified local business'}{item.base_price != null ? ` · from $${Number(item.base_price).toFixed(2)}` : ''}</Text></View></View>) : <Empty text="No active services matched this search."/>}
+          {services.length ? services.map(item => <Pressable key={item.id} style={s.result} onPress={() => router.push(`/business-profile?id=${item.business_id}`)}><View style={s.icon}><Ionicons name="construct-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{item.name}</Text><Text style={s.resultCopy}>{relationName(item.businesses) || 'Verified local business'}{item.base_price != null ? ` · from $${Number(item.base_price).toFixed(2)}` : ''}</Text></View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>) : <Empty text="No active services matched this search."/>}
         </Section>}
         {show('PRODUCTS') && <Section title={`Products ${visibleCounts.products ? `(${visibleCounts.products})` : ''}`}>
           {products.length ? products.map(p => <View style={s.result} key={p.id}><View style={s.icon}><Ionicons name="cube-outline" size={22}/></View><View style={{flex:1}}><Pressable onPress={()=>router.push(`/product?id=${p.id}`)}><Text style={s.resultTitle}>{p.name}</Text></Pressable><Text style={s.resultCopy}>${Number(p.sale_price ?? p.price).toFixed(2)} AUD · {((Array.isArray(p.inventory) ? p.inventory[0] : p.inventory)?.stock_quantity ?? 0) - ((Array.isArray(p.inventory) ? p.inventory[0] : p.inventory)?.reserved_quantity ?? 0) > 0 ? 'In stock' : 'Out of stock'} · {((Array.isArray(p.businesses) ? p.businesses[0] : p.businesses)?.name ?? 'Local business')}</Text></View><Pressable onPress={() => void add(p.id)} style={s.add}><Text style={s.addText}>ADD</Text></Pressable></View>) : <Empty text="No active products matched this search."/>}
