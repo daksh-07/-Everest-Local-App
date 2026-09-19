@@ -25,6 +25,7 @@ const STEPS = [
 ] as const;
 
 const states = ['NSW','ACT','NT','QLD','SA','TAS','VIC','WA'] as const;
+const licenceJurisdictions = [...states, 'OVERSEAS'];
 const identityTypes = ['AUSTRALIAN_DRIVER_LICENCE','AUSTRALIAN_PASSPORT','FOREIGN_PASSPORT','BIRTH_CERTIFICATE','OTHER'] as const;
 const insuranceTypes = ['ADDITIONAL_MOTOR','COMMERCIAL_BUSINESS_USE','OTHER'] as const;
 
@@ -217,7 +218,7 @@ export default function DriverOnboarding() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.stepRow}>{STEPS.map((label,index)=><View key={label} style={s.step}><View style={[s.stepDot,index<=step&&s.stepDotActive]}><Text style={[s.stepNumber,index<=step&&s.stepNumberActive]}>{index+1}</Text></View><Text style={[s.stepLabel,index===step&&s.stepLabelActive]}>{label}</Text></View>)}</ScrollView>
 
         {step===0&&<View>
-          <Text style={s.sectionTitle}>1. Identity</Text><Text style={s.sectionCopy}>Upload your profile photograph and one identity document. Service NSW lists documents such as an Australian driver licence, Australian passport, foreign passport with visa and birth certificate as examples of identity evidence; Everest still requires its own review. </Text>
+          <Text style={s.sectionTitle}>1. Identity</Text><Text style={s.sectionCopy}>Upload your profile photograph and one identity document. Service NSW lists documents such as an Australian driver licence, Australian passport, foreign passport with visa and birth certificate as examples of identity evidence; Everest still requires its own review.</Text>
           <Text style={s.label}>IDENTITY DOCUMENT TYPE</Text><View style={s.choices}>{identityTypes.map(item=><Choice key={item} label={item.replaceAll('_',' ')} selected={identityType===item} onPress={()=>setIdentityType(item)}/>)}</View>
           <DocumentCard label="Profile photograph" hint="Used for Everest identity review." type="PROFILE_PHOTO" documents={docs} onUpload={(t,c)=>{setProfilePhotoUploading(true);void pickDocument(t,c).finally(()=>setProfilePhotoUploading(false));}} disabled={!!uploading||profilePhotoUploading}/>
           <DocumentCard label="Identity document" hint="Private storage. Manual verification is required unless an authorised provider is configured." type="IDENTITY_DOCUMENT" documents={docs} onUpload={(t,c)=>void pickDocument(t,c,{expiresAt:identityExpiry,documentNumber:identityNumber,issuingJurisdiction:identityJurisdiction,documentSubtype:identityType})} disabled={!!uploading} expiresAt={identityExpiry} onSetExpiry={setIdentityExpiry} documentNumber={identityNumber} onSetDocumentNumber={setIdentityNumber} issuingJurisdiction={identityJurisdiction} onSetIssuingJurisdiction={setIdentityJurisdiction} documentSubtype={identityType}/>
@@ -241,8 +242,8 @@ export default function DriverOnboarding() {
         </View>}
 
         {step===2&&<View>
-          <Text style={s.sectionTitle}>3. Driver licence</Text><Text style={s.sectionCopy}>For NSW, Transport for NSW offers a Driver Licence Check service to approved organisations. Everest has not claimed access to that service here, so this launch path is MANUAL_REVIEW_REQUIRED. </Text>
-          <Text style={s.label}>LICENCE JURISDICTION</Text><View style={s.choices}>{states.concat(['OVERSEAS'] as never[]).map(item=><Choice key={String(item)} label={String(item)} selected={licenceJurisdiction===item} onPress={()=>setLicenceJurisdiction(String(item))}/>)}</View>
+          <Text style={s.sectionTitle}>3. Driver licence</Text><Text style={s.sectionCopy}>For NSW, Transport for NSW offers a Driver Licence Check service to approved organisations. Everest has not claimed access to that service here, so this launch path is MANUAL_REVIEW_REQUIRED.</Text>
+          <Text style={s.label}>LICENCE JURISDICTION</Text><View style={s.choices}>{licenceJurisdictions.map(item=><Choice key={item} label={item} selected={licenceJurisdiction===item} onPress={()=>setLicenceJurisdiction(item)}/>)}</View>
           <Field label="LICENCE NUMBER" value={licenceNumber} onChangeText={setLicenceNumber} placeholder="Licence number"/>
           <Field label="LICENCE CLASS" value={licenceClass} onChangeText={setLicenceClass} placeholder="C / LR / MR / HR / HC / MC"/>
           <Field label="LICENCE EXPIRY" value={licenceExpiry} onChangeText={setLicenceExpiry} placeholder="YYYY-MM-DD"/>
@@ -261,7 +262,7 @@ export default function DriverOnboarding() {
         </View>}
 
         {step===4&&<View>
-          <Text style={s.sectionTitle}>5. Registration / CTP</Text><Text style={s.sectionCopy}>Service NSW's official registration check can show registration status, expiry, restrictions and CTP provider/policy expiry. Everest records the admin's evidence and does not treat typed values as official verification. </Text>
+          <Text style={s.sectionTitle}>5. Registration / CTP</Text><Text style={s.sectionCopy}>Service NSW's official registration check can show registration status, expiry, restrictions and CTP provider/policy expiry. Everest records the admin's evidence and does not treat typed values as official verification.</Text>
           <View style={s.two}><View style={s.half}><Field label="REGISTRATION PLATE" value={plate} onChangeText={setPlate} placeholder="ABC123"/></View><View style={s.half}><Field label="REGISTRATION STATE" value={vehicleState} onChangeText={setVehicleState} placeholder="NSW"/></View></View>
           <Field label="REGISTRATION EXPIRY" value={registrationExpiry} onChangeText={setRegistrationExpiry} placeholder="YYYY-MM-DD"/>
           <Field label="REGISTRATION RESTRICTIONS" value={registrationRestrictions} onChangeText={setRegistrationRestrictions} placeholder="Restrictions / concessions if shown" multiline/>
@@ -307,7 +308,7 @@ export default function DriverOnboarding() {
         </View>}
 
         {!!error&&<Text style={s.error}>{error}</Text>}
-        {step>0&&<View style={s.nav}><Pressable disabled={busy} onPress={()=>setStep(current=>Math.max(0,current-1))} style={s.outline}><Text style={s.outlineText}>BACK</Text></Pressable>{step<9&&<Pressable disabled={busy} onPress={()=>void next()} style={s.primary}><Text style={s.primaryText}>{busy?'SAVING…':'SAVE & CONTINUE'}</Text></Pressable>}</View>}
+        <View style={s.nav}>{step>0&&<Pressable disabled={busy} onPress={()=>setStep(current=>Math.max(0,current-1))} style={s.outline}><Text style={s.outlineText}>BACK</Text></Pressable>}{step<9&&<Pressable disabled={busy} onPress={()=>void next()} style={s.primary}><Text style={s.primaryText}>{busy?'SAVING…':'SAVE & CONTINUE'}</Text></Pressable>}</View>
       </>}
     </ScrollView>
   </SafeAreaView>;
