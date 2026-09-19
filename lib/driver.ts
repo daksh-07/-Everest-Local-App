@@ -62,6 +62,13 @@ export type DriverVerification = {
   verification_method: 'MANUAL_ADMIN_CHECK' | 'OFFICIAL_API';
   verification_provider: string | null;
   verification_reference: string | null;
+  licence_jurisdiction: string | null;
+  licence_number: string | null;
+  licence_class: string | null;
+  licence_expiry: string | null;
+  insurance_provider: string | null;
+  insurance_policy_reference: string | null;
+  insurance_expiry: string | null;
 };
 
 export type DriverApplication = {
@@ -118,7 +125,7 @@ export async function getDriverApplication(): Promise<DriverApplication | null> 
   if (!application) return null;
 
   const [verificationResult, vehicleResult, documentsResult] = await Promise.all([
-    supabase.from('driver_verifications').select('identity_status,licence_status,registration_status,insurance_status,verification_method,verification_provider,verification_reference').eq('application_id', application.id).maybeSingle(),
+    supabase.from('driver_verifications').select('identity_status,licence_status,registration_status,insurance_status,verification_method,verification_provider,verification_reference,licence_jurisdiction,licence_number,licence_class,licence_expiry,insurance_provider,insurance_policy_reference,insurance_expiry').eq('application_id', application.id).maybeSingle(),
     supabase.from('driver_vehicles').select('id,registration_plate,registration_state,make,model,year,colour,vehicle_type,vin,ownership_status,registration_expiry,registration_status,ctp_provider,ctp_expiry,status').eq('application_id', application.id).maybeSingle(),
     supabase.from('driver_documents').select('id,document_type,storage_path,mime_type,size_bytes,status,uploaded_at,expires_at,rejection_reason').eq('application_id', application.id).neq('status','REPLACED').order('uploaded_at',{ascending:false}),
   ]);
@@ -175,6 +182,20 @@ export async function submitDriverApplication() {
   if (data !== true) throw new Error('Driver application could not be submitted.');
 }
 
+export async function saveDriverVerificationDetails(input: { licenceJurisdiction: string; licenceNumber: string; licenceClass: string; licenceExpiry: string; insuranceProvider: string; insurancePolicyReference: string; insuranceExpiry: string; }) {
+  requireSupabaseConfig();
+  const { error } = await supabase.rpc('save_driver_verification_details', {
+    p_licence_jurisdiction: input.licenceJurisdiction,
+    p_licence_number: input.licenceNumber,
+    p_licence_class: input.licenceClass,
+    p_licence_expiry: input.licenceExpiry,
+    p_insurance_provider: input.insuranceProvider.trim() || null,
+    p_insurance_policy_reference: input.insurancePolicyReference.trim() || null,
+    p_insurance_expiry: input.insuranceExpiry || null,
+  });
+  if (error) throw new Error(error.message);
+}
+
 export async function saveDriverVehicle(input: {
   registrationPlate: string;
   registrationState: string;
@@ -186,9 +207,11 @@ export async function saveDriverVehicle(input: {
   vin: string;
   ownershipStatus: DriverVehicle['ownership_status'];
   registrationExpiry: string;
+  ctpProvider: string;
+  ctpExpiry: string;
 }) {
   requireSupabaseConfig();
-  const { data, error } = await supabase.rpc('save_driver_vehicle', {
+  const { data, error } = await supabase.rpc('save_driver_vehicle_details', {
     p_registration_plate: input.registrationPlate.trim(),
     p_registration_state: input.registrationState.trim(),
     p_make: input.make.trim(),
@@ -199,6 +222,8 @@ export async function saveDriverVehicle(input: {
     p_vin: input.vin.trim() || null,
     p_ownership_status: input.ownershipStatus,
     p_registration_expiry: input.registrationExpiry || null,
+    p_ctp_provider: input.ctpProvider.trim() || null,
+    p_ctp_expiry: input.ctpExpiry || null,
   });
   if (error) throw new Error(error.message);
   if (typeof data !== 'string') throw new Error('Vehicle save returned an invalid reference.');
