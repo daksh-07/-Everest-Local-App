@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, Linking } from 'react-native';
 import { supabase, requireSupabaseConfig } from './supabase';
 import { z } from 'zod';
 
@@ -10,6 +10,53 @@ function passwordResetRedirect() {
     return `${window.location.origin}/auth`;
   }
   return 'everestlocal://auth';
+}
+
+function oauthRedirect() {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return `${window.location.origin}/auth`;
+  }
+  return 'everestlocal://auth';
+}
+
+export async function signInWithProvider(provider: 'google' | 'apple') {
+  requireSupabaseConfig();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: oauthRedirect(),
+      skipBrowserRedirect: Platform.OS !== 'web',
+    },
+  });
+  if (error) throw new Error(error.message);
+  if (Platform.OS !== 'web' && data.url) {
+    await Linking.openURL(data.url);
+  }
+  return data;
+}
+
+export async function createNativeOAuthSession(url: string) {
+  requireSupabaseConfig();
+  const parsed = new URL(url);
+  const code = parsed.searchParams.get('code');
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) throw new Error(error.message);
+    return data.session;
+  }
+
+  const fragment = url.includes('#') ? url.slice(url.indexOf('#') + 1) : '';
+  const params = new URLSearchParams(fragment);
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (!accessToken || !refreshToken) return null;
+
+  const { data, error } = await supabase.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+  if (error) throw new Error(error.message);
+  return data.session;
 }
 
 export async function signUp(email:string,password:string,fullName:string){
