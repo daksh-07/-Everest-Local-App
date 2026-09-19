@@ -143,6 +143,7 @@ test('new auth RPCs do not retain implicit PUBLIC execution', () => {
     'admin_set_driver_verification',
     'admin_set_driver_document_status',
     'admin_set_driver_vehicle_verification',
+    'admin_set_driver_credential_details',
   ]) {
     assert.match(
       migrationText,
