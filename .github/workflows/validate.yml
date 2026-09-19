@@ -52,7 +52,19 @@ jobs:
       - name: Migration audit
         run: npm run audit:migrations
       - name: Security invariant tests
-        run: npm run test:security
+        shell: bash
+        run: |
+          set +e
+          npm run test:security 2>&1 | tee security.log
+          status=${PIPESTATUS[0]}
+          exit $status
+      - name: Upload security test diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-test-diagnostics
+          path: security.log
+          if-no-files-found: ignore
       - name: Expo Doctor
         run: npx expo-doctor
       - name: Expo web bundle
