@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -123,7 +123,7 @@ export default function Search() {
   </SafeAreaView>;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return <View><Text style={s.heading}>{title}</Text>{children}</View>;
 }
 function Empty({ text }: { text: string }) { return <View style={s.emptyInline}><Text style={s.muted}>{text}</Text></View>; }
