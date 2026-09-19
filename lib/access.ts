@@ -6,7 +6,7 @@ export type AccessContext = {
   business_name: string | null;
   business_status: 'ACTIVE' | 'PAUSED' | 'SUSPENDED' | null;
   business_verification_status: 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED' | null;
-  driver_application_status: 'PENDING' | 'APPROVED' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED' | null;
+  driver_application_status: 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'MORE_INFORMATION_REQUIRED' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'EXPIRED' | null;
   is_business_member: boolean;
   is_verified_business: boolean;
   is_active_driver: boolean;
