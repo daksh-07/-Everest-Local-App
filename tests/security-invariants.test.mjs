@@ -114,8 +114,8 @@ test('EAS release profiles are present and production auto-increments versions',
 
 
 test('business membership cannot be self-assigned through the Data API', () => {
-  assert.match(migrationText, /create\\s+policy\\s+business_members_admin_insert[\\s\\S]{0,400}with\\s+check\\s*\\(public\\.is_admin\\(\\)\\)/i);
-  assert.match(migrationText, /revoke\\s+insert,\\s*update,\\s*delete\\s+on\\s+public\\.business_members\\s+from\\s+anon,\\s*authenticated/i);
+  assert.match(migrationText, /create\s+policy\s+business_members_admin_insert[\s\S]{0,400}with\s+check\s*\(public\.is_admin\(\)\)/i);
+  assert.match(migrationText, /revoke\s+insert,\s*update,\s*delete\s+on\s+public\.business_members\s+from\s+anon,\s*authenticated/i);
 });
 
 test('business and driver role elevation is server-authorized', () => {
