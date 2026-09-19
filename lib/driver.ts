@@ -330,3 +330,27 @@ export async function adminSetDriverDocumentStatus(documentId: string, status: '
   const { error } = await supabase.rpc('admin_set_driver_document_status', { p_document_id: documentId, p_status: status, p_reason: reason?.trim() || null });
   if (error) throw new Error(error.message);
 }
+
+
+export async function adminSetDriverVehicleVerification(applicationId: string, input: {
+  registrationStatus: 'PENDING'|'CURRENT'|'EXPIRED'|'SUSPENDED'|'CANCELLED'|'REJECTED';
+  registrationExpiry: string;
+  ctpProvider: string;
+  ctpExpiry: string;
+  verificationMethod?: 'MANUAL_ADMIN_CHECK'|'OFFICIAL_API';
+  provider?: string;
+  reference?: string;
+}) {
+  requireSupabaseConfig();
+  const { error } = await supabase.rpc('admin_set_driver_vehicle_verification', {
+    p_application_id: applicationId,
+    p_registration_status: input.registrationStatus,
+    p_registration_expiry: input.registrationExpiry || null,
+    p_ctp_provider: input.ctpProvider.trim() || null,
+    p_ctp_expiry: input.ctpExpiry || null,
+    p_verification_method: input.verificationMethod ?? 'MANUAL_ADMIN_CHECK',
+    p_provider: input.provider ?? null,
+    p_reference: input.reference ?? null,
+  });
+  if (error) throw new Error(error.message);
+}
