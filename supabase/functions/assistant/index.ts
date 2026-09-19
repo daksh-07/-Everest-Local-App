@@ -5,7 +5,7 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-type ActionKind = 'VIEW_BUSINESS' | 'VIEW_PRODUCT' | 'CREATE_REQUEST' | 'VIEW_ORDER' | 'VIEW_BOOKING' | 'OPEN_MESSAGE' | 'VIEW_QUOTE' | 'OPEN_OPPORTUNITIES' | 'OPEN_SEARCH';
+type ActionKind = 'VIEW_BUSINESS' | 'VIEW_PRODUCT' | 'CREATE_REQUEST' | 'VIEW_ORDER' | 'VIEW_BOOKING' | 'OPEN_MESSAGE' | 'VIEW_QUOTE' | 'OPEN_OPPORTUNITIES' | 'OPEN_SEARCH' | 'OPEN_DRIVER_APPLICATION';
 type Action = { kind: ActionKind; id?: string; title: string; href: string };
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -60,8 +60,11 @@ Deno.serve(async (req) => {
     if (membershipError) throw membershipError;
     const businessIds = (membershipRows ?? []).map(item => item.business_id);
 
-    const [profileResult, businessResult, serviceResult, productResult, requestResult, quoteResult, bookingResult, orderResult, conversationResult] = await Promise.all([
+    const [profileResult, driverApplicationResult, driverVerificationResult, driverVehicleResult, businessResult, serviceResult, productResult, requestResult, quoteResult, bookingResult, orderResult, conversationResult] = await Promise.all([
       client.from('profiles').select('role,suburb,city,state').eq('id', authData.user.id).maybeSingle(),
+      client.from('driver_applications').select('id,status,status_reason,submitted_at,last_submitted_at').eq('user_id', authData.user.id).maybeSingle(),
+      client.from('driver_verifications').select('identity_status,licence_status,registration_status,insurance_status,licence_expiry,insurance_expiry,verification_method').maybeSingle(),
+      client.from('driver_vehicles').select('status,registration_status,registration_expiry,ctp_expiry').maybeSingle(),
       client.from('businesses').select('id,name,description,suburb,city,state,verification_status').eq('status','ACTIVE').eq('verification_status','VERIFIED').limit(100),
       client.from('services').select('id,business_id,name,description,base_price,duration_minutes,businesses(name,suburb,city,state)').eq('active',true).limit(100),
       client.from('products').select('id,business_id,name,description,price,sale_price,delivery_eligible,pickup_available,status,businesses(name,suburb,city,state)').in('status',['ACTIVE','OUT_OF_STOCK']).limit(100),
@@ -127,6 +130,8 @@ Deno.serve(async (req) => {
     for (const item of businessMatches) fallbackActions.push(action('VIEW_BUSINESS', item.id, item.name));
     for (const item of productMatches.slice(0,3)) fallbackActions.push(action('VIEW_PRODUCT', item.id, item.name));
     if (/request|hire|book|quote|plumber|cleaner|detail|mechanic|landscap|tradie|service/i.test(message)) fallbackActions.push(action('CREATE_REQUEST', undefined, 'Post a service request'));
+    if (/driver|delivery driver|licence|license|vehicle registration|rego|driver application/i.test(message) && driverApplicationResult.data) fallbackActions.push(action('OPEN_DRIVER_APPLICATION', undefined, 'Open driver verification'));
+    if (/driver|delivery driver|licence|license|vehicle registration|rego|driver application/i.test(message) && driverApplicationResult.data) fallbackLines.push(`Your driver application status is ${driverApplicationResult.data.status.replaceAll('_',' ')}.`);
     if (/job|opportunit|work request/i.test(message) && businessOpportunities.length) fallbackActions.push(action('OPEN_OPPORTUNITIES', undefined, 'View business opportunities'));
     if (/order|delivery|purchase|bought/i.test(message) && (orders[0] || businessOrders[0])) { const order = (orders[0] ?? businessOrders[0]) as {id:string;order_number:string}; fallbackActions.push(action('VIEW_ORDER', order.id, `Order ${order.order_number}`)); }
     if (/booking|appointment|scheduled/i.test(message) && (bookings[0] || businessBookings[0])) fallbackActions.push(action('VIEW_BOOKING', (bookings[0] ?? businessBookings[0] as {id:string}).id, 'View booking'));
@@ -154,13 +159,14 @@ Use ONLY the supplied records.
 Never invent businesses, services, products, prices, reviews, availability, delivery times, orders, bookings, messages or customer data.
 Private records belong only to the authenticated user. Never infer or expose another person's data.
 If a fact is absent, say it is unavailable rather than guessing.
-Return ONLY valid JSON: {"message":"string","actions":[{"kind":"VIEW_BUSINESS|VIEW_PRODUCT|CREATE_REQUEST|VIEW_ORDER|VIEW_BOOKING|OPEN_MESSAGE|VIEW_QUOTE|OPEN_OPPORTUNITIES|OPEN_SEARCH","id":"exact supplied id when required","title":"short button title","query":"optional search query"}]}
+Return ONLY valid JSON: {"message":"string","actions":[{"kind":"VIEW_BUSINESS|VIEW_PRODUCT|CREATE_REQUEST|VIEW_ORDER|VIEW_BOOKING|OPEN_MESSAGE|VIEW_QUOTE|OPEN_OPPORTUNITIES|OPEN_SEARCH|OPEN_DRIVER_APPLICATION","id":"exact supplied id when required","title":"short button title","query":"optional search query"}]}
 Action ids MUST come from the supplied records. CREATE_REQUEST and OPEN_SEARCH do not require ids.
 Keep the answer concise.`;
 
     const context = JSON.stringify({
       authenticated_user: { role: profileResult.data?.role ?? null, location: { suburb: profileResult.data?.suburb ?? null, city: profileResult.data?.city ?? null, state: profileResult.data?.state ?? null } },
       public_marketplace: { businesses, services: compactServices, products: compactProducts },
+      authenticated_driver_verification: driverApplicationResult.data ? { application_status: driverApplicationResult.data.status, status_reason: driverApplicationResult.data.status_reason, submitted_at: driverApplicationResult.data.submitted_at, verification: driverVerificationResult.data, vehicle: driverVehicleResult.data } : null,
       authenticated_user_records: { requests, quotes, bookings, orders, conversations },
       authenticated_business_records: { opportunities: businessOpportunities, quotes: businessQuotes, bookings: businessBookings, orders: businessOrders, conversations: businessConversations },
     });
@@ -203,7 +209,7 @@ Keep the answer concise.`;
       if (kind === 'VIEW_BOOKING' && (!id || !validBookingIds.has(id))) return [];
       if (kind === 'VIEW_QUOTE' && (!id || !validQuoteIds.has(id))) return [];
       if (kind === 'OPEN_MESSAGE' && id && !validConversationIds.has(id)) return [];
-      if (!['VIEW_BUSINESS','VIEW_PRODUCT','CREATE_REQUEST','VIEW_ORDER','VIEW_BOOKING','OPEN_MESSAGE','VIEW_QUOTE','OPEN_OPPORTUNITIES','OPEN_SEARCH'].includes(kind)) return [];
+      if (!['VIEW_BUSINESS','VIEW_PRODUCT','CREATE_REQUEST','VIEW_ORDER','VIEW_BOOKING','OPEN_MESSAGE','VIEW_QUOTE','OPEN_OPPORTUNITIES','OPEN_SEARCH','OPEN_DRIVER_APPLICATION'].includes(kind)) return [];
       return [action(kind,id,title,query)];
     }).slice(0,6) : [];
 
