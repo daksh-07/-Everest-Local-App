@@ -205,4 +205,5 @@ test('Ask Everest does not query driver documents', async () => {
   assert.doesNotMatch(assistant, /from\(['"]driver_documents['"]\)/i);
   assert.doesNotMatch(assistant, /storage\.from\(['"]driver-verification['"]\)/i);
   assert.match(assistant, /driver_applications/i);
+  assert.doesNotMatch(assistant, /licence_number|insurance_policy_reference|storage_path/i);
 });
