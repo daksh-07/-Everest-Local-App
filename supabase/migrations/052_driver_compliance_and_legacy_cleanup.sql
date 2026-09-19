@@ -731,7 +731,7 @@ begin
     values(a.user_id,'DRIVER_CREDENTIAL_EXPIRED','Driver access restricted',expired_reason,jsonb_build_object('application_id',a.id));
   end if;
 
-  for days in 30,14,7 loop
+  foreach days in array array[30,14,7] loop
     if v.licence_expiry is not null and v.licence_expiry-current_date=days then
       insert into public.notifications(user_id,kind,title,body,data)
       select a.user_id,'DRIVER_LICENCE_EXPIRY','Driver licence expires soon',
