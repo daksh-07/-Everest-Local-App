@@ -32,7 +32,8 @@ function GlobalAskButton({ pathname }: { pathname: string }) {
 
 export default function RootLayout() {
   const pathname=usePathname(); const router=useRouter();
-  const [authInitialized,setAuthInitialized]=useState(false); const [supabaseConfigured,setSupabaseConfigured]=useState(false); const [role,setRole]=useState<AppRole|null>(null);\n  const [hasBusinessAccess,setHasBusinessAccess]=useState(false); const [startupError,setStartupError]=useState(''); const [retryNonce,setRetryNonce]=useState(0);
+  const [authInitialized,setAuthInitialized]=useState(false); const [supabaseConfigured,setSupabaseConfigured]=useState(false); const [role,setRole]=useState<AppRole|null>(null);
+  const [hasBusinessAccess,setHasBusinessAccess]=useState(false); const [startupError,setStartupError]=useState(''); const [retryNonce,setRetryNonce]=useState(0);
   useEffect(()=>{let active=true;let unsubscribe:(()=>void)|undefined;
     async function initializeAuth(){
       try{
