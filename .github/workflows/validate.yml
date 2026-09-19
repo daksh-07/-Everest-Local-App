@@ -24,10 +24,10 @@ jobs:
         run: |
           set +e
           npm run typecheck 2>&1 | tee typecheck.log
-          status=\${PIPESTATUS[0]}
-          exit \$status
+          status=${PIPESTATUS[0]}
+          exit $status
       - name: Upload TypeScript diagnostics
-        if: \${{ failure() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: typecheck-diagnostics
