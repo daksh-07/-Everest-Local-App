@@ -116,7 +116,7 @@ test('EAS release profiles are present and production auto-increments versions',
 test('business and driver role elevation is server-authorized', () => {
   const businessCreate = migrationText
     .split(/(?=create\s+(?:or\s+replace\s+)?function\b)/i)
-    .find((block) => /create_business_profile\s*\(/i.test(block));
+    .filter((block) => /create_business_profile\s*\(/i.test(block)).at(-1);
   assert.ok(businessCreate);
   assert.doesNotMatch(businessCreate, /update\s+public\.profiles\s+set\s+role\s*=\s*['"]BUSINESS['"]/i);
 
