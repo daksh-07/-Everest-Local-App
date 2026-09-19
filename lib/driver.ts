@@ -145,7 +145,15 @@ export async function getDriverRequirements(): Promise<DriverVerificationRequire
   return data as DriverVerificationRequirements;
 }
 
-export async function getOrCreateDriverApplicationDraft() {\n  requireSupabaseConfig();\n  const { data, error } = await supabase.rpc('get_or_create_driver_application_draft');\n  if (error) throw new Error(error.message);\n  if (typeof data !== 'string') throw new Error('Driver draft creation returned an invalid reference.');\n  return data;\n}\n\nexport async function getDriverApplication(): Promise<DriverApplication | null> {
+export async function getOrCreateDriverApplicationDraft() {
+  requireSupabaseConfig();
+  const { data, error } = await supabase.rpc('get_or_create_driver_application_draft');
+  if (error) throw new Error(error.message);
+  if (typeof data !== 'string') throw new Error('Driver draft creation returned an invalid reference.');
+  return data;
+}
+
+export async function getDriverApplication(): Promise<DriverApplication | null> {
   requireSupabaseConfig();
   const userId = await currentUserId();
   const { data: application, error } = await supabase.from('driver_applications')
@@ -163,7 +171,8 @@ export async function getOrCreateDriverApplicationDraft() {\n  requireSupabaseCo
   if (vehicleResult.error) throw new Error(vehicleResult.error.message);
   if (documentsResult.error) throw new Error(documentsResult.error.message);
 
-  const { data: declarations, error: declarationError } = await supabase.from('driver_declarations').select('declaration_key,declaration_version,declaration_text,accepted_at').eq('application_id', application.id).order('accepted_at',{ascending:true});\n  if (declarationError) throw new Error(declarationError.message);
+  const { data: declarations, error: declarationError } = await supabase.from('driver_declarations').select('declaration_key,declaration_version,declaration_text,accepted_at').eq('application_id', application.id).order('accepted_at',{ascending:true});
+  if (declarationError) throw new Error(declarationError.message);
   return {
     ...application,
     verification: verificationResult.data as DriverVerification | null,
