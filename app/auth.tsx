@@ -801,7 +801,8 @@ const s = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
-  roleRequired: { color: '#77736c', fontSize: 12, lineHeight: 18, marginBottom: 10, textAlign: 'center' },\n  footer: {
+  roleRequired: { color: '#77736c', fontSize: 12, lineHeight: 18, marginBottom: 10, textAlign: 'center' },
+  footer: {
     color: '#aaa69e',
     fontSize: 9,
     fontWeight: '700',
