@@ -27,7 +27,7 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
 
 function GlobalAskButton({ pathname }: { pathname: string }) {\n  if (['/assistant','/auth','/messages','/cart'].includes(pathname)) return null;\n  return <Pressable accessibilityRole="button" accessibilityLabel="Ask Everest" onPress={() => router.push('/assistant')} style={styles.askButton}><Text style={styles.askButtonText}>✦ Ask Everest</Text></Pressable>;\n}\n\nexport default function RootLayout() {
   const pathname=usePathname(); const router=useRouter();
-  const [authInitialized,setAuthInitialized]=useState(false); const [supabaseConfigured,setSupabaseConfigured]=useState(false); const [role,setRole]=useState<AppRole|null>(null); const [startupError,setStartupError]=useState(''); const [retryNonce,setRetryNonce]=useState(0);
+  const [authInitialized,setAuthInitialized]=useState(false); const [supabaseConfigured,setSupabaseConfigured]=useState(false); const [role,setRole]=useState<AppRole|null>(null);\n  const [hasBusinessAccess,setHasBusinessAccess]=useState(false); const [startupError,setStartupError]=useState(''); const [retryNonce,setRetryNonce]=useState(0);
   useEffect(()=>{let active=true;let unsubscribe:(()=>void)|undefined;
     async function initializeAuth(){
       try{
@@ -36,11 +36,11 @@ function GlobalAskButton({ pathname }: { pathname: string }) {\n  if (['/assista
         if(!configured){setAuthInitialized(true);return;}
         const loadProfile=async(userId:string)=>{
           try{
-            const {data,error}=await supabase.from('profiles').select('role').eq('id',userId).maybeSingle();
+            const [{data,error}, {data:membership,error:membershipError}] = await Promise.all([supabase.from('profiles').select('role').eq('id',userId).maybeSingle(), supabase.from('business_members').select('business_id').eq('user_id',userId).limit(1)]);
             if(!active)return;
-            if(error){setRole(null);setStartupError('We could not load your account right now. Please retry.');}
-            else if(data?.role){setRole(data.role as AppRole);setStartupError('');}
-            else{setRole(null);setStartupError('Your account profile is not ready yet. Please try again shortly.');}
+            if(error || membershipError){setRole(null);setHasBusinessAccess(false);setStartupError('We could not load your account right now. Please retry.');}
+            else if(data?.role){setRole(data.role as AppRole);setHasBusinessAccess(Boolean(membership?.length));setStartupError('');}
+            else{setRole(null);setHasBusinessAccess(false);setStartupError('Your account profile is not ready yet. Please try again shortly.');}
           }catch(error){if(!active)return;setRole(null);setStartupError('We could not load your account right now. Please retry.');}
           finally{if(active)setAuthInitialized(true);}
         };
@@ -50,7 +50,7 @@ function GlobalAskButton({ pathname }: { pathname: string }) {\n  if (['/assista
         if(session?.user.id)void loadProfile(session.user.id);else setAuthInitialized(true);
         const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,nextSession)=>{
           if(!active)return;
-          if(!nextSession?.user.id){setRole(null);setStartupError('');setAuthInitialized(true);return;}
+          if(!nextSession?.user.id){setRole(null);setHasBusinessAccess(false);setStartupError('');setAuthInitialized(true);return;}
           scheduleProfileLoad(nextSession.user.id);
         });
         unsubscribe=()=>subscription.unsubscribe();
@@ -66,8 +66,8 @@ function GlobalAskButton({ pathname }: { pathname: string }) {\n  if (['/assista
     if(!role){router.replace('/auth');return;}
     if(adminRoutes.has(pathname)&&role!=='ADMIN'){router.replace('/');return;}
     if(deliveryRoutes.has(pathname)&&role!=='ADMIN'&&role!=='DELIVERY_DRIVER'){router.replace('/');return;}
-    if(businessRoutes.has(pathname)&&role!=='BUSINESS'&&role!=='ADMIN')router.replace('/');
-  },[pathname,authInitialized,supabaseConfigured,role,startupError,router]);
+    if(businessRoutes.has(pathname)&&!hasBusinessAccess&&role!=='ADMIN')router.replace('/');
+  },[pathname,authInitialized,supabaseConfigured,role,hasBusinessAccess,startupError,router]);
 
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname);
   return <><StatusBar style="dark"/><Stack screenOptions={{headerShown:false,animation:'fade'}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError message={startupError} onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<GlobalAskButton pathname={pathname}/><PwaInstallPrompt/></>;
