@@ -22,5 +22,27 @@ const buildInfo = JSON.parse(await readFile(join(dist, 'build-info.json'), 'utf8
 if (!buildInfo || typeof buildInfo !== 'object') {
   throw new Error('Web export is incomplete: build-info.json is not a JSON object.');
 }
+if (typeof buildInfo.commit !== 'string' || !buildInfo.commit) {
+  throw new Error('Web export is incomplete: build-info.json is missing a commit identifier.');
+}
+if (typeof buildInfo.environment !== 'string' || !buildInfo.environment) {
+  throw new Error('Web export is incomplete: build-info.json is missing a build environment.');
+}
 
-console.log('Web export verified: HTML shell and build provenance are present.');
+const expectedCommit = process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA;
+if (expectedCommit && buildInfo.commit !== expectedCommit) {
+  throw new Error(
+    `Web export provenance mismatch: expected ${expectedCommit} but artifact reports ${buildInfo.commit}.`,
+  );
+}
+
+const expectedEnvironment = process.env.VERCEL_ENV;
+if (expectedEnvironment && buildInfo.environment !== expectedEnvironment) {
+  throw new Error(
+    `Web export environment mismatch: expected ${expectedEnvironment} but artifact reports ${buildInfo.environment}.`,
+  );
+}
+
+console.log(
+  `Web export verified: HTML shell and build provenance are present for ${buildInfo.environment} build ${buildInfo.commit}.`,
+);
