@@ -7,24 +7,24 @@ const passwordSchema = z.string().min(8).max(128);
 
 function passwordResetRedirect() {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return `${window.location.origin}/auth`;
+    return `${window.location.origin}/auth${intent ? `?intent=${encodeURIComponent(intent)}` : ''}`;
   }
-  return 'everestlocal://auth';
+  return `everestlocal://auth${intent ? `?intent=${encodeURIComponent(intent)}` : ''}`;
 }
 
-function oauthRedirect() {
+function oauthRedirect(intent?: 'CUSTOMER' | 'BUSINESS' | 'DELIVERY_DRIVER') {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return `${window.location.origin}/auth`;
   }
   return 'everestlocal://auth';
 }
 
-export async function signInWithProvider(provider: 'google' | 'apple') {
+export async function signInWithProvider(provider: 'google' | 'apple', intent?: 'CUSTOMER' | 'BUSINESS' | 'DELIVERY_DRIVER') {
   requireSupabaseConfig();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: oauthRedirect(),
+      redirectTo: oauthRedirect(intent),
       skipBrowserRedirect: Platform.OS !== 'web',
     },
   });
