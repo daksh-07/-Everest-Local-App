@@ -10,7 +10,7 @@ const protectedRoutes = new Set([
 ]);
 const businessApplicationRoutes = new Set(['/business','/business-onboarding','/business-dashboard','/business-verification']);
 const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities']);
-const adminRoutes = new Set(['/admin']);
+const adminRoutes = new Set(['/admin','/driver-verification']);
 const deliveryRoutes = new Set(['/delivery','/driver-dashboard']);
 const driverApplicationRoutes = new Set(['/driver-onboarding']);
 
