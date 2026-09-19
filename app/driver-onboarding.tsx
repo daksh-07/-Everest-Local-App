@@ -20,7 +20,7 @@ import {
 const STEPS = ['Personal', 'Licence', 'Vehicle', 'Insurance', 'Review'] as const;
 const states = ['NSW','ACT','NT','QLD','SA','TAS','VIC','WA','OVERSEAS'];
 
-function Field({ label, value, onChangeText, placeholder, keyboardType = 'default', secure = false }: {
+function Field({ label, value, onChangeText, placeholder, keyboardType = 'default', secure = false, editable = true }: {
   label: string; value: string; onChangeText: (value: string) => void; placeholder: string; keyboardType?: 'default'|'numeric'|'email-address'; secure?: boolean; editable?: boolean;
 }) {
   return <View style={s.field}><Text style={s.label}>{label}</Text><TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#aaa69f" style={s.input} keyboardType={keyboardType} editable={editable ?? true} autoCapitalize={label.includes('EMAIL') ? 'none' : 'words'} secureTextEntry={secure}/></View>;
