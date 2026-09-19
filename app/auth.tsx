@@ -31,6 +31,7 @@ export default function Auth() {
 
   useEffect(() => {
     let mounted = true;
+    let nativeSubscription: { remove: () => void } | undefined;
 
     async function handleRecoveryUrl(url: string | null) {
       if (!url || !mounted) return;
@@ -64,16 +65,18 @@ export default function Auth() {
     // Native deep-link handling is loaded only after this screen has rendered.
     if (typeof window === 'undefined') {
       void import('react-native').then(({ Linking }) => {
+        if (!mounted) return;
         void Linking.getInitialURL().then(handleRecoveryUrl);
-        const listener = Linking.addEventListener('url', event => {
+        nativeSubscription = Linking.addEventListener('url', event => {
           void handleRecoveryUrl(event.url);
         });
-        return () => listener.remove();
       });
     }
 
     return () => {
       mounted = false;
+      nativeSubscription?.remove();
+      nativeSubscription = undefined;
     };
   }, []);
 
