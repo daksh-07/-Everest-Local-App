@@ -111,10 +111,13 @@ Deno.serve(async (req) => {
 
     const validBusinessIds = new Set(businesses.map(item => item.id));
     const validProductIds = new Set(products.map(item => item.id));
-    const validOrderIds = new Set(orders.map(item => item.id));
-    const validBookingIds = new Set(bookings.map(item => item.id));
-    const validQuoteIds = new Set(quotes.map(item => item.id));
-    const validConversationIds = new Set(conversations.map(item => item.id));
+    const validOrderIds = new Set([...orders, ...businessOrders].map(item => (item as {id:string}).id));
+    const validBookingIds = new Set([...bookings, ...businessBookings].map(item => (item as {id:string}).id));
+    const validQuoteIds = new Set([...quotes, ...businessQuotes].map(item => (item as {id:string}).id));
+    const validConversationIds = new Set([...conversations, ...businessConversations].map(item => item.id));
+    const validBusinessOrderIds = new Set(businessOrders.map(item => (item as {id:string}).id));
+    const validBusinessBookingIds = new Set(businessBookings.map(item => (item as {id:string}).id));
+    const validBusinessQuoteIds = new Set(businessQuotes.map(item => (item as {id:string}).id));
 
     const fallbackActions: Action[] = [];
     const businessMatches = businesses.filter(item => matches(`${item.name} ${item.description ?? ''} ${item.suburb ?? ''} ${item.city ?? ''}`, message)).slice(0,5);
@@ -128,7 +131,7 @@ Deno.serve(async (req) => {
     if (/order|delivery|purchase|bought/i.test(message) && (orders[0] || businessOrders[0])) { const order = (orders[0] ?? businessOrders[0]) as {id:string;order_number:string}; fallbackActions.push(action('VIEW_ORDER', order.id, `Order ${order.order_number}`)); }
     if (/booking|appointment|scheduled/i.test(message) && (bookings[0] || businessBookings[0])) fallbackActions.push(action('VIEW_BOOKING', (bookings[0] ?? businessBookings[0] as {id:string}).id, 'View booking'));
     if (/quote|price from business/i.test(message) && (quotes[0] || businessQuotes[0])) fallbackActions.push(action('VIEW_QUOTE', (quotes[0] ?? businessQuotes[0] as {id:string}).id, 'View my quotes'));
-    if (/message|chat|conversation/i.test(message)) fallbackActions.push(action('OPEN_MESSAGE', conversations[0]?.id, 'Open messages'));
+    if (/message|chat|conversation/i.test(message)) fallbackActions.push(action('OPEN_MESSAGE', conversations[0]?.id ?? (businessConversations[0] as {id:string}|undefined)?.id, 'Open messages'));
     if (!fallbackActions.length) fallbackActions.push(action('OPEN_SEARCH', undefined, 'Explore the marketplace', message));
 
     const fallbackLines = [
@@ -151,7 +154,7 @@ Use ONLY the supplied records.
 Never invent businesses, services, products, prices, reviews, availability, delivery times, orders, bookings, messages or customer data.
 Private records belong only to the authenticated user. Never infer or expose another person's data.
 If a fact is absent, say it is unavailable rather than guessing.
-Return ONLY valid JSON: {"message":"string","actions":[{"kind":"VIEW_BUSINESS|VIEW_PRODUCT|CREATE_REQUEST|VIEW_ORDER|VIEW_BOOKING|OPEN_MESSAGE|VIEW_QUOTE|OPEN_SEARCH","id":"exact supplied id when required","title":"short button title","query":"optional search query"}]}
+Return ONLY valid JSON: {"message":"string","actions":[{"kind":"VIEW_BUSINESS|VIEW_PRODUCT|CREATE_REQUEST|VIEW_ORDER|VIEW_BOOKING|OPEN_MESSAGE|VIEW_QUOTE|OPEN_OPPORTUNITIES|OPEN_SEARCH","id":"exact supplied id when required","title":"short button title","query":"optional search query"}]}
 Action ids MUST come from the supplied records. CREATE_REQUEST and OPEN_SEARCH do not require ids.
 Keep the answer concise.`;
 
