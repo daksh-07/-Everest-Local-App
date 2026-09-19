@@ -155,3 +155,43 @@ test('business and driver entry routes are protected by the root router', async 
 test('mobile source does not reference trusted server-only credential variables', () => {
   assert.doesNotMatch(clientText, /SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET|AI_API_KEY/);
 });
+
+
+test('driver verification is credential-based, not profile-role based', () => {
+  const operational = migrationText.split(/(?=create\\s+(?:or\\s+replace\\s+)?function\\b)/i).filter(block => /driver_is_operational\\s*\\(/i.test(block)).at(-1);
+  assert.ok(operational);
+  assert.match(operational, /a\.status\s*=\s*'APPROVED'/i);
+  assert.match(operational, /v\.licence_status\s*=\s*'VERIFIED'/i);
+  assert.match(operational, /v\.registration_status\s*=\s*'VERIFIED'/i);
+  assert.match(operational, /dv\.status\s*=\s*'VERIFIED'/i);
+  assert.match(operational, /registration_expiry\s+is\s+not\s+null/i);
+  assert.match(operational, /licence_front/i);
+});
+
+test('sensitive driver Data API writes are revoked', () => {
+  for (const table of ['driver_applications','driver_vehicles','driver_documents','driver_verifications','driver_status_history']) {
+    assert.match(migrationText, new RegExp('revoke\\s+all\\s+on\\s+public\\.' + table + '[\\s\\S]{0,300}from\\s+public,\\s*anon,\\s*authenticated', 'i'));
+  }
+  assert.match(migrationText, /revoke\\s+insert,update,delete,truncat(?:e|ion),references,trigger\\s+on\\s+public\\.profiles/i);
+});
+
+test('driver storage is private and owner/admin scoped', () => {
+  assert.match(migrationText, /values\\('driver-verification','driver-verification',false/i);
+  assert.match(migrationText, /driver_verification_owner_upload[\\s\\S]{0,500}storage\.foldername\(name\).*auth\.uid/i);
+  assert.match(migrationText, /driver_verification_owner_read[\\s\\S]{0,500}owner_id.*is_admin/i);
+  assert.doesNotMatch(clientText, /getPublicUrl\\s*\([^)]*driver-verification/i);
+});
+
+test('driver delivery authorization checks active verification server-side', () => {
+  const deliveryBlocks = migrationText.split(/(?=create\\s+(?:or\\s+replace\\s+)?function\\b)/i).filter(block => /assign_delivery_driver\\s*\(|update_delivery_status\\s*\(/i.test(block));
+  assert.ok(deliveryBlocks.length >= 2);
+  assert.ok(deliveryBlocks.some(block => /driver_is_operational/i.test(block)));
+  assert.ok(deliveryBlocks.some(block => /not exists\\(select 1 from public\.delivery_assignments/i.test(block)));
+});
+
+test('Ask Everest does not query driver documents', async () => {
+  const assistant = await readFile(join(root, 'supabase', 'functions', 'assistant', 'index.ts'), 'utf8');
+  assert.doesNotMatch(assistant, /from\\(['\"]driver_documents['\"]\\)/i);
+  assert.doesNotMatch(assistant, /storage\\.from\\(['\"]driver-verification['\"]\\)/i);
+  assert.match(assistant, /driver_applications/i);
+});
