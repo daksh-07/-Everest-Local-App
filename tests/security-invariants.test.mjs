@@ -168,7 +168,7 @@ test('mobile source does not reference trusted server-only credential variables'
 
 
 test('driver verification is credential-based, not profile-role based', () => {
-  const operational = migrationText.split(/(?=create\s+(?:or\s+replace\s+)?function\b)/i).filter(block => /driver_is_operational\s*\(/i.test(block)).at(-1);
+  const operational = migrationText.split(/(?=create\s+(?:or\s+replace\s+)?function\b)/i).filter(block => /function\s+public\.driver_is_operational\s*\(/i.test(block)).at(-1);
   assert.ok(operational);
   assert.match(operational, /a\.status\s*=\s*'APPROVED'/i);
   assert.match(operational, /v\.licence_status\s*=\s*'VERIFIED'/i);
@@ -179,9 +179,7 @@ test('driver verification is credential-based, not profile-role based', () => {
 });
 
 test('sensitive driver Data API writes are revoked', () => {
-  for (const table of ['driver_applications','driver_vehicles','driver_documents','driver_verifications','driver_status_history']) {
-    assert.match(migrationText, new RegExp('revoke\\s+all\\s+on\\s+public\\.' + table + '[\\s\\S]{0,300}from\\s+public,\\s*anon,\\s*authenticated', 'i'));
-  }
+  assert.match(migrationText, /revoke\s+all\s+on\s+public\.driver_applications,public\.driver_vehicles,public\.driver_documents,public\.driver_verifications,public\.driver_status_history,public\.driver_verification_requirements\s+from\s+public,\s*anon,\s*authenticated/i);
   assert.match(migrationText, /revoke\s+insert,update,delete,truncate,references,trigger\s+on\s+public\.profiles/i);
 });
 
