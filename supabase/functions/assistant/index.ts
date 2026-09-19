@@ -10,7 +10,6 @@ type Action = { kind: ActionKind; id?: string; title: string; href: string };
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 const text = (value: unknown, max = 5000) => typeof value === 'string' ? value.slice(0, max) : '';
-const lower = (value: unknown) => text(value).toLowerCase();
 
 function action(kind: ActionKind, id: string | undefined, title: string, query = ''): Action {
   const q = encodeURIComponent(query || title);
