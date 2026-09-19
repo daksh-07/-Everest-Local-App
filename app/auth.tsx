@@ -340,7 +340,7 @@ export default function Auth() {
     setSocialBusy(provider);
     try {
       const auth = await import('@/lib/auth');
-      await auth.signInWithProvider(provider);
+      await auth.signInWithProvider(provider, intent);
     } catch (e) {
       setError(
         presentAuthError(
@@ -497,7 +497,7 @@ export default function Auth() {
             <PrimaryButton
               label={busy ? (mode === 'login' ? 'Signing in…' : mode === 'signup' ? 'Creating account…' : mode === 'reset' ? 'Sending…' : 'Updating…') : primaryLabel}
               loading={busy}
-              disabled={busy || !!socialBusy || !intent}
+              disabled={busy || !!socialBusy || (!intent && mode !== 'reset' && mode !== 'recovery')}
               onPress={() => void submit()}
             />
 
