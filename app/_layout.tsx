@@ -60,7 +60,7 @@ export default function RootLayout() {
           scheduleProfileLoad(nextSession.user.id);
         });
         unsubscribe=()=>subscription.unsubscribe();
-      }catch(error){if(!active)return;setSupabaseConfigured(false);setAuthInitialized(true);setStartupError('Authentication services could not be initialized. Please retry.');}
+      }catch{if(!active)return;setSupabaseConfigured(false);setAuthInitialized(true);setStartupError('Authentication services could not be initialized. Please retry.');}
     }
     void initializeAuth(); return()=>{active=false;unsubscribe?.()};
   },[retryNonce]);
