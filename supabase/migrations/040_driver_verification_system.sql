@@ -171,7 +171,7 @@ select exists(
     and v.registration_status='VERIFIED' and dv.status='VERIFIED' and dv.registration_status='CURRENT'
     and dv.registration_expiry is not null and dv.registration_expiry>=current_date
     and (dv.ctp_expiry is null or dv.ctp_expiry>=current_date)
-    and (not (select require_additional_insurance from public.driver_verification_requirements where id=true) or (v.insurance_status='VERIFIED' and exists(select 1 from public.driver_documents d where d.application_id=a.id and d.document_type='INSURANCE' and d.status='VERIFIED' and d.expires_at is not null and d.expires_at>=current_date))
+    and (not (select require_additional_insurance from public.driver_verification_requirements where id=true) or (v.insurance_status='VERIFIED' and exists(select 1 from public.driver_documents d where d.application_id=a.id and d.document_type='INSURANCE' and d.status='VERIFIED' and d.expires_at is not null and d.expires_at>=current_date)))
     and not exists(select 1 from public.driver_documents d where d.application_id=a.id and d.status='MORE_INFORMATION_REQUIRED')
 );$$;
 revoke execute on function public.driver_is_operational(uuid) from public,anon;
