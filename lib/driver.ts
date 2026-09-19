@@ -417,7 +417,6 @@ export async function adminSetDriverCredentialDetails(applicationId: string, inp
   insurancePolicyReference: string;
   insuranceType: 'CTP'|'ADDITIONAL_MOTOR'|'COMMERCIAL_BUSINESS_USE'|'OTHER'|'';
   insuranceExpiry: string;
-  insuranceType?: 'CTP'|'ADDITIONAL_MOTOR'|'COMMERCIAL_BUSINESS_USE'|'OTHER';
   verificationMethod?: 'MANUAL_ADMIN_CHECK'|'OFFICIAL_API';
   provider?: string;
   reference?: string;
