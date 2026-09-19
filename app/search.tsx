@@ -3,12 +3,12 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import type { MarketplaceBusiness, Product } from '@/lib/types';
+import type { MarketplaceBusiness } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 
 type Tab = 'ALL' | 'BUSINESSES' | 'SERVICES' | 'PRODUCTS' | 'JOBS';
 type ServiceResult = { id: string; business_id: string; name: string; description: string | null; base_price: number | null; duration_minutes: number | null; businesses?: { name: string; suburb: string | null; city: string | null; state: string | null } | { name: string; suburb: string | null; city: string | null; state: string | null }[] | null };
-type JobResult = { id: string; description: string; suburb: string; city: string; state: string; status: string; budget: number | null; preferred_date: string | null };
+type SearchProduct = { id:string; business_id:string; name:string; description:string|null; price:number; sale_price:number|null; status:string; delivery_eligible:boolean; pickup_available:boolean; businesses?:{name:string;suburb:string|null;city:string|null;state:string|null}|{name:string;suburb:string|null;city:string|null;state:string|null}[]|null; inventory?:{stock_quantity:number;reserved_quantity:number}|{stock_quantity:number;reserved_quantity:number}[]|null };\ntype JobResult = { id: string; description: string; suburb: string; city: string; state: string; status: string; budget: number | null; preferred_date: string | null };
 
 function relationName(value: ServiceResult['businesses']) {
   return Array.isArray(value) ? value[0]?.name : value?.name;
@@ -20,7 +20,7 @@ export default function Search() {
   const [tab, setTab] = useState<Tab>(['ALL', 'BUSINESSES', 'SERVICES', 'PRODUCTS', 'JOBS'].includes(params.tab ?? '') ? params.tab as Tab : 'ALL');
   const [businesses, setBusinesses] = useState<MarketplaceBusiness[]>([]);
   const [services, setServices] = useState<ServiceResult[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<SearchProduct[]>([]);
   const [jobs, setJobs] = useState<JobResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -34,7 +34,7 @@ export default function Search() {
       const pattern = text ? `%\${text}%` : null;
       const businessQuery = supabase.from('businesses').select('id,name,slug,description,logo_url,category_id,verification_status,suburb,city,state').eq('status', 'ACTIVE').eq('verification_status', 'VERIFIED').limit(50);
       const serviceQuery = supabase.from('services').select('id,business_id,name,description,base_price,duration_minutes,businesses(name,suburb,city,state)').eq('active', true).limit(50);
-      const productQuery = supabase.from('products').select('id,business_id,category_id,name,slug,description,price,sale_price,status,delivery_eligible,pickup_available').eq('status', 'ACTIVE').limit(50);
+      const productQuery = supabase.from('products').select('id,business_id,name,description,price,sale_price,status,delivery_eligible,pickup_available,businesses(name,suburb,city,state),inventory(stock_quantity,reserved_quantity)').eq('status', 'ACTIVE').limit(50);
 
       if (pattern) {
         businessQuery.or(`name.ilike.${pattern},description.ilike.${pattern},suburb.ilike.${pattern}`);
@@ -48,7 +48,7 @@ export default function Search() {
       if (p.error) throw p.error;
       setBusinesses((b.data ?? []) as MarketplaceBusiness[]);
       setServices((s.data ?? []) as ServiceResult[]);
-      setProducts((p.data ?? []) as Product[]);
+      setProducts((p.data ?? []) as SearchProduct[]);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user && (tab === 'JOBS' || tab === 'ALL')) {
