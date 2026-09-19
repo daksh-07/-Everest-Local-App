@@ -29,7 +29,7 @@ export default function Search() {
   useEffect(() => {
     const timer = setTimeout(() => { void load(); }, 250);
     return () => clearTimeout(timer);
-  }, [q, tab]);
+  }, [load]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -78,7 +78,7 @@ export default function Search() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [q, tab]);
 
   async function add(productId: string) {
     try {
