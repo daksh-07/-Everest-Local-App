@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
+import { getMyAccessContext } from '@/lib/access';
 import type { DeliveryStatus } from '@/lib/types';
 
 type Delivery={id:string;order_id:string;status:DeliveryStatus;fee:number;eta:string|null;notes:string|null;customer_location:Record<string,unknown>|null};
@@ -12,9 +13,9 @@ function mapsQuery(value:Record<string,unknown>|null){if(!value)return '';if(typ
 
 export default function Delivery(){
  const [items,setItems]=useState<Delivery[]>([]);const [drivers,setDrivers]=useState<Driver[]>([]);const [isAdmin,setIsAdmin]=useState(false);const [isDriver,setIsDriver]=useState(false);const [loading,setLoading]=useState(true);const [busy,setBusy]=useState<string|null>(null);const [error,setError]=useState('');
- async function load(){try{setError('');const {data:user}=await supabase.auth.getUser();if(!user.user)throw new Error('Authentication required');const {data:profile,error:pe}=await supabase.from('profiles').select('role').eq('id',user.user.id).single();if(pe)throw pe;const admin=profile?.role==='ADMIN';const driver=profile?.role==='DELIVERY_DRIVER';setIsAdmin(admin);setIsDriver(driver);
+ async function load(){try{setError('');const {data:user}=await supabase.auth.getUser();if(!user.user)throw new Error('Authentication required');const access=await getMyAccessContext();const admin=access.is_admin;const driver=access.is_active_driver;setIsAdmin(admin);setIsDriver(driver);
   const {data,error:e}=await supabase.from('deliveries').select('id,order_id,status,fee,eta,notes,customer_location').order('created_at',{ascending:false});if(e)throw e;setItems((data??[]) as Delivery[]);
-  if(admin){const {data:apps,error:ae}=await supabase.from('driver_applications').select('user_id').eq('status','ACTIVE');if(ae)throw ae;const ids=(apps??[]).map(item=>item.user_id);if(ids.length){const {data:ds,error:de}=await supabase.from('profiles').select('id,full_name').in('id',ids).order('full_name');if(de)throw de;setDrivers((ds??[]) as Driver[])}else setDrivers([]);}else setDrivers([]);
+  if(admin){const {data:apps,error:ae}=await supabase.from('driver_applications').select('user_id').eq('status','APPROVED');if(ae)throw ae;const ids=(apps??[]).map(item=>item.user_id);if(ids.length){const {data:ds,error:de}=await supabase.from('profiles').select('id,full_name').in('id',ids).order('full_name');if(de)throw de;setDrivers((ds??[]) as Driver[])}else setDrivers([]);}else setDrivers([]);
  }catch{setError('We could not load delivery operations right now.')}finally{setLoading(false)}}
  useEffect(()=>{void load()},[]);
  const next=(status:DeliveryStatus):DeliveryStatus|null=>({PENDING:'ACCEPTED',ACCEPTED:'PREPARING',PREPARING:'READY_FOR_PICKUP',ASSIGNED:'PICKED_UP',PICKED_UP:'OUT_FOR_DELIVERY',OUT_FOR_DELIVERY:'DELIVERED'} as Partial<Record<DeliveryStatus,DeliveryStatus>>)[status]??null;
