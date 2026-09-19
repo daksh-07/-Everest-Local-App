@@ -265,8 +265,8 @@ export async function uploadDriverDocument(input: {
   requireSupabaseConfig();
   const userId = await currentUserId();
   const mimeType = input.asset.mimeType && ['image/jpeg','image/png','image/webp'].includes(input.asset.mimeType) ? input.asset.mimeType : 'image/jpeg';
-  const size = input.asset.fileSize ?? 0;
-  if (size > 10 * 1024 * 1024) throw new Error('Document must be 10 MB or smaller.');
+  const size = input.asset.fileSize ?? input.asset.file?.size ?? (input.asset.base64 ? Math.floor(input.asset.base64.length * 0.75) : 0);
+  if (size <= 0 || size > 10 * 1024 * 1024) throw new Error('Document must be between 1 byte and 10 MB.');
   const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const path = `${userId}/${input.applicationId}/${input.documentType}/${id}.${extensionFor(mimeType)}`;
   const body = await assetBody(input.asset, mimeType);
@@ -279,7 +279,7 @@ export async function uploadDriverDocument(input: {
       p_document_type: input.documentType,
       p_storage_path: path,
       p_mime_type: mimeType,
-      p_size_bytes: size || 1,
+      p_size_bytes: size,
       p_expires_at: input.expiresAt ?? null,
     });
     if (error) throw error;
