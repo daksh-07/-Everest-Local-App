@@ -15,7 +15,7 @@ export default function Delivery(){
  async function load(){try{setError('');const {data:user}=await supabase.auth.getUser();if(!user.user)throw new Error('Authentication required');const {data:profile,error:pe}=await supabase.from('profiles').select('role').eq('id',user.user.id).single();if(pe)throw pe;const admin=profile?.role==='ADMIN';const driver=profile?.role==='DELIVERY_DRIVER';setIsAdmin(admin);setIsDriver(driver);
   const {data,error:e}=await supabase.from('deliveries').select('id,order_id,status,fee,eta,notes,customer_location').order('created_at',{ascending:false});if(e)throw e;setItems((data??[]) as Delivery[]);
   if(admin){const {data:ds,error:de}=await supabase.from('profiles').select('id,full_name').eq('role','DELIVERY_DRIVER').order('full_name');if(de)throw de;setDrivers((ds??[]) as Driver[])}else setDrivers([]);
- }catch(e){setError('We could not load delivery operations right now.')}finally{setLoading(false)}}
+ }catch{setError('We could not load delivery operations right now.')}finally{setLoading(false)}}
  useEffect(()=>{void load()},[]);
  const next=(status:DeliveryStatus):DeliveryStatus|null=>({PENDING:'ACCEPTED',ACCEPTED:'PREPARING',PREPARING:'READY_FOR_PICKUP',ASSIGNED:'PICKED_UP',PICKED_UP:'OUT_FOR_DELIVERY',OUT_FOR_DELIVERY:'DELIVERED'} as Partial<Record<DeliveryStatus,DeliveryStatus>>)[status]??null;
  const canCancel=(status:DeliveryStatus)=>['PENDING','ACCEPTED','PREPARING','ASSIGNED'].includes(status);
