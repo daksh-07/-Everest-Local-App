@@ -22,7 +22,11 @@ export type DriverDocumentType =
   | 'VEHICLE_SIDE'
   | 'VEHICLE_INTERIOR'
   | 'VEHICLE_PLATE'
-  | 'INSURANCE';
+  | 'INSURANCE'
+  | 'IDENTITY_DOCUMENT'
+  | 'POLICE_CHECK'
+  | 'WORK_RIGHTS'
+  | 'ABN_EVIDENCE';
 
 export type DriverDocument = {
   id: string;
@@ -101,7 +105,21 @@ export type DriverApplication = {
 };
 
 export type DriverDeclaration = { declaration_key: string; declaration_version: string; declaration_text: string; accepted_at: string };
-export type DriverCompliance = { jurisdiction: string; identity: any; licence: any; vehicle: any; registration: any; ctp: any; insurance: any; overall: { status: DriverStatus; blockingItems: string[]; expiresSoon: Array<{ credential: string; days: number; expires_at: string }> } };
+export type DriverComplianceItem = {
+  status: string;
+  reason: string | null;
+  source: { source?: string; name?: string | null; url?: string | null; notes?: string | null };
+};
+export type DriverCompliance = {
+  jurisdiction: string;
+  identity: DriverComplianceItem;
+  licence: DriverComplianceItem;
+  vehicle: DriverComplianceItem;
+  registration: DriverComplianceItem;
+  ctp: DriverComplianceItem;
+  insurance: DriverComplianceItem;
+  overall: { status: DriverStatus; blockingItems: string[]; expiresSoon: Array<{ credential: string; days: number; expires_at: string }> };
+};
 
 
 export type DriverVerificationRequirements = {
@@ -126,7 +144,7 @@ export async function getDriverRequirements(): Promise<DriverVerificationRequire
   return data as DriverVerificationRequirements;
 }
 
-export async function getDriverApplication(): Promise<DriverApplication | null> {
+export async function getOrCreateDriverApplicationDraft() {\n  requireSupabaseConfig();\n  const { data, error } = await supabase.rpc('get_or_create_driver_application_draft');\n  if (error) throw new Error(error.message);\n  if (typeof data !== 'string') throw new Error('Driver draft creation returned an invalid reference.');\n  return data;\n}\n\nexport async function getDriverApplication(): Promise<DriverApplication | null> {
   requireSupabaseConfig();
   const userId = await currentUserId();
   const { data: application, error } = await supabase.from('driver_applications')
@@ -144,7 +162,7 @@ export async function getDriverApplication(): Promise<DriverApplication | null> 
   if (vehicleResult.error) throw new Error(vehicleResult.error.message);
   if (documentsResult.error) throw new Error(documentsResult.error.message);
 
-  const { data: declarations } = await supabase.from('driver_declarations').select('declaration_key,declaration_version,declaration_text,accepted_at').eq('application_id', application.id).order('accepted_at',{ascending:true});
+  const { data: declarations, error: declarationError } = await supabase.from('driver_declarations').select('declaration_key,declaration_version,declaration_text,accepted_at').eq('application_id', application.id).order('accepted_at',{ascending:true});\n  if (declarationError) throw new Error(declarationError.message);
   return {
     ...application,
     verification: verificationResult.data as DriverVerification | null,
@@ -356,6 +374,7 @@ export async function adminSetDriverDocumentStatus(documentId: string, status: '
 export async function adminSetDriverVehicleVerification(applicationId: string, input: {
   registrationStatus: 'PENDING'|'CURRENT'|'EXPIRED'|'SUSPENDED'|'CANCELLED'|'REJECTED';
   registrationExpiry: string;
+  registrationRestrictions: string;
   ctpProvider: string;
   ctpExpiry: string;
   verificationMethod?: 'MANUAL_ADMIN_CHECK'|'OFFICIAL_API';
@@ -367,6 +386,7 @@ export async function adminSetDriverVehicleVerification(applicationId: string, i
     p_application_id: applicationId,
     p_registration_status: input.registrationStatus,
     p_registration_expiry: input.registrationExpiry || null,
+    p_registration_restrictions: input.registrationRestrictions.trim() || null,
     p_ctp_provider: input.ctpProvider.trim() || null,
     p_ctp_expiry: input.ctpExpiry || null,
     p_verification_method: input.verificationMethod ?? 'MANUAL_ADMIN_CHECK',
@@ -383,7 +403,9 @@ export async function adminSetDriverCredentialDetails(applicationId: string, inp
   insuranceStatus: 'NOT_REQUIRED'|'PENDING'|'VERIFIED'|'MORE_INFORMATION_REQUIRED'|'REJECTED'|'EXPIRED';
   insuranceProvider: string;
   insurancePolicyReference: string;
+  insuranceType: 'CTP'|'ADDITIONAL_MOTOR'|'COMMERCIAL_BUSINESS_USE'|'OTHER'|'';
   insuranceExpiry: string;
+  insuranceType?: 'CTP'|'ADDITIONAL_MOTOR'|'COMMERCIAL_BUSINESS_USE'|'OTHER';
   verificationMethod?: 'MANUAL_ADMIN_CHECK'|'OFFICIAL_API';
   provider?: string;
   reference?: string;
@@ -397,6 +419,7 @@ export async function adminSetDriverCredentialDetails(applicationId: string, inp
     p_insurance_provider: input.insuranceProvider.trim() || null,
     p_insurance_policy_reference: input.insurancePolicyReference.trim() || null,
     p_insurance_expiry: input.insuranceExpiry || null,
+    p_insurance_type: input.insuranceType ?? null,
     p_verification_method: input.verificationMethod ?? 'MANUAL_ADMIN_CHECK',
     p_provider: input.provider ?? null,
     p_reference: input.reference ?? null,
