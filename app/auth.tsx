@@ -199,7 +199,7 @@ function PrimaryButton({
 
 export default function Auth() {
   const [mode, setMode] = useState<Mode>('login');
-  const [intent, setIntent] = useState<AuthIntent>('CUSTOMER');
+  const [intent, setIntent] = useState<AuthIntent | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
