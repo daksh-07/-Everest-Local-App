@@ -354,3 +354,31 @@ export async function adminSetDriverVehicleVerification(applicationId: string, i
   });
   if (error) throw new Error(error.message);
 }
+
+
+export async function adminSetDriverCredentialDetails(applicationId: string, input: {
+  licenceStatus: 'PENDING'|'VERIFIED'|'MORE_INFORMATION_REQUIRED'|'REJECTED'|'EXPIRED';
+  licenceExpiry: string;
+  insuranceStatus: 'NOT_REQUIRED'|'PENDING'|'VERIFIED'|'MORE_INFORMATION_REQUIRED'|'REJECTED'|'EXPIRED';
+  insuranceProvider: string;
+  insurancePolicyReference: string;
+  insuranceExpiry: string;
+  verificationMethod?: 'MANUAL_ADMIN_CHECK'|'OFFICIAL_API';
+  provider?: string;
+  reference?: string;
+}) {
+  requireSupabaseConfig();
+  const { error } = await supabase.rpc('admin_set_driver_credential_details', {
+    p_application_id: applicationId,
+    p_licence_status: input.licenceStatus,
+    p_licence_expiry: input.licenceExpiry || null,
+    p_insurance_status: input.insuranceStatus,
+    p_insurance_provider: input.insuranceProvider.trim() || null,
+    p_insurance_policy_reference: input.insurancePolicyReference.trim() || null,
+    p_insurance_expiry: input.insuranceExpiry || null,
+    p_verification_method: input.verificationMethod ?? 'MANUAL_ADMIN_CHECK',
+    p_provider: input.provider ?? null,
+    p_reference: input.reference ?? null,
+  });
+  if (error) throw new Error(error.message);
+}
