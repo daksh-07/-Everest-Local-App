@@ -13,6 +13,18 @@ for (const file of requiredFiles) {
   }
 }
 
+const manifest = JSON.parse(await readFile(join(dist, 'manifest.json'), 'utf8'));
+if (manifest?.name !== 'Everest Local' || manifest?.display !== 'standalone' || manifest?.start_url !== '/') {
+  throw new Error('Web export is incomplete: manifest.json is missing the required Everest Local PWA settings.');
+}
+for (const icon of ['/icon-192.png', '/icon-512.png']) {
+  try {
+    await access(join(dist, icon.slice(1)));
+  } catch {
+    throw new Error(`Web export is incomplete: missing PWA icon ${icon}.`);
+  }
+}
+
 const html = await readFile(join(dist, 'index.html'), 'utf8');
 if (!/<html[\s>]/i.test(html) || !html.includes('<script')) {
   throw new Error('Web export is incomplete: dist/index.html does not contain a usable HTML shell.');
