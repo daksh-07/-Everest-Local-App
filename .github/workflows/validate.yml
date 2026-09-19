@@ -32,7 +32,7 @@ jobs:
       - name: Expo Doctor
         run: npx expo-doctor
       - name: Expo web bundle
-        run: npx expo export --platform web --output-dir dist
+        run: npm run build:web
   validate-functions:
     name: Validate Supabase functions
     runs-on: ubuntu-latest
