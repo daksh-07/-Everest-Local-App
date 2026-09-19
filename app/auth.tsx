@@ -226,6 +226,27 @@ export default function Auth() {
   }, [entryOpacity, entryY]);
 
   useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    let active = true;
+    void (async () => {
+      const intentParam = new URL(window.location.href).searchParams.get('intent');
+      const storedIntent = window.localStorage.getItem('everest-auth-intent');
+      const selected = intentParam === 'BUSINESS' || intentParam === 'DELIVERY_DRIVER' || intentParam === 'CUSTOMER'
+        ? intentParam
+        : storedIntent === 'BUSINESS' || storedIntent === 'DELIVERY_DRIVER' || storedIntent === 'CUSTOMER'
+          ? storedIntent
+          : null;
+      if (!selected) return;
+      const { supabase } = await import('@/lib/supabase');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!active || !session) return;
+      window.localStorage.removeItem('everest-auth-intent');
+      await routeAfterAuth(selected);
+    })();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
     let mounted = true;
     let nativeSubscription: { remove: () => void } | undefined;
 
@@ -237,7 +258,10 @@ export default function Auth() {
         if (session && mounted) {
           setError('');
           setNotice('');
-          router.replace('/');
+          const urlIntent = new URL(url).searchParams.get('intent');
+          const selected = urlIntent === 'BUSINESS' || urlIntent === 'DELIVERY_DRIVER' || urlIntent === 'CUSTOMER' ? urlIntent : null;
+          if (selected) await routeAfterAuth(selected);
+          else router.replace('/');
         }
       } catch (e) {
         if (mounted) setError(presentAuthError(e, 'Social sign-in could not be completed. Please try again.'));
