@@ -197,6 +197,11 @@ function PrimaryButton({
   );
 }
 
+async function routeAfterAuth(selectedIntent: AuthIntent) {
+  const { resolvePostAuthRoute } = await import('@/lib/access');
+  router.replace(await resolvePostAuthRoute(selectedIntent) as never);
+}
+
 export default function Auth() {
   const [mode, setMode] = useState<Mode>('login');
   const [intent, setIntent] = useState<AuthIntent | null>(null);
@@ -211,10 +216,6 @@ export default function Auth() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  async function routeAfterAuth(selectedIntent: AuthIntent) {
-    const { resolvePostAuthRoute } = await import('@/lib/access');
-    router.replace(await resolvePostAuthRoute(selectedIntent) as never);
-  }
   const entryOpacity = useRef(new Animated.Value(0)).current;
   const entryY = useRef(new Animated.Value(12)).current;
 
