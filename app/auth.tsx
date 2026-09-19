@@ -339,6 +339,7 @@ export default function Auth() {
     setNotice('');
     setSocialBusy(provider);
     try {
+      if (!intent) throw new Error('Choose how you are using Everest Local first.');
       const auth = await import('@/lib/auth');
       await auth.signInWithProvider(provider, intent);
     } catch (e) {
