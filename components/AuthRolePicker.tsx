@@ -6,7 +6,7 @@ export type AuthRole = 'CUSTOMER' | 'BUSINESS' | 'DELIVERY_DRIVER';
 const options: Array<{ role: AuthRole; title: string; copy: string; icon: 'person-outline' | 'business-outline' | 'car-outline' }> = [
   { role: 'CUSTOMER', title: 'Customer', copy: 'Find services, hire local businesses and buy products.', icon: 'person-outline' },
   { role: 'BUSINESS', title: 'Business', copy: 'Get customers, manage services, products, bookings and orders.', icon: 'business-outline' },
-  { role: 'DELIVERY_DRIVER', title: 'Delivery Driver', copy: 'Deliver Everest orders and manage your delivery jobs.', icon: 'car-outline' },
+  { role: 'DELIVERY_DRIVER', title: 'Apply as a Delivery Driver', copy: 'Submit verification details. Approval is required before any delivery access is granted.', icon: 'car-outline' },
 ];
 
 export function AuthRolePicker({ selectedRole, onChange }: { selectedRole: AuthRole | null; onChange: (role: AuthRole) => void }) {
