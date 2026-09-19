@@ -398,7 +398,7 @@ export default function Auth() {
                 <SocialButton
                   provider="google"
                   busy={socialBusy === 'google'}
-                  disabled={!!socialBusy || busy}
+                  disabled={!!socialBusy || busy || !intent}
                   onPress={() => void socialSignIn('google')}
                 />
                 <SocialButton
