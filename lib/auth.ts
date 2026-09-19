@@ -7,16 +7,16 @@ const passwordSchema = z.string().min(8).max(128);
 
 function passwordResetRedirect() {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return `${window.location.origin}/auth${intent ? `?intent=${encodeURIComponent(intent)}` : ''}`;
+    return `${window.location.origin}/auth`;
   }
-  return `everestlocal://auth${intent ? `?intent=${encodeURIComponent(intent)}` : ''}`;
+  return 'everestlocal://auth';
 }
 
 function oauthRedirect(intent?: 'CUSTOMER' | 'BUSINESS' | 'DELIVERY_DRIVER') {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return `${window.location.origin}/auth`;
+    return `${window.location.origin}/auth${intent ? `?intent=${encodeURIComponent(intent)}` : ''}`;
   }
-  return 'everestlocal://auth';
+  return `everestlocal://auth${intent ? `?intent=${encodeURIComponent(intent)}` : ''}`;
 }
 
 export async function signInWithProvider(provider: 'google' | 'apple', intent?: 'CUSTOMER' | 'BUSINESS' | 'DELIVERY_DRIVER') {
