@@ -6,10 +6,30 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "everestlocal",
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.everestlocal.app" },
-    "android": { "package": "com.everestlocal.app" },
-    "web": { "bundler": "metro", "output": "single" },
-    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.everestlocal.app"
+    },
+    "android": {
+      "package": "com.everestlocal.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      [
+        "expo-router"
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Everest Local uses your photos to verify driver documents and vehicle images.",
+          "cameraPermission": "Everest Local uses your camera to verify driver documents and vehicle images.",
+          "microphonePermission": false
+        }
+      ]
+    ],
     "extra": {
       "supabaseUrl": "https://bmwbljefnamvjnmuvkvv.supabase.co",
       "supabaseAnonKey": "sb_publishable_evkp_gHdu3ucFI82P8VLCw_vCjR2M2S"
