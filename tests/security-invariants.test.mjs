@@ -188,6 +188,8 @@ test('driver storage is private and owner/admin scoped', () => {
   assert.match(migrationText, /values\('driver-verification','driver-verification',false/i);
   assert.match(migrationText, /driver_verification_owner_upload[\s\S]{0,500}storage\.foldername\(name\).*auth\.uid/i);
   assert.match(migrationText, /driver_verification_owner_read[\s\S]{0,500}owner_id.*is_admin/i);
+  assert.match(migrationText, /drop policy if exists driver_verification_owner_update/i);
+  assert.match(migrationText, /drop policy if exists driver_verification_owner_delete/i);
   assert.doesNotMatch(clientText, /getPublicUrl\s*\([^)]*driver-verification/i);
 });
 
