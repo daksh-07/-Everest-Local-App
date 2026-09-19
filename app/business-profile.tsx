@@ -42,9 +42,9 @@ export default function BusinessProfile() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'We could not load this business right now.');
     } finally { setLoading(false); }
-  }
+  }, [id]);
 
-  useEffect(()=>{void load()},[id]);
+  useEffect(()=>{void load()},[load]);
 
   if (loading) return <SafeAreaView style={s.safe}><ActivityIndicator style={{marginTop:80}}/></SafeAreaView>;
   if (error || !business) return <SafeAreaView style={s.safe}><View style={s.empty}><Text style={s.emptyTitle}>{error || 'Business not found.'}</Text><Pressable onPress={()=>void load()} style={s.button}><Text style={s.buttonText}>RETRY</Text></Pressable></View></SafeAreaView>;
