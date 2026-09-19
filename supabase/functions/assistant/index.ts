@@ -131,7 +131,6 @@ Deno.serve(async (req) => {
     for (const item of productMatches.slice(0,3)) fallbackActions.push(action('VIEW_PRODUCT', item.id, item.name));
     if (/request|hire|book|quote|plumber|cleaner|detail|mechanic|landscap|tradie|service/i.test(message)) fallbackActions.push(action('CREATE_REQUEST', undefined, 'Post a service request'));
     if (/driver|delivery driver|licence|license|vehicle registration|rego|driver application/i.test(message) && driverApplicationResult.data) fallbackActions.push(action('OPEN_DRIVER_APPLICATION', undefined, 'Open driver verification'));
-    if (/driver|delivery driver|licence|license|vehicle registration|rego|driver application/i.test(message) && driverApplicationResult.data) fallbackLines.push(`Your driver application status is ${driverApplicationResult.data.status.replaceAll('_',' ')}.`);
     if (/job|opportunit|work request/i.test(message) && businessOpportunities.length) fallbackActions.push(action('OPEN_OPPORTUNITIES', undefined, 'View business opportunities'));
     if (/order|delivery|purchase|bought/i.test(message) && (orders[0] || businessOrders[0])) { const order = (orders[0] ?? businessOrders[0]) as {id:string;order_number:string}; fallbackActions.push(action('VIEW_ORDER', order.id, `Order ${order.order_number}`)); }
     if (/booking|appointment|scheduled/i.test(message) && (bookings[0] || businessBookings[0])) fallbackActions.push(action('VIEW_BOOKING', (bookings[0] ?? businessBookings[0] as {id:string}).id, 'View booking'));
@@ -145,6 +144,7 @@ Deno.serve(async (req) => {
       productMatches.length ? `I found ${productMatches.length} product match${productMatches.length === 1 ? '' : 'es'}.` : '',
       !businessMatches.length && !serviceMatches.length && !productMatches.length ? 'I could not find a matching public marketplace record yet.' : '',
     ].filter(Boolean);
+    if (/driver|delivery driver|licence|license|vehicle registration|rego|driver application/i.test(message) && driverApplicationResult.data) fallbackLines.push('Your driver application status is ' + driverApplicationResult.data.status.replaceAll('_',' ') + '.');
 
     if (!aiUrl || !aiKey || !model) {
       return json({
