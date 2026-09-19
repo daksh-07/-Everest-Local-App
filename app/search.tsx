@@ -26,11 +26,6 @@ export default function Search() {
   const [error, setError] = useState('');
   const [cartMessage, setCartMessage] = useState('');
 
-  useEffect(() => {
-    const timer = setTimeout(() => { void load(); }, 250);
-    return () => clearTimeout(timer);
-  }, [load]);
-
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -79,6 +74,11 @@ export default function Search() {
       setLoading(false);
     }
   }, [q, tab]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => { void load(); }, 250);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   async function add(productId: string) {
     try {
