@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
     const validOrderIds = new Set([...orders, ...businessOrders].map(item => (item as {id:string}).id));
     const validBookingIds = new Set([...bookings, ...businessBookings].map(item => (item as {id:string}).id));
     const validQuoteIds = new Set([...quotes, ...businessQuotes].map(item => (item as {id:string}).id));
-    const validConversationIds = new Set([...conversations, ...businessConversations].map(item => item.id));
+    const validConversationIds = new Set([...conversations, ...businessConversations].map(item => (item as { id: string }).id));
     const validBusinessOrderIds = new Set(businessOrders.map(item => (item as {id:string}).id));
     const validBusinessBookingIds = new Set(businessBookings.map(item => (item as {id:string}).id));
     const validBusinessQuoteIds = new Set(businessQuotes.map(item => (item as {id:string}).id));
