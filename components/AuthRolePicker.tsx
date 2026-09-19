@@ -9,7 +9,7 @@ const options: Array<{ role: AuthRole; title: string; copy: string; icon: 'perso
   { role: 'DELIVERY_DRIVER', title: 'Delivery Driver', copy: 'Deliver Everest orders and manage your delivery jobs.', icon: 'car-outline' },
 ];
 
-export function AuthRolePicker({ selectedRole, onChange }: { selectedRole: AuthRole; onChange: (role: AuthRole) => void }) {
+export function AuthRolePicker({ selectedRole, onChange }: { selectedRole: AuthRole | null; onChange: (role: AuthRole) => void }) {
   return (
     <View style={s.wrap}>
       <Text style={s.eyebrow}>HOW ARE YOU USING EVEREST LOCAL?</Text>
