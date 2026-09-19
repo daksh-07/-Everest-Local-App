@@ -18,7 +18,7 @@ export default function Activity(){
    supabase.from('bookings').select('id,status,scheduled_date,scheduled_time,created_at').eq('customer_id',user.id).order('created_at',{ascending:false}).limit(15),
    supabase.from('orders').select('id,order_number,status,total,created_at').eq('customer_id',user.id).order('created_at',{ascending:false}).limit(15),
   ]);for(const result of [requests,quotes,bookings,orders])if(result.error)throw result.error;
-  const next:Item=[
+  const next:Item[]=[
    ...((requests.data??[]) as Array<{id:string;description:string;status:string;created_at:string}>).map(r=>({key:`request:${r.id}`,label:'Job request',status:statusLabel(r.status),detail:r.description,route:'/requests' as const,created_at:r.created_at})),
    ...((quotes.data??[]) as Array<{id:string;status:string;total:number;created_at:string}>).map(q=>({key:`quote:${q.id}`,label:'Quote',status:statusLabel(q.status),detail:`$${Number(q.total).toFixed(2)} AUD`,route:'/quotes' as const,created_at:q.created_at})),
    ...((bookings.data??[]) as Array<{id:string;status:string;scheduled_date:string|null;scheduled_time:string|null;created_at:string}>).map(b=>({key:`booking:${b.id}`,label:'Booking',status:statusLabel(b.status),detail:b.scheduled_date?`Scheduled ${b.scheduled_date}${b.scheduled_time?` at ${b.scheduled_time}`:''}`:'Date pending',route:'/bookings' as const,created_at:b.created_at})),
