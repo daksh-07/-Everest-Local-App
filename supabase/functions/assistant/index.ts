@@ -20,7 +20,7 @@ function action(kind: ActionKind, id: string | undefined, title: string, query =
     kind === 'VIEW_BOOKING' ? '/bookings' :
     kind === 'OPEN_MESSAGE' ? (id ? `/messages?conversationId=${encodeURIComponent(id)}` : '/messages') :
     kind === 'VIEW_QUOTE' ? '/quotes' :
-    kind === 'VIEW_PRODUCT' ? `/search?tab=PRODUCTS&q=${q}` :
+    kind === 'VIEW_PRODUCT' && id ? `/product?id=${encodeURIComponent(id)}` :
     `/search?q=${q}`;
   return { kind, id, title, href };
 }
