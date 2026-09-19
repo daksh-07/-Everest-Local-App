@@ -3,79 +3,63 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, router, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
-import type { AppRole } from '@/lib/types';
+import type { AccessContext } from '@/lib/access';
 
 const protectedRoutes = new Set([
   '/account','/activity','/assistant','/request','/requests','/quotes','/bookings','/orders','/cart','/messages','/reviews','/notifications','/settings',
 ]);
-const businessRoutes = new Set(['/business-dashboard','/business-verification','/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities']);
+const businessApplicationRoutes = new Set(['/business','/business-onboarding','/business-dashboard','/business-verification']);
+const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities']);
 const adminRoutes = new Set(['/admin']);
 const deliveryRoutes = new Set(['/delivery']);
+const driverApplicationRoutes = new Set(['/driver-onboarding']);
 
 function StartupError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return <View style={styles.errorScreen}><Text style={styles.eyebrow}>EVEREST LOCAL</Text><Text style={styles.errorTitle}>Something went wrong loading this page.</Text><Text style={styles.errorCopy}>{message}</Text><Pressable onPress={onRetry} style={styles.retryButton}><Text style={styles.retry}>RETRY</Text></Pressable></View>;
 }
 function sanitizeDebug(value: string) { return value.replace(/https?:\/\/[^\s)]+/gi,'[url]').replace(/(anon[_-]?key|service[_-]?role|secret|password|token)=?[^\s&]+/gi,'$1=[redacted]'); }
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
-  const pathname=usePathname();
-  const message=sanitizeDebug(error?.message||String(error)||'Unknown runtime error.');
-  const stack=sanitizeDebug(error?.stack||'');
+  const pathname=usePathname();const message=sanitizeDebug(error?.message||String(error)||'Unknown runtime error.');const stack=sanitizeDebug(error?.stack||'');
   const details=[`route: ${pathname}`,`name: ${error?.name||'Error'}`,`message: ${message}`,stack?`stack:\n${stack}`:'' ].filter(Boolean).join('\n\n');
   if(typeof console!=='undefined') console.error('[Everest Local runtime error]',{pathname,name:error?.name,message,stack});
   return <View style={styles.errorScreen}><Text style={styles.eyebrow}>EVEREST LOCAL</Text><Text style={styles.errorTitle}>Something went wrong loading this page.</Text><ScrollView style={styles.errorDetails} contentContainerStyle={styles.errorDetailsContent}><Text selectable style={styles.errorCopy}>{details}</Text></ScrollView><Pressable onPress={retry} style={styles.retryButton}><Text style={styles.retry}>RETRY</Text></Pressable></View>;
 }
-
 function GlobalAskButton({ pathname }: { pathname: string }) {
   if (['/assistant','/auth','/messages','/cart'].includes(pathname)) return null;
   return <Pressable accessibilityRole="button" accessibilityLabel="Ask Everest" onPress={() => router.push('/assistant')} style={styles.askButton}><Text style={styles.askButtonText}>✦ Ask Everest</Text></Pressable>;
 }
 
 export default function RootLayout() {
-  const pathname=usePathname(); const router=useRouter();
-  const [authInitialized,setAuthInitialized]=useState(false); const [supabaseConfigured,setSupabaseConfigured]=useState(false); const [role,setRole]=useState<AppRole|null>(null);
-  const [hasBusinessAccess,setHasBusinessAccess]=useState(false); const [startupError,setStartupError]=useState(''); const [retryNonce,setRetryNonce]=useState(0);
+  const pathname=usePathname();const nav=useRouter();
+  const [authInitialized,setAuthInitialized]=useState(false);const [supabaseConfigured,setSupabaseConfigured]=useState(false);const [sessionUserId,setSessionUserId]=useState<string|null>(null);const [access,setAccess]=useState<AccessContext|null>(null);const [startupError,setStartupError]=useState('');const [retryNonce,setRetryNonce]=useState(0);
   useEffect(()=>{let active=true;let unsubscribe:(()=>void)|undefined;
-    async function initializeAuth(){
-      try{
-        const {supabase,supabaseConfigured:configured}=await import('@/lib/supabase');
-        if(!active)return; setSupabaseConfigured(configured);
-        if(!configured){setAuthInitialized(true);return;}
-        const loadProfile=async(userId:string)=>{
-          try{
-            const [{data,error}, {data:membership,error:membershipError}] = await Promise.all([supabase.from('profiles').select('role').eq('id',userId).maybeSingle(), supabase.from('business_members').select('business_id').eq('user_id',userId).limit(1)]);
-            if(!active)return;
-            if(error || membershipError){setRole(null);setHasBusinessAccess(false);setStartupError('We could not load your account right now. Please retry.');}
-            else if(data?.role){setRole(data.role as AppRole);setHasBusinessAccess(Boolean(membership?.length));setStartupError('');}
-            else{setRole(null);setHasBusinessAccess(false);setStartupError('Your account profile is not ready yet. Please try again shortly.');}
-          }catch{if(!active)return;setRole(null);setHasBusinessAccess(false);setStartupError('We could not load your account right now. Please retry.');}
-          finally{if(active)setAuthInitialized(true);}
-        };
-        const scheduleProfileLoad=(userId:string)=>{setAuthInitialized(false);setRole(null);setStartupError('');setTimeout(()=>{if(active)void loadProfile(userId)},0);};
-        const {data:{session}}=await supabase.auth.getSession();
-        if(!active)return;
-        if(session?.user.id)void loadProfile(session.user.id);else setAuthInitialized(true);
-        const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,nextSession)=>{
-          if(!active)return;
-          if(!nextSession?.user.id){setRole(null);setHasBusinessAccess(false);setStartupError('');setAuthInitialized(true);return;}
-          scheduleProfileLoad(nextSession.user.id);
-        });
-        unsubscribe=()=>subscription.unsubscribe();
-      }catch{if(!active)return;setSupabaseConfigured(false);setAuthInitialized(true);setStartupError('Authentication services could not be initialized. Please retry.');}
-    }
-    void initializeAuth(); return()=>{active=false;unsubscribe?.()};
-  },[retryNonce]);
+    async function load(){try{
+      const {supabase,supabaseConfigured:configured}=await import('@/lib/supabase');if(!active)return;setSupabaseConfigured(configured);
+      if(!configured){setAuthInitialized(true);return;}
+      const refresh=async(userId:string)=>{try{const {getMyAccessContext}=await import('@/lib/access');const next=await getMyAccessContext();if(!active)return;setSessionUserId(userId);setAccess(next);setStartupError('');}catch(e){if(active){setAccess(null);setStartupError(e instanceof Error?e.message:'We could not load your account access. Please retry.')}}finally{if(active)setAuthInitialized(true)}};
+      const {data:{session}}=await supabase.auth.getSession();if(!active)return;
+      if(session?.user.id)void refresh(session.user.id);else {setSessionUserId(null);setAccess(null);setAuthInitialized(true);}
+      const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,next)=>{if(!active)return;if(!next?.user.id){setSessionUserId(null);setAccess(null);setStartupError('');setAuthInitialized(true);return;}setAuthInitialized(false);void refresh(next.user.id)});
+      unsubscribe=()=>subscription.unsubscribe();
+    }catch(e){if(active){setSupabaseConfigured(false);setAuthInitialized(true);setStartupError(e instanceof Error?e.message:'Authentication services could not be initialized. Please retry.')}}}
+    void load();return()=>{active=false;unsubscribe?.()};},[retryNonce]);
 
-  useEffect(()=>{
-    if(!authInitialized||!supabaseConfigured||startupError)return;
-    const needsAuth=protectedRoutes.has(pathname)||businessRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname);
+  useEffect(()=>{if(!authInitialized||!supabaseConfigured||startupError)return;
+    const needsAuth=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
     if(!needsAuth)return;
-    if(!role){router.replace('/auth');return;}
-    if(adminRoutes.has(pathname)&&role!=='ADMIN'){router.replace('/');return;}
-    if(deliveryRoutes.has(pathname)&&role!=='ADMIN'&&role!=='DELIVERY_DRIVER'){router.replace('/');return;}
-    if(businessRoutes.has(pathname)&&!hasBusinessAccess&&role!=='ADMIN')router.replace('/');
-  },[pathname,authInitialized,supabaseConfigured,role,hasBusinessAccess,startupError,router]);
+    if(!sessionUserId){nav.replace('/auth');return;}
+    if(adminRoutes.has(pathname)&&!access?.is_admin){nav.replace('/');return;}
+    if(driverApplicationRoutes.has(pathname))return;
+    if(deliveryRoutes.has(pathname)){if(!access?.is_active_driver&&!access?.is_admin)nav.replace('/driver-onboarding');return;}
+    if(businessApplicationRoutes.has(pathname)){
+      if(pathname==='/business' || pathname==='/business-onboarding'){if(access?.is_business_member)nav.replace('/business-dashboard');return;}
+      if(!access?.is_business_member&&!access?.is_admin){nav.replace('/business-onboarding');return;}
+      return;
+    }
+    if(businessRestrictedRoutes.has(pathname)){if(!access?.is_verified_business&&!access?.is_admin)nav.replace('/business-dashboard');return;}
+  },[pathname,authInitialized,supabaseConfigured,sessionUserId,access,startupError,nav]);
 
-  const needsProtectedAccess=protectedRoutes.has(pathname)||businessRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname);
+  const needsProtectedAccess=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
   return <><StatusBar style="dark"/><Stack screenOptions={{headerShown:false,animation:'fade'}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError message={startupError} onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<GlobalAskButton pathname={pathname}/><PwaInstallPrompt/></>;
 }
 
