@@ -21,8 +21,8 @@ export default function Delivery(){
  const canCancel=(status:DeliveryStatus)=>['PENDING','ACCEPTED','PREPARING','ASSIGNED'].includes(status);
  const canFail=(status:DeliveryStatus)=>status==='OUT_FOR_DELIVERY';
  const earnings=useMemo(()=>items.filter(item=>item.status==='DELIVERED').reduce((sum,item)=>sum+Number(item.fee),0),[items]);
- async function update(d:Delivery,status:DeliveryStatus){setBusy(d.id);setError('');try{const {error:e}=await supabase.rpc('update_delivery_status',{p_delivery_id:d.id,p_status:status});if(e)throw e;await load()}catch(e){setError('That delivery update could not be completed.')}finally{setBusy(null)}}
- async function assign(d:Delivery,driverId:string){setBusy(d.id);setError('');try{const {error:e}=await supabase.rpc('assign_delivery_driver',{p_delivery_id:d.id,p_driver_id:driverId});if(e)throw e;await load()}catch(e){setError('Driver assignment could not be completed.')}finally{setBusy(null)}}
+ async function update(d:Delivery,status:DeliveryStatus){setBusy(d.id);setError('');try{const {error:e}=await supabase.rpc('update_delivery_status',{p_delivery_id:d.id,p_status:status});if(e)throw e;await load()}catch{setError('That delivery update could not be completed.')}finally{setBusy(null)}}
+ async function assign(d:Delivery,driverId:string){setBusy(d.id);setError('');try{const {error:e}=await supabase.rpc('assign_delivery_driver',{p_delivery_id:d.id,p_driver_id:driverId});if(e)throw e;await load()}catch{setError('Driver assignment could not be completed.')}finally{setBusy(null)}}
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page}>
   <Text style={s.eyebrow}>EVEREST DELIVERY</Text><Text style={s.title}>{isDriver?'Driver jobs':'Delivery operations'}</Text>
   {isDriver&&<View style={s.driverSummary}><View><Text style={s.summaryLabel}>ASSIGNED JOBS</Text><Text style={s.summaryValue}>{items.length}</Text></View><View><Text style={s.summaryLabel}>COMPLETED FEES</Text><Text style={s.summaryValue}>${earnings.toFixed(2)}</Text></View><View><Text style={s.summaryLabel}>STATUS</Text><Text style={s.summaryValue}>ACTIVE JOBS</Text></View></View>}
