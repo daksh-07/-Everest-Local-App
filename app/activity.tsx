@@ -1,0 +1,61 @@
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { supabase } from '@/lib/supabase';
+
+type Item = { key: string; label: string; status: string; detail: string; route: string };
+
+const statusLabel = (value: string | null | undefined) => (value ?? 'PENDING').replaceAll('_', ' ');
+
+export default function Activity() {
+  const [items, setItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  async function load() {
+    setLoading(true);
+    setError('');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setItems([]); return; }
+
+      const [requests, quotes, bookings, orders] = await Promise.all([
+        supabase.from('service_requests').select('id,description,status,created_at').eq('customer_id', user.id).order('created_at', { ascending: false }).limit(15),
+        supabase.from('quotes').select('id,status,total,created_at').eq('customer_id', user.id).order('created_at', { ascending: false }).limit(15),
+        supabase.from('bookings').select('id,status,scheduled_date,scheduled_time,created_at').eq('customer_id', user.id).order('created_at', { ascending: false }).limit(15),
+        supabase.from('orders').select('id,order_number,status,total,created_at').eq('customer_id', user.id).order('created_at', { ascending: false }).limit(15),
+      ]);
+      for (const result of [requests, quotes, bookings, orders]) if (result.error) throw result.error;
+
+      const next: Item[] = [
+        ...((requests.data ?? []) as Array<{id:string;description:string;status:string;created_at:string}>).map(r => ({ key:`request:${r.id}`, label:'Job request', status:statusLabel(r.status), detail:r.description, route:'/requests' })),
+        ...((quotes.data ?? []) as Array<{id:string;status:string;total:number;created_at:string}>).map(q => ({ key:`quote:${q.id}`, label:'Quote', status:statusLabel(q.status), detail:`$${Number(q.total).toFixed(2)} AUD`, route:'/quotes' })),
+        ...((bookings.data ?? []) as Array<{id:string;status:string;scheduled_date:string|null;scheduled_time:string|null;created_at:string}>).map(b => ({ key:`booking:${b.id}`, label:'Booking', status:statusLabel(b.status), detail:b.scheduled_date ? `Scheduled ${b.scheduled_date}${b.scheduled_time ? ` at ${b.scheduled_time}` : ''}` : 'Date pending', route:'/bookings' })),
+        ...((orders.data ?? []) as Array<{id:string;order_number:string;status:string;total:number;created_at:string}>).map(o => ({ key:`order:${o.id}`, label:`Order ${o.order_number}`, status:statusLabel(o.status), detail:`$${Number(o.total).toFixed(2)} AUD`, route:'/orders' })),
+      ];
+      next.sort((a,b) => Date.parse(b.key) - Date.parse(a.key));
+      setItems(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'We could not load your activity.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { void load(); }, []);
+
+  return <SafeAreaView style={s.safe}>
+    <ScrollView contentContainerStyle={s.page}>
+      <Text style={s.eyebrow}>EVEREST LOCAL</Text>
+      <Text style={s.title}>Activity</Text>
+      <Text style={s.copy}>Requests, quotes, bookings and orders in one place.</Text>
+      {loading ? <ActivityIndicator style={{ marginTop: 30 }} /> : error ? <View style={s.empty}><Text style={s.emptyTitle}>We couldn't load your activity.</Text><Pressable onPress={() => void load()} style={s.button}><Text style={s.buttonText}>RETRY</Text></Pressable></View> : items.length ? items.map(item => <Pressable key={item.key} onPress={() => router.push(item.route as never)} style={s.card}><View style={{ flex: 1 }}><Text style={s.label}>{item.label}</Text><Text style={s.detail} numberOfLines={2}>{item.detail}</Text></View><View style={s.status}><Text style={s.statusText}>{item.status}</Text><Text style={s.arrow}>›</Text></View></Pressable>) : <View style={s.empty}><Text style={s.emptyTitle}>Nothing here yet.</Text><Text style={s.emptyCopy}>Post a job, request a quote, book a service or buy a product and your activity will appear here.</Text><Pressable onPress={() => router.push('/search')} style={s.button}><Text style={s.buttonText}>EXPLORE LOCAL</Text></Pressable></View>}
+      <View style={s.links}><Pressable onPress={() => router.push('/notifications')}><Text style={s.link}>Notifications</Text></Pressable><Pressable onPress={() => router.push('/reviews')}><Text style={s.link}>Reviews</Text></Pressable></View>
+    </ScrollView>
+  </SafeAreaView>;
+}
+
+const s = StyleSheet.create({
+  safe:{flex:1,backgroundColor:'#f8f7f4'},page:{padding:20,paddingBottom:50},eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:2,color:'#777'},title:{fontSize:31,fontWeight:'900',marginTop:7},copy:{fontSize:13,lineHeight:20,color:'#777',marginTop:8,marginBottom:22},card:{backgroundColor:'#fff',borderRadius:17,borderWidth:1,borderColor:'#e5e2dc',padding:16,marginBottom:9,flexDirection:'row',alignItems:'center',gap:12},label:{fontSize:10,fontWeight:'900',letterSpacing:.7,color:'#777'},detail:{fontSize:14,fontWeight:'700',marginTop:6},status:{alignItems:'flex-end'},statusText:{fontSize:9,fontWeight:'900',maxWidth:110,textAlign:'right'},arrow:{fontSize:22,color:'#777',marginTop:2},empty:{backgroundColor:'#fff',borderRadius:20,padding:28,alignItems:'center',marginTop:12},emptyTitle:{fontSize:17,fontWeight:'800',textAlign:'center'},emptyCopy:{fontSize:13,lineHeight:20,color:'#777',textAlign:'center',marginTop:7},button:{height:46,borderRadius:13,backgroundColor:'#111',paddingHorizontal:18,alignItems:'center',justifyContent:'center',marginTop:16},buttonText:{color:'#fff',fontSize:10,fontWeight:'900'},links:{flexDirection:'row',justifyContent:'space-around',marginTop:20},link:{fontSize:12,fontWeight:'800'}
+});
