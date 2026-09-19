@@ -47,7 +47,7 @@ export default function RootLayout() {
             if(error || membershipError){setRole(null);setHasBusinessAccess(false);setStartupError('We could not load your account right now. Please retry.');}
             else if(data?.role){setRole(data.role as AppRole);setHasBusinessAccess(Boolean(membership?.length));setStartupError('');}
             else{setRole(null);setHasBusinessAccess(false);setStartupError('Your account profile is not ready yet. Please try again shortly.');}
-          }catch(error){if(!active)return;setRole(null);setStartupError('We could not load your account right now. Please retry.');}
+          }catch{if(!active)return;setRole(null);setHasBusinessAccess(false);setStartupError('We could not load your account right now. Please retry.');}
           finally{if(active)setAuthInitialized(true);}
         };
         const scheduleProfileLoad=(userId:string)=>{setAuthInitialized(false);setRole(null);setStartupError('');setTimeout(()=>{if(active)void loadProfile(userId)},0);};
