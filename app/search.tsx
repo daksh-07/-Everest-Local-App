@@ -46,11 +46,16 @@ export default function Search() {
       if (b.error) throw b.error;
       if (s.error) throw s.error;
       if (p.error) throw p.error;
-      setBusinesses((b.data ?? []) as MarketplaceBusiness[]);
-      setServices((s.data ?? []) as ServiceResult[]);
-      setProducts((p.data ?? []) as SearchProduct[]);
-
       const { data: { user } } = await supabase.auth.getUser();
+      const budgetMatch = text.match(/(?:under|below)\s*\$?\s*(\d+(?:\.\d+)?)/i);
+      const maxBudget = budgetMatch ? Number(budgetMatch[1]) : null;
+      const { data: locationProfile } = user ? await supabase.from('profiles').select('suburb').eq('id', user.id).maybeSingle() : { data: null };
+      const nearby = /\bnear me\b/i.test(text) && typeof locationProfile?.suburb === 'string' && locationProfile.suburb.trim().length > 0;
+      const nearbySuburb = nearby ? locationProfile!.suburb!.toLowerCase() : '';
+      setBusinesses(((b.data ?? []) as MarketplaceBusiness[]).filter(item => !nearby || item.suburb?.toLowerCase() === nearbySuburb));
+      setServices(((s.data ?? []) as ServiceResult[]).filter(item => !maxBudget || item.base_price == null || Number(item.base_price) <= maxBudget).filter(item => !nearby || (Array.isArray(item.businesses) ? item.businesses[0]?.suburb : item.businesses?.suburb)?.toLowerCase() === nearbySuburb));
+      setProducts(((p.data ?? []) as SearchProduct[]).filter(item => !maxBudget || Number(item.sale_price ?? item.price) <= maxBudget));
+
       if (user && (tab === 'JOBS' || tab === 'ALL')) {
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
         if (profile?.role === 'BUSINESS' || profile?.role === 'ADMIN') {
