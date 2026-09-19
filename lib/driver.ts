@@ -40,6 +40,7 @@ export type DriverDocument = {
   rejection_reason: string | null;
   document_number: string | null;
   document_subtype: string | null;
+  supersedes_document_id: string | null;
   issuing_jurisdiction: string | null;
 };
 
@@ -165,7 +166,7 @@ export async function getDriverApplication(): Promise<DriverApplication | null> 
   const [verificationResult, vehicleResult, documentsResult] = await Promise.all([
     supabase.from('driver_verifications').select('identity_status,licence_status,registration_status,insurance_status,verification_method,verification_provider,verification_reference,licence_jurisdiction,licence_number,licence_class,licence_expiry,licence_restrictions,insurance_provider,insurance_policy_reference,insurance_type,insurance_expiry').eq('application_id', application.id).maybeSingle(),
     supabase.from('driver_vehicles').select('id,registration_plate,registration_state,make,model,year,colour,vehicle_type,vin,ownership_status,registration_expiry,registration_restrictions,registration_status,ctp_provider,ctp_expiry,status').eq('application_id', application.id).maybeSingle(),
-    supabase.from('driver_documents').select('id,document_type,document_subtype,storage_path,mime_type,size_bytes,status,uploaded_at,expires_at,rejection_reason,document_number,issuing_jurisdiction').eq('application_id', application.id).neq('status','REPLACED').order('uploaded_at',{ascending:false}),
+    supabase.from('driver_documents').select('id,document_type,document_subtype,supersedes_document_id,storage_path,mime_type,size_bytes,status,uploaded_at,expires_at,rejection_reason,document_number,issuing_jurisdiction').eq('application_id', application.id).neq('status','REPLACED').order('uploaded_at',{ascending:false}),
   ]);
   if (verificationResult.error) throw new Error(verificationResult.error.message);
   if (vehicleResult.error) throw new Error(vehicleResult.error.message);
