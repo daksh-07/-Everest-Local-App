@@ -18,6 +18,12 @@ function StartupError({ message, onRetry }: { message: string; onRetry: () => vo
   return <View style={styles.errorScreen}><Text style={styles.eyebrow}>EVEREST LOCAL</Text><Text style={styles.errorTitle}>Something went wrong loading this page.</Text><Text style={styles.errorCopy}>{message}</Text><Pressable onPress={onRetry} style={styles.retryButton}><Text style={styles.retry}>RETRY</Text></Pressable></View>;
 }
 function sanitizeDebug(value: string) { return value.replace(/https?:\/\/[^\s)]+/gi,'[url]').replace(/(anon[_-]?key|service[_-]?role|secret|password|token)=?[^\s&]+/gi,'$1=[redacted]'); }
+function presentStartupError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+  if (message.includes('network') || message.includes('fetch') || message.includes('offline')) return 'We could not reach Everest Local. Check your connection and try again.';
+  if (message.includes('authentication') || message.includes('session')) return 'Your account session could not be loaded. Please try again.';
+  return 'Everest Local could not finish loading this page. Please try again.';
+}
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   const pathname=usePathname();const message=sanitizeDebug(error?.message||String(error)||'Unknown runtime error.');const stack=sanitizeDebug(error?.stack||'');
   const details=[`route: ${pathname}`,`name: ${error?.name||'Error'}`,`message: ${message}`,stack?`stack:\n${stack}`:'' ].filter(Boolean).join('\n\n');
