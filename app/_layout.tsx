@@ -11,7 +11,7 @@ const protectedRoutes = new Set([
 const businessApplicationRoutes = new Set(['/business','/business-onboarding','/business-dashboard','/business-verification']);
 const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities']);
 const adminRoutes = new Set(['/admin']);
-const deliveryRoutes = new Set(['/delivery']);
+const deliveryRoutes = new Set(['/delivery','/driver-dashboard']);
 const driverApplicationRoutes = new Set(['/driver-onboarding']);
 
 function StartupError({ message, onRetry }: { message: string; onRetry: () => void }) {
