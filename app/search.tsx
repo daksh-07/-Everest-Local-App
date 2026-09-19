@@ -63,7 +63,7 @@ export default function Search() {
           if (jobsError) throw jobsError;
           setJobs(((data ?? []) as Array<{ id: string; status: string; service_requests: JobResult | JobResult[] | null }>).map(item => {
             const request = Array.isArray(item.service_requests) ? item.service_requests[0] : item.service_requests;
-            return request ? { id: item.id, ...request } : null;
+            return request ? { ...request, id: request.id } : null;
           }).filter(Boolean) as JobResult[]);
         } else {
           const { data, error: jobsError } = await supabase.from('service_requests').select('id,description,suburb,city,state,status,budget,preferred_date').eq('customer_id', user.id).order('created_at', { ascending: false }).limit(50);
