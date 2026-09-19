@@ -88,7 +88,7 @@ function IconField({
   textContentType?: 'emailAddress' | 'password' | 'newPassword';
   keyboardType?: 'default' | 'email-address';
   autoCapitalize?: 'none' | 'words';
-  autoComplete?: 'email' | 'password' | 'new-password';
+  autoComplete?: 'name' | 'email' | 'password' | 'new-password';
   showPassword?: boolean;
   onTogglePassword?: () => void;
 }) {
