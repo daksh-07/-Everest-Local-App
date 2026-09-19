@@ -21,9 +21,9 @@ const STEPS = ['Personal', 'Licence', 'Vehicle', 'Insurance', 'Review'] as const
 const states = ['NSW','ACT','NT','QLD','SA','TAS','VIC','WA','OVERSEAS'];
 
 function Field({ label, value, onChangeText, placeholder, keyboardType = 'default', secure = false }: {
-  label: string; value: string; onChangeText: (value: string) => void; placeholder: string; keyboardType?: 'default'|'numeric'|'email-address'; secure?: boolean;
+  label: string; value: string; onChangeText: (value: string) => void; placeholder: string; keyboardType?: 'default'|'numeric'|'email-address'; secure?: boolean; editable?: boolean;
 }) {
-  return <View style={s.field}><Text style={s.label}>{label}</Text><TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#aaa69f" style={s.input} keyboardType={keyboardType} autoCapitalize={label.includes('EMAIL') ? 'none' : 'words'} secureTextEntry={secure}/></View>;
+  return <View style={s.field}><Text style={s.label}>{label}</Text><TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#aaa69f" style={s.input} keyboardType={keyboardType} editable={editable ?? true} autoCapitalize={label.includes('EMAIL') ? 'none' : 'words'} secureTextEntry={secure}/></View>;
 }
 
 function Choice({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
@@ -160,7 +160,7 @@ export default function DriverOnboarding() {
         <Field label="LEGAL LAST NAME" value={lastName} onChangeText={setLastName} placeholder="Last name"/>
         <Field label="DATE OF BIRTH" value={dob} onChangeText={setDob} placeholder="YYYY-MM-DD"/>
         <Field label="PHONE" value={phone} onChangeText={setPhone} placeholder="04xx xxx xxx" keyboardType="numeric"/>
-        <Field label="EMAIL" value={email} onChangeText={()=>{}} placeholder="Account email"/>
+        <Field label="EMAIL" value={email} onChangeText={()=>{}} placeholder="Account email" editable={false}/>
         <Field label="RESIDENTIAL ADDRESS" value={address} onChangeText={setAddress} placeholder="Street address"/>
         <View style={s.two}><View style={s.half}><Field label="SUBURB" value={suburb} onChangeText={setSuburb} placeholder="Suburb"/></View><View style={s.half}><Field label="POSTCODE" value={postcode} onChangeText={setPostcode} placeholder="Postcode" keyboardType="numeric"/></View></View>
         <Field label="CITY" value={city} onChangeText={setCity} placeholder="City"/>
