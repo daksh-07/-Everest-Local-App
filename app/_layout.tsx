@@ -6,7 +6,7 @@ import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import type { AppRole } from '@/lib/types';
 
 const protectedRoutes = new Set([
-  '/account','/activity','/request','/requests','/quotes','/bookings','/orders','/cart','/messages','/reviews','/notifications','/settings',
+  '/account','/activity','/assistant','/request','/requests','/quotes','/bookings','/orders','/cart','/messages','/reviews','/notifications','/settings',
 ]);
 const businessRoutes = new Set(['/business-dashboard','/business-verification','/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities']);
 const adminRoutes = new Set(['/admin']);
@@ -25,7 +25,7 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
   return <View style={styles.errorScreen}><Text style={styles.eyebrow}>EVEREST LOCAL</Text><Text style={styles.errorTitle}>Something went wrong loading this page.</Text><ScrollView style={styles.errorDetails} contentContainerStyle={styles.errorDetailsContent}><Text selectable style={styles.errorCopy}>{details}</Text></ScrollView><Pressable onPress={retry} style={styles.retryButton}><Text style={styles.retry}>RETRY</Text></Pressable></View>;
 }
 
-export default function RootLayout() {
+function GlobalAskButton({ pathname }: { pathname: string }) {\n  if (['/assistant','/auth','/messages','/cart'].includes(pathname)) return null;\n  return <Pressable accessibilityRole="button" accessibilityLabel="Ask Everest" onPress={() => router.push('/assistant')} style={styles.askButton}><Text style={styles.askButtonText}>✦ Ask Everest</Text></Pressable>;\n}\n\nexport default function RootLayout() {
   const pathname=usePathname(); const router=useRouter();
   const [authInitialized,setAuthInitialized]=useState(false); const [supabaseConfigured,setSupabaseConfigured]=useState(false); const [role,setRole]=useState<AppRole|null>(null); const [startupError,setStartupError]=useState(''); const [retryNonce,setRetryNonce]=useState(0);
   useEffect(()=>{let active=true;let unsubscribe:(()=>void)|undefined;
@@ -70,7 +70,7 @@ export default function RootLayout() {
   },[pathname,authInitialized,supabaseConfigured,role,startupError,router]);
 
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname);
-  return <><StatusBar style="dark"/><Stack screenOptions={{headerShown:false,animation:'fade'}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError message={startupError} onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<PwaInstallPrompt/></>;
+  return <><StatusBar style="dark"/><Stack screenOptions={{headerShown:false,animation:'fade'}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError message={startupError} onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<GlobalAskButton pathname={pathname}/><PwaInstallPrompt/></>;
 }
 
-const styles=StyleSheet.create({overlay:{position:'absolute',top:0,right:0,bottom:0,left:0},errorScreen:{flex:1,backgroundColor:'#f8f7f4',padding:24,justifyContent:'center',alignItems:'center'},eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:2,color:'#777'},errorTitle:{maxWidth:520,marginTop:10,fontSize:25,lineHeight:31,fontWeight:'900',textAlign:'center'},errorDetails:{width:'100%',maxWidth:760,maxHeight:360,marginTop:14},errorDetailsContent:{padding:4},errorCopy:{maxWidth:520,marginTop:10,color:'#777',fontSize:13,lineHeight:20,textAlign:'center'},retryButton:{marginTop:20,paddingVertical:12,paddingHorizontal:16},retry:{fontSize:12,fontWeight:'900',letterSpacing:.8}});
+const styles=StyleSheet.create({overlay:{position:'absolute',top:0,right:0,bottom:0,left:0},errorScreen:{flex:1,backgroundColor:'#f8f7f4',padding:24,justifyContent:'center',alignItems:'center'},eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:2,color:'#777'},errorTitle:{maxWidth:520,marginTop:10,fontSize:25,lineHeight:31,fontWeight:'900',textAlign:'center'},errorDetails:{width:'100%',maxWidth:760,maxHeight:360,marginTop:14},errorDetailsContent:{padding:4},errorCopy:{maxWidth:520,marginTop:10,color:'#777',fontSize:13,lineHeight:20,textAlign:'center'},retryButton:{marginTop:20,paddingVertical:12,paddingHorizontal:16},retry:{fontSize:12,fontWeight:'900',letterSpacing:.8},askButton:{position:'absolute',right:16,bottom:92,height:44,borderRadius:22,backgroundColor:'#111',paddingHorizontal:16,alignItems:'center',justifyContent:'center',shadowOpacity:.12,shadowRadius:8,shadowOffset:{width:0,height:3}},askButtonText:{color:'#fff',fontSize:11,fontWeight:'800'}});
