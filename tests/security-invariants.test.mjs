@@ -112,6 +112,46 @@ test('EAS release profiles are present and production auto-increments versions',
   assert.equal(eas.build?.production?.autoIncrement, true);
 });
 
+
+test('business and driver role elevation is server-authorized', () => {
+  const businessCreate = migrationText
+    .split(/(?=create\s+(?:or\s+replace\s+)?function\b)/i)
+    .find((block) => /create_business_profile\s*\(/i.test(block));
+  assert.ok(businessCreate);
+  assert.doesNotMatch(businessCreate, /update\s+public\.profiles\s+set\s+role\s*=\s*['"]BUSINESS['"]/i);
+
+  const driverApproval = migrationText
+    .split(/(?=create\s+(?:or\s+replace\s+)?function\b)/i)
+    .find((block) => /admin_set_driver_application\s*\(/i.test(block));
+  assert.ok(driverApproval);
+  assert.match(driverApproval, /is_admin\(\)/i);
+  assert.match(driverApproval, /role\s*=\s*['"]DELIVERY_DRIVER['"]/i);
+});
+
+test('new auth RPCs do not retain implicit PUBLIC execution', () => {
+  for (const signature of [
+    'create_driver_application',
+    'admin_set_driver_application',
+    'get_my_access_context',
+    'create_business_profile',
+    'admin_set_verification',
+  ]) {
+    assert.match(
+      migrationText,
+      new RegExp('revoke\\s+execute\\s+on\\s+function\\s+public\\.' + signature + '[\\s\\S]{0,500}from\\s+public,\\s*anon', 'i'),
+    );
+  }
+});
+
+test('business and driver entry routes are protected by the root router', async () => {
+  const layout = await readFile(join(appDir, '_layout.tsx'), 'utf8');
+  assert.match(layout, /business-onboarding/);
+  assert.match(layout, /business-dashboard/);
+  assert.match(layout, /driver-onboarding/);
+  assert.match(layout, /driver-dashboard/);
+  assert.match(layout, /delivery/);
+});
+
 test('mobile source does not reference trusted server-only credential variables', () => {
   assert.doesNotMatch(clientText, /SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET|AI_API_KEY/);
 });
