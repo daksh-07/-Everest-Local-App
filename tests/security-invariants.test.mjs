@@ -285,3 +285,9 @@ test('admin authorization code does not use the admin email as its security boun
 test('single-admin role trigger is not callable through PostgREST', () => {
   assert.match(migrationText, /revoke\s+execute\s+on\s+function\s+public\.enforce_single_admin_identity\(\)[\s\S]{0,120}from\s+public,\s*anon,\s*authenticated/i);
 });
+
+
+test('initial admin UUID is bound to the intended email only during bootstrap and singleton ADMIN is enforced', () => {
+  assert.match(migrationText, /select\s+lower\(email\)[\s\S]{0,250}716edb35-a0cb-4cbf-99b2-41fa8500ffd3[\s\S]{0,250}dakshgolani5@gmail\.com/i);
+  assert.match(migrationText, /create\s+unique\s+index\s+if\s+not\s+exists\s+profiles_single_admin_role_idx[\s\S]{0,220}where\s+role\s*=\s*['"]ADMIN['"]/i);
+});
