@@ -336,7 +336,7 @@ export default function Auth() {
       }
       if (mode === 'login') {
         await auth.signIn(email, password);
-        router.replace('/');
+        await routeAfterAuth(intent ?? 'CUSTOMER');
         return;
       }
       const data = await auth.signUp(email, password, name);
