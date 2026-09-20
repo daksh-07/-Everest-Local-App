@@ -135,3 +135,9 @@ test('client presents pending state instead of a dead submit control', () => {
   assert.match(screen, /CHECK ABN & SUBMIT/);
   assert.match(screen, /Australian Business Register/);
 });
+
+
+test('legacy direct verification submission cannot bypass ABR verification', () => {
+  assert.match(legacySubmissionHardeningMigration, /revoke execute on function public\.submit_business_verification[\s\S]*authenticated/);
+  assert.match(legacySubmissionHardeningMigration, /grant execute on function public\.submit_business_verification[\s\S]*service_role/);
+});
