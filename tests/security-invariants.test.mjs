@@ -272,3 +272,11 @@ test('authorized admin is routed to the private admin gate after authentication'
   assert.match(access, /return ['"]\/admin['"]/);
   assert.match(auth, /signIn\(email, password\)[\s\S]{0,250}routeAfterAuth/);
 });
+
+
+test('admin authorization code does not use the admin email as its security boundary', async () => {
+  const migrationTextLower = migrationText.toLowerCase();
+  const clientAndServerText = migrationText + await readFile(join(appDir, '_layout.tsx'), 'utf8') + await readFile(join(libDir, 'admin-mfa.ts'), 'utf8');
+  assert.doesNotMatch(clientAndServerText, /dakshgolani5@gmail\.com/i);
+  assert.match(migrationTextLower, /716edb35-a0cb-4cbf-99b2-41fa8500ffd3/);
+});
