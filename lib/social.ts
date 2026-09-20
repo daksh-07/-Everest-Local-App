@@ -93,6 +93,8 @@ export async function createPost(input: {
   productId?: string;
 }): Promise<string> {
   requireSupabaseConfig();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Authentication required.');
   const caption = input.caption?.trim() || null;
   if (!caption && !input.serviceId && !input.productId) {
     throw new Error('Add a caption, service or product to publish a post.');
@@ -100,7 +102,7 @@ export async function createPost(input: {
   const { data, error } = await supabase
     .from('posts')
     .insert({
-      author_id: (await supabase.auth.getUser()).data.user?.id,
+      author_id: user.id,
       business_id: input.businessId ?? null,
       caption,
       post_type: input.postType ?? 'UPDATE',
