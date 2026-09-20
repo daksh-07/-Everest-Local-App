@@ -190,7 +190,7 @@ function PrimaryButton({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => [s.primaryButton, pressed && !disabled ? s.pressed : null]}
+      style={({ pressed }) => [s.primaryButton, disabled ? s.disabledButton : null, pressed && !disabled ? s.pressed : null]}
     >
       {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.primaryText}>{label}</Text>}
     </Pressable>
@@ -204,7 +204,7 @@ async function routeAfterAuth(selectedIntent: AuthIntent) {
 
 export default function Auth() {
   const [mode, setMode] = useState<Mode>('login');
-  const [intent, setIntent] = useState<AuthIntent | null>(null);
+  const [intent, setIntent] = useState<AuthIntent | null>('CUSTOMER');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -414,7 +414,9 @@ export default function Auth() {
           <Animated.View style={[s.content, { opacity: entryOpacity, transform: [{ translateY: entryY }] }]}>
             <Brand />
 
-            <AuthRolePicker selectedRole={intent} onChange={setIntent} />\n\n            <View style={s.hero}>
+            <AuthRolePicker selectedRole={intent} onChange={setIntent} />
+
+            <View style={s.hero}>
               <Text style={s.title}>{title}</Text>
               <Text style={s.copy}>{copy}</Text>
             </View>
@@ -808,6 +810,9 @@ const s = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.9,
+  },
+  disabledButton: {
+    opacity: 0.55,
   },
   pressed: {
     opacity: 0.78,
