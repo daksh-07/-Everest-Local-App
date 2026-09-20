@@ -22,6 +22,7 @@ async function walk(dir) {
 
 const allMigrationFiles = (await walk(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
 const migrationFiles = allMigrationFiles.filter((file) => /^\d{3}_.+\.sql$/i.test(file.split('/').at(-1)));
+const timestampMigrationFiles = allMigrationFiles.filter((file) => /^\d{14}_.+\.sql$/i.test(file.split('/').at(-1)));
 const migrationText = (await Promise.all(allMigrationFiles.map((file) => readFile(file, 'utf8')))).join('\n');
 const appAndLibFiles = (await Promise.all([walk(appDir), walk(libDir)])).flat();
 const clientText = (await Promise.all(appAndLibFiles.map((file) => readFile(file, 'utf8')))).join('\n');
@@ -31,8 +32,11 @@ const tableNames = [...migrationText.matchAll(/create\s+table\s+(?:if\s+not\s+ex
 
 test('migration sequence is contiguous', () => {
   const versions = migrationFiles.map((file) => Number(file.split('/').at(-1).slice(0, 3)));
-  assert.ok(versions.length > 0);
+  assert.equal(versions.length, 34);
   versions.forEach((version, index) => assert.equal(version, index + 1));
+  assert.ok(timestampMigrationFiles.length > 0);
+  assert.equal(new Set(timestampMigrationFiles.map((file) => file.split('/').at(-1).slice(0, 14))).size, timestampMigrationFiles.length);
+  timestampMigrationFiles.forEach((file) => assert.match(file.split('/').at(-1), /^\d{14}_.+\.sql$/));
 });
 
 test('every public table is explicitly RLS-enabled', () => {

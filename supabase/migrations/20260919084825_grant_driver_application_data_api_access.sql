@@ -1,0 +1,1 @@
+-- Historical compatibility migration.\n-- The production schema change is already represented by subsequent driver security migrations.\n-- Keep this migration version present so local and remote migration history remain synchronized.\n
