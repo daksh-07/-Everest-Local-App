@@ -78,7 +78,7 @@ test('client maps expected backend errors and hides unexpected database details'
   ]) {
     assert.match(flow, new RegExp(code));
   }
-  assert.match(flow, /Reference:/i);
+  assert.match(screen, /Reference:/i);
   assert.doesNotMatch(screen, /catch\{setError\('We could not submit verification right now\. Please check the ABN and try again\.'\)\}/);
 });
 
