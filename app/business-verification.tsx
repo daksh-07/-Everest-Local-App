@@ -24,7 +24,7 @@ function submissionErrorMessage(error: unknown): string {
     case 'DATABASE_ERROR':
       return error.diagnosticId
         ? `We couldn't submit your verification right now. Please try again. Reference: ${error.diagnosticId}`
-        : 'We couldn't submit your verification right now. Please try again.';
+        : "We couldn't submit your verification right now. Please try again.";
   }
 }
 
