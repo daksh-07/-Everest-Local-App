@@ -6,8 +6,8 @@ import { router } from 'expo-router';
 import type { Profile } from '@/lib/types';
 import type { AccessContext } from '@/lib/access';
 
-type AccountRoute='/requests'|'/quotes'|'/bookings'|'/orders'|'/messages'|'/reviews'|'/notifications'|'/settings';
-const links:ReadonlyArray<readonly [string,AccountRoute]>=[['Requests','/requests'],['Quotes','/quotes'],['Bookings','/bookings'],['Orders','/orders'],['Messages','/messages'],['Reviews','/reviews'],['Notifications','/notifications'],['Settings','/settings']];
+type AccountRoute='/requests'|'/quotes'|'/bookings'|'/orders'|'/messages'|'/reviews'|'/notifications'|'/settings'|'/saved';
+const links:ReadonlyArray<readonly [string,AccountRoute]>=[['Requests','/requests'],['Quotes','/quotes'],['Bookings','/bookings'],['Orders','/orders'],['Messages','/messages'],['Reviews','/reviews'],['Saved','/saved'],['Notifications','/notifications'],['Settings','/settings']];
 
 export default function Account(){
  const [profile,setProfile]=useState<Profile|null>(null);const [access,setAccess]=useState<AccessContext|null>(null);const [loading,setLoading]=useState(true);const [error,setError]=useState('');
