@@ -12,7 +12,7 @@ type AbrPayload = {
   EntityName?: string;
   EntityTypeCode?: string;
   EntityTypeName?: string;
-  Gst?: { effectiveFrom?: string | null } | null;
+  Gst?: string | null;
   AddressState?: string;
   AddressPostcode?: string;
   BusinessName?: string[];
@@ -149,8 +149,8 @@ Deno.serve(async (req) => {
       entityName: payload.EntityName || '',
       entityType: payload.EntityTypeName || '',
       entityTypeCode: payload.EntityTypeCode || '',
-      gstRegistered: !!payload.Gst,
-      gstRegisteredFrom: payload.Gst?.effectiveFrom || null,
+      gstRegistered: typeof payload.Gst === 'string' && payload.Gst.length > 0,
+      gstRegisteredFrom: typeof payload.Gst === 'string' ? payload.Gst : null,
       state: payload.AddressState || '',
       postcode: payload.AddressPostcode || '',
       businessNames,
