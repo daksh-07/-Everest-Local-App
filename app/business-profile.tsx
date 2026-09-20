@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { toggleSavedBusiness } from '@/lib/marketplace';
 
 type Business = { id:string; name:string; description:string|null; logo_url:string|null; cover_url:string|null; verification_status:string; suburb:string|null; city:string|null; state:string|null; opening_hours:Record<string,unknown>|null; phone:string|null; email:string|null };
 type Service = { id:string; name:string; description:string|null; base_price:number|null; duration_minutes:number|null };
@@ -17,6 +18,9 @@ export default function BusinessProfile() {
   const [rating,setRating]=useState<number|null>(null);
   const [reviewCount,setReviewCount]=useState(0);
   const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
+  const [saved,setSaved]=useState(false);
+  const [message,setMessage]=useState('');
   const [error,setError]=useState('');
 
   const load = useCallback(async () => {
@@ -46,6 +50,8 @@ export default function BusinessProfile() {
 
   useEffect(()=>{void load()},[load]);
 
+  async function saveBusiness(){if(!business)return;setSaving(true);setError('');try{await toggleSavedBusiness(business.id,!saved);setSaved(!saved);setMessage(!saved?'Saved for later.':'Removed from saved.')}catch(e){setError(e instanceof Error?e.message:'Could not update saved status.')}finally{setSaving(false)}}
+
   if (loading) return <SafeAreaView style={s.safe}><ActivityIndicator style={{marginTop:80}}/></SafeAreaView>;
   if (error || !business) return <SafeAreaView style={s.safe}><View style={s.empty}><Text style={s.emptyTitle}>{error || 'Business not found.'}</Text><Pressable onPress={()=>void load()} style={s.button}><Text style={s.buttonText}>RETRY</Text></Pressable></View></SafeAreaView>;
 
@@ -58,6 +64,8 @@ export default function BusinessProfile() {
       <Text style={s.location}>{[business.suburb,business.city,business.state].filter(Boolean).join(', ') || 'Local business'}</Text>
       {rating!==null&&<Text style={s.rating}>★ {rating.toFixed(1)} · {reviewCount} review{reviewCount===1?'':'s'}</Text>}
     </View>
+    <Pressable disabled={saving} onPress={()=>void saveBusiness()} style={s.saveRow} accessibilityLabel={saved?'Remove business from saved':'Save business'}><Ionicons name={saved?'bookmark':'bookmark-outline'} size={19}/><Text style={s.saveText}>{saved?'SAVED':'SAVE BUSINESS'}</Text></Pressable>
+    {message&&<Text style={s.message}>{message}</Text>}
     {business.description&&<Text style={s.copy}>{business.description}</Text>}
     <View style={s.actions}><Pressable style={s.actionPrimary} onPress={()=>router.push('/request')}><Text style={s.actionPrimaryText}>POST REQUEST</Text></Pressable><Pressable style={s.actionSecondary} onPress={()=>router.push('/search?tab=SERVICES')}><Text style={s.actionSecondaryText}>VIEW SERVICES</Text></Pressable></View>
     <Text style={s.heading}>Services</Text>
@@ -67,4 +75,4 @@ export default function BusinessProfile() {
   </ScrollView></SafeAreaView>;
 }
 
-const s=StyleSheet.create({safe:{flex:1,backgroundColor:'#f8f7f4'},page:{padding:20,paddingBottom:50},back:{fontSize:14,fontWeight:'800',marginBottom:18},hero:{backgroundColor:'#151515',borderRadius:23,padding:22,alignItems:'center'},logo:{width:68,height:68,borderRadius:20,backgroundColor:'#fff',alignItems:'center',justifyContent:'center'},title:{color:'#fff',fontSize:25,fontWeight:'900',marginTop:14,textAlign:'center'},verified:{fontSize:9,fontWeight:'900',letterSpacing:1,color:'#ddd',marginTop:7},location:{fontSize:12,color:'#aaa',marginTop:8,textAlign:'center'},rating:{fontSize:12,color:'#fff',marginTop:7},copy:{fontSize:13,lineHeight:20,color:'#555',marginTop:18},actions:{flexDirection:'row',gap:9,marginTop:16},actionPrimary:{flex:1,height:46,borderRadius:13,backgroundColor:'#111',alignItems:'center',justifyContent:'center'},actionPrimaryText:{color:'#fff',fontSize:9,fontWeight:'900'},actionSecondary:{flex:1,height:46,borderRadius:13,borderWidth:1,borderColor:'#d8d3ca',alignItems:'center',justifyContent:'center'},actionSecondaryText:{fontSize:9,fontWeight:'900'},heading:{fontSize:20,fontWeight:'800',marginTop:28,marginBottom:12},card:{backgroundColor:'#fff',borderRadius:17,borderWidth:1,borderColor:'#e5e2dc',padding:16,marginBottom:9},cardTitle:{fontSize:15,fontWeight:'800'},meta:{fontSize:12,lineHeight:18,color:'#777',marginTop:5},price:{fontSize:11,fontWeight:'800',marginTop:10},emptyInline:{backgroundColor:'#fff',borderRadius:17,padding:18,borderWidth:1,borderColor:'#e5e2dc'},empty:{flex:1,justifyContent:'center',alignItems:'center',padding:30},emptyTitle:{fontSize:17,fontWeight:'800',textAlign:'center'},button:{height:46,borderRadius:13,backgroundColor:'#111',paddingHorizontal:18,alignItems:'center',justifyContent:'center',marginTop:16},buttonText:{color:'#fff',fontSize:10,fontWeight:'900'}});
+const s=StyleSheet.create({safe:{flex:1,backgroundColor:'#f8f7f4'},page:{padding:20,paddingBottom:50},back:{fontSize:14,fontWeight:'800',marginBottom:18},hero:{backgroundColor:'#151515',borderRadius:23,padding:22,alignItems:'center'},logo:{width:68,height:68,borderRadius:20,backgroundColor:'#fff',alignItems:'center',justifyContent:'center'},title:{color:'#fff',fontSize:25,fontWeight:'900',marginTop:14,textAlign:'center'},verified:{fontSize:9,fontWeight:'900',letterSpacing:1,color:'#ddd',marginTop:7},location:{fontSize:12,color:'#aaa',marginTop:8,textAlign:'center'},rating:{fontSize:12,color:'#fff',marginTop:7},saveRow:{height:48,borderRadius:14,borderWidth:1,borderColor:'#d8d3ca',marginTop:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8},saveText:{fontSize:10,fontWeight:'900',letterSpacing:.7},message:{fontSize:12,fontWeight:'700',marginTop:8,textAlign:'center'},copy:{fontSize:13,lineHeight:20,color:'#555',marginTop:18},actions:{flexDirection:'row',gap:9,marginTop:16},actionPrimary:{flex:1,height:46,borderRadius:13,backgroundColor:'#111',alignItems:'center',justifyContent:'center'},actionPrimaryText:{color:'#fff',fontSize:9,fontWeight:'900'},actionSecondary:{flex:1,height:46,borderRadius:13,borderWidth:1,borderColor:'#d8d3ca',alignItems:'center',justifyContent:'center'},actionSecondaryText:{fontSize:9,fontWeight:'900'},heading:{fontSize:20,fontWeight:'800',marginTop:28,marginBottom:12},card:{backgroundColor:'#fff',borderRadius:17,borderWidth:1,borderColor:'#e5e2dc',padding:16,marginBottom:9},cardTitle:{fontSize:15,fontWeight:'800'},meta:{fontSize:12,lineHeight:18,color:'#777',marginTop:5},price:{fontSize:11,fontWeight:'800',marginTop:10},emptyInline:{backgroundColor:'#fff',borderRadius:17,padding:18,borderWidth:1,borderColor:'#e5e2dc'},empty:{flex:1,justifyContent:'center',alignItems:'center',padding:30},emptyTitle:{fontSize:17,fontWeight:'800',textAlign:'center'},button:{height:46,borderRadius:13,backgroundColor:'#111',paddingHorizontal:18,alignItems:'center',justifyContent:'center',marginTop:16},buttonText:{color:'#fff',fontSize:10,fontWeight:'900'}});
