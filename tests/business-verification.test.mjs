@@ -97,3 +97,21 @@ test('documents are not falsely presented as uploaded', () => {
   assert.match(screen, /may request supporting documents during review/);
   assert.doesNotMatch(screen, /upload complete|documents uploaded|fake upload|simulated upload/i);
 });
+
+
+test('ABR registry verification is server-side, admin-authorized and auditable', () => {
+  assert.match(abrFunction, /Deno\.env\.get\('ABR_AUTH_GUID'\)/);
+  assert.match(abrFunction, /abr\.business\.gov\.au\/json\/AbnDetails\.aspx/);
+  assert.match(abrFunction, /profile\?\.role !== 'ADMIN'/);
+  assert.match(abrFunction, /record_business_abr_check/);
+  assert.doesNotMatch(abrFunction, /EXPO_PUBLIC_ABR|ABR_AUTH_GUID\s*=\s*['"][^'"]+['"]/);
+  assert.match(abrMigration, /security definer[\s\S]*set search_path = ''/);
+  assert.match(abrMigration, /business_abr_check/);
+  assert.match(adminScreen, /verify-business-abn/);
+  assert.match(adminScreen, /CHECK GOVERNMENT REGISTRY/);
+});
+
+test('ABR evidence never directly auto-promotes a business', () => {
+  assert.doesNotMatch(abrFunction, /admin_set_verification/);
+  assert.match(abrFunction, /Final marketplace approval remains an Everest admin decision/);
+});
