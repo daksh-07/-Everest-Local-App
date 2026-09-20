@@ -15,11 +15,11 @@ export default function Social() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
 
-  const load = useCallback(async (reset = true) => {
+  const load = useCallback(async (reset = true, offset = 0) => {
     if (reset) setLoading(true);
     setError('');
     try {
-      const items = await listPublicPosts({ limit: 20, offset: reset ? 0 : posts.length });
+      const items = await listPublicPosts({ limit: 20, offset });
       const ids = items.map(item => item.business_id).filter((value): value is string => Boolean(value));
       let businessMap: Record<string, { name: string; slug: string }> = {};
       if (ids.length) {
@@ -28,7 +28,7 @@ export default function Social() {
         businessMap = Object.fromEntries((data ?? []).map(item => [item.id, { name: item.name, slug: item.slug }]));
       }
       const enriched = items.map(item => ({ ...item, businesses: item.business_id ? businessMap[item.business_id] ?? null : null }));
-      setPosts(reset ? enriched : [...posts, ...enriched]);
+      setPosts(current => reset ? enriched : [...current, ...enriched]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'We could not load discovery right now.');
     } finally {
@@ -36,19 +36,19 @@ export default function Social() {
       setRefreshing(false);
       setLoadingMore(false);
     }
-  }, [posts]);
+  }, []);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(true, 0); }, [load]);
 
   async function refresh() {
     setRefreshing(true);
-    await load(true);
+    await load(true, 0);
   }
 
   function loadNext() {
     if (loading || loadingMore || posts.length === 0 || posts.length % 20 !== 0) return;
     setLoadingMore(true);
-    void load(false);
+    void load(false, posts.length);
   }
 
   if (loading && posts.length === 0) {
