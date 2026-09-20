@@ -1,4 +1,5 @@
 import { supabase, requireSupabaseConfig } from './supabase';
+import { submitBusinessVerification as submitBusinessVerificationFlow } from './business-verification';
 
 export async function createBusinessProfile(input:{name:string;description:string;categoryId?:string;abn?:string;phone?:string;email?:string;suburb:string;city:string;state:string;postcode?:string}){
  requireSupabaseConfig();
@@ -10,9 +11,8 @@ export async function createBusinessProfile(input:{name:string;description:strin
 }
 
 export async function submitBusinessVerification(businessId:string,abn:string,documents:unknown[]=[]){
- requireSupabaseConfig();const {data,error}=await supabase.rpc('submit_business_verification',{p_business_id:businessId,p_abn:abn.trim()||null,p_documents:documents});if(error)throw new Error(error.message);return data as string;
+ return submitBusinessVerificationFlow(businessId,abn,documents);
 }
-
 
 export async function createBusinessSetup(input:{
  name:string;description:string;categoryId:string;abn?:string;phone?:string;email?:string;suburb:string;city:string;state:string;postcode?:string;
