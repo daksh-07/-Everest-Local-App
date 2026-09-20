@@ -8,7 +8,7 @@ import { isBusinessSaved,toggleSavedBusiness } from '@/lib/marketplace';
 import { followBusiness, getFollowCounts, isFollowing, unfollowBusiness, listPublicPosts, type SocialPost } from '@/lib/social';
 
 type Business = { id:string; name:string; description:string|null; logo_url:string|null; cover_url:string|null; verification_status:string; suburb:string|null; city:string|null; state:string|null; opening_hours:Record<string,unknown>|null; phone:string|null; email:string|null };
-type Service = { id:string; name:string; description:string|null; base_price:number|null; duration_minutes:number|null };
+type Service = { id:string; name:string; description:string|null; base_price:number|null; duration_minutes:number|null; delivery_mode:'LOCAL'|'REMOTE'|'BOTH' };
 type Product = { id:string; name:string; description:string|null; price:number; sale_price:number|null; delivery_eligible:boolean; pickup_available:boolean; status:string };
 
 export default function BusinessProfile() {
@@ -34,7 +34,7 @@ export default function BusinessProfile() {
     try {
       const [businessResult, serviceResult, productResult, reviewResult] = await Promise.all([
         supabase.from('businesses').select('id,name,description,logo_url,cover_url,verification_status,suburb,city,state,opening_hours,phone,email').eq('id',id).single(),
-        supabase.from('services').select('id,name,description,base_price,duration_minutes').eq('business_id',id).eq('active',true).order('name'),
+        supabase.from('services').select('id,name,description,base_price,duration_minutes,delivery_mode').eq('business_id',id).eq('active',true).order('name'),
         supabase.from('products').select('id,name,description,price,sale_price,delivery_eligible,pickup_available,status').eq('business_id',id).in('status',['ACTIVE','OUT_OF_STOCK']).order('name'),
         supabase.from('reviews').select('rating').eq('business_id',id).limit(200),
       ]);
@@ -86,7 +86,7 @@ export default function BusinessProfile() {
     {business.description&&<Text style={s.copy}>{business.description}</Text>}
     <View style={s.actions}><Pressable style={s.actionPrimary} onPress={()=>router.push('/request')}><Text style={s.actionPrimaryText}>POST REQUEST</Text></Pressable><Pressable style={s.actionSecondary} onPress={()=>router.push('/search?tab=SERVICES')}><Text style={s.actionSecondaryText}>VIEW SERVICES</Text></Pressable></View>
     <Text style={s.heading}>Services</Text>
-    {services.length?services.map(item=><View key={item.id} style={s.card}><Text style={s.cardTitle}>{item.name}</Text>{item.description&&<Text style={s.meta}>{item.description}</Text>}<Text style={s.price}>{item.base_price!=null?`From $${Number(item.base_price).toFixed(2)} AUD`:'Quote required'}{item.duration_minutes? ` · ${item.duration_minutes} min`:''}</Text></View>):<View style={s.emptyInline}><Text style={s.meta}>No active services listed.</Text></View>}
+    {services.length?services.map(item=><View key={item.id} style={s.card}><Text style={s.cardTitle}>{item.name}</Text>{item.description&&<Text style={s.meta}>{item.description}</Text>}<Text style={s.price}>{item.delivery_mode==='REMOTE'?'🖥 Remote':item.delivery_mode==='BOTH'?'📍 Local + 🖥 Remote':'📍 Local'}{item.base_price!=null?` · From ${Number(item.base_price).toFixed(2)} AUD`:' · Quote required'}{item.duration_minutes? ` · ${item.duration_minutes} min`:''}</Text></View>):<View style={s.emptyInline}><Text style={s.meta}>No active services listed.</Text></View>}
     <Text style={s.heading}>Products</Text>
     {products.length?products.map(item=><View key={item.id} style={s.card}><Text style={s.cardTitle}>{item.name}</Text>{item.description&&<Text style={s.meta}>{item.description}</Text>}<Text style={s.price}>${Number(item.sale_price??item.price).toFixed(2)} AUD · {item.status==='OUT_OF_STOCK'?'Out of stock':item.delivery_eligible?'Delivery available':'Pickup'}{item.pickup_available?' · Pickup available':''}</Text></View>):<View style={s.emptyInline}><Text style={s.meta}>No active products listed.</Text></View>}
     <Text style={s.heading}>Posts</Text>
