@@ -59,7 +59,7 @@ test('server authorization and duplicate-pending guards remain authoritative', (
 });
 
 test('SECURITY DEFINER functions use an empty search_path', () => {
-  assert.match(searchPathHardeningMigration, /security definer[\\s\\S]*set search_path = ''/g);
+  assert.match(searchPathHardeningMigration, /security definer[\s\S]*set search_path = ''/);
   assert.match(searchPathHardeningMigration, /public\\.businesses/);
   assert.match(searchPathHardeningMigration, /public\\.business_verifications/);
 });
