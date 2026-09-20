@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "audit": "node scripts/static-audit.mjs",
     "audit:migrations": "node scripts/migration-audit.mjs",
-    "test:security": "node --test tests/security-invariants.test.mjs tests/quote-authority.test.mjs tests/cart-authority.test.mjs tests/cart-integrity.test.mjs",
+    "test:security": "node --test tests/security-invariants.test.mjs tests/quote-authority.test.mjs tests/cart-authority.test.mjs tests/cart-integrity.test.mjs tests/delivery-request-integrity.test.mjs",
     "test:business-verification": "node --experimental-strip-types --test tests/business-verification.test.mjs"
   },
   "dependencies": {
