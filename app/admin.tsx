@@ -258,7 +258,7 @@ const s = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 7, marginTop: 14 },
   button: { height: 40, borderRadius: 11, backgroundColor: '#111', paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
   buttonText: { fontSize: 9, fontWeight: '900', color: '#fff' },
-  outline: { height: 40, borderRadius: 11, borderWidth: 1, borderColor: '#ddd8cf', paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', alignItems: 'center', justifyContent: 'center', marginTop: 10 },
+  outline: { height: 40, borderRadius: 11, borderWidth: 1, borderColor: '#ddd8cf', paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', marginTop: 10 },
   outlineText: { fontSize: 9, fontWeight: '900' },
   disabled: { opacity: 0.45 },
   empty: { backgroundColor: '#fff', borderRadius: 19, padding: 25, alignItems: 'center' },
