@@ -3,10 +3,11 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { listPublicPosts, type SocialPost } from '@/lib/social';
 import type { MarketplaceBusiness } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 
-type Tab = 'ALL' | 'BUSINESSES' | 'SERVICES' | 'PRODUCTS' | 'JOBS';
+type Tab = 'ALL' | 'BUSINESSES' | 'SERVICES' | 'PRODUCTS' | 'POSTS' | 'JOBS';
 type ServiceResult = { id: string; business_id: string; name: string; description: string | null; base_price: number | null; duration_minutes: number | null; businesses?: { name: string; suburb: string | null; city: string | null; state: string | null } | { name: string; suburb: string | null; city: string | null; state: string | null }[] | null };
 type SearchProduct = { id:string; business_id:string; name:string; description:string|null; price:number; sale_price:number|null; status:string; delivery_eligible:boolean; pickup_available:boolean; businesses?:{name:string;suburb:string|null;city:string|null;state:string|null}|{name:string;suburb:string|null;city:string|null;state:string|null}[]|null; inventory?:{stock_quantity:number;reserved_quantity:number}|{stock_quantity:number;reserved_quantity:number}[]|null };
 type JobResult = { id: string; description: string; suburb: string; city: string; state: string; status: string; budget: number | null; preferred_date: string | null };
@@ -22,11 +23,12 @@ function escapeIlike(value: string) {
 export default function Search() {
   const params = useLocalSearchParams<{ q?: string; tab?: string }>();
   const [q, setQ] = useState(typeof params.q === 'string' ? params.q : '');
-  const [tab, setTab] = useState<Tab>(['ALL', 'BUSINESSES', 'SERVICES', 'PRODUCTS', 'JOBS'].includes(params.tab ?? '') ? params.tab as Tab : 'ALL');
+  const [tab, setTab] = useState<Tab>(['ALL', 'BUSINESSES', 'SERVICES', 'PRODUCTS', 'POSTS', 'JOBS'].includes(params.tab ?? '') ? params.tab as Tab : 'ALL');
   const [businesses, setBusinesses] = useState<MarketplaceBusiness[]>([]);
   const [services, setServices] = useState<ServiceResult[]>([]);
   const [products, setProducts] = useState<SearchProduct[]>([]);
   const [jobs, setJobs] = useState<JobResult[]>([]);
+  const [posts, setPosts] = useState<SocialPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cartMessage, setCartMessage] = useState('');
@@ -60,6 +62,8 @@ export default function Search() {
       setBusinesses(((b.data ?? []) as MarketplaceBusiness[]).filter(item => !nearby || item.suburb?.toLowerCase() === nearbySuburb));
       setServices(((s.data ?? []) as ServiceResult[]).filter(item => !maxBudget || item.base_price == null || Number(item.base_price) <= maxBudget).filter(item => !nearby || (Array.isArray(item.businesses) ? item.businesses[0]?.suburb : item.businesses?.suburb)?.toLowerCase() === nearbySuburb));
       setProducts(((p.data ?? []) as SearchProduct[]).filter(item => !maxBudget || Number(item.sale_price ?? item.price) <= maxBudget));
+      const postItems = await listPublicPosts({ limit: 50 });
+      setPosts(text ? postItems.filter(item => (item.caption ?? '').toLowerCase().includes(text.toLowerCase())) : postItems);
 
       if (user && (tab === 'JOBS' || tab === 'ALL')) {
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
@@ -101,7 +105,7 @@ export default function Search() {
     }
   }
 
-  const visibleCounts = useMemo(() => ({ businesses: businesses.length, services: services.length, products: products.length, jobs: jobs.length }), [businesses, services, products, jobs]);
+  const visibleCounts = useMemo(() => ({ businesses: businesses.length, services: services.length, products: products.length, posts: posts.length, jobs: jobs.length }), [businesses, services, products, posts, jobs]);
   const show = (target: Tab) => tab === 'ALL' || tab === target;
 
   return <SafeAreaView style={s.safe}>
@@ -111,7 +115,7 @@ export default function Search() {
         <Pressable onPress={() => router.push('/cart')} style={s.cart} accessibilityLabel="Open cart"><Ionicons name="bag-handle-outline" size={21}/></Pressable>
       </View>
       <View style={s.search}><Ionicons name="search" size={20} color="#777"/><TextInput autoFocus value={q} onChangeText={setQ} placeholder="Search businesses, services, products or jobs" placeholderTextColor="#888" style={s.input} returnKeyType="search"/></View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabs}>{(['ALL','BUSINESSES','SERVICES','PRODUCTS','JOBS'] as Tab[]).map(value => <Pressable key={value} onPress={() => setTab(value)} style={[s.tab, tab === value && s.tabActive]}><Text style={[s.tabText, tab === value && s.tabTextActive]}>{value}</Text></Pressable>)}</ScrollView>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabs}>{(['ALL','BUSINESSES','SERVICES','PRODUCTS','POSTS','JOBS'] as Tab[]).map(value => <Pressable key={value} onPress={() => setTab(value)} style={[s.tab, tab === value && s.tabActive]}><Text style={[s.tabText, tab === value && s.tabTextActive]}>{value}</Text></Pressable>)}</ScrollView>
       {q.trim() && <Text style={s.hint}>Searching real marketplace records for “{q.trim()}”. Availability is shown only when the backend has it.</Text>}
       {loading ? <ActivityIndicator style={{ marginTop: 35 }}/> : error ? <View style={s.empty}><Text style={s.emptyTitle}>We couldn't load results.</Text><Text style={s.emptyCopy}>Please try again.</Text><Pressable onPress={() => void load()} style={s.retry}><Text style={s.retryText}>RETRY</Text></Pressable></View> : <>
         {show('BUSINESSES') && <Section title={`Businesses ${visibleCounts.businesses ? `(${visibleCounts.businesses})` : ''}`}>
@@ -122,6 +126,9 @@ export default function Search() {
         </Section>}
         {show('PRODUCTS') && <Section title={`Products ${visibleCounts.products ? `(${visibleCounts.products})` : ''}`}>
           {products.length ? products.map(p => <View style={s.result} key={p.id}><View style={s.icon}><Ionicons name="cube-outline" size={22}/></View><View style={{flex:1}}><Pressable onPress={()=>router.push(`/product?id=${p.id}`)}><Text style={s.resultTitle}>{p.name}</Text></Pressable><Text style={s.resultCopy}>${Number(p.sale_price ?? p.price).toFixed(2)} AUD · {((Array.isArray(p.inventory) ? p.inventory[0] : p.inventory)?.stock_quantity ?? 0) - ((Array.isArray(p.inventory) ? p.inventory[0] : p.inventory)?.reserved_quantity ?? 0) > 0 ? 'In stock' : 'Out of stock'} · {((Array.isArray(p.businesses) ? p.businesses[0] : p.businesses)?.name ?? 'Local business')}</Text></View><Pressable onPress={() => void add(p.id)} style={s.add}><Text style={s.addText}>ADD</Text></Pressable></View>) : <Empty text="No active products matched this search."/>}
+        </Section>}
+        {show('POSTS') && <Section title={`Posts ${visibleCounts.posts ? `(${visibleCounts.posts})` : ''}`}>
+          {posts.length ? posts.map(post => <Pressable key={post.id} style={s.result} onPress={() => post.business_id ? router.push('/business-profile?id=' + post.business_id) : router.push('/social')}><View style={s.icon}><Ionicons name={post.business_id ? 'business-outline' : 'person-outline'} size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{post.caption || post.post_type.replaceAll('_',' ')}</Text><Text style={s.resultCopy}>{post.post_type.replaceAll('_',' ')} · {new Date(post.created_at).toLocaleDateString()}</Text></View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>) : <Empty text="No public posts matched this search."/>}
         </Section>}
         {show('JOBS') && <Section title={`Jobs ${visibleCounts.jobs ? `(${visibleCounts.jobs})` : ''}`}>
           {jobs.length ? jobs.map(job => <Pressable key={job.id} style={s.result} onPress={() => router.push('/requests')}><View style={s.icon}><Ionicons name="briefcase-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{job.description}</Text><Text style={s.resultCopy}>{[job.suburb,job.city,job.state].filter(Boolean).join(', ')}{job.budget != null ? ` · Budget $${Number(job.budget).toFixed(0)}` : ''}</Text></View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>) : <Empty text="No jobs are available for your current role yet."/>}
