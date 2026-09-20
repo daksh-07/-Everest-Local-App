@@ -158,11 +158,11 @@ export default function BusinessVerification() {
             </Text>
 
             <Pressable
-              disabled={busy || !abnValid || pending || verified}
+              disabled={busy || !abnValid || verified}
               onPress={() => void submit()}
-              style={[s.button, (busy || !abnValid || pending || verified) ? s.buttonDisabled : null]}
+              style={[s.button, (busy || !abnValid || verified) ? s.buttonDisabled : null]}
             >
-              <Text style={s.buttonText}>{busy ? 'CHECKING ABR…' : pending ? 'UNDER REVIEW' : verified ? 'VERIFIED' : 'CHECK ABN & SUBMIT'}</Text>
+              <Text style={s.buttonText}>{busy ? 'CHECKING ABR…' : pending ? 'RECHECK ABR' : verified ? 'VERIFIED' : 'CHECK ABN & SUBMIT'}</Text>
             </Pressable>
           </>
         ) : (
