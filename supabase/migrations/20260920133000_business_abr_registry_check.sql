@@ -24,6 +24,14 @@ alter table public.business_verifications
 create index if not exists business_verifications_abr_check_status_idx
   on public.business_verifications(abr_check_status);
 
+drop policy if exists business_verifications_admin_select on public.business_verifications;
+
+create policy business_verifications_admin_select
+  on public.business_verifications
+  for select
+  to authenticated
+  using ((select public.is_admin()));
+
 create or replace function public.record_business_abr_check(
   p_business_id uuid,
   p_result jsonb
