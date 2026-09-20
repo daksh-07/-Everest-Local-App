@@ -24,6 +24,8 @@ export async function getMyAccessContext(): Promise<AccessContext> {
 export async function resolvePostAuthRoute(intent: 'CUSTOMER' | 'BUSINESS' | 'DELIVERY_DRIVER'): Promise<string> {
   const access = await getMyAccessContext();
 
+  if (access.is_authorized_admin) return '/admin';
+
   if (intent === 'BUSINESS') {
     if (!access.is_business_member) return '/business-onboarding';
     return '/business-dashboard';
