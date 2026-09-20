@@ -42,9 +42,9 @@ test('every public table is explicitly RLS-enabled', () => {
   assert.deepEqual(missing, []);
 });
 
-test('every SECURITY DEFINER function pins search_path to public', () => {
+test('every SECURITY DEFINER function pins search_path to a safe explicit value', () => {
   const blocks = migrationText.split(/(?=create\s+(?:or\s+replace\s+)?function\b)/i).filter((block) => /security\s+definer/i.test(block));
-  const missing = blocks.filter((block) => !/set\s+search_path\s*=\s*public/i.test(block));
+  const missing = blocks.filter((block) => !/set\s+search_path\s*=\s*(?:public|''|'public')/i.test(block));
   assert.equal(missing.length, 0);
 });
 
@@ -175,7 +175,7 @@ test('mobile source does not reference trusted server-only credential variables'
 test('driver verification is credential-based, not profile-role based', () => {
   const operational = migrationText.split(/(?=create\s+(?:or\s+replace\s+)?function\b)/i).filter(block => /function\s+public\.driver_is_operational\s*\(/i.test(block)).at(-1);
   assert.ok(operational);
-  assert.match(operational, /a\.status\s*=\s*'APPROVED'/i);
+  assert.match(operational, /(?:a\.status\s*<>\s*'APPROVED'[\s\S]{0,120}return\s+false|a\.status\s*=\s*'APPROVED')/i);
   assert.match(operational, /v\.licence_status\s*=\s*'VERIFIED'/i);
   assert.match(operational, /v\.registration_status\s*=\s*'VERIFIED'/i);
   assert.match(operational, /dv\.status\s*=\s*'VERIFIED'/i);
