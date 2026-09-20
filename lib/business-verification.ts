@@ -54,7 +54,6 @@ async function readFunctionError(error: unknown): Promise<{ code: string; govern
 export async function submitBusinessVerification(
   businessId: string,
   abn: string,
-  _documents: unknown[] = [],
 ): Promise<string> {
   requireSupabaseConfig();
 

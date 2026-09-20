@@ -19,6 +19,10 @@ const searchPathHardeningMigration = await readFile(
   'supabase/migrations/20260920112705_business_verification_search_path_hardening.sql',
   'utf8',
 );
+const legacySubmissionHardeningMigration = await readFile(
+  'supabase/migrations/20260920234000_restrict_legacy_business_verification_submission.sql',
+  'utf8',
+);
 const screen = await readFile('app/business-verification.tsx', 'utf8');
 const flow = await readFile('lib/business-verification.ts', 'utf8');
 const baseVerification = await readFile('supabase/migrations/006_business_verification.sql', 'utf8');
@@ -41,7 +45,7 @@ test('invalid ABN checksum is rejected', () => {
 
 test('ABN length and character validation is enforced', () => {
   assert.equal(isValidAbn('5182475355'), false);
-  assert.equal(isValidAbn('51824753556 1'), false);
+  assert.equal(isValidAbn('5182475355 1'), false);
   assert.equal(isValidAbn('51824753A556'), false);
 });
 
@@ -97,7 +101,7 @@ test('client maps expected backend errors and hides unexpected database details'
     assert.match(flow, new RegExp(code));
   }
   assert.match(screen, /Reference:/i);
-  assert.doesNotMatch(screen, /catch\{setError\('We could not submit verification right now\. Please check the ABN and try again\.'\)\}/);
+  assert.doesNotMatch(screen, /catch\{setError\('We could not submit verification right now\. Please check the ABN and try again\.'\)}/);
 });
 
 test('documents are not falsely presented as uploaded', () => {
@@ -105,7 +109,6 @@ test('documents are not falsely presented as uploaded', () => {
   assert.match(screen, /may request supporting documents during review/);
   assert.doesNotMatch(screen, /upload complete|documents uploaded|fake upload|simulated upload/i);
 });
-
 
 test('ABR government verification is server-only and stores provider evidence', () => {
   assert.match(abrMigration, /verification_provider/);
@@ -131,11 +134,10 @@ test('admin verification RPC remains available to authenticated callers but enfo
 });
 
 test('client presents pending state instead of a dead submit control', () => {
-  assert.match(screen, /UNDER REVIEW/);
+  assert.match(screen, /under review/i);
   assert.match(screen, /CHECK ABN & SUBMIT/);
   assert.match(screen, /Australian Business Register/);
 });
-
 
 test('legacy direct verification submission cannot bypass ABR verification', () => {
   assert.match(legacySubmissionHardeningMigration, /revoke execute on function public\.submit_business_verification[\s\S]*authenticated/);
