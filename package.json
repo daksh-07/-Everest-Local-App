@@ -13,7 +13,8 @@
     "lint": "eslint .",
     "audit": "node scripts/static-audit.mjs",
     "audit:migrations": "node scripts/migration-audit.mjs",
-    "test:security": "node --test tests/security-invariants.test.mjs"
+    "test:security": "node --test tests/security-invariants.test.mjs",
+    "test:business-verification": "node --experimental-strip-types --test tests/business-verification.test.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
