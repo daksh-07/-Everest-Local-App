@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-import { toggleSavedBusiness } from '@/lib/marketplace';
+import { isBusinessSaved,toggleSavedBusiness } from '@/lib/marketplace';
 
 type Business = { id:string; name:string; description:string|null; logo_url:string|null; cover_url:string|null; verification_status:string; suburb:string|null; city:string|null; state:string|null; opening_hours:Record<string,unknown>|null; phone:string|null; email:string|null };
 type Service = { id:string; name:string; description:string|null; base_price:number|null; duration_minutes:number|null };
@@ -43,6 +43,7 @@ export default function BusinessProfile() {
       setProducts((productResult.data??[]) as Product[]);
       setReviewCount(reviews.length);
       setRating(reviews.length ? reviews.reduce((sum,item)=>sum+Number(item.rating),0)/reviews.length : null);
+      setSaved(await isBusinessSaved(id));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'We could not load this business right now.');
     } finally { setLoading(false); }
