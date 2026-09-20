@@ -2,10 +2,8 @@ import { useEffect,useMemo,useState } from 'react';
 import { ActivityIndicator,Pressable,ScrollView,StyleSheet,Text,TextInput,View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { createBusinessProfile } from '@/lib/business';
-import { createService } from '@/lib/services';
+import { createBusinessSetup } from '@/lib/business';
 import { listServiceTaxonomy, type DeliveryMode, type ServiceDefinition, type TaxonomyCategory } from '@/lib/taxonomy';
-import { supabase } from '@/lib/supabase';
 import { userFacingError } from '@/lib/errors';
 
 type Field={label:string;value:string;setValue:(value:string)=>void;placeholder:string;multiline?:boolean};
@@ -40,15 +38,11 @@ export default function Business(){
   if(hasLocal&&!suburb.trim()){setMessage('A suburb is required for local services.');return;}
   setBusy(true);
   try{
-   const id=await createBusinessProfile({name,description,categoryId:rootId,abn,phone,email,suburb,city,state,postcode});
-   for(const definitionId of selected){
-    const definition=definitions.find(x=>x.id===definitionId);if(!definition)continue;
-    await createService({businessId:id,name:definition.name,description:'',categoryId:definition.category_id,serviceDefinitionId:definition.id,deliveryMode:modes[definition.id]??definition.default_delivery_mode});
-   }
-   if(hasLocal){
-    const {error}=await supabase.rpc('add_service_area',{p_business_id:id,p_suburb:suburb,p_city:city,p_state:state,p_postcode:postcode||null});
-    if(error)throw error;
-   }
+   await createBusinessSetup({
+    name,description,categoryId:rootId,abn,phone,email,suburb,city,state,postcode,
+    services:selected.map(serviceDefinitionId=>({serviceDefinitionId,deliveryMode:modes[serviceDefinitionId]??definitions.find(x=>x.id===serviceDefinitionId)?.default_delivery_mode??'LOCAL'})),
+    serviceArea:hasLocal?{suburb,city,state,postcode}:undefined,
+   });
    setMessage('Business profile and service offerings created as drafts. Continue to verification.');
    router.replace('/business-verification');
   }catch(e){setMessage(userFacingError(e,'Could not create the business setup. Please check your details and try again.'))}
