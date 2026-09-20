@@ -90,10 +90,6 @@ export default function BusinessVerification() {
       setError('Enter a valid 11-digit ABN.');
       return;
     }
-    if (pending) {
-      setError('Your verification is already under review.');
-      return;
-    }
     if (verified) {
       setError('This business is already verified.');
       return;
