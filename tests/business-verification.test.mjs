@@ -7,6 +7,14 @@ const migration = await readFile(
   'supabase/migrations/20260920111150_business_abn_verification_flow.sql',
   'utf8',
 );
+const abrMigration = await readFile(
+  'supabase/migrations/20260920233000_abr_government_verification.sql',
+  'utf8',
+);
+const abrFunction = await readFile(
+  'supabase/functions/business-abn-verify/index.ts',
+  'utf8',
+);
 const searchPathHardeningMigration = await readFile(
   'supabase/migrations/20260920112705_business_verification_search_path_hardening.sql',
   'utf8',
@@ -96,4 +104,34 @@ test('documents are not falsely presented as uploaded', () => {
   assert.match(screen, /ABN submission is the first verification step/);
   assert.match(screen, /may request supporting documents during review/);
   assert.doesNotMatch(screen, /upload complete|documents uploaded|fake upload|simulated upload/i);
+});
+
+
+test('ABR government verification is server-only and stores provider evidence', () => {
+  assert.match(abrMigration, /verification_provider/);
+  assert.match(abrMigration, /submit_business_verification_from_abr/);
+  assert.match(abrMigration, /current_setting\('request\.jwt\.claims', true\)/);
+  assert.match(abrMigration, /service_role/);
+  assert.match(abrMigration, /revoke execute[\s\S]*authenticated/);
+});
+
+test('ABR Edge Function verifies active ABN and business-name match before submission', () => {
+  assert.match(abrFunction, /ABR_LOOKUP_GUID/);
+  assert.match(abrFunction, /abr\.business\.gov\.au\/json\/AbnDetails\.aspx/);
+  assert.match(abrFunction, /AbnStatus/);
+  assert.match(abrFunction, /BusinessName/);
+  assert.match(abrFunction, /BUSINESS_NAME_MISMATCH/);
+  assert.match(abrFunction, /submit_business_verification_from_abr/);
+  assert.match(abrFunction, /SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+test('admin verification RPC remains available to authenticated callers but enforces admin authorization inside the function', () => {
+  assert.match(abrMigration, /grant execute on function public\.admin_set_verification[\s\S]*to authenticated/);
+  assert.match(baseVerification, /if not public\.is_admin\(\) then raise exception 'Admin authorization required'/);
+});
+
+test('client presents pending state instead of a dead submit control', () => {
+  assert.match(screen, /UNDER REVIEW/);
+  assert.match(screen, /CHECK ABN & SUBMIT/);
+  assert.match(screen, /Australian Business Register/);
 });
