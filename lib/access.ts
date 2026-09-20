@@ -10,6 +10,7 @@ export type AccessContext = {
   is_business_member: boolean;
   is_verified_business: boolean;
   is_active_driver: boolean;
+  is_authorized_admin: boolean;
   is_admin: boolean;
 };
 
