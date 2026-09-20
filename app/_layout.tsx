@@ -48,7 +48,7 @@ export default function RootLayout() {
     const needsAuth=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
     if(!needsAuth)return;
     if(!sessionUserId){nav.replace('/auth');return;}
-    if(adminRoutes.has(pathname)&&!access?.is_admin){nav.replace('/');return;}
+    if(adminRoutes.has(pathname)){if(!access?.is_authorized_admin){nav.replace('/');return;}if(!access.is_admin&&pathname!=='/admin'){nav.replace('/admin');return;}return;}
     if(driverApplicationRoutes.has(pathname))return;
     if(deliveryRoutes.has(pathname)){if(!access?.is_active_driver&&!access?.is_admin)nav.replace('/driver-onboarding');return;}
     if(businessApplicationRoutes.has(pathname)){
