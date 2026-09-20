@@ -280,3 +280,8 @@ test('admin authorization code does not use the admin email as its security boun
   assert.doesNotMatch(clientAndServerText, /dakshgolani5@gmail\.com/i);
   assert.match(migrationTextLower, /716edb35-a0cb-4cbf-99b2-41fa8500ffd3/);
 });
+
+
+test('single-admin role trigger is not callable through PostgREST', () => {
+  assert.match(migrationText, /revoke\s+execute\s+on\s+function\s+public\.enforce_single_admin_identity\(\)[\s\S]{0,120}from\s+public,\s*anon,\s*authenticated/i);
+});
