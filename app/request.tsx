@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router,useLocalSearchParams } from 'expo-router';
 import { createServiceRequest } from '@/lib/marketplace';
 import { supabase } from '@/lib/supabase';
+import { userFacingError } from '@/lib/errors';
 import type { DeliveryMode } from '@/lib/taxonomy';
 
 export default function Request(){
@@ -14,7 +15,7 @@ export default function Request(){
  const effectiveMode=serviceMode==='BOTH'?mode:(serviceMode??mode);
  function next(){setError('');if(step===1&&description.trim().length<5){setError('Tell businesses what you need in at least a few words.');return;}if(step===2&&effectiveMode==='LOCAL'&&!suburb.trim()){setError('Add the suburb where the work will happen.');return;}if(step===3&&budget&&(!Number.isFinite(Number(budget))||Number(budget)<0)){setError('Budget must be a valid positive amount.');return;}setStep(value=>Math.min(4,value+1));}
  function back(){setError('');setStep(value=>Math.max(1,value-1));}
- async function submit(){setError('');setBusy(true);try{await createServiceRequest({serviceId:serviceId||undefined,description,suburb:effectiveMode==='REMOTE'?undefined:suburb,city:effectiveMode==='REMOTE'?undefined:'Sydney',state:effectiveMode==='REMOTE'?undefined:'NSW',preferredDate:date||undefined,preferredTime:time||undefined,budget:budget?Number(budget):undefined,deliveryMode:effectiveMode});setSuccess(true);}catch(e){setError(e instanceof Error?e.message:'We could not submit your request. Please retry.')}finally{setBusy(false)}}
+ async function submit(){setError('');setBusy(true);try{await createServiceRequest({serviceId:serviceId||undefined,description,suburb:effectiveMode==='REMOTE'?undefined:suburb,city:effectiveMode==='REMOTE'?undefined:'Sydney',state:effectiveMode==='REMOTE'?undefined:'NSW',preferredDate:date||undefined,preferredTime:time||undefined,budget:budget?Number(budget):undefined,deliveryMode:effectiveMode});setSuccess(true);}catch(e){setError(userFacingError(e,'We could not submit your request. Please retry.'))}finally{setBusy(false)}}
  if(success)return <SafeAreaView style={s.safe}><View style={s.success}><View style={s.check}><Text style={{fontSize:28}}>✓</Text></View><Text style={s.title}>Request received.</Text><Text style={s.copy}>Everest will match your request against eligible verified businesses that support {effectiveMode==='REMOTE'?'remote delivery':effectiveMode==='LOCAL'?'local delivery':'the requested delivery mode'}.</Text><Pressable onPress={()=>router.replace('/activity')} style={s.button}><Text style={s.buttonText}>VIEW ACTIVITY</Text></Pressable></View></SafeAreaView>;
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page}>
   <View style={s.top}><Pressable onPress={()=>step>1?back():router.back()}><Text style={s.back}>‹</Text></Pressable><Text style={s.topTitle}>Post a request</Text><Text style={s.step}>{step}/4</Text></View><View style={s.progress}><View style={[s.progressFill,{width:`${step*25}%`}]}/></View>
