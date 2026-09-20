@@ -40,7 +40,7 @@ export async function unenrollAdminTotp(factorId: string) {
   if (error) throw new Error(error.message);
   const factor = factors.totp.find((item) => item.id === factorId);
   if (!factor) return;
-  if (factor.status === 'verified') {
+  if (String(factor.status) === 'verified') {
     throw new Error('A verified admin MFA factor cannot be removed from setup.');
   }
   const { error: unenrollError } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
@@ -56,7 +56,7 @@ export async function enrollAdminTotp() {
   const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
   if (factorsError) throw new Error(factorsError.message);
   for (const factor of factors.totp) {
-    if (factor.status === 'unverified') {
+    if (String(factor.status) === 'unverified') {
       const { error } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
       if (error) throw new Error(error.message);
     }
@@ -89,7 +89,7 @@ export async function verifyAdminTotp(factorId: string, code: string) {
   if (assurance.currentLevel !== 'aal2') {
     await supabase.auth.refreshSession();
     const { data: refreshed } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (refreshed.currentLevel !== 'aal2') throw new Error('MFA verification did not establish the required assurance level.');
+    if (refreshed?.currentLevel !== 'aal2') throw new Error('MFA verification did not establish the required assurance level.');
   }
   await supabase.auth.refreshSession();
 }
