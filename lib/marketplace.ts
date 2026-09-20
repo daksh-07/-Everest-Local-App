@@ -10,3 +10,43 @@ export async function myRequests():Promise<ServiceRequest[]>{const user=await cu
 export async function myQuotes():Promise<Quote[]>{const user=await currentUser();if(!user)return[];const {data,error}=await supabase.from('quotes').select('*').eq('customer_id',user.id).order('created_at',{ascending:false});if(error)throw new Error(error.message);return (data??[]) as Quote[];}
 export async function acceptQuote(quoteId:string){requireSupabaseConfig();if(!quoteId.trim())throw new Error('Quote reference is required.');const {data,error}=await supabase.rpc('accept_quote',{p_quote_id:quoteId});if(error)throw new Error(error.message);return data as string;}
 export async function updateBookingStatus(bookingId:string,nextStatus:'REQUESTED'|'PENDING_PAYMENT'|'CONFIRMED'|'UPCOMING'|'IN_PROGRESS'|'COMPLETED'|'CANCELLED'|'DISPUTED'){requireSupabaseConfig();const {data,error}=await supabase.rpc('update_booking_status',{p_booking_id:bookingId,p_next:nextStatus});if(error)throw new Error(error.message);return Boolean(data);}
+
+export async function mySavedBusinesses():Promise<MarketplaceBusiness[]>{
+ const user=await currentUser();if(!user)return[];
+ const {data: saved,error: savedError}=await supabase.from('saved_businesses').select('business_id,created_at').eq('customer_id',user.id).order('created_at',{ascending:false});
+ if(savedError)throw new Error(savedError.message);
+ const ids=(saved??[]).map((row)=>row.business_id as string);
+ if(!ids.length)return[];
+ const {data,error}=await supabase.from('businesses').select('id,name,slug,description,logo_url,category_id,verification_status,suburb,city,state').in('id',ids);
+ if(error)throw new Error(error.message);
+ const byId=new Map((data??[]).map((item)=>[item.id,item as MarketplaceBusiness]));
+ return ids.map((id)=>byId.get(id)).filter((item):item is MarketplaceBusiness=>Boolean(item));
+}
+
+export async function mySavedProducts():Promise<Product[]>{
+ const user=await currentUser();if(!user)return[];
+ const {data: saved,error: savedError}=await supabase.from('saved_products').select('product_id,created_at').eq('customer_id',user.id).order('created_at',{ascending:false});
+ if(savedError)throw new Error(savedError.message);
+ const ids=(saved??[]).map((row)=>row.product_id as string);
+ if(!ids.length)return[];
+ const {data,error}=await supabase.from('products').select('id,business_id,category_id,name,slug,description,price,sale_price,status,delivery_eligible,pickup_available').in('id',ids);
+ if(error)throw new Error(error.message);
+ const byId=new Map((data??[]).map((item)=>[item.id,item as Product]));
+ return ids.map((id)=>byId.get(id)).filter((item):item is Product=>Boolean(item));
+}
+
+export async function setBusinessSaved(businessId:string,saved:boolean){
+ const user=await currentUser();if(!user)throw new Error('Sign in to save businesses.');
+ if(!businessId.trim())throw new Error('Business reference is required.');
+ const query=supabase.from('saved_businesses');
+ if(saved){const {error}=await query.upsert({customer_id:user.id,business_id:businessId},{onConflict:'customer_id,business_id'});if(error)throw new Error(error.message);return;}
+ const {error}=await query.delete().eq('customer_id',user.id).eq('business_id',businessId);if(error)throw new Error(error.message);
+}
+
+export async function setProductSaved(productId:string,saved:boolean){
+ const user=await currentUser();if(!user)throw new Error('Sign in to save products.');
+ if(!productId.trim())throw new Error('Product reference is required.');
+ const query=supabase.from('saved_products');
+ if(saved){const {error}=await query.upsert({customer_id:user.id,product_id:productId},{onConflict:'customer_id,product_id'});if(error)throw new Error(error.message);return;}
+ const {error}=await query.delete().eq('customer_id',user.id).eq('product_id',productId);if(error)throw new Error(error.message);
+}
