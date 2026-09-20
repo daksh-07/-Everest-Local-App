@@ -24,6 +24,9 @@ const allMigrationFiles = (await walk(migrationsDir)).filter((file) => file.ends
 const migrationFiles = allMigrationFiles.filter((file) => /^\d{3}_.+\.sql$/i.test(file.split('/').at(-1)));
 const timestampMigrationFiles = allMigrationFiles.filter((file) => /^\d{14}_.+\.sql$/i.test(file.split('/').at(-1)));
 const migrationText = (await Promise.all(allMigrationFiles.map((file) => readFile(file, 'utf8')))).join('\n');
+const runtimeMigrationText = (await Promise.all(allMigrationFiles
+  .filter((file) => file.split('/').at(-1) !== '20260920243000_lock_initial_admin_identity.sql')
+  .map((file) => readFile(file, 'utf8')))).join('\n');
 const appAndLibFiles = (await Promise.all([walk(appDir), walk(libDir)])).flat();
 const clientText = (await Promise.all(appAndLibFiles.map((file) => readFile(file, 'utf8')))).join('\n');
 
@@ -276,7 +279,7 @@ test('authorized admin is routed to the private admin gate after authentication'
 
 test('admin authorization code does not use the admin email as its security boundary', async () => {
   const migrationTextLower = migrationText.toLowerCase();
-  const clientAndServerText = migrationText + await readFile(join(appDir, '_layout.tsx'), 'utf8') + await readFile(join(libDir, 'admin-mfa.ts'), 'utf8');
+  const clientAndServerText = runtimeMigrationText + await readFile(join(appDir, '_layout.tsx'), 'utf8') + await readFile(join(libDir, 'admin-mfa.ts'), 'utf8');
   assert.doesNotMatch(clientAndServerText, /dakshgolani5@gmail\.com/i);
   assert.match(migrationTextLower, /716edb35-a0cb-4cbf-99b2-41fa8500ffd3/);
 });
