@@ -5,13 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { router,useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { addToCart } from '@/lib/commerce';
-import { toggleSavedProduct } from '@/lib/marketplace';
+import { isProductSaved,toggleSavedProduct } from '@/lib/marketplace';
 
 type Product={id:string;name:string;description:string|null;price:number;sale_price:number|null;status:string;delivery_eligible:boolean;pickup_available:boolean;businesses:{name:string;suburb:string|null;city:string|null;state:string|null}|{name:string;suburb:string|null;city:string|null;state:string|null}[]|null;inventory:{stock_quantity:number;reserved_quantity:number}|{stock_quantity:number;reserved_quantity:number}[]|null};
 
 export default function ProductPage(){
  const {id}=useLocalSearchParams<{id?:string}>();const [product,setProduct]=useState<Product|null>(null);const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [saving,setSaving]=useState(false);const [saved,setSaved]=useState(false);const [message,setMessage]=useState('');const [error,setError]=useState('');
- const load=useCallback(async()=>{if(typeof id!=='string'||!id){setError('Product not found.');setLoading(false);return;}try{const {data,error:e}=await supabase.from('products').select('id,name,description,price,sale_price,status,delivery_eligible,pickup_available,businesses(name,suburb,city,state),inventory(stock_quantity,reserved_quantity)').eq('id',id).eq('status','ACTIVE').single();if(e)throw e;setProduct(data as Product)}catch{setError('We could not load this product right now.')}finally{setLoading(false)}},[id]);
+ const load=useCallback(async()=>{if(typeof id!=='string'||!id){setError('Product not found.');setLoading(false);return;}try{const {data,error:e}=await supabase.from('products').select('id,name,description,price,sale_price,status,delivery_eligible,pickup_available,businesses(name,suburb,city,state),inventory(stock_quantity,reserved_quantity)').eq('id',id).eq('status','ACTIVE').single();if(e)throw e;setProduct(data as Product);setSaved(await isProductSaved(id))}catch{setError('We could not load this product right now.')}finally{setLoading(false)}},[id]);
  useEffect(()=>{void load()},[load]);
  async function add(){if(!product)return;setBusy(true);setMessage('');setError('');try{await addToCart(product.id,1);setMessage('Added to your cart.')}catch(e){setError(e instanceof Error?e.message:'Could not add this product to cart.')}finally{setBusy(false)}}
  async function save(){if(!product)return;setSaving(true);setError('');try{await toggleSavedProduct(product.id,!saved);setSaved(!saved);setMessage(!saved?'Saved for later.':'Removed from saved.')}catch(e){setError(e instanceof Error?e.message:'Could not update saved status.')}finally{setSaving(false)}}
