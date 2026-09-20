@@ -52,8 +52,8 @@ export default function Search() {
         productQuery.or(`name.ilike.${pattern},description.ilike.${pattern}`);
       }
 
-      const remoteIntent = /\\bremote\\b|\\bonline\\b/i.test(text);
-      const taxonomy = await searchServiceTaxonomy(text.replace(/\\bremote\\b|\\bonline\\b/gi, '').trim(), remoteIntent ? 'REMOTE' : undefined);
+      const remoteIntent = /\bremote\b|\bonline\b/i.test(text);
+      const taxonomy = await searchServiceTaxonomy(text.replace(/\bremote\b|\bonline\b/gi, '').trim(), remoteIntent ? 'REMOTE' : undefined);
       const [b, s, p] = await Promise.all([businessQuery, serviceQuery, productQuery]);
       if (b.error) throw b.error;
       if (s.error) throw s.error;
