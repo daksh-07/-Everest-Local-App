@@ -7,6 +7,10 @@ const migration = await readFile(
   'supabase/migrations/20260920111150_business_abn_verification_flow.sql',
   'utf8',
 );
+const searchPathHardeningMigration = await readFile(
+  'supabase/migrations/20260920112705_business_verification_search_path_hardening.sql',
+  'utf8',
+);
 const screen = await readFile('app/business-verification.tsx', 'utf8');
 const flow = await readFile('lib/business-verification.ts', 'utf8');
 const baseVerification = await readFile('supabase/migrations/006_business_verification.sql', 'utf8');
@@ -52,6 +56,12 @@ test('server authorization and duplicate-pending guards remain authoritative', (
   assert.match(migration, /message = 'NOT_AUTHORIZED'/);
   assert.match(migration, /message = 'VERIFICATION_PENDING'/);
   assert.match(migration, /business_verifications_one_pending_per_business/);
+});
+
+test('SECURITY DEFINER functions use an empty search_path', () => {
+  assert.match(searchPathHardeningMigration, /security definer[\\s\\S]*set search_path = ''/g);
+  assert.match(searchPathHardeningMigration, /public\\.businesses/);
+  assert.match(searchPathHardeningMigration, /public\\.business_verifications/);
 });
 
 test('verification status cannot be self-promoted by direct business updates', () => {
