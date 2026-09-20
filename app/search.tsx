@@ -6,8 +6,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { listPublicPosts, type SocialPost } from '@/lib/social';
 import type { MarketplaceBusiness } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
+import { searchServiceTaxonomy, type DeliveryMode, type ServiceDefinition } from '@/lib/taxonomy';
 
 type Tab = 'ALL' | 'BUSINESSES' | 'SERVICES' | 'PRODUCTS' | 'POSTS' | 'JOBS';
+type TaxonomyResult = ServiceDefinition;
 type ServiceResult = { id: string; business_id: string; name: string; description: string | null; base_price: number | null; duration_minutes: number | null; businesses?: { name: string; suburb: string | null; city: string | null; state: string | null } | { name: string; suburb: string | null; city: string | null; state: string | null }[] | null };
 type SearchProduct = { id:string; business_id:string; name:string; description:string|null; price:number; sale_price:number|null; status:string; delivery_eligible:boolean; pickup_available:boolean; businesses?:{name:string;suburb:string|null;city:string|null;state:string|null}|{name:string;suburb:string|null;city:string|null;state:string|null}[]|null; inventory?:{stock_quantity:number;reserved_quantity:number}|{stock_quantity:number;reserved_quantity:number}[]|null };
 type JobResult = { id: string; description: string; suburb: string; city: string; state: string; status: string; budget: number | null; preferred_date: string | null };
@@ -26,6 +28,7 @@ export default function Search() {
   const [tab, setTab] = useState<Tab>(['ALL', 'BUSINESSES', 'SERVICES', 'PRODUCTS', 'POSTS', 'JOBS'].includes(params.tab ?? '') ? params.tab as Tab : 'ALL');
   const [businesses, setBusinesses] = useState<MarketplaceBusiness[]>([]);
   const [services, setServices] = useState<ServiceResult[]>([]);
+  const [taxonomyResults, setTaxonomyResults] = useState<TaxonomyResult[]>([]);
   const [products, setProducts] = useState<SearchProduct[]>([]);
   const [jobs, setJobs] = useState<JobResult[]>([]);
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -40,7 +43,7 @@ export default function Search() {
       const text = q.trim();
       const pattern = text ? `%${escapeIlike(text)}%` : null;
       const businessQuery = supabase.from('businesses').select('id,name,slug,description,logo_url,category_id,verification_status,suburb,city,state').eq('status', 'ACTIVE').eq('verification_status', 'VERIFIED').limit(50);
-      const serviceQuery = supabase.from('services').select('id,business_id,name,description,base_price,duration_minutes,businesses(name,suburb,city,state)').eq('active', true).limit(50);
+      const serviceQuery = supabase.from('services').select('id,business_id,name,description,base_price,duration_minutes,delivery_mode,businesses(name,suburb,city,state)').eq('active', true).limit(50);
       const productQuery = supabase.from('products').select('id,business_id,name,description,price,sale_price,status,delivery_eligible,pickup_available,businesses(name,suburb,city,state),inventory(stock_quantity,reserved_quantity)').eq('status', 'ACTIVE').limit(50);
 
       if (pattern) {
@@ -49,6 +52,8 @@ export default function Search() {
         productQuery.or(`name.ilike.${pattern},description.ilike.${pattern}`);
       }
 
+      const remoteIntent = /\\bremote\\b|\\bonline\\b/i.test(text);
+      const taxonomy = await searchServiceTaxonomy(text.replace(/\\bremote\\b|\\bonline\\b/gi, '').trim(), remoteIntent ? 'REMOTE' : undefined);
       const [b, s, p] = await Promise.all([businessQuery, serviceQuery, productQuery]);
       if (b.error) throw b.error;
       if (s.error) throw s.error;
@@ -59,8 +64,9 @@ export default function Search() {
       const { data: locationProfile } = user ? await supabase.from('profiles').select('suburb').eq('id', user.id).maybeSingle() : { data: null };
       const nearby = /\bnear me\b/i.test(text) && typeof locationProfile?.suburb === 'string' && locationProfile.suburb.trim().length > 0;
       const nearbySuburb = nearby ? locationProfile!.suburb!.toLowerCase() : '';
+      setTaxonomyResults(taxonomy);
       setBusinesses(((b.data ?? []) as MarketplaceBusiness[]).filter(item => !nearby || item.suburb?.toLowerCase() === nearbySuburb));
-      setServices(((s.data ?? []) as ServiceResult[]).filter(item => !maxBudget || item.base_price == null || Number(item.base_price) <= maxBudget).filter(item => !nearby || (Array.isArray(item.businesses) ? item.businesses[0]?.suburb : item.businesses?.suburb)?.toLowerCase() === nearbySuburb));
+      setServices(((s.data ?? []) as ServiceResult[]).filter(item => !maxBudget || item.base_price == null || Number(item.base_price) <= maxBudget).filter(item => !nearby || (Array.isArray(item.businesses) ? item.businesses[0]?.suburb : item.businesses?.suburb)?.toLowerCase() === nearbySuburb).filter(item => !remoteIntent || (item as ServiceResult & {delivery_mode?:DeliveryMode}).delivery_mode !== 'LOCAL'));
       setProducts(((p.data ?? []) as SearchProduct[]).filter(item => !maxBudget || Number(item.sale_price ?? item.price) <= maxBudget));
       const postItems = await listPublicPosts({ limit: 50 });
       setPosts(text ? postItems.filter(item => (item.caption ?? '').toLowerCase().includes(text.toLowerCase())) : postItems);
@@ -105,7 +111,7 @@ export default function Search() {
     }
   }
 
-  const visibleCounts = useMemo(() => ({ businesses: businesses.length, services: services.length, products: products.length, posts: posts.length, jobs: jobs.length }), [businesses, services, products, posts, jobs]);
+  const visibleCounts = useMemo(() => ({ businesses: businesses.length, services: services.length, taxonomy: taxonomyResults.length, products: products.length, posts: posts.length, jobs: jobs.length }), [businesses, services, taxonomyResults, products, posts, jobs]);
   const show = (target: Tab) => tab === 'ALL' || tab === target;
 
   return <SafeAreaView style={s.safe}>
@@ -121,8 +127,9 @@ export default function Search() {
         {show('BUSINESSES') && <Section title={`Businesses ${visibleCounts.businesses ? `(${visibleCounts.businesses})` : ''}`}>
           {businesses.length ? businesses.map(b => <Pressable key={b.id} style={s.result} onPress={() => router.push(`/business-profile?id=${b.id}`)}><View style={s.icon}><Ionicons name="business-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{b.name}</Text><Text style={s.resultCopy}>{[b.suburb,b.city,b.state].filter(Boolean).join(', ') || 'Local business'}</Text>{b.verification_status === 'VERIFIED' && <Text style={s.verified}>✓ VERIFIED</Text>}</View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>) : <Empty text="No verified businesses matched this search."/>}
         </Section>}
-        {show('SERVICES') && <Section title={`Services ${visibleCounts.services ? `(${visibleCounts.services})` : ''}`}>
-          {services.length ? services.map(item => <Pressable key={item.id} style={s.result} onPress={() => router.push(`/business-profile?id=${item.business_id}`)}><View style={s.icon}><Ionicons name="construct-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{item.name}</Text><Text style={s.resultCopy}>{relationName(item.businesses) || 'Verified local business'}{item.base_price != null ? ` · from $${Number(item.base_price).toFixed(2)}` : ''}</Text></View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>) : <Empty text="No active services matched this search."/>}
+        {show('SERVICES') && <Section title={`Services ${visibleCounts.services || visibleCounts.taxonomy ? `(${visibleCounts.services + visibleCounts.taxonomy})` : ''}`}>
+          {taxonomyResults.map(item => <Pressable key={'taxonomy-'+item.id} style={s.result} onPress={() => router.push('/search?q='+encodeURIComponent(item.name)+'&tab=SERVICES')}><View style={s.icon}><Ionicons name="layers-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{item.name}</Text><Text style={s.resultCopy}>{item.default_delivery_mode === 'REMOTE' ? 'Remote / online' : item.default_delivery_mode === 'BOTH' ? 'Local + remote' : 'Local service'}</Text></View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>)}
+          {services.length ? services.map(item => <Pressable key={item.id} style={s.result} onPress={() => router.push(`/business-profile?id=${item.business_id}`)}><View style={s.icon}><Ionicons name="construct-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{item.name}</Text><Text style={s.resultCopy}>{relationName(item.businesses) || 'Verified marketplace business'} · {((item as ServiceResult & {delivery_mode?:DeliveryMode}).delivery_mode === 'REMOTE') ? 'Remote' : (item as ServiceResult & {delivery_mode?:DeliveryMode}).delivery_mode === 'BOTH' ? 'Local + remote' : 'Local'}{item.base_price != null ? ` · from ${Number(item.base_price).toFixed(2)}` : ''}</Text></View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>) : <Empty text="No active services matched this search."/>}
         </Section>}
         {show('PRODUCTS') && <Section title={`Products ${visibleCounts.products ? `(${visibleCounts.products})` : ''}`}>
           {products.length ? products.map(p => <View style={s.result} key={p.id}><View style={s.icon}><Ionicons name="cube-outline" size={22}/></View><View style={{flex:1}}><Pressable onPress={()=>router.push(`/product?id=${p.id}`)}><Text style={s.resultTitle}>{p.name}</Text></Pressable><Text style={s.resultCopy}>${Number(p.sale_price ?? p.price).toFixed(2)} AUD · {((Array.isArray(p.inventory) ? p.inventory[0] : p.inventory)?.stock_quantity ?? 0) - ((Array.isArray(p.inventory) ? p.inventory[0] : p.inventory)?.reserved_quantity ?? 0) > 0 ? 'In stock' : 'Out of stock'} · {((Array.isArray(p.businesses) ? p.businesses[0] : p.businesses)?.name ?? 'Local business')}</Text></View><Pressable onPress={() => void add(p.id)} style={s.add}><Text style={s.addText}>ADD</Text></Pressable></View>) : <Empty text="No active products matched this search."/>}
