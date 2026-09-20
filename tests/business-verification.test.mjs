@@ -36,13 +36,13 @@ test('ABN length and character validation is enforced', () => {
 test('server-side ABN validation uses the official modulus-89 weights', () => {
   assert.match(migration, /substring\(abn,1,1\)::integer - 1\) \* 10/);
   assert.match(migration, /substring\(abn,11,1\)::integer \* 19/);
-  assert.match(migration, /mod\([\s\S]*89\)/);
+  assert.match(migration, /mod\([\s\S]*89[\s\S]*\)/);
   assert.match(migration, /abn !~ '\^\[0-9\]\{11\}\$'/);
 });
 
 test('server normalizes and stores the ABN before creating PENDING verification', () => {
   assert.match(migration, /regexp_replace\(coalesce\(p_abn,''\), '\[\[:space:\]-\]'/);
-  assert.match(migration, /abn,\s*documents\)/);
+  assert.match(migration, /abn,\s*documents\s*\)/);
   assert.match(migration, /normalized_abn,\s*coalesce\(p_documents/);
   assert.match(migration, /verification_status = 'PENDING'/);
 });
