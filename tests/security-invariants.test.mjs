@@ -218,3 +218,57 @@ test('Ask Everest does not query driver documents', async () => {
   assert.match(assistant, /driver_applications/i);
   assert.doesNotMatch(assistant, /licence_number|insurance_policy_reference|storage_path/i);
 });
+
+
+test('admin authorization is restricted to the immutable intended UUID and MFA/password assurance', () => {
+  assert.match(migrationText, /716edb35-a0cb-4cbf-99b2-41fa8500ffd3/);
+  assert.match(migrationText, /is_admin_identity[\s\S]{0,900}role\s*=\s*['"]ADMIN['"]/i);
+  assert.match(migrationText, /create\s+or\s+replace\s+function\s+public\.is_admin\(\)[\s\S]{0,1200}auth\.jwt\(\)\s*->>\s*'aal'[\s\S]{0,300}aal2/i);
+  assert.match(migrationText, /is_admin\(\)[\s\S]{0,1200}jsonb_array_elements[\s\S]{0,300}method['"]\s*=\s*['"]password['"]/i);
+});
+
+test('no client Data API path can insert/update/delete profiles or select ADMIN by role', () => {
+  assert.match(migrationText, /revoke\s+insert,\s*update,\s*delete[\s\S]{0,250}on\s+public\.profiles\s+from\s+anon,\s*authenticated/i);
+  assert.match(migrationText, /enforce_single_admin_identity[\s\S]{0,700}new\.role\s*=\s*['"]ADMIN['"][\s\S]{0,300}716edb35-a0cb-4cbf-99b2-41fa8500ffd3/i);
+});
+
+test('sole admin cannot use ordinary account deletion', () => {
+  assert.match(migrationText, /can_delete_my_account[\s\S]{0,700}is_admin_identity\(\)[\s\S]{0,80}return\s+false/i);
+});
+
+test('admin route requires server authorization and MFA before sensitive queries', async () => {
+  const admin = await readFile(join(appDir, 'admin.tsx'), 'utf8');
+  const gate = admin.indexOf('getAdminMfaState');
+  const sensitive = admin.indexOf("supabase.from('businesses'");
+  assert.ok(gate >= 0);
+  assert.ok(sensitive > gate);
+  assert.match(admin, /state\.authorizedAdmin/);
+  assert.match(admin, /state\.aal!==['"]aal2['"]/);
+  assert.match(admin, /challengeAdminTotp|verifyAdminTotp/);
+});
+
+test('admin MFA implementation uses Supabase TOTP APIs and never contains a secret', async () => {
+  const mfa = await readFile(join(libDir, 'admin-mfa.ts'), 'utf8');
+  assert.match(mfa, /mfa\.enroll\(\{\s*factorType:\s*['"]totp['"]/);
+  assert.match(mfa, /mfa\.challenge\(/);
+  assert.match(mfa, /mfa\.verify\(/);
+  assert.doesNotMatch(mfa, /-----BEGIN|SUPABASE_SERVICE_ROLE_KEY|sk_(?:live|test)_/);
+});
+
+test('all admin SECURITY DEFINER RPCs retain the server-side is_admin gate', () => {
+  const blocks = migrationText.split(/(?=create\s+(?:or\s+replace\s+)?function\s+public\.admin_)/i).slice(1);
+  assert.ok(blocks.length >= 5);
+  for (const block of blocks) {
+    const end = block.search(/\ncreate\s+(?:or\s+replace\s+)?function\s+/i);
+    const body = end >= 0 ? block.slice(0, end) : block;
+    assert.match(body, /is_admin\(\)/i);
+  }
+});
+
+test('authorized admin is routed to the private admin gate after authentication', async () => {
+  const access = await readFile(join(libDir, 'access.ts'), 'utf8');
+  const auth = await readFile(join(appDir, 'auth.tsx'), 'utf8');
+  assert.match(access, /is_authorized_admin/);
+  assert.match(access, /return ['"]\/admin['"]/);
+  assert.match(auth, /signIn\(email, password\)[\s\S]{0,250}routeAfterAuth/);
+});
