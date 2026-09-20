@@ -5,19 +5,22 @@ export type AdminMfaState = {
   authorizedAdmin: boolean;
   aal: 'aal1' | 'aal2';
   hasVerifiedTotp: boolean;
+  passwordAuthenticated: boolean;
 };
 
 export async function getAdminMfaState(): Promise<AdminMfaState> {
   requireSupabaseConfig();
   const access = await getMyAccessContext();
-  if (!access.is_authorized_admin) return { authorizedAdmin: false, aal: 'aal1', hasVerifiedTotp: false };
+  if (!access.is_authorized_admin) return { authorizedAdmin: false, aal: 'aal1', hasVerifiedTotp: false, passwordAuthenticated: false };
+  const { data: authState, error: authStateError } = await supabase.rpc('get_admin_auth_state');
+  if (authStateError) throw new Error(authStateError.message);
   const [{ data: aal, error: aalError }, { data: factors, error: factorsError }] = await Promise.all([
     supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
     supabase.auth.mfa.listFactors(),
   ]);
   if (aalError) throw new Error(aalError.message);
   if (factorsError) throw new Error(factorsError.message);
-  return { authorizedAdmin: true, aal: aal.currentLevel === 'aal2' ? 'aal2' : 'aal1', hasVerifiedTotp: factors.totp.some((factor) => factor.status === 'verified') };
+  return { authorizedAdmin: true, aal: aal.currentLevel === 'aal2' ? 'aal2' : 'aal1', hasVerifiedTotp: factors.totp.some((factor) => factor.status === 'verified'), passwordAuthenticated: authState?.password_authenticated === true };
 }
 
 export async function enrollAdminTotp() {
