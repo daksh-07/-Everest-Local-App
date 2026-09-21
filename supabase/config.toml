@@ -15,6 +15,6 @@ verify_jwt = true
 [functions.stripe-webhook]
 verify_jwt = false
 
-[functions.verify-business-abn]
+[functions.business-abn-verify]
 verify_jwt = true
 
