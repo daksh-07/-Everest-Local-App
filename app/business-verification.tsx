@@ -150,7 +150,7 @@ export default function BusinessVerification() {
             {!!normalizedAbn && abnValid && <Text style={s.valid}>ABN format is valid.</Text>}
 
             <Text style={s.note}>
-              Everest checks the ABN with ABR public data, including active status and registered business name. A successful government check does not itself grant VERIFIED marketplace status.
+              ABN submission is the first verification step. Everest checks the ABN with ABR public data, including active status and registered business name. A successful government check does not itself grant VERIFIED marketplace status. We may request supporting documents during review.
             </Text>
 
             <Pressable
