@@ -174,7 +174,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page}>
    <Text style={s.eyebrow}>EVEREST LOCAL · PRIVATE ADMIN</Text>
    <Text style={s.title}>{setup?'Secure your admin account':'Verify your identity'}</Text>
-   <Text style={s.copy}>{setup?'Admin access requires a TOTP authenticator. Scan the QR code with your authenticator app, then enter the current 6-digit code.':'Enter the current 6-digit code from your authenticator app. No admin data is loaded until MFA succeeds.'}</Text>
+   <Text style={s.copy}>{setup?'Admin access requires a TOTP authenticator. Scan the QR code with your authenticator app, then enter the current 6-digit code. If the code is close to expiring, wait for the newest code before submitting.':'Enter the newest 6-digit code from your authenticator app. If the code is close to expiring, wait for the next code before submitting. No admin data is loaded until MFA succeeds.'}</Text>
    {loading?<ActivityIndicator style={{marginTop:30}}/>:showSetup?<View style={s.mfaPanel}>
      {qrDataUrl&&!qrRenderFailed&&(Platform.OS==='web'?<img src={qrDataUrl} width={220} height={220} onError={()=>{setQrRenderFailed(true);setDiagnostic('QR_RENDER_FAILED')}} style={{width:220,height:220,display:'block',objectFit:'contain',backgroundColor:'#fff'}} alt="Admin authenticator QR code"/>:<Image source={{uri:qrDataUrl}} onError={()=>{setQrRenderFailed(true);setDiagnostic('QR_RENDER_FAILED')}} style={{width:220,height:220,backgroundColor:'#fff'}} resizeMode="contain"/>)} 
      {qrRenderFailed&&<Text style={s.error}>The QR image could not be rendered. Use the manual setup URI below in your authenticator app.</Text>}
