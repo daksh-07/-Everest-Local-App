@@ -65,7 +65,7 @@ begin
     abr_checked_at = now(),
     abr_abn_status = nullif(p_result->>'abnStatus',''),
     abr_abn_status_effective_from = case
-      when p_result->>'abnStatusEffectiveFrom' ~ '^\\d{4}-\\d{2}-\\d{2}$'
+      when p_result->>'abnStatusEffectiveFrom' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}
         then (p_result->>'abnStatusEffectiveFrom')::date
       else null
     end,
@@ -78,6 +78,94 @@ begin
     end,
     abr_gst_registered_from = case
       when p_result->>'gstRegisteredFrom' ~ '^\\d{4}-\\d{2}-\\d{2}$'
+        then (p_result->>'gstRegisteredFrom')::date
+      else null
+    end,
+    abr_state = nullif(p_result->>'state',''),
+    abr_postcode = nullif(p_result->>'postcode',''),
+    abr_business_names = coalesce(p_result->'businessNames','[]'::jsonb),
+    abr_match = case
+      when p_result ? 'nameMatch' then (p_result->>'nameMatch')::boolean
+      else null
+    end,
+    abr_message = nullif(p_result->>'message','')
+  where id = latest_id;
+
+  insert into public.admin_actions(
+    admin_id,
+    action,
+    target_type,
+    target_id,
+    metadata
+  )
+  values(
+    auth.uid(),
+    'business_abr_check',
+    'business',
+    p_business_id,
+    jsonb_build_object(
+      'status', p_result->>'status',
+      'name_match', p_result->>'nameMatch',
+      'abn_status', p_result->>'abnStatus'
+    )
+  );
+
+  return true;
+end;
+$$;
+
+grant execute on function public.record_business_abr_check(uuid,jsonb) to authenticated;
+
+        then (p_result->>'abnStatusEffectiveFrom')::date
+      else null
+    end,
+    abr_entity_name = nullif(p_result->>'entityName',''),
+    abr_entity_type = nullif(p_result->>'entityType',''),
+    abr_entity_type_code = nullif(p_result->>'entityTypeCode',''),
+    abr_gst_registered = case
+      when p_result ? 'gstRegistered' then (p_result->>'gstRegistered')::boolean
+      else null
+    end,
+    abr_gst_registered_from = case
+      when p_result->>'gstRegisteredFrom' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}
+        then (p_result->>'gstRegisteredFrom')::date
+      else null
+    end,
+    abr_state = nullif(p_result->>'state',''),
+    abr_postcode = nullif(p_result->>'postcode',''),
+    abr_business_names = coalesce(p_result->'businessNames','[]'::jsonb),
+    abr_match = case
+      when p_result ? 'nameMatch' then (p_result->>'nameMatch')::boolean
+      else null
+    end,
+    abr_message = nullif(p_result->>'message','')
+  where id = latest_id;
+
+  insert into public.admin_actions(
+    admin_id,
+    action,
+    target_type,
+    target_id,
+    metadata
+  )
+  values(
+    auth.uid(),
+    'business_abr_check',
+    'business',
+    p_business_id,
+    jsonb_build_object(
+      'status', p_result->>'status',
+      'name_match', p_result->>'nameMatch',
+      'abn_status', p_result->>'abnStatus'
+    )
+  );
+
+  return true;
+end;
+$$;
+
+grant execute on function public.record_business_abr_check(uuid,jsonb) to authenticated;
+
         then (p_result->>'gstRegisteredFrom')::date
       else null
     end,
