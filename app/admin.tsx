@@ -70,7 +70,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
      started.current=false;
      const m=e instanceof AdminMfaError?e.message:'Secure MFA setup could not be started. Please try again.';
      setDiagnostic(e instanceof AdminMfaError?e.diagnostic:'ENROLLMENT_FAILED');
-     setDiagnosticDetails(e instanceof AdminMfaError?e.details:{phase:'enrollment'});
+     setDiagnosticDetails(e instanceof AdminMfaError?(e.details ?? null):{phase:'enrollment'});
      setError(m);
      setPhase('IDLE');
    }finally{setLoading(false)}
@@ -97,7 +97,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
    }catch(e){
      const m=e instanceof AdminMfaError?e.message:'MFA setup could not be restarted.';
      setDiagnostic(e instanceof AdminMfaError?e.diagnostic:'UNKNOWN');
-     setDiagnosticDetails(e instanceof AdminMfaError?e.details:{phase:'enrollment'});
+     setDiagnosticDetails(e instanceof AdminMfaError?(e.details ?? null):{phase:'enrollment'});
      setError(m);
      setPhase('IDLE');
      started.current=false;
@@ -161,7 +161,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
      const isMfa=e instanceof AdminMfaError;
      const diag=isMfa?e.diagnostic:'UNKNOWN';
      setDiagnostic(diag);
-     setDiagnosticDetails(isMfa?e.details:{phase:'verification'});
+     setDiagnosticDetails(isMfa?(e.details ?? null):{phase:'verification'});
      if(diag==='MFA_FACTOR_NOT_FOUND'){
        setChallengeId('');
        setError('Your MFA setup expired before verification. Start a new setup.');
