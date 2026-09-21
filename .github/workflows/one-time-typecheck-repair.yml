@@ -20,7 +20,7 @@ jobs:
           s = p.read_text()
           replacements = {
             "setDiagnosticDetails(e instanceof AdminMfaError?e.details:{phase:'enrollment'});": "setDiagnosticDetails(e instanceof AdminMfaError?(e.details ?? null):{phase:'enrollment'});",
-            "setDiagnosticDetails(e instanceof AdminMfaError?e.details:{phase:'verification'});": "setDiagnosticDetails(e instanceof AdminMfaError?(e.details ?? null):{phase:'verification'});",
+            "setDiagnosticDetails(isMfa?e.details:{phase:'verification'});": "setDiagnosticDetails(isMfa?(e.details ?? null):{phase:'verification'});",
           }
           for old, new in replacements.items():
             count = s.count(old)
