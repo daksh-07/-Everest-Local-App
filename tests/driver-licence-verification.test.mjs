@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+const root=process.cwd();
+const migration=fs.readFileSync(path.join(root,'supabase/migrations/20260921183000_driver_licence_authoritative_boundary.sql'),'utf8');
+const shared=fs.readFileSync(path.join(root,'supabase/functions/_shared/driver-verification.ts'),'utf8');
+assert.match(migration,/begin_driver_licence_verification/);
+assert.match(migration,/apply_driver_licence_authoritative_result/);
+assert.match(migration,/auth\.jwt\(\)->>'role'.*service_role/s);
+assert.match(migration,/grant execute on function public\.begin_driver_licence_verification\(uuid\) to service_role/);
+assert.match(migration,/grant execute on function public\.apply_driver_licence_authoritative_result\(uuid,text,text,text,text,date,text,text\) to service_role/);
+for (const event of ['DRIVER_LICENCE_VERIFICATION_SUBMITTED','DRIVER_LICENCE_VERIFICATION_SUCCESS','DRIVER_LICENCE_AUTO_VERIFIED','DRIVER_LICENCE_AUTO_REJECTED','DRIVER_LICENCE_VERIFICATION_RETRY','DRIVER_LICENCE_MANUAL_REVIEW_REQUESTED']) assert.match(migration,new RegExp(event));
+assert.match(migration,/government verification service could not complete the check/);
+assert.match(migration,/Official API results can only be recorded by the trusted verification service/);
+assert.match(migration,/v\.verification_method='OFFICIAL_API' or exists/);
+assert.doesNotMatch(shared,/EXPO_PUBLIC_|SUPABASE_SERVICE_ROLE_KEY|TFNSW_.*KEY/i);
+console.log('driver licence authoritative boundary tests passed');

@@ -17,8 +17,6 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
  type SetupPhase='IDLE'|'ENROLLING'|'ENROLLED'|'AWAITING_CODE'|'VERIFYING'|'VERIFIED'|'COMPLETE';
  const [phase,setPhase]=useState<SetupPhase>(setup?'IDLE':'AWAITING_CODE');
  const [enrollment,setEnrollment]=useState<Enrollment|null>(null);
- const [challengeId,setChallengeId]=useState('');
- const [aalBefore,setAalBefore]=useState<string|null>(null);
  const [code,setCode]=useState('');
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(setup);
@@ -72,8 +70,6 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
    setDiagnostic('');
    setDiagnosticDetails(null);
    setCode('');
-   setChallengeId('');
-   setAalBefore(null);
    setEnrollment(null);
    setQrRenderFailed(false);
    setRestartRequired(false);
@@ -113,8 +109,6 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
      const activeAalBefore=challenge.aalBefore;
      const activeFactorStatus=challenge.factorStatus;
      const activeFactorType=challenge.factorType;
-     setChallengeId(activeChallengeId);
-     setAalBefore(activeAalBefore);
      setDiagnosticDetails({
        phase:'challenge',
        factorExists:true,
@@ -144,7 +138,6 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
      const diag=isMfa?e.diagnostic:'UNKNOWN';
      setDiagnostic(diag);
      setDiagnosticDetails(isMfa?(e.details ?? null):{phase:'verification'});
-     setChallengeId('');
      if(diag==='MFA_FACTOR_NOT_FOUND'){
        setError('Your MFA setup expired before verification. Start a new setup.');
        setRestartRequired(true);
