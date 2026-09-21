@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { cwd } from 'node:process';
 
-const migration = fs.readFileSync(path.join(process.cwd(), 'supabase/migrations/20260921233400_service_dispatch_evaluation_audit.sql'), 'utf8');
+const migration = fs.readFileSync(path.join(cwd(), 'supabase/migrations/20260921233400_service_dispatch_evaluation_audit.sql'), 'utf8');
 
 test('dispatch records provider eligibility and exclusion reasons', () => {
   assert.match(migration, /service_dispatch_evaluations/);
