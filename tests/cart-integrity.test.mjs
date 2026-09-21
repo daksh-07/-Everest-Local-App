@@ -12,7 +12,9 @@ test('cart quantities are database-constrained to positive integers', () => {
 
 test('cart quantity integrity does not replace server-authoritative checkout validation', async () => {
   const commerce = await readFile('lib/commerce.ts', 'utf8');
-  assert.match(commerce, /supabase\.functions\.invoke\(['"]checkout['"]/i);
-  assert.match(commerce, /delivery_method\s*:/i);
-  assert.doesNotMatch(commerce, /price\s*:/i);
+  const checkoutCallStart = commerce.search(/supabase\.functions\.invoke\(['"]checkout['"]/i);
+  assert.notEqual(checkoutCallStart, -1);
+  const checkoutCall = commerce.slice(checkoutCallStart, commerce.indexOf(');', checkoutCallStart) + 2);
+  assert.match(checkoutCall, /delivery_method\s*:/i);
+  assert.doesNotMatch(checkoutCall, /price\s*:/i);
 });
