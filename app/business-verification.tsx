@@ -72,6 +72,8 @@ export default function BusinessVerification() {
 
   const isVerified = business?.verification_status === 'VERIFIED';
   const isRetry = verification?.automated_decision === 'RETRY';
+  const retryBlocked = isRetry && !!verification?.retry_after && new Date(verification.retry_after).getTime() > Date.now();
+  const pendingLookup = business?.verification_status === 'PENDING' && !isRetry;
   const isManualReview = verification?.automated_decision === 'MANUAL_REVIEW_REQUESTED';
   const isRejected = business?.verification_status === 'REJECTED' && verification?.status === 'REJECTED';
 
@@ -258,9 +260,9 @@ export default function BusinessVerification() {
             )}
 
             <Pressable
-              disabled={busy || !abnValid || isRetry || business.verification_status === 'PENDING'}
+              disabled={busy || !abnValid || retryBlocked || pendingLookup}
               onPress={() => void submit()}
-              style={[s.button, (busy || !abnValid || isRetry || business.verification_status === 'PENDING') ? s.buttonDisabled : null]}
+              style={[s.button, (busy || !abnValid || retryBlocked || pendingLookup) ? s.buttonDisabled : null]}
             >
               <Text style={s.buttonText}>{busy ? 'CHECKING ABN…' : 'VERIFY ABN'}</Text>
             </Pressable>
