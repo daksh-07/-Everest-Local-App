@@ -121,11 +121,13 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
    setPhase('VERIFYING');
    try{
      let activeChallengeId=challengeId;
+     let activeAalBefore=aalBefore;
      if(!activeChallengeId){
        const challenge=await challengeAdminTotpFactor(enrollment.id);
        activeChallengeId=challenge.challengeId;
        setChallengeId(activeChallengeId);
-       setAalBefore(challenge.aalBefore);
+       activeAalBefore=challenge.aalBefore;
+       setAalBefore(activeAalBefore);
        setDiagnosticDetails({
          phase:'challenge',
          factorExists:true,
@@ -136,7 +138,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
          aalBefore:challenge.aalBefore,
        });
      }
-     await verifyAdminTotp(enrollment.id,activeChallengeId,c,aalBefore);
+     await verifyAdminTotp(enrollment.id,activeChallengeId,c,activeAalBefore);
      setDiagnosticDetails({
        phase:'verification',
        factorExists:true,
@@ -144,7 +146,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
        factorType:'totp',
        challengeCreated:true,
        challengeIdExists:true,
-       aalBefore,
+       aalBefore:activeAalBefore,
        aalAfter:'aal2',
      });
      setPhase('VERIFIED');
