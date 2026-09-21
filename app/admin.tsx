@@ -53,18 +53,6 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
      setPhase('ENROLLED');
      setEnrollment({id:d.id,qr_code:d.totp.qr_code,secret:d.totp.secret,uri:d.totp.uri});
      setQrRenderFailed(false);
-     const challenge=await challengeAdminTotpFactor(d.id);
-     setChallengeId(challenge.challengeId);
-     setAalBefore(challenge.aalBefore);
-     setDiagnosticDetails({
-       phase:'challenge',
-       factorExists:true,
-       factorStatus:challenge.factorStatus,
-       factorType:challenge.factorType,
-       challengeCreated:true,
-       challengeIdExists:true,
-       aalBefore:challenge.aalBefore,
-     });
      setPhase('AWAITING_CODE');
    }catch(e){
      started.current=false;
@@ -120,28 +108,22 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
    setDiagnosticDetails(null);
    setPhase('VERIFYING');
    try{
-     let activeChallengeId=challengeId;
-     let activeAalBefore=aalBefore;
-     let activeFactorStatus=setup?'unverified':'verified';
-     let activeFactorType='totp';
-     if(!activeChallengeId){
-       const challenge=await challengeAdminTotpFactor(enrollment.id);
-       activeChallengeId=challenge.challengeId;
-       setChallengeId(activeChallengeId);
-       activeAalBefore=challenge.aalBefore;
-       activeFactorStatus=challenge.factorStatus;
-       activeFactorType=challenge.factorType;
-       setAalBefore(activeAalBefore);
-       setDiagnosticDetails({
-         phase:'challenge',
-         factorExists:true,
-         factorStatus:challenge.factorStatus,
-         factorType:challenge.factorType,
-         challengeCreated:true,
-         challengeIdExists:true,
-         aalBefore:challenge.aalBefore,
-       });
-     }
+     const challenge=await challengeAdminTotpFactor(enrollment.id);
+     const activeChallengeId=challenge.challengeId;
+     const activeAalBefore=challenge.aalBefore;
+     const activeFactorStatus=challenge.factorStatus;
+     const activeFactorType=challenge.factorType;
+     setChallengeId(activeChallengeId);
+     setAalBefore(activeAalBefore);
+     setDiagnosticDetails({
+       phase:'challenge',
+       factorExists:true,
+       factorStatus:challenge.factorStatus,
+       factorType:challenge.factorType,
+       challengeCreated:true,
+       challengeIdExists:true,
+       aalBefore:challenge.aalBefore,
+     });
      await verifyAdminTotp(enrollment.id,activeChallengeId,c,activeAalBefore,activeFactorStatus,activeFactorType);
      setDiagnosticDetails({
        phase:'verification',
@@ -162,17 +144,15 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
      const diag=isMfa?e.diagnostic:'UNKNOWN';
      setDiagnostic(diag);
      setDiagnosticDetails(isMfa?(e.details ?? null):{phase:'verification'});
+     setChallengeId('');
      if(diag==='MFA_FACTOR_NOT_FOUND'){
-       setChallengeId('');
        setError('Your MFA setup expired before verification. Start a new setup.');
        setRestartRequired(true);
        setPhase('IDLE');
      }else if(diag==='CHALLENGE_EXPIRED'){
-       setChallengeId('');
        setError('Your verification window expired. Enter the newest code from your authenticator, then press Verify again.');
        setPhase('AWAITING_CODE');
      }else if(diag==='MFA_VERIFICATION_FAILED'){
-       setChallengeId('');
        setError(isMfa?e.message:'Supabase rejected the MFA verification attempt. Enter the newest code and try again.');
        setPhase('AWAITING_CODE');
      }else{
