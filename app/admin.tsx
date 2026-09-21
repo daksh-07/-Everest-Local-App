@@ -18,6 +18,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
  const [phase,setPhase]=useState<SetupPhase>(setup?'IDLE':'AWAITING_CODE');
  const [enrollment,setEnrollment]=useState<Enrollment|null>(null);
  const [challengeId,setChallengeId]=useState('');
+ const [aalBefore,setAalBefore]=useState<string|null>(null);
  const [code,setCode]=useState('');
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(setup);
@@ -54,6 +55,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
      setQrRenderFailed(false);
      const challenge=await challengeAdminTotpFactor(d.id);
      setChallengeId(challenge.challengeId);
+     setAalBefore(challenge.aalBefore);
      setDiagnosticDetails({
        phase:'challenge',
        factorExists:true,
@@ -61,6 +63,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
        factorType:challenge.factorType,
        challengeCreated:true,
        challengeIdExists:true,
+       aalBefore:challenge.aalBefore,
      });
      setPhase('AWAITING_CODE');
    }catch(e){
@@ -82,6 +85,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
    setDiagnosticDetails(null);
    setCode('');
    setChallengeId('');
+   setAalBefore(null);
    setEnrollment(null);
    setQrRenderFailed(false);
    setRestartRequired(false);
@@ -121,6 +125,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
        const challenge=await challengeAdminTotpFactor(enrollment.id);
        activeChallengeId=challenge.challengeId;
        setChallengeId(activeChallengeId);
+       setAalBefore(challenge.aalBefore);
        setDiagnosticDetails({
          phase:'challenge',
          factorExists:true,
@@ -128,9 +133,10 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
          factorType:challenge.factorType,
          challengeCreated:true,
          challengeIdExists:true,
+         aalBefore:challenge.aalBefore,
        });
      }
-     await verifyAdminTotp(enrollment.id,activeChallengeId,c);
+     await verifyAdminTotp(enrollment.id,activeChallengeId,c,aalBefore);
      setDiagnosticDetails({
        phase:'verification',
        factorExists:true,
@@ -138,6 +144,8 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
        factorType:'totp',
        challengeCreated:true,
        challengeIdExists:true,
+       aalBefore,
+       aalAfter:'aal2',
      });
      setPhase('VERIFIED');
      setCode('');
