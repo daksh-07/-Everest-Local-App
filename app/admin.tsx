@@ -138,7 +138,9 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
          aalBefore:challenge.aalBefore,
        });
      }
-     await verifyAdminTotp(enrollment.id,activeChallengeId,c,activeAalBefore);
+     const challengeFactorStatus = enrollment && diagnosticDetails?.factorStatus ? diagnosticDetails.factorStatus : 'unverified';
+     const challengeFactorType = enrollment && diagnosticDetails?.factorType ? diagnosticDetails.factorType : 'totp';
+     await verifyAdminTotp(enrollment.id,activeChallengeId,c,activeAalBefore,challengeFactorStatus,challengeFactorType);
      setDiagnosticDetails({
        phase:'verification',
        factorExists:true,
