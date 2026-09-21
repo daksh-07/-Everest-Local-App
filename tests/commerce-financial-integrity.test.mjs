@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
+import { URL } from 'node:url';
 
 const migration = await readFile(
   new URL('../supabase/migrations/20260921010000_product_order_line_financial_integrity.sql', import.meta.url),
