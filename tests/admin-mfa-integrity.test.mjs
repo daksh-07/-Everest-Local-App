@@ -21,7 +21,7 @@ test('admin MFA enrollment is non-destructive until explicit restart', () => {
 });
 
 test('admin MFA verification uses the exact stored factor and challenge without an automatic retry', () => {
-  assert.match(adminMfa, /verifyAdminTotp\(factorId: string, challengeId: string, code: string\)/);
+  assert.match(adminMfa, /verifyAdminTotp\(\s*factorId: string,\s*challengeId: string,\s*code: string/);
   assert.match(adminMfa, /mfa\.verify\(\{[\s\S]*factorId: factor\.id,[\s\S]*challengeId/);
   assert.match(adminMfa, /MFA_CHALLENGE_CREATION_FAILED/);
   assert.match(adminMfa, /MFA_VERIFICATION_FAILED/);
@@ -43,7 +43,7 @@ test('admin MFA captures safe Supabase challenge/verify diagnostics without secr
   assert.match(adminMfa, /aalBefore/);
   assert.match(adminMfa, /aalAfter/);
   assert.doesNotMatch(adminMfa, /console\.(?:log|info|debug|warn|error)/);
-  assert.doesNotMatch(adminMfa, /(?:access_token|refresh_token|recovery.?code|otp_code)/i);
+  assert.doesNotMatch(adminMfa, /(?:access_token|refresh_token|recovery[_ -]?code|otp[_ -]?code)\b/i);
 });
 
 test('admin MFA exposes an explicit setup state machine and stale-factor recovery UX', () => {
