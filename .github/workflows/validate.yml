@@ -1,4 +1,5 @@
 name: Validate Everest Local
+# Main validation workflow: keep typecheck/lint/security/build gates authoritative.
 on:
   push:
     branches: [main]
