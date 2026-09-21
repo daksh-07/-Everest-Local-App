@@ -58,11 +58,16 @@ function firstText(doc: Document, localNames: string[]): string {
   return '';
 }
 
-function allTexts(doc: Document, localName: string): string[] {
+function childText(parent: Element, localName: string): string {
+  const nodes = parent.getElementsByTagNameNS('*', localName);
+  return nodes[0]?.textContent?.trim() || '';
+}
+
+function namesUnder(doc: Document, parentName: string): string[] {
   const values: string[] = [];
-  const nodes = doc.getElementsByTagNameNS('*', localName);
-  for (const node of Array.from(nodes)) {
-    const value = node.textContent?.trim();
+  const parents = doc.getElementsByTagNameNS('*', parentName);
+  for (const parent of Array.from(parents)) {
+    const value = childText(parent, 'organisationName');
     if (value && !values.includes(value)) values.push(value);
   }
   return values;
@@ -84,22 +89,21 @@ function parseAbrXml(raw: string): AbrPayload {
   const abn = firstText(doc, ['identifierValue']);
   const abnStatus = firstText(doc, ['entityStatusCode']);
   const abnStatusEffectiveFrom = firstText(doc, ['effectiveFrom']) || null;
-  const entityName = firstText(doc, ['organisationName']) || [
+  const mainName = namesUnder(doc, 'mainName')[0] || '';
+  const legalName = [
     firstText(doc, ['givenName']),
     firstText(doc, ['otherGivenName']),
     firstText(doc, ['familyName']),
   ].filter(Boolean).join(' ').trim();
+  const entityName = mainName || legalName;
 
   const entityTypeCode = firstText(doc, ['entityTypeCode']);
   const entityType = firstText(doc, ['entityDescription']);
-  const gstRegisteredFrom = firstText(doc, ['goodsAndServicesTax'])
-    ? firstText(doc, ['goodsAndServicesTax'])
-    : null;
+  const gstRegisteredFrom = firstText(doc, ['goodsAndServicesTax']) || null;
   const state = firstText(doc, ['stateCode']);
   const postcode = firstText(doc, ['postcode']);
 
-  const businessNames = allTexts(doc, 'businessName')
-    .filter(value => value !== 'businessName');
+  const businessNames = namesUnder(doc, 'businessName');
 
   if (!abn && !abnStatus && !exceptionCode) {
     throw new Error('ABR response did not contain a business record.');
