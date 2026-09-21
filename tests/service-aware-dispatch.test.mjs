@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { cwd } from 'node:process';
 
-const root = process.cwd();
+const root = cwd();
 const migration = [
   'supabase/migrations/20260921233000_service_aware_dispatch_engine.sql',
   'supabase/migrations/20260921235900_dispatch_relationship_prerequisites.sql',
