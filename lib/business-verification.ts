@@ -34,15 +34,52 @@ function createDiagnosticId(): string {
   return `BV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
+function mapRemoteCode(code: unknown, governmentName?: unknown): BusinessVerificationError | null {
+  const normalizedCode = typeof code === 'string' ? code : '';
+  const name = typeof governmentName === 'string' ? governmentName : undefined;
+  switch (normalizedCode) {
+    case 'INVALID_ABN':
+      return new BusinessVerificationError('INVALID_ABN');
+    case 'ABN_NOT_FOUND':
+      return new BusinessVerificationError('ABN_NOT_FOUND');
+    case 'ABN_NOT_ACTIVE':
+      return new BusinessVerificationError('ABN_NOT_ACTIVE');
+    case 'BUSINESS_NAME_MISMATCH':
+    case 'ABN_MISMATCH':
+      return new BusinessVerificationError('BUSINESS_NAME_MISMATCH', undefined, name);
+    case 'GOVERNMENT_LOOKUP_UNAVAILABLE':
+    case 'PENDING_RETRY':
+      return new BusinessVerificationError('GOVERNMENT_LOOKUP_UNAVAILABLE');
+    case 'VERIFICATION_PENDING':
+      return new BusinessVerificationError('VERIFICATION_PENDING');
+    case 'NOT_AUTHORIZED':
+      return new BusinessVerificationError('NOT_AUTHORIZED');
+    case 'VERIFICATION_ALREADY_COMPLETED':
+      return new BusinessVerificationError('VERIFICATION_ALREADY_COMPLETED');
+    default:
+      return null;
+  }
+}
+
 async function readFunctionError(error: unknown): Promise<{ code: string; governmentName?: string }> {
   const candidate = error as { context?: { json?: () => Promise<unknown> } } | null;
   try {
     const payload = await candidate?.context?.json?.();
     if (payload && typeof payload === 'object') {
-      const value = payload as { error?: unknown; government_name?: unknown };
+      const value = payload as { error?: unknown; reason?: unknown; status?: unknown; government_name?: unknown; authoritative_name?: unknown };
       return {
-        code: typeof value.error === 'string' ? value.error : '',
-        governmentName: typeof value.government_name === 'string' ? value.government_name : undefined,
+        code: typeof value.error === 'string'
+          ? value.error
+          : typeof value.reason === 'string'
+            ? value.reason
+            : typeof value.status === 'string'
+              ? value.status
+              : '',
+        governmentName: typeof value.government_name === 'string'
+          ? value.government_name
+          : typeof value.authoritative_name === 'string'
+            ? value.authoritative_name
+            : undefined,
       };
     }
   } catch {
@@ -71,28 +108,28 @@ export async function submitBusinessVerification(
 
   if (error) {
     const remote = await readFunctionError(error);
-    const diagnosticId = createDiagnosticId();
+    const mapped = mapRemoteCode(remote.code, remote.governmentName);
+    if (mapped) throw mapped;
 
-    switch (remote.code) {
-      case 'INVALID_ABN':
-        throw new BusinessVerificationError('INVALID_ABN');
-      case 'ABN_NOT_FOUND':
-        throw new BusinessVerificationError('ABN_NOT_FOUND');
-      case 'ABN_NOT_ACTIVE':
-        throw new BusinessVerificationError('ABN_NOT_ACTIVE');
-      case 'BUSINESS_NAME_MISMATCH':
-        throw new BusinessVerificationError('BUSINESS_NAME_MISMATCH', undefined, remote.governmentName);
-      case 'GOVERNMENT_LOOKUP_UNAVAILABLE':
-        throw new BusinessVerificationError('GOVERNMENT_LOOKUP_UNAVAILABLE');
-      case 'VERIFICATION_PENDING':
-        throw new BusinessVerificationError('VERIFICATION_PENDING');
-      case 'NOT_AUTHORIZED':
-        throw new BusinessVerificationError('NOT_AUTHORIZED');
-      case 'VERIFICATION_ALREADY_COMPLETED':
-        throw new BusinessVerificationError('VERIFICATION_ALREADY_COMPLETED');
-      default:
-        console.error(`[BusinessVerification:${diagnosticId}] government verification failed`);
-        throw new BusinessVerificationError('DATABASE_ERROR', diagnosticId);
+    const diagnosticId = createDiagnosticId();
+    console.error(`[BusinessVerification:${diagnosticId}] government verification failed`);
+    throw new BusinessVerificationError('DATABASE_ERROR', diagnosticId);
+  }
+
+  if (data && typeof data === 'object') {
+    const value = data as {
+      status?: unknown;
+      reason?: unknown;
+      error?: unknown;
+      government_name?: unknown;
+      authoritative_name?: unknown;
+    };
+    const mapped = mapRemoteCode(value.error ?? value.reason ?? value.status, value.government_name ?? value.authoritative_name);
+    if (mapped) {
+      const status = typeof value.status === 'string' ? value.status : '';
+      // A successful verification response also uses status=VERIFIED, so only
+      // map terminal/retry statuses here. VERIFIED must continue below.
+      if (status !== 'VERIFIED') throw mapped;
     }
   }
 
