@@ -146,7 +146,7 @@ test('ABR Edge Function only returns VERIFIED after active/current ABN and busin
   const activeIndex = abrFunction.indexOf('const active = parsed.abnStatus.toLowerCase() === \'active\'');
   const currentIndex = abrFunction.indexOf('const current = parsed.abnCurrent !== false');
   const mismatchIndex = abrFunction.indexOf("reason: 'BUSINESS_NAME_MISMATCH'");
-  const verifiedIndex = abrFunction.indexOf("status: 'VERIFIED'");
+  const verifiedIndex = abrFunction.indexOf("status: 'VERIFIED'", mismatchIndex);
   assert.ok(activeIndex >= 0);
   assert.ok(currentIndex > activeIndex);
   assert.ok(mismatchIndex > currentIndex);
