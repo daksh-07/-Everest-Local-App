@@ -89,3 +89,4 @@ test('admin MFA does not persist the TOTP secret or URI', () => {
   assert.doesNotMatch(adminMfa, /localStorage\.(?:setItem|getItem)\([^)]*(?:secret|uri)/i);
   assert.doesNotMatch(adminMfa, /console\.(?:log|info|debug|warn|error)[\s\S]{0,300}(?:secret|uri)/i);
 });
+
