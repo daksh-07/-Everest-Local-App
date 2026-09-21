@@ -327,8 +327,8 @@ export async function verifyAdminTotp(
   if (verifyError) {
     const diagnostic = classifyMfaError(verifyError, 'verification');
     const details: Omit<AdminMfaDiagnosticDetails, 'phase' | 'code' | 'message' | 'status'> = {
-      factorExists: true,
-      factorStatus,
+      factorExists: authErrorCode(verifyError) !== 'mfa_factor_not_found',
+      factorStatus: authErrorCode(verifyError) === 'mfa_factor_not_found' ? 'missing' : factorStatus,
       factorType,
       challengeCreated: true,
       challengeIdExists: true,
