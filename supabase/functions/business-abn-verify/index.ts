@@ -436,7 +436,7 @@ Deno.serve(async (req) => {
         message: 'We found an active ABN, but the registered business information could not be matched confidently with the business details entered in Everest Local.',
         authoritative_name: parsed.entityName,
         business_names: parsed.businessNames,
-      }, 422);
+      }, 200);
     }
 
     const result: VerificationResult = {
