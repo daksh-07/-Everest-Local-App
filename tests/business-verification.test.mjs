@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 const { isValidAbn, normalizeAbn } = await import('../lib/abn.ts');
 const migration = await readFile('supabase/migrations/20260921073000_automated_business_abn_verification.sql', 'utf8');
 const caseMigration = await readFile('supabase/migrations/20260921073100_business_verification_case_types.sql', 'utf8');
+const revalidationMigration = await readFile('supabase/migrations/20260921073300_add_abn_revalidation_strategy.sql', 'utf8');
 const searchPathHardeningMigration = await readFile(
   'supabase/migrations/20260920112705_business_verification_search_path_hardening.sql',
   'utf8',
