@@ -1,0 +1,2 @@
+create index if not exists service_dispatch_assignments_booking_request_fk_idx on public.service_dispatch_assignments(booking_id, service_request_id);
+create index if not exists service_dispatch_assignments_job_request_fk_idx on public.service_dispatch_assignments(job_id, service_request_id);
