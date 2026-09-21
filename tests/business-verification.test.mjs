@@ -129,14 +129,29 @@ test('ABR government verification is server-only and stores provider evidence', 
   assert.match(abrMigration, /revoke execute[\s\S]*authenticated/);
 });
 
-test('ABR Edge Function verifies active ABN and business-name match before submission', () => {
+test('deployed ABR Edge Function is reconciled with source and enforces server-side verification', () => {
   assert.match(abrFunction, /ABR_LOOKUP_GUID/);
-  assert.match(abrFunction, /abr\.business\.gov\.au\/json\/AbnDetails\.aspx/);
-  assert.match(abrFunction, /AbnStatus/);
-  assert.match(abrFunction, /BusinessName/);
+  assert.match(abrFunction, /abr\.business\.gov\.au\/ABRXMLSearch\/AbrXmlSearch\.asmx\/SearchByABNv202001/);
+  assert.match(abrFunction, /parseAbrXml/);
+  assert.match(abrFunction, /ABN_NOT_FOUND/);
+  assert.match(abrFunction, /ABN_MISMATCH/);
   assert.match(abrFunction, /BUSINESS_NAME_MISMATCH/);
-  assert.match(abrFunction, /submit_business_verification_from_abr/);
+  assert.match(abrFunction, /begin_automated_abn_verification/);
+  assert.match(abrFunction, /finish_automated_abn_verification/);
   assert.match(abrFunction, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(abrFunction, /authData\.user\.id/);
+});
+
+test('ABR Edge Function only returns VERIFIED after active/current ABN and business-name match', () => {
+  const activeIndex = abrFunction.indexOf('const active = parsed.abnStatus.toLowerCase() === \'active\'');
+  const currentIndex = abrFunction.indexOf('const current = parsed.abnCurrent !== false');
+  const mismatchIndex = abrFunction.indexOf("reason: 'BUSINESS_NAME_MISMATCH'");
+  const verifiedIndex = abrFunction.indexOf("status: 'VERIFIED'");
+  assert.ok(activeIndex >= 0);
+  assert.ok(currentIndex > activeIndex);
+  assert.ok(mismatchIndex > currentIndex);
+  assert.ok(verifiedIndex > mismatchIndex);
+  assert.match(abrFunction, /finish_automated_abn_verification/);
 });
 
 test('admin verification RPC remains available to authenticated callers but enforces admin authorization inside the function', () => {
