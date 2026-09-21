@@ -240,33 +240,35 @@ export async function enrollAdminTotp() {
 
 export async function challengeAdminTotpFactor(factorId: string): Promise<{ challengeId: string; factorStatus: string; factorType: string; aalBefore: string | null }> {
   const userId = await assertAuthorizedAdmin();
-  const factor = await findExactFactor(factorId);
+  const { data: assuranceBefore, error: assuranceBeforeError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (assuranceBeforeError) {
+    throw diagnosticError(classifyMfaError(assuranceBeforeError, 'challenge'), 'The MFA assurance state could not be read before challenge creation.', assuranceBeforeError, 'challenge', {
+      factorExists: false,
+      challengeCreated: false,
+      challengeIdExists: false,
+    });
+  }
+
+  const factors = await listAllFactors();
+  const factor = factors.find((item) => item.id === factorId && item.factor_type === 'totp') ?? null;
   if (!factor) {
     throw new AdminMfaError('MFA_FACTOR_NOT_FOUND', 'The MFA setup factor is no longer available.', {
-      phase: 'challenge', factorExists: false, challengeCreated: false, challengeIdExists: false,
+      phase: 'challenge',
+      factorExists: false,
+      challengeCreated: false,
+      challengeIdExists: false,
+      aalBefore: assuranceBefore.currentLevel,
     });
   }
   if (factor.status !== 'unverified' && factor.status !== 'verified') {
     throw new AdminMfaError('MFA_FACTOR_NOT_FOUND', 'The MFA setup factor is no longer available.', {
-      phase: 'challenge', factorExists: true, factorStatus: String(factor.status), factorType: String(factor.factor_type),
-      challengeCreated: false, challengeIdExists: false,
-    });
-  }
-
-  const current = await currentUserId();
-  if (current !== userId) throw new AdminMfaError('SESSION_EXPIRED', 'The admin session changed during MFA setup.', {
-    phase: 'challenge', factorExists: true, factorStatus: String(factor.status), factorType: String(factor.factor_type),
-    challengeCreated: false, challengeIdExists: false,
-  });
-
-  const { data: assuranceBefore, error: assuranceBeforeError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (assuranceBeforeError) {
-    throw diagnosticError(classifyMfaError(assuranceBeforeError, 'challenge'), 'The MFA assurance state could not be read before challenge creation.', assuranceBeforeError, 'challenge', {
+      phase: 'challenge',
       factorExists: true,
-      factorStatus,
-      factorType,
+      factorStatus: String(factor.status),
+      factorType: String(factor.factor_type),
       challengeCreated: false,
       challengeIdExists: false,
+      aalBefore: assuranceBefore.currentLevel,
     });
   }
 
@@ -284,11 +286,21 @@ export async function challengeAdminTotpFactor(factorId: string): Promise<{ chal
   }
   if (!data?.id) {
     throw new AdminMfaError('MFA_CHALLENGE_CREATION_FAILED', 'Supabase did not return a challenge ID.', {
-      phase: 'challenge', factorExists: true, factorStatus: String(factor.status), factorType: String(factor.factor_type),
-      challengeCreated: false, challengeIdExists: false, aalBefore: assuranceBefore.currentLevel,
+      phase: 'challenge',
+      factorExists: true,
+      factorStatus: String(factor.status),
+      factorType: String(factor.factor_type),
+      challengeCreated: false,
+      challengeIdExists: false,
+      aalBefore: assuranceBefore.currentLevel,
     });
   }
-  return { challengeId: data.id, factorStatus: String(factor.status), factorType: String(factor.factor_type), aalBefore: assuranceBefore.currentLevel };
+  return {
+    challengeId: data.id,
+    factorStatus: String(factor.status),
+    factorType: String(factor.factor_type),
+    aalBefore: assuranceBefore.currentLevel,
+  };
 }
 
 export async function verifyAdminTotp(
