@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { cwd } from 'node:process';
 
-const migration = fs.readFileSync(path.join(process.cwd(), 'supabase/migrations/20260921233000_service_aware_dispatch_engine.sql'), 'utf8') + '\n' + fs.readFileSync(path.join(process.cwd(), 'supabase/migrations/20260921233100_service_dispatch_authority.sql'), 'utf8');
+const root = cwd();
+const migration = fs.readFileSync(path.join(root, 'supabase/migrations/20260921233000_service_aware_dispatch_engine.sql'), 'utf8') + '\n' + fs.readFileSync(path.join(root, 'supabase/migrations/20260921233100_service_dispatch_authority.sql'), 'utf8');
 
 const fn = (name) => {
   const start = migration.indexOf(`create or replace function public.${name}`);
@@ -99,7 +101,7 @@ test('all dispatch SECURITY DEFINER functions pin search_path', () => {
 });
 
 test('Phase 1 driver availability migration remains present and untouched', () => {
-  const phase1 = fs.readFileSync(path.join(process.cwd(), 'supabase/migrations/20260921210000_driver_availability.sql'), 'utf8');
+  const phase1 = fs.readFileSync(path.join(root, 'supabase/migrations/20260921210000_driver_availability.sql'), 'utf8');
   assert.match(phase1, /set_driver_availability/);
   assert.match(phase1, /driver_availability/);
 });
