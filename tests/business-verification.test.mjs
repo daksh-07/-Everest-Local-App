@@ -93,6 +93,10 @@ test('admin verification remains server-authorized', () => {
 test('client maps expected backend errors and hides unexpected database details', () => {
   for (const code of [
     'INVALID_ABN',
+    'ABN_NOT_FOUND',
+    'ABN_NOT_ACTIVE',
+    'BUSINESS_NAME_MISMATCH',
+    'GOVERNMENT_LOOKUP_UNAVAILABLE',
     'VERIFICATION_PENDING',
     'NOT_AUTHORIZED',
     'VERIFICATION_ALREADY_COMPLETED',
@@ -102,6 +106,13 @@ test('client maps expected backend errors and hides unexpected database details'
   }
   assert.match(screen, /Reference:/i);
   assert.doesNotMatch(screen, /catch\{setError\('We could not submit verification right now\. Please check the ABN and try again\.'\)}/);
+});
+
+test('client handles successful HTTP responses that contain a terminal ABR rejection status', () => {
+  assert.match(flow, /value\.error \?\? value\.reason \?\? value\.status/);
+  assert.match(flow, /status !== 'VERIFIED'/);
+  assert.match(flow, /ABN_MISMATCH/);
+  assert.match(flow, /PENDING_RETRY/);
 });
 
 test('documents are not falsely presented as uploaded', () => {
