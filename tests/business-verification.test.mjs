@@ -127,6 +127,7 @@ test('manual review is a real server-authorized case and cannot self-approve', (
   assert.match(caseMigration, /case_type/);
   assert.match(caseMigration, /business_members/);
   assert.match(caseMigration, /resolve_business_verification_review/);
+  assert.match(caseMigration, /revoke execute on function public\\.request_business_verification_review/);
   assert.match(caseMigration, /if not public\.is_admin\(\) then/);
   assert.match(caseMigration, /ABN_VERIFICATION_MANUAL_REVIEW_REQUESTED/);
   assert.match(caseMigration, /ABN_VERIFICATION_MANUAL_APPROVED/);
