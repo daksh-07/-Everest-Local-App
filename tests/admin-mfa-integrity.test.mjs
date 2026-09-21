@@ -91,7 +91,7 @@ test('admin MFA does not persist the TOTP secret or URI', () => {
 });
 test('admin MFA post-sign-in challenge uses the current-factor helper', () => {
   assert.match(adminMfa, /export async function challengeAdminTotp\(code: string\)/);
-  assert.match(adminMfa, /getVerifiedAdminTotpFactor\(\)/);
+  assert.match(adminMfa, /getVerifiedAdminTotpFactorId\(\)/);
   assert.match(adminScreen, /if\(!setup\)\{[\s\S]*challengeAdminTotp\(c\)/);
   assert.doesNotMatch(adminScreen, /if\(!setup\)\{[\s\S]*challengeAdminTotpFactor\(enrollment\.id\)/);
 });
