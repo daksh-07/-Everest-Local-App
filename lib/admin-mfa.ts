@@ -279,15 +279,16 @@ export async function challengeAdminTotpFactor(factorId: string): Promise<{ chal
       factorType: String(factor.factor_type),
       challengeCreated: false,
       challengeIdExists: false,
+      aalBefore: assuranceBefore.currentLevel,
     });
   }
   if (!data?.id) {
     throw new AdminMfaError('MFA_CHALLENGE_CREATION_FAILED', 'Supabase did not return a challenge ID.', {
       phase: 'challenge', factorExists: true, factorStatus: String(factor.status), factorType: String(factor.factor_type),
-      challengeCreated: false, challengeIdExists: false,
+      challengeCreated: false, challengeIdExists: false, aalBefore: assuranceBefore.currentLevel,
     });
   }
-  return { challengeId: data.id, factorStatus: String(factor.status), factorType: String(factor.factor_type) };
+  return { challengeId: data.id, factorStatus: String(factor.status), factorType: String(factor.factor_type), aalBefore: assuranceBefore.currentLevel };
 }
 
 export async function verifyAdminTotp(factorId: string, challengeId: string, code: string, aalBefore: string | null = null) {
