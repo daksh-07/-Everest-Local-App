@@ -18,6 +18,7 @@ export class BusinessVerificationError extends Error {
     super(code);
     this.name = 'BusinessVerificationError';
     this.code = code;
+    this.diagnosticId = diagnosticId;
   }
 }
 
