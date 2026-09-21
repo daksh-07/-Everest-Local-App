@@ -121,7 +121,14 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
        onDone();
        return;
      }
-     const challenge=await challengeAdminTotpFactor(enrollment!.id);
+     if(!enrollment){
+       throw new AdminMfaError('MFA_FACTOR_NOT_FOUND','MFA setup is incomplete. Restart setup to continue.',{
+         phase:'verification',
+         factorExists:false,
+         challengeIdExists:false,
+       });
+     }
+     const challenge=await challengeAdminTotpFactor(enrollment.id);
      const activeChallengeId=challenge.challengeId;
      const activeAalBefore=challenge.aalBefore;
      const activeFactorStatus=challenge.factorStatus;
