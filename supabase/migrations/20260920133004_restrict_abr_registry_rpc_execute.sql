@@ -1,0 +1,2 @@
+-- Compatibility marker: the production database applied the ABR RPC execute restriction
+-- separately after 20260920133003. Fresh environments receive the revoke in 20260920133003.
