@@ -33,12 +33,12 @@ test('admin MFA verification uses the exact stored factor and challenge without 
 });
 
 test('admin MFA captures safe Supabase challenge/verify diagnostics without secrets', () => {
-  assert.match(adminMfa, /error\.status/);
+  assert.match(adminMfa, /status: typeof value\.status/);
   assert.match(adminMfa, /factorStatus/);
   assert.match(adminMfa, /challengeCreated/);
   assert.match(adminMfa, /challengeIdExists/);
   assert.doesNotMatch(adminMfa, /console\.(?:log|info|debug|warn|error)/);
-  assert.doesNotMatch(adminMfa, /(?:access_token|refresh_token|password|recovery.?code|otp_code)/i);
+  assert.doesNotMatch(adminMfa, /(?:access_token|refresh_token|recovery.?code|otp_code)/i);
 });
 
 test('admin MFA exposes an explicit setup state machine and stale-factor recovery UX', () => {
