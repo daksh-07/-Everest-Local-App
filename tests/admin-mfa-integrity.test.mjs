@@ -30,8 +30,13 @@ test('admin MFA refreshes the session before creating a verification challenge',
 });
 
 test('admin MFA verification uses the exact stored factor and challenge without an automatic retry', () => {
-  assert.match(adminMfa, /supabase\.auth\.mfa\.verify/);
-  assert.doesNotMatch(adminMfa, /for\s*\(|while\s*\(|retry/i);
+  const verifyStart = adminMfa.indexOf('export async function verifyAdminTotp');
+  const verifyEnd = adminMfa.indexOf('\nexport ', verifyStart + 1);
+  assert.ok(verifyStart >= 0);
+  const verifyBlock = adminMfa.slice(verifyStart, verifyEnd > verifyStart ? verifyEnd : undefined);
+  assert.match(verifyBlock, /supabase\.auth\.mfa\.verify\(\{[\s\S]*factorId[\s\S]*challengeId[\s\S]*code/);
+  assert.doesNotMatch(verifyBlock, /\b(?:for|while)\s*\(/);
+  assert.doesNotMatch(verifyBlock, /\bretry\b/i);
 });
 
 test('admin MFA captures safe Supabase challenge/verify diagnostics without secrets', () => {
@@ -66,10 +71,13 @@ test('admin MFA post-sign-in verification does not require enrollment state', ()
   const submitStart = gate.indexOf('async function submit()');
   const submitBlock = gate.slice(submitStart);
   const setupBranchStart = submitBlock.indexOf('if(setup&&!enrollment){');
-  const setupBranchEnd = submitBlock.indexOf('if(!setup){', setupBranchStart);
-  assert.ok(setupBranchStart >= 0 && setupBranchEnd > setupBranchStart);
-  const setupOnlyBranch = submitBlock.slice(setupBranchStart, setupBranchEnd);
+  const postSignInStart = submitBlock.indexOf('if(!setup){', setupBranchStart);
+  const postSignInEnd = submitBlock.indexOf("if(!enrollment){", postSignInStart);
+  assert.ok(setupBranchStart >= 0 && postSignInStart > setupBranchStart);
+  assert.ok(postSignInEnd > postSignInStart);
+  const setupOnlyBranch = submitBlock.slice(setupBranchStart, postSignInStart);
+  const postSignInBranch = submitBlock.slice(postSignInStart, postSignInEnd);
   assert.match(setupOnlyBranch, /MFA_FACTOR_NOT_FOUND/);
-  assert.match(submitBlock.slice(setupBranchEnd), /if\(!setup\)\{[\s\S]*challengeAdminTotp\(c\)/);
-  assert.doesNotMatch(submitBlock.slice(setupBranchEnd), /MFA_FACTOR_NOT_FOUND/);
+  assert.match(postSignInBranch, /challengeAdminTotp\(c\)/);
+  assert.doesNotMatch(postSignInBranch, /MFA_FACTOR_NOT_FOUND/);
 });
