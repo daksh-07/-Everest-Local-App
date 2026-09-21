@@ -58,6 +58,7 @@ function createDiagnosticId(): string {
 export async function verifyBusinessAbn(
   businessId: string,
   abn: string,
+  revalidate = false,
 ): Promise<AutomatedVerificationResponse> {
   requireSupabaseConfig();
 
@@ -70,6 +71,7 @@ export async function verifyBusinessAbn(
     body: {
       business_id: businessId,
       abn: normalizedAbn,
+      revalidate,
     },
   });
 
