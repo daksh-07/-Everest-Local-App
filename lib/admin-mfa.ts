@@ -68,6 +68,8 @@ export type AdminMfaDiagnosticDetails = {
   factorType?: string;
   challengeCreated?: boolean;
   challengeIdExists?: boolean;
+  aalBefore?: string | null;
+  aalAfter?: string | null;
 };
 
 type AuthErrorLike = { code?: string; message?: string; status?: number };
@@ -323,6 +325,7 @@ export async function verifyAdminTotp(factorId: string, challengeId: string, cod
       factorType: String(factor.factor_type),
       challengeCreated: true,
       challengeIdExists: true,
+      aalBefore: assuranceBefore.currentLevel,
     };
     if (diagnostic === 'CHALLENGE_EXPIRED') {
       throw diagnosticError(diagnostic, 'Your verification window expired. Enter the newest code from your authenticator, then press Verify again.', verifyError, 'verification', details);
@@ -335,6 +338,7 @@ export async function verifyAdminTotp(factorId: string, challengeId: string, cod
     throw diagnosticError(classifyMfaError(assuranceError, 'verification'), 'The MFA assurance state could not be confirmed.', assuranceError, 'verification', {
       factorExists: true, factorStatus: 'verified', factorType: String(factor.factor_type),
       challengeCreated: true, challengeIdExists: true,
+      aalBefore: assuranceBefore.currentLevel,
     });
   }
 
@@ -342,6 +346,7 @@ export async function verifyAdminTotp(factorId: string, challengeId: string, cod
     throw new AdminMfaError('AAL2_NOT_ESTABLISHED', 'MFA verification succeeded but the session did not reach AAL2.', {
       phase: 'verification', factorExists: true, factorStatus: 'verified', factorType: String(factor.factor_type),
       challengeCreated: true, challengeIdExists: true,
+      aalBefore: assuranceBefore.currentLevel, aalAfter: assurance.currentLevel,
     });
   }
 }
