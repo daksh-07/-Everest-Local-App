@@ -360,13 +360,13 @@ begin
   v_reason := nullif(p_result->>'reason','');
   v_entity_name := nullif(p_result->>'entityName','');
 
-  if v_decision = 'AUTO_VERIFIED' then
-    perform pg_catalog.set_config(
-      'everest.automated_business_verification',
-      'business:' || v_business_id::text,
-      true
-    );
+  perform pg_catalog.set_config(
+    'everest.automated_business_verification',
+    'business:' || v_business_id::text,
+    true
+  );
 
+  if v_decision = 'AUTO_VERIFIED' then
     update public.business_verifications
     set
       status = 'VERIFIED',
