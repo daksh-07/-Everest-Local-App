@@ -14,14 +14,134 @@ type Enrollment={id:string;qr_code:string;secret:string;uri:string};
 function Unauthorized(){return <SafeAreaView style={s.safe}><View style={s.center}><Text style={s.eyebrow}>EVEREST LOCAL</Text><Text style={s.title}>Access unavailable</Text><Text style={s.copy}>This area is not available for this account.</Text></View></SafeAreaView>}
 
 function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
- const [enrollment,setEnrollment]=useState<Enrollment|null>(null);const [code,setCode]=useState('');const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(setup);const [error,setError]=useState('');const [diagnostic,setDiagnostic]=useState('');const [qrRenderFailed,setQrRenderFailed]=useState(false);const beginStarted=useRef(false);
- const begin=useCallback(async()=>{if(!setup||beginStarted.current)return;beginStarted.current=true;setLoading(true);setError('');try{const d=await enrollAdminTotp();if(!d?.id||!d?.totp?.qr_code||!d?.totp?.secret||!d?.totp?.uri)throw new AdminMfaError('QR_RENDER_FAILED','Supabase returned an incomplete TOTP enrollment payload.');setEnrollment({id:d.id,qr_code:d.totp.qr_code,secret:d.totp.secret,uri:d.totp.uri});setQrRenderFailed(false)}catch(e){beginStarted.current=false;setDiagnostic(e instanceof AdminMfaError?e.diagnostic:'ENROLLMENT_FAILED');setError(e instanceof Error?e.message:'Secure MFA setup could not be started. Please try again.')}finally{setLoading(false)}},[setup]);
- useEffect(()=>{void begin()},[begin]);
- async function submit(){const c=code.replace(/\D/g,'').slice(0,6);if(c.length!==6){setError('Enter the 6-digit code from your authenticator app.');return}setBusy(true);setError('');setDiagnostic('');try{if(setup){if(!enrollment)throw new AdminMfaError('ENROLLMENT_FAILED','MFA setup is not ready. Restart setup to create a new factor.');await verifyAdminTotp(enrollment.id,c)}else await challengeAdminTotp(c);onDone()}catch(e){const message=e instanceof AdminMfaError?e.message:(e instanceof Error?e.message:'MFA verification could not be completed.');setDiagnostic(e instanceof AdminMfaError?e.diagnostic:'UNKNOWN');setError(message)}finally{setBusy(false)}}
- const qrDataUrl=enrollment?.qr_code?enrollment.qr_code.startsWith('data:')?enrollment.qr_code:`data:image/svg+xml;charset=utf-8,${encodeURIComponent(enrollment.qr_code)}`:null;
- return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page}><Text style={s.eyebrow}>EVEREST LOCAL · PRIVATE ADMIN</Text><Text style={s.title}>{setup?'Secure your admin account':'Verify your identity'}</Text><Text style={s.copy}>{setup?'Admin access requires a TOTP authenticator. Scan the QR code with your authenticator app, then enter the current 6-digit code.':'Enter the current 6-digit code from your authenticator app. No admin data is loaded until MFA succeeds.'}</Text>{loading?<ActivityIndicator style={{marginTop:30}}/>:setup&&enrollment?<View style={s.mfaPanel}>{qrDataUrl&&!qrRenderFailed&&(Platform.OS==='web'?<img src={qrDataUrl} width={220} height={220} onError={()=>{setQrRenderFailed(true);setDiagnostic('QR_RENDER_FAILED')}} style={{width:220,height:220,display:'block',objectFit:'contain',backgroundColor:'#fff'}} alt="Admin authenticator QR code"/>:<Image source={{uri:qrDataUrl}} onError={()=>{setQrRenderFailed(true);setDiagnostic('QR_RENDER_FAILED')}} style={{width:220,height:220,backgroundColor:'#fff'}} resizeMode="contain"/>)}{qrRenderFailed&&<Text style={s.error}>The QR image could not be rendered. Use the manual setup URI below in your authenticator app.</Text>}<Text style={s.smallLabel}>MANUAL SETUP SECRET</Text><Text selectable style={s.secret}>{enrollment.secret}</Text><Text selectable style={s.uri}>{enrollment.uri}</Text><Text style={s.hint}>Keep the secret and URI private. They are shown only during this setup and are not stored in app source.</Text></View>:null}<TextInput value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} secureTextEntry={!setup} placeholder="000000" placeholderTextColor="#aaa" style={s.codeInput} accessibilityLabel="MFA verification code"/>{!!error&&<Text style={s.error}>{error}</Text>}{!!diagnostic&&<Text style={s.diagnostic}>Diagnostic: {diagnostic}</Text>}<Pressable disabled={busy||loading} onPress={()=>void submit()} style={s.button}><Text style={s.buttonText}>{busy?'VERIFYING…':setup?'ENABLE MFA & OPEN ADMIN':'VERIFY & OPEN ADMIN'}</Text></Pressable>{setup&&enrollment&&<Pressable disabled={busy||loading} onPress={()=>{void (async()=>{setBusy(true);setError('');try{await unenrollAdminTotp(enrollment.id);beginStarted.current=false;setEnrollment(null);setQrRenderFailed(false);setDiagnostic('');await begin()}catch(e){setDiagnostic(e instanceof AdminMfaError?e.diagnostic:'UNKNOWN');setError(e instanceof Error?e.message:'MFA setup could not be restarted.')}finally{setBusy(false)}})()}} style={s.outline}><Text style={s.outlineText}>RESTART MFA SETUP</Text></Pressable>}</ScrollView></SafeAreaView>
-}
+ type SetupPhase='IDLE'|'ENROLLING'|'ENROLLED'|'AWAITING_CODE'|'VERIFYING'|'VERIFIED'|'COMPLETE';
+ const [phase,setPhase]=useState<SetupPhase>(setup?'IDLE':'AWAITING_CODE');
+ const [enrollment,setEnrollment]=useState<Enrollment|null>(null);
+ const [challengeId,setChallengeId]=useState('');
+ const [code,setCode]=useState('');
+ const [busy,setBusy]=useState(false);
+ const [loading,setLoading]=useState(setup);
+ const [error,setError]=useState('');
+ const [diagnostic,setDiagnostic]=useState('');
+ const [qrRenderFailed,setQrRenderFailed]=useState(false);
+ const [restartRequired,setRestartRequired]=useState(false);
+ const started=useRef(false);
 
+ const begin=useCallback(async()=>{
+   if(!setup||started.current||phase==='ENROLLING'||phase==='ENROLLED'||phase==='AWAITING_CODE'||phase==='VERIFYING'||phase==='VERIFIED'||phase==='COMPLETE')return;
+   started.current=true;
+   setLoading(true);
+   setError('');
+   setDiagnostic('');
+   setRestartRequired(false);
+   setPhase('ENROLLING');
+   try{
+     const abandoned=await listAbandonedAdminTotpFactors();
+     if(abandoned.length){
+       setRestartRequired(true);
+       setPhase('IDLE');
+       setError('An unfinished MFA setup was found. Restart MFA setup to create a fresh factor.');
+       return;
+     }
+     const d=await enrollAdminTotp();
+     if(!d?.id||!d?.totp?.qr_code||!d?.totp?.secret||!d?.totp?.uri){
+       throw new AdminMfaError('QR_RENDER_FAILED','Supabase returned an incomplete TOTP enrollment payload.');
+     }
+     setPhase('ENROLLED');
+     setEnrollment({id:d.id,qr_code:d.totp.qr_code,secret:d.totp.secret,uri:d.totp.uri});
+     setQrRenderFailed(false);
+     const challenge=await challengeAdminTotpFactor(d.id);
+     setChallengeId(challenge);
+     setPhase('AWAITING_CODE');
+   }catch(e){
+     started.current=false;
+     const m=e instanceof AdminMfaError?e.message:'Secure MFA setup could not be started. Please try again.';
+     setDiagnostic(e instanceof AdminMfaError?e.diagnostic:'ENROLLMENT_FAILED');
+     setError(m);
+     setPhase('IDLE');
+   }finally{setLoading(false)}
+ },[setup,phase]);
+
+ useEffect(()=>{void begin()},[begin]);
+
+ async function restart(){
+   setBusy(true);
+   setError('');
+   setDiagnostic('');
+   setCode('');
+   setChallengeId('');
+   setEnrollment(null);
+   setQrRenderFailed(false);
+   setRestartRequired(false);
+   setPhase('ENROLLING');
+   try{
+     await restartAdminTotpSetup();
+     started.current=false;
+     await begin();
+   }catch(e){
+     const m=e instanceof AdminMfaError?e.message:'MFA setup could not be restarted.';
+     setDiagnostic(e instanceof AdminMfaError?e.diagnostic:'UNKNOWN');
+     setError(m);
+     setPhase('IDLE');
+     started.current=false;
+   }finally{setBusy(false)}
+ }
+
+ async function submit(){
+   const c=code.replace(/\D/g,'').slice(0,6);
+   if(c.length!==6){setError('Enter the 6-digit code from your authenticator app.');return}
+   if(!enrollment||!challengeId){
+     setDiagnostic('MFA_FACTOR_NOT_FOUND');
+     setError('Your MFA setup expired before verification. Start a new setup.');
+     setRestartRequired(true);
+     return;
+   }
+   setBusy(true);
+   setError('');
+   setDiagnostic('');
+   setPhase('VERIFYING');
+   try{
+     await verifyAdminTotp(enrollment.id,challengeId,c);
+     setPhase('VERIFIED');
+     setCode('');
+     setPhase('COMPLETE');
+     onDone();
+   }catch(e){
+     const isMfa=e instanceof AdminMfaError;
+     const diag=isMfa?e.diagnostic:'UNKNOWN';
+     setDiagnostic(diag);
+     if(diag==='MFA_FACTOR_NOT_FOUND'){
+       setError('Your MFA setup expired before verification. Start a new setup.');
+       setRestartRequired(true);
+       setPhase('IDLE');
+     }else{
+       setError(isMfa?e.message:'MFA verification could not be completed.');
+       setPhase('AWAITING_CODE');
+     }
+   }finally{setBusy(false)}
+ }
+
+ const qrDataUrl=enrollment?.qr_code?enrollment.qr_code.startsWith('data:')?enrollment.qr_code:`data:image/svg+xml;charset=utf-8,${encodeURIComponent(enrollment.qr_code)}`:null;
+ const showSetup=setup&&!!enrollment&&phase!=='IDLE';
+
+ return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page}>
+   <Text style={s.eyebrow}>EVEREST LOCAL · PRIVATE ADMIN</Text>
+   <Text style={s.title}>{setup?'Secure your admin account':'Verify your identity'}</Text>
+   <Text style={s.copy}>{setup?'Admin access requires a TOTP authenticator. Scan the QR code with your authenticator app, then enter the current 6-digit code.':'Enter the current 6-digit code from your authenticator app. No admin data is loaded until MFA succeeds.'}</Text>
+   {loading?<ActivityIndicator style={{marginTop:30}}/>:showSetup?<View style={s.mfaPanel}>
+     {qrDataUrl&&!qrRenderFailed&&(Platform.OS==='web'?<img src={qrDataUrl} width={220} height={220} onError={()=>{setQrRenderFailed(true);setDiagnostic('QR_RENDER_FAILED')}} style={{width:220,height:220,display:'block',objectFit:'contain',backgroundColor:'#fff'}} alt="Admin authenticator QR code"/>:<Image source={{uri:qrDataUrl}} onError={()=>{setQrRenderFailed(true);setDiagnostic('QR_RENDER_FAILED')}} style={{width:220,height:220,backgroundColor:'#fff'}} resizeMode="contain"/>)} 
+     {qrRenderFailed&&<Text style={s.error}>The QR image could not be rendered. Use the manual setup URI below in your authenticator app.</Text>}
+     <Text style={s.smallLabel}>MANUAL SETUP SECRET</Text><Text selectable style={s.secret}>{enrollment?.secret}</Text>
+     <Text selectable style={s.uri}>{enrollment?.uri}</Text>
+     <Text style={s.hint}>Keep the secret and URI private. They are shown only during this setup and are not stored in app source.</Text>
+   </View>:restartRequired?<View style={s.empty}><Text style={s.emptyTitle}>MFA setup needs to be restarted</Text><Text style={s.meta}>The previous setup is incomplete or no longer available. A new factor and QR code will be generated only when you explicitly restart setup.</Text></View>:null}
+   {(!setup||showSetup)&&<TextInput value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} secureTextEntry={!setup} placeholder="000000" placeholderTextColor="#aaa" style={s.codeInput} accessibilityLabel="MFA verification code"/>}
+   {!!error&&<Text style={s.error}>{error}</Text>}
+   {!!diagnostic&&<Text style={s.diagnostic}>Diagnostic: {diagnostic}</Text>}
+   {setup&&restartRequired?<Pressable disabled={busy} onPress={()=>void restart()} style={s.button}><Text style={s.buttonText}>{busy?'RESTARTING…':'RESTART MFA SETUP'}</Text></Pressable>:<Pressable disabled={busy||loading||phase==='ENROLLING'} onPress={()=>void submit()} style={s.button}><Text style={s.buttonText}>{busy?'VERIFYING…':setup?'ENABLE MFA & OPEN ADMIN':'VERIFY & OPEN ADMIN'}</Text></Pressable>}
+   {setup&&showSetup&&<Pressable disabled={busy||loading} onPress={()=>void restart()} style={s.outline}><Text style={s.outlineText}>RESTART MFA SETUP</Text></Pressable>}
+ </ScrollView></SafeAreaView>
+}
 export default function Admin(){
  const [gate,setGate]=useState<Gate>('loading');const [counts,setCounts]=useState<Counts>({});const [pending,setPending]=useState<PendingBusiness[]>([]);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
  const load=useCallback(async()=>{const tables=['businesses','profiles','service_requests','quotes','bookings','products','orders','reviews','audit_logs'];const results=await Promise.all(tables.map(t=>supabase.from(t).select('*',{count:'exact',head:true})));const failed=results.find(r=>r.error);if(failed?.error)throw failed.error;setCounts(Object.fromEntries(tables.map((t,i)=>[t,results[i].count??0])));const {data,error:e}=await supabase.from('businesses').select('id,name,verification_status,abn,suburb,city,state').eq('verification_status','PENDING').order('created_at',{ascending:true}).limit(50);if(e)throw e;setPending((data??[]) as PendingBusiness[])},[]);
