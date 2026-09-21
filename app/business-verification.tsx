@@ -89,7 +89,32 @@ export default function BusinessVerification() {
       setBusiness(current as Business | null);
       if (current?.abn) setAbn(normalizeAbn(current.abn));
       if (current?.id) {
-        setVerification(await getLatestBusinessVerification(current.id));
+        const latest = await getLatestBusinessVerification(current.id);
+        setVerification(latest);
+
+        const lastSuccessfulCheck = latest?.status === 'VERIFIED' && latest.provider_retrieved_at
+          ? new Date(latest.provider_retrieved_at).getTime()
+          : 0;
+
+        if (
+          current.verification_status === 'VERIFIED' &&
+          current.abn &&
+          lastSuccessfulCheck > 0 &&
+          lastSuccessfulCheck < Date.now() - 30 * 24 * 60 * 60 * 1000
+        ) {
+          try {
+            await verifyBusinessAbn(current.id, current.abn, true);
+            const refreshed = await myBusiness();
+            setBusiness(refreshed as Business | null);
+            setVerification(await getLatestBusinessVerification(current.id));
+          } catch (revalidationError) {
+            if (revalidationError instanceof BusinessVerificationError && revalidationError.code === 'SERVICE_UNAVAILABLE') {
+              setMessage("Your business remains verified. We couldn't revalidate the ABN right now because the verification service is temporarily unavailable.");
+            } else {
+              setMessage('Your business remains verified while ABN revalidation is retried.');
+            }
+          }
+        }
       }
     } catch {
       setError('We could not load your business profile right now. Please try again.');
