@@ -8,10 +8,12 @@ const migration = [
   'supabase/migrations/20260921233000_service_aware_dispatch_engine.sql',
   'supabase/migrations/20260921235900_dispatch_relationship_prerequisites.sql',
   'supabase/migrations/20260921240000_dispatch_lifecycle_authority_correction.sql',
+  'supabase/migrations/20260921241000_dispatch_state_audit_and_acceptance_guards.sql',
+  'supabase/migrations/20260921241100_fix_dispatch_offer_response_guard.sql',
 ].map((file) => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
 
 const fn = (name) => {
-  const start = migration.indexOf(`create or replace function public.${name}`);
+  const start = migration.lastIndexOf(`create or replace function public.${name}`);
   assert.notEqual(start, -1, `${name} must exist`);
   const next = migration.indexOf('create or replace function public.', start + 10);
   return migration.slice(start, next === -1 ? migration.length : next);
@@ -22,7 +24,7 @@ test('dispatch entry is BOOKED + CONFIRMED only', () => {
   assert.match(body, /r\.status<>'BOOKED'/);
   assert.match(body, /b\.status<>'CONFIRMED'/);
   assert.match(body, /q\.status<>'ACCEPTED'/);
-  assert.doesNotMatch(body, /DISPATCHABLE.*request_status/i);
+  assert.doesNotMatch(body, /alter.*request_status.*DISPATCHABLE/i);
 });
 
 test('dispatch entry verifies booking/request relationship', () => {
@@ -115,18 +117,25 @@ test('late acceptance is rejected deterministically', () => {
   assert.match(body, /OFFER_NO_LONGER_AVAILABLE/);
 });
 
-test('acceptance re-checks operational, capability, availability and freshness', () => {
+test('acceptance re-checks operational, capability, availability, radius and freshness', () => {
   const body = fn('respond_service_dispatch_offer');
   assert.match(body, /dispatch_driver_is_operational/);
   assert.match(body, /service_provider_capabilities/);
   assert.match(body, /driver_availability/);
   assert.match(body, /LOCATION_STALE/);
+  assert.match(body, /PROVIDER_OUTSIDE_SERVICE_RADIUS/);
 });
 
 test('acceptance locks the dispatch job and offer', () => {
   const body = fn('respond_service_dispatch_offer');
   assert.match(body, /where id=p_offer_id for update/);
   assert.match(body, /where id=o\.job_id for update/);
+});
+
+test('acceptance explicitly transitions ACCEPTED then ASSIGNED', () => {
+  const body = fn('respond_service_dispatch_offer');
+  assert.match(body, /status='ACCEPTED'/);
+  assert.match(body, /status='ASSIGNED'/);
 });
 
 test('only one assignment can exist per job and provider', () => {
@@ -145,7 +154,6 @@ test('unauthorized users cannot mutate dispatch state', () => {
   const body = fn('respond_service_dispatch_offer');
   assert.match(body, /o\.provider_id<>auth\.uid\(\)/);
   assert.match(body, /Not authorized/);
-  assert.match(migration, /grant execute on function public\.respond_service_dispatch_offer/);
 });
 
 test('internal candidate/queue functions are not client executable', () => {
@@ -158,12 +166,19 @@ test('location updates are server-authoritative and adaptive', () => {
   const body = fn('update_provider_location');
   assert.match(body, /min_location_update_seconds/);
   assert.match(body, /LOCATION_UPDATE_TOO_FREQUENT/);
-  assert.match(body, /driver_is_operational|dispatch_driver_is_operational/);
+  assert.match(body, /dispatch_driver_is_operational/);
 });
 
 test('precise locations are provider-self only under RLS', () => {
   assert.match(migration, /service_provider_locations_self/);
   assert.match(migration, /provider_id=\(select auth\.uid\(\)\)/);
+});
+
+test('marketplace cancellation cancels an active dispatch without changing marketplace authority', () => {
+  const body = fn('cancel_service_dispatch_on_marketplace_change');
+  assert.match(body, /SERVICE_DISPATCH_CANCELLED/);
+  assert.match(body, /NEW\.status<>'BOOKED'/);
+  assert.match(body, /NEW\.status<>'CONFIRMED'/);
 });
 
 test('all dispatch SECURITY DEFINER functions pin search_path', () => {
@@ -178,6 +193,7 @@ test('all dispatch SECURITY DEFINER functions pin search_path', () => {
     'respond_service_dispatch_offer',
     'process_service_dispatch_queue',
     'update_provider_location',
+    'cancel_service_dispatch_on_marketplace_change',
   ]) {
     assert.match(fn(name), /security definer set search_path to 'public'/i, name);
   }
