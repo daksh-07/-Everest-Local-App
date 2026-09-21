@@ -238,7 +238,7 @@ export async function enrollAdminTotp() {
   return { ...data, userId };
 }
 
-export async function challengeAdminTotpFactor(factorId: string): Promise<{ challengeId: string; factorStatus: string; factorType: string }> {
+export async function challengeAdminTotpFactor(factorId: string): Promise<{ challengeId: string; factorStatus: string; factorType: string; aalBefore: string | null }> {
   const userId = await assertAuthorizedAdmin();
   const factor = await findExactFactor(factorId);
   if (!factor) {
@@ -258,6 +258,17 @@ export async function challengeAdminTotpFactor(factorId: string): Promise<{ chal
     phase: 'challenge', factorExists: true, factorStatus: String(factor.status), factorType: String(factor.factor_type),
     challengeCreated: false, challengeIdExists: false,
   });
+
+  const { data: assuranceBefore, error: assuranceBeforeError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (assuranceBeforeError) {
+    throw diagnosticError(classifyMfaError(assuranceBeforeError, 'challenge'), 'The MFA assurance state could not be read before challenge creation.', assuranceBeforeError, 'challenge', {
+      factorExists: true,
+      factorStatus: String(factor.status),
+      factorType: String(factor.factor_type),
+      challengeCreated: false,
+      challengeIdExists: false,
+    });
+  }
 
   const { data, error } = await supabase.auth.mfa.challenge({ factorId: factor.id });
   if (error) {
@@ -279,7 +290,7 @@ export async function challengeAdminTotpFactor(factorId: string): Promise<{ chal
   return { challengeId: data.id, factorStatus: String(factor.status), factorType: String(factor.factor_type) };
 }
 
-export async function verifyAdminTotp(factorId: string, challengeId: string, code: string) {
+export async function verifyAdminTotp(factorId: string, challengeId: string, code: string, aalBefore: string | null = null) {
   const userId = await assertAuthorizedAdmin();
   const factor = await findExactFactor(factorId);
   if (!factor) {
@@ -303,14 +314,6 @@ export async function verifyAdminTotp(factorId: string, challengeId: string, cod
     });
   }
 
-  const { data: assuranceBefore, error: assuranceBeforeError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (assuranceBeforeError) {
-    throw diagnosticError(classifyMfaError(assuranceBeforeError, 'verification'), 'The MFA assurance state could not be read.', assuranceBeforeError, 'verification', {
-      factorExists: true, factorStatus: String(factor.status), factorType: String(factor.factor_type),
-      challengeIdExists: true,
-    });
-  }
-
   const { error: verifyError } = await supabase.auth.mfa.verify({
     factorId: factor.id,
     challengeId,
@@ -325,7 +328,7 @@ export async function verifyAdminTotp(factorId: string, challengeId: string, cod
       factorType: String(factor.factor_type),
       challengeCreated: true,
       challengeIdExists: true,
-      aalBefore: assuranceBefore.currentLevel,
+      aalBefore,
     };
     if (diagnostic === 'CHALLENGE_EXPIRED') {
       throw diagnosticError(diagnostic, 'Your verification window expired. Enter the newest code from your authenticator, then press Verify again.', verifyError, 'verification', details);
@@ -338,7 +341,7 @@ export async function verifyAdminTotp(factorId: string, challengeId: string, cod
     throw diagnosticError(classifyMfaError(assuranceError, 'verification'), 'The MFA assurance state could not be confirmed.', assuranceError, 'verification', {
       factorExists: true, factorStatus: 'verified', factorType: String(factor.factor_type),
       challengeCreated: true, challengeIdExists: true,
-      aalBefore: assuranceBefore.currentLevel,
+      aalBefore,
     });
   }
 
@@ -346,7 +349,7 @@ export async function verifyAdminTotp(factorId: string, challengeId: string, cod
     throw new AdminMfaError('AAL2_NOT_ESTABLISHED', 'MFA verification succeeded but the session did not reach AAL2.', {
       phase: 'verification', factorExists: true, factorStatus: 'verified', factorType: String(factor.factor_type),
       challengeCreated: true, challengeIdExists: true,
-      aalBefore: assuranceBefore.currentLevel, aalAfter: assurance.currentLevel,
+      aalBefore, aalAfter: assurance.currentLevel,
     });
   }
 }
@@ -354,7 +357,7 @@ export async function verifyAdminTotp(factorId: string, challengeId: string, cod
 export async function challengeAdminTotp(code: string) {
   const factorId = await getVerifiedAdminTotpFactorId();
   const challenge = await challengeAdminTotpFactor(factorId);
-  return verifyAdminTotp(factorId, challenge.challengeId, code);
+  return verifyAdminTotp(factorId, challenge.challengeId, code, challenge.aalBefore);
 }
 
 async function getVerifiedAdminTotpFactorId() {
