@@ -1,5 +1,6 @@
 name: Validate Everest Local
 # Main validation workflow: keep typecheck/lint/security/build gates authoritative.
+# Validation is triggered again after autonomous repairs so the repaired HEAD is authoritative.
 on:
   push:
     branches: [main]
