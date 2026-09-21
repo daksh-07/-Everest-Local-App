@@ -62,7 +62,7 @@ test('admin MFA exposes an explicit setup state machine and stale-factor recover
   for (const state of ['IDLE','ENROLLING','ENROLLED','AWAITING_CODE','VERIFYING','VERIFIED','COMPLETE']) {
     assert.match(adminScreen, new RegExp("'" + state + "'"));
   }
-  assert.match(adminScreen, /Your MFA setup expired before verification\. Start a new setup\./);
+  assert.match(adminScreen, /MFA setup is incomplete\. Restart setup to continue\./);
   assert.match(adminScreen, /RESTART MFA SETUP/);
 });
 
