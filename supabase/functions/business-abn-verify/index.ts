@@ -219,7 +219,8 @@ Deno.serve(async (req) => {
   const adminClient = createClient(url, service);
 
   try {
-    const body = await req.json() as { business_id?: unknown; abn?: unknown };
+    const body = await req.json() as { business_id?: unknown; abn?: unknown; revalidate?: unknown };
+    const revalidate = body.revalidate === true;
     const businessId = typeof body.business_id === 'string' ? body.business_id : '';
     const abn = normalizeAbn(body.abn);
 
@@ -237,12 +238,14 @@ Deno.serve(async (req) => {
         p_business_id: businessId,
         p_submitted_by: authData.user.id,
         p_abn: abn,
+        p_revalidate: revalidate,
       },
     );
 
     if (startError) {
       const message = safeRpcError(startError);
       if (message === 'VERIFICATION_ALREADY_COMPLETED') return json({ error: 'VERIFICATION_ALREADY_COMPLETED' }, 409);
+      if (message === 'REVALIDATION_NOT_DUE') return json({ status: 'VERIFIED', message: 'ABN revalidation is not due yet.' }, 200);
       if (message === 'VERIFICATION_PENDING') return json({ error: 'VERIFICATION_PENDING' }, 409);
       if (message === 'RATE_LIMITED') return json({ error: 'RATE_LIMITED' }, 429);
       if (message === 'NOT_AUTHORIZED') return json({ error: 'NOT_AUTHORIZED' }, 403);
