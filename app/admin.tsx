@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import type { VerificationStatus } from '@/lib/types';
-import { AdminMfaError, challengeAdminTotp, enrollAdminTotp, getAdminMfaState, unenrollAdminTotp, verifyAdminTotp } from '@/lib/admin-mfa';
+import { AdminMfaError, challengeAdminTotp, challengeAdminTotpFactor, enrollAdminTotp, getAdminMfaState, listAbandonedAdminTotpFactors, restartAdminTotpSetup, verifyAdminTotp } from '@/lib/admin-mfa';
 
 type PendingBusiness={id:string;name:string;verification_status:VerificationStatus;abn:string|null;suburb:string|null;city:string|null;state:string|null};
 type Counts=Record<string,number>;
