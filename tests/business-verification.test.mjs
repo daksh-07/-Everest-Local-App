@@ -14,6 +14,9 @@ const searchPathHardeningMigration = await readFile(
 const screen = await readFile('app/business-verification.tsx', 'utf8');
 const flow = await readFile('lib/business-verification.ts', 'utf8');
 const baseVerification = await readFile('supabase/migrations/006_business_verification.sql', 'utf8');
+const abrFunction = await readFile('supabase/functions/verify-business-abn/index.ts', 'utf8');
+const abrMigration = await readFile('supabase/migrations/20260920133000_business_abr_registry_check.sql', 'utf8');
+const adminScreen = await readFile('app/admin.tsx', 'utf8');
 
 test('ABN normalization removes spaces and hyphens only', () => {
   assert.equal(normalizeAbn('82 644 881 283'), '82644881283');
@@ -101,10 +104,12 @@ test('documents are not falsely presented as uploaded', () => {
 
 test('ABR registry verification is server-side, admin-authorized and auditable', () => {
   assert.match(abrFunction, /Deno\.env\.get\('ABR_AUTH_GUID'\)/);
-  assert.match(abrFunction, /abr\.business\.gov\.au\/json\/AbnDetails\.aspx/);
+  assert.match(abrFunction, /abr\.business\.gov\.au\/ABRXMLSearch\/AbrXmlSearch\.asmx\/SearchByABNv202001/);
+  assert.match(abrFunction, /includeHistoricalDetails.*N/);
   assert.match(abrFunction, /profile\?\.role !== 'ADMIN'/);
   assert.match(abrFunction, /record_business_abr_check/);
   assert.doesNotMatch(abrFunction, /EXPO_PUBLIC_ABR|ABR_AUTH_GUID\s*=\s*['"][^'"]+['"]/);
+  assert.doesNotMatch(abrFunction, /callback|parseJsonp|AbnDetails\.aspx/);
   assert.match(abrMigration, /security definer[\s\S]*set search_path = ''/);
   assert.match(abrMigration, /business_abr_check/);
   assert.match(adminScreen, /verify-business-abn/);
