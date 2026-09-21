@@ -1,0 +1,38 @@
+name: One-time typecheck repair
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: github.actor == 'daksh-07'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Apply targeted null-safety fix and remove helper workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/admin.tsx')
+          s = p.read_text()
+          replacements = {
+            "setDiagnosticDetails(e instanceof AdminMfaError?e.details:{phase:'enrollment'});": "setDiagnosticDetails(e instanceof AdminMfaError?(e.details ?? null):{phase:'enrollment'});",
+            "setDiagnosticDetails(e instanceof AdminMfaError?e.details:{phase:'verification'});": "setDiagnosticDetails(e instanceof AdminMfaError?(e.details ?? null):{phase:'verification'});",
+          }
+          for old, new in replacements.items():
+            if s.count(old) != 1:
+              raise SystemExit(f'Expected exactly one occurrence of {old!r}, found {s.count(old)}')
+            s = s.replace(old, new)
+          p.write_text(s)
+          PY
+          rm -f .github/workflows/one-time-typecheck-repair.yml
+          git diff --check
+          git diff -- app/admin.tsx
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/admin.tsx .github/workflows/one-time-typecheck-repair.yml
+          git commit -m 'fix: handle optional MFA diagnostics safely'
+          git push origin main
