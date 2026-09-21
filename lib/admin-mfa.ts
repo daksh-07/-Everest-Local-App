@@ -263,8 +263,8 @@ export async function challengeAdminTotpFactor(factorId: string): Promise<{ chal
   if (assuranceBeforeError) {
     throw diagnosticError(classifyMfaError(assuranceBeforeError, 'challenge'), 'The MFA assurance state could not be read before challenge creation.', assuranceBeforeError, 'challenge', {
       factorExists: true,
-      factorStatus: String(factor.status),
-      factorType: String(factor.factor_type),
+      factorStatus,
+      factorType,
       challengeCreated: false,
       challengeIdExists: false,
     });
@@ -291,32 +291,23 @@ export async function challengeAdminTotpFactor(factorId: string): Promise<{ chal
   return { challengeId: data.id, factorStatus: String(factor.status), factorType: String(factor.factor_type), aalBefore: assuranceBefore.currentLevel };
 }
 
-export async function verifyAdminTotp(factorId: string, challengeId: string, code: string, aalBefore: string | null = null) {
-  const userId = await assertAuthorizedAdmin();
-  const factor = await findExactFactor(factorId);
-  if (!factor) {
-    throw new AdminMfaError('MFA_FACTOR_NOT_FOUND', 'Your MFA setup expired before verification. Start a new setup.', {
-      phase: 'verification', factorExists: false, challengeIdExists: Boolean(challengeId),
-    });
-  }
-
-  const current = await currentUserId();
-  if (current !== userId) {
-    throw new AdminMfaError('SESSION_EXPIRED', 'The admin session changed during MFA setup. Start a fresh setup.', {
-      phase: 'verification', factorExists: true, factorStatus: String(factor.status), factorType: String(factor.factor_type),
-      challengeIdExists: Boolean(challengeId),
-    });
-  }
-
+export async function verifyAdminTotp(
+  factorId: string,
+  challengeId: string,
+  code: string,
+  aalBefore: string | null = null,
+  factorStatus = 'unknown',
+  factorType = 'totp',
+) {
   if (!challengeId) {
     throw new AdminMfaError('CHALLENGE_EXPIRED', 'Your verification window expired. Enter the newest code from your authenticator, then press Verify again.', {
-      phase: 'verification', factorExists: true, factorStatus: String(factor.status), factorType: String(factor.factor_type),
-      challengeCreated: false, challengeIdExists: false,
+      phase: 'verification', factorExists: true, factorStatus, factorType,
+      challengeCreated: false, challengeIdExists: false, aalBefore,
     });
   }
 
   const { error: verifyError } = await supabase.auth.mfa.verify({
-    factorId: factor.id,
+    factorId,
     challengeId,
     code: code.trim(),
   });
@@ -340,7 +331,7 @@ export async function verifyAdminTotp(factorId: string, challengeId: string, cod
   const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (assuranceError) {
     throw diagnosticError(classifyMfaError(assuranceError, 'verification'), 'The MFA assurance state could not be confirmed.', assuranceError, 'verification', {
-      factorExists: true, factorStatus: 'verified', factorType: String(factor.factor_type),
+      factorExists: true, factorStatus: 'verified', factorType,
       challengeCreated: true, challengeIdExists: true,
       aalBefore,
     });
@@ -348,7 +339,7 @@ export async function verifyAdminTotp(factorId: string, challengeId: string, cod
 
   if (assurance.currentLevel !== 'aal2') {
     throw new AdminMfaError('AAL2_NOT_ESTABLISHED', 'MFA verification succeeded but the session did not reach AAL2.', {
-      phase: 'verification', factorExists: true, factorStatus: 'verified', factorType: String(factor.factor_type),
+      phase: 'verification', factorExists: true, factorStatus: 'verified', factorType,
       challengeCreated: true, challengeIdExists: true,
       aalBefore, aalAfter: assurance.currentLevel,
     });
