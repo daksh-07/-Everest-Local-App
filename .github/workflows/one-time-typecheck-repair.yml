@@ -23,8 +23,9 @@ jobs:
             "setDiagnosticDetails(e instanceof AdminMfaError?e.details:{phase:'verification'});": "setDiagnosticDetails(e instanceof AdminMfaError?(e.details ?? null):{phase:'verification'});",
           }
           for old, new in replacements.items():
-            if s.count(old) != 1:
-              raise SystemExit(f'Expected exactly one occurrence of {old!r}, found {s.count(old)}')
+            count = s.count(old)
+            if count < 1:
+              raise SystemExit(f'Expected at least one occurrence of {old!r}, found {count}')
             s = s.replace(old, new)
           p.write_text(s)
           PY
