@@ -37,6 +37,8 @@ test('admin MFA captures safe Supabase challenge/verify diagnostics without secr
   assert.match(adminMfa, /factorStatus/);
   assert.match(adminMfa, /challengeCreated/);
   assert.match(adminMfa, /challengeIdExists/);
+  assert.match(adminMfa, /aalBefore/);
+  assert.match(adminMfa, /aalAfter/);
   assert.doesNotMatch(adminMfa, /console\.(?:log|info|debug|warn|error)/);
   assert.doesNotMatch(adminMfa, /(?:access_token|refresh_token|recovery.?code|otp_code)/i);
 });
