@@ -22,7 +22,7 @@ test('admin MFA enrollment is non-destructive until explicit restart', () => {
 
 test('admin MFA verification uses the exact stored factor and challenge without an automatic retry', () => {
   assert.match(adminMfa, /verifyAdminTotp\(\s*factorId: string,\s*challengeId: string,\s*code: string/);
-  assert.match(adminMfa, /mfa\.verify\(\{[\s\S]*factorId: factor\.id,[\s\S]*challengeId/);
+  assert.match(adminMfa, /mfa\.verify\(\{[\s\S]*factorId,[\s\S]*challengeId/);
   assert.match(adminMfa, /MFA_CHALLENGE_CREATION_FAILED/);
   assert.match(adminMfa, /MFA_VERIFICATION_FAILED/);
   assert.match(adminMfa, /CHALLENGE_EXPIRED/);
