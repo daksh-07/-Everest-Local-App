@@ -1,5 +1,5 @@
 import { supabase, requireSupabaseConfig } from './supabase';
-import { submitBusinessVerification as submitBusinessVerificationFlow } from './business-verification';
+import { verifyBusinessAbn } from './business-verification';
 
 export async function createBusinessProfile(input:{name:string;description:string;categoryId?:string;abn?:string;phone?:string;email?:string;suburb:string;city:string;state:string;postcode?:string}){
  requireSupabaseConfig();
@@ -10,8 +10,8 @@ export async function createBusinessProfile(input:{name:string;description:strin
  if(error)throw new Error(error.message);if(typeof data!=='string')throw new Error('Business creation returned an invalid reference.');return data;
 }
 
-export async function submitBusinessVerification(businessId:string,abn:string,documents:unknown[]=[]){
- return submitBusinessVerificationFlow(businessId,abn,documents);
+export async function submitBusinessVerification(businessId:string,abn:string){
+ return verifyBusinessAbn(businessId,abn);
 }
 
 export async function createBusinessSetup(input:{
