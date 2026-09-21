@@ -239,7 +239,7 @@ export async function enrollAdminTotp() {
 }
 
 export async function challengeAdminTotpFactor(factorId: string): Promise<{ challengeId: string; factorStatus: string; factorType: string; aalBefore: string | null }> {
-  const userId = await assertAuthorizedAdmin();
+  await assertAuthorizedAdmin();
   const { data: assuranceBefore, error: assuranceBeforeError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (assuranceBeforeError) {
     throw diagnosticError(classifyMfaError(assuranceBeforeError, 'challenge'), 'The MFA assurance state could not be read before challenge creation.', assuranceBeforeError, 'challenge', {

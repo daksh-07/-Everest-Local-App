@@ -30,7 +30,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
  const started=useRef(false);
 
  const begin=useCallback(async()=>{
-   if(!setup||started.current||phase==='ENROLLING'||phase==='ENROLLED'||phase==='AWAITING_CODE'||phase==='VERIFYING'||phase==='VERIFIED'||phase==='COMPLETE')return;
+   if(!setup||started.current)return;
    started.current=true;
    setLoading(true);
    setError('');
