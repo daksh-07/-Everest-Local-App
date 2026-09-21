@@ -61,7 +61,7 @@ jobs:
           status=${PIPESTATUS[0]}
           exit $status
       - name: Service dispatch regression tests
-        run: npm run test:dispatch
+        run: npm run test:dispatch && node --test tests/service-aware-dispatch-audit.test.mjs
       - name: Business verification tests
         run: npm run test:business-verification
       - name: Upload security test diagnostics
