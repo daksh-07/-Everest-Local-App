@@ -6,17 +6,18 @@ const cors = {
 };
 
 type AbrPayload = {
-  Abn?: string;
-  AbnStatus?: string;
-  AbnStatusEffectiveFrom?: string | null;
-  EntityName?: string;
-  EntityTypeCode?: string;
-  EntityTypeName?: string;
-  Gst?: string | null;
-  AddressState?: string;
-  AddressPostcode?: string;
-  BusinessName?: string[];
-  Message?: string;
+  abn: string;
+  abnStatus: string;
+  abnStatusEffectiveFrom: string | null;
+  entityName: string;
+  entityTypeCode: string;
+  entityType: string;
+  gstRegistered: boolean | null;
+  gstRegisteredFrom: string | null;
+  state: string;
+  postcode: string;
+  businessNames: string[];
+  message?: string;
 };
 
 const json = (body: unknown, status = 200) =>
@@ -42,16 +43,81 @@ function sameName(localName: string, entityName: string, businessNames: string[]
   return candidates.some(candidate => candidate === local);
 }
 
-function parseJsonp(raw: string): AbrPayload {
-  const match = raw.match(/^[A-Za-z_$][A-Za-z0-9_$]*\((.*)\)\s*$/s);
-  if (!match) throw new Error('Invalid ABR response format');
-  const parsed = JSON.parse(match[1]) as AbrPayload;
-  if (!parsed || typeof parsed !== 'object') throw new Error('Invalid ABR response payload');
-  return parsed;
-}
-
 function normalizeAbn(value: string): string {
   return value.replace(/[\s-]/g, '');
+}
+
+function firstText(doc: Document, localNames: string[]): string {
+  for (const localName of localNames) {
+    const nodes = doc.getElementsByTagNameNS('*', localName);
+    for (const node of Array.from(nodes)) {
+      const value = node.textContent?.trim();
+      if (value) return value;
+    }
+  }
+  return '';
+}
+
+function allTexts(doc: Document, localName: string): string[] {
+  const values: string[] = [];
+  const nodes = doc.getElementsByTagNameNS('*', localName);
+  for (const node of Array.from(nodes)) {
+    const value = node.textContent?.trim();
+    if (value && !values.includes(value)) values.push(value);
+  }
+  return values;
+}
+
+function parseAbrXml(raw: string): AbrPayload {
+  const doc = new DOMParser().parseFromString(raw, 'application/xml');
+  if (!doc) throw new Error('ABR returned an unreadable XML response.');
+
+  const parserError = doc.getElementsByTagName('parsererror')[0];
+  if (parserError) throw new Error('ABR returned malformed XML.');
+
+  const exceptionCode = firstText(doc, ['exceptionCode']);
+  const exceptionDescription = firstText(doc, ['exceptionDescription']);
+  if (exceptionCode || exceptionDescription) {
+    throw new Error(exceptionDescription || exceptionCode || 'ABR returned an application error.');
+  }
+
+  const abn = firstText(doc, ['identifierValue']);
+  const abnStatus = firstText(doc, ['entityStatusCode']);
+  const abnStatusEffectiveFrom = firstText(doc, ['effectiveFrom']) || null;
+  const entityName = firstText(doc, ['organisationName']) || [
+    firstText(doc, ['givenName']),
+    firstText(doc, ['otherGivenName']),
+    firstText(doc, ['familyName']),
+  ].filter(Boolean).join(' ').trim();
+
+  const entityTypeCode = firstText(doc, ['entityTypeCode']);
+  const entityType = firstText(doc, ['entityDescription']);
+  const gstRegisteredFrom = firstText(doc, ['goodsAndServicesTax'])
+    ? firstText(doc, ['goodsAndServicesTax'])
+    : null;
+  const state = firstText(doc, ['stateCode']);
+  const postcode = firstText(doc, ['postcode']);
+
+  const businessNames = allTexts(doc, 'businessName')
+    .filter(value => value !== 'businessName');
+
+  if (!abn && !abnStatus && !exceptionCode) {
+    throw new Error('ABR response did not contain a business record.');
+  }
+
+  return {
+    abn,
+    abnStatus,
+    abnStatusEffectiveFrom,
+    entityName,
+    entityTypeCode,
+    entityType,
+    gstRegistered: gstRegisteredFrom !== null,
+    gstRegisteredFrom,
+    state,
+    postcode,
+    businessNames,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -95,65 +161,61 @@ Deno.serve(async (req) => {
     const abn = normalizeAbn(typeof business.abn === 'string' ? business.abn : '');
     if (!/^\d{11}$/.test(abn)) return json({ error: 'Business does not have a valid ABN to check' }, 422);
 
-    const abrUrl = new URL('https://abr.business.gov.au/json/AbnDetails.aspx');
-    abrUrl.searchParams.set('abn', abn);
-    abrUrl.searchParams.set('callback', 'everestAbrCallback');
-    abrUrl.searchParams.set('guid', guid);
+    const abrUrl = new URL('https://abr.business.gov.au/ABRXMLSearch/AbrXmlSearch.asmx/SearchByABNv202001');
+    abrUrl.searchParams.set('searchString', abn);
+    abrUrl.searchParams.set('includeHistoricalDetails', 'N');
+    abrUrl.searchParams.set('authenticationGuid', guid);
 
-    const response = await fetch(abrUrl, { headers: { Accept: 'application/javascript, application/json' } });
+    const response = await fetch(abrUrl, {
+      headers: { Accept: 'application/xml, text/xml' },
+    });
     const raw = await response.text();
-    if (!response.ok) throw new Error('ABR request failed');
+
+    if (!response.ok) {
+      console.error('abr_http_error', { status: response.status });
+      return json({ error: 'ABR could not complete the registry lookup.' }, 502);
+    }
 
     let payload: AbrPayload;
     try {
-      payload = parseJsonp(raw);
-    } catch {
+      payload = parseAbrXml(raw);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'ABR returned an application error.';
+      const noRecord = /no records found/i.test(message);
       await client.rpc('record_business_abr_check', {
         p_business_id: businessId,
         p_result: {
-          status: 'ERROR',
-          message: 'ABR returned an unreadable response.',
+          status: noRecord ? 'NOT_FOUND' : 'ERROR',
+          message: noRecord ? 'ABR did not find a record for this ABN.' : 'ABR returned an application error.',
         },
       });
-      return json({ error: 'ABR returned an unreadable response.' }, 502);
+      return json({
+        status: noRecord ? 'NOT_FOUND' : 'ERROR',
+        message: noRecord ? 'ABR did not find a record for this ABN.' : 'ABR returned an application error.',
+      }, noRecord ? 200 : 502);
     }
 
-    if (payload.Message) {
-      await client.rpc('record_business_abr_check', {
-        p_business_id: businessId,
-        p_result: {
-          status: 'NOT_FOUND',
-          message: payload.Message,
-          abnStatus: payload.AbnStatus || '',
-        },
-      });
-      return json({ status: 'NOT_FOUND', message: payload.Message }, 200);
-    }
-
-    const businessNames = Array.isArray(payload.BusinessName)
-      ? payload.BusinessName.filter((value): value is string => typeof value === 'string').slice(0, 50)
-      : [];
-    const nameMatch = sameName(business.name, payload.EntityName || '', businessNames);
-    const active = payload.AbnStatus === 'Active';
-    const abnMatches = normalizeAbn(payload.Abn || '') === abn;
-    const stateMatch = !business.state || !payload.AddressState || business.state.toUpperCase() === payload.AddressState.toUpperCase();
-    const postcodeMatch = !business.postcode || !payload.AddressPostcode || business.postcode === payload.AddressPostcode;
+    const nameMatch = sameName(business.name, payload.entityName, payload.businessNames);
+    const active = payload.abnStatus.toLowerCase() === 'active';
+    const abnMatches = normalizeAbn(payload.abn) === abn;
+    const stateMatch = !business.state || !payload.state || business.state.toUpperCase() === payload.state.toUpperCase();
+    const postcodeMatch = !business.postcode || !payload.postcode || business.postcode === payload.postcode;
     const locationMatch = stateMatch && postcodeMatch;
 
     const status = !active ? 'INACTIVE' : nameMatch && abnMatches && locationMatch ? 'MATCHED' : 'MISMATCH';
 
     const result = {
       status,
-      abnStatus: payload.AbnStatus || '',
-      abnStatusEffectiveFrom: payload.AbnStatusEffectiveFrom || null,
-      entityName: payload.EntityName || '',
-      entityType: payload.EntityTypeName || '',
-      entityTypeCode: payload.EntityTypeCode || '',
-      gstRegistered: typeof payload.Gst === 'string' && payload.Gst.length > 0,
-      gstRegisteredFrom: typeof payload.Gst === 'string' ? payload.Gst : null,
-      state: payload.AddressState || '',
-      postcode: payload.AddressPostcode || '',
-      businessNames,
+      abnStatus: payload.abnStatus,
+      abnStatusEffectiveFrom: payload.abnStatusEffectiveFrom,
+      entityName: payload.entityName,
+      entityType: payload.entityType,
+      entityTypeCode: payload.entityTypeCode,
+      gstRegistered: payload.gstRegistered,
+      gstRegisteredFrom: payload.gstRegisteredFrom,
+      state: payload.state,
+      postcode: payload.postcode,
+      businessNames: payload.businessNames,
       nameMatch,
       message: status === 'MATCHED'
         ? 'ABR record is active and the submitted business name and location match the registry data. Final marketplace approval remains an Everest admin decision.'
