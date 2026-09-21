@@ -30,6 +30,10 @@ test('admin MFA verification uses the exact stored factor and challenge without 
   const verifyEnd = adminMfa.indexOf('export async function challengeAdminTotp(', verifyStart);
   const verifyBlock = adminMfa.slice(verifyStart, verifyEnd);
   assert.doesNotMatch(verifyBlock, /mfa\.challenge\(\{ factorId: factor\.id \}\)[\s\S]*mfa\.verify\(\{[\s\S]*code: code\.trim\(\)/);
+  const verifyCallIndex = verifyBlock.indexOf('supabase.auth.mfa.verify');
+  const betweenStart = verifyBlock.lastIndexOf('supabase.auth.mfa.challenge', verifyCallIndex);
+  assert.ok(verifyCallIndex >= 0);
+  assert.ok(betweenStart < 0 || !verifyBlock.slice(betweenStart, verifyCallIndex).includes('getAuthenticatorAssuranceLevel'));
 });
 
 test('admin MFA captures safe Supabase challenge/verify diagnostics without secrets', () => {
