@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-const root=process.cwd();
+const root=globalThis.process.cwd();
 const migration=fs.readFileSync(path.join(root,'supabase/migrations/20260921183000_driver_licence_authoritative_boundary.sql'),'utf8');
 const shared=fs.readFileSync(path.join(root,'supabase/functions/_shared/driver-verification.ts'),'utf8');
 assert.match(migration,/begin_driver_licence_verification/);
@@ -14,4 +14,4 @@ assert.match(migration,/government verification service could not complete the c
 assert.match(migration,/Official API results can only be recorded by the trusted verification service/);
 assert.match(migration,/v\.verification_method='OFFICIAL_API' or exists/);
 assert.doesNotMatch(shared,/EXPO_PUBLIC_|SUPABASE_SERVICE_ROLE_KEY|TFNSW_.*KEY/i);
-console.log('driver licence authoritative boundary tests passed');
+globalThis.console.log('driver licence authoritative boundary tests passed');
