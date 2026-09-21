@@ -51,7 +51,15 @@ test('every public table is explicitly RLS-enabled', () => {
 
 test('every SECURITY DEFINER function pins search_path to a safe explicit value', () => {
   const blocks = migrationText.split(/(?=create\s+(?:or\s+replace\s+)?function\b)/i).filter((block) => /security\s+definer/i.test(block));
-  const missing = blocks.filter((block) => !/set\s+search_path\s*(?:=|to)\s*(?:public|''|'public')/i.test(block));
+  const alterPinnedNames = new Set(
+    [...migrationText.matchAll(/alter\s+function\s+public\.([a-z_][a-z0-9_]*)\s*\([^)]*\)\s+set\s+search_path\s+(?:=|to)\s+public/gi)]
+      .map((match) => match[1].toLowerCase()),
+  );
+  const missing = blocks.filter((block) => {
+    if (/set\s+search_path\s*(?:=|to)\s*(?:public|''|'public')/i.test(block)) return false;
+    const name = block.match(/create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?([a-z_][a-z0-9_]*)/i)?.[1]?.toLowerCase();
+    return !name || !alterPinnedNames.has(name);
+  });
   assert.equal(missing.length, 0);
 });
 
@@ -119,7 +127,6 @@ test('EAS release profiles are present and production auto-increments versions',
   assert.equal(eas.build?.production?.autoIncrement, true);
 });
 
-
 test('business membership cannot be self-assigned through the Data API', () => {
   assert.match(migrationText, /create\s+policy\s+business_members_admin_insert[\s\S]{0,400}with\s+check\s*\(public\.is_admin\(\)\)/i);
   assert.match(migrationText, /revoke\s+insert,\s*update,\s*delete\s+on\s+public\.business_members\s+from\s+anon,\s*authenticated/i);
@@ -178,7 +185,6 @@ test('mobile source does not reference trusted server-only credential variables'
   assert.doesNotMatch(clientText, /SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET|AI_API_KEY/);
 });
 
-
 test('driver verification is credential-based, not profile-role based', () => {
   const functionPattern = /create\s+(?:or\s+replace\s+)?function\s+public\.driver_is_operational\s*\([\s\S]*?\n\$\$\s*;/i;
   const operational = migrationText.match(functionPattern)?.[0];
@@ -221,7 +227,6 @@ test('Ask Everest does not query driver documents', async () => {
   assert.match(assistant, /driver_applications/i);
   assert.doesNotMatch(assistant, /licence_number|insurance_policy_reference|storage_path/i);
 });
-
 
 test('admin authorization is restricted to the immutable intended UUID and MFA/password assurance', () => {
   assert.match(migrationText, /716edb35-a0cb-4cbf-99b2-41fa8500ffd3/);
@@ -276,7 +281,6 @@ test('authorized admin is routed to the private admin gate after authentication'
   assert.match(auth, /signIn\(email, password\)[\s\S]{0,250}routeAfterAuth/);
 });
 
-
 test('admin authorization code does not use the admin email as its security boundary', async () => {
   const migrationTextLower = migrationText.toLowerCase();
   const clientAndServerText = runtimeMigrationText + await readFile(join(appDir, '_layout.tsx'), 'utf8') + await readFile(join(libDir, 'admin-mfa.ts'), 'utf8');
@@ -284,17 +288,14 @@ test('admin authorization code does not use the admin email as its security boun
   assert.match(migrationTextLower, /716edb35-a0cb-4cbf-99b2-41fa8500ffd3/);
 });
 
-
 test('single-admin role trigger is not callable through PostgREST', () => {
   assert.match(migrationText, /revoke\s+execute\s+on\s+function\s+public\.enforce_single_admin_identity\(\)[\s\S]{0,120}from\s+public,\s*anon,\s*authenticated/i);
 });
-
 
 test('initial admin UUID is bound to the intended email only during bootstrap and singleton ADMIN is enforced', () => {
   assert.match(migrationText, /select\s+lower\(email\)[\s\S]{0,250}716edb35-a0cb-4cbf-99b2-41fa8500ffd3[\s\S]{0,250}dakshgolani5@gmail\.com/i);
   assert.match(migrationText, /create\s+unique\s+index\s+if\s+not\s+exists\s+profiles_single_admin_role_idx[\s\S]{0,220}where\s+role\s*=\s*['"]ADMIN['"]/i);
 });
-
 
 test('admin auth-state inspection does not require SECURITY DEFINER privileges', () => {
   assert.match(migrationText, /create\s+or\s+replace\s+function\s+public\.get_admin_auth_state\(\)[\s\S]{0,180}security\s+invoker/i);
