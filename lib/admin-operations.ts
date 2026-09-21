@@ -34,7 +34,7 @@ export const ADMIN_RESOURCES: AdminResource[] = [
   {key:'categories',label:'Categories',table:'categories',select:'id,name,slug,parent_id,kind,active,created_at',searchColumn:'name',orderColumn:'created_at',description:'Service and product taxonomy.'},
   {key:'service_definitions',label:'Service Taxonomy',table:'service_definitions',select:'id,category_id,name,slug,description,default_delivery_mode,active,created_at,updated_at',searchColumn:'name',orderColumn:'created_at',description:'Canonical services and LOCAL / REMOTE / BOTH defaults.'},
   {key:'service_areas',label:'Service Areas',table:'service_areas',select:'id,business_id,state,city,suburb,postcode,active',searchColumn:'suburb',orderColumn:'suburb',description:'Business service coverage.'},
-  {key:'service_matches',label:'Service Matching',table:'service_matches',select:'id,request_id,business_id,score,reason,created_at',searchColumn:'status',orderColumn:'created_at',description:'Business-request matching state.'},
+  {key:'service_matches',label:'Service Matching',table:'service_matches',select:'id,request_id,business_id,score,reason,created_at',searchColumn:'request_id',orderColumn:'created_at',description:'Business-request matching state.'},
   {key:'opportunities',label:'Opportunities',table:'opportunities',select:'id,request_id,business_id,status,expires_at,created_at',searchColumn:'status',orderColumn:'created_at',description:'Business opportunity distribution.'},
   {key:'stripe_events',label:'Stripe Events',table:'stripe_events',select:'event_id,event_type,status,processed_at,created_at',searchColumn:'event_type',orderColumn:'created_at',description:'Webhook processing metadata only; raw payment payloads remain restricted.',sensitive:true},
 ];
@@ -50,7 +50,7 @@ export async function getAdminResourcePage(resource: AdminResource, page: number
   if (term) query = query.ilike(resource.searchColumn, `%${term}%`);
   const { data, error, count } = await query;
   if (error) throw new Error('The requested admin data could not be loaded.');
-  return { rows: (data ?? []) as Record<string, unknown>[], count: count ?? 0 };
+  return { rows: (data ?? []) as unknown as Record<string, unknown>[], count: count ?? 0 };
 }
 
 export async function getAdminResourceCount(resource: AdminResource) {
