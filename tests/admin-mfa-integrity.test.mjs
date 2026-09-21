@@ -54,6 +54,24 @@ test('admin MFA exposes an explicit setup state machine and stale-factor recover
   assert.match(adminScreen, /RESTART MFA SETUP/);
 });
 
+test('admin MFA creates the challenge only when the user submits a code', () => {
+  const gateStart = adminScreen.indexOf('function MfaGate');
+  const gateEnd = adminScreen.indexOf('\nexport default function Admin', gateStart);
+  assert.ok(gateStart >= 0 && gateEnd > gateStart);
+  const gate = adminScreen.slice(gateStart, gateEnd);
+  const beginEnd = gate.indexOf('\n useEffect(()=>{void begin()},[begin]);');
+  assert.ok(beginEnd > 0);
+  const beginBlock = gate.slice(gateStart, beginEnd);
+  assert.doesNotMatch(beginBlock, /challengeAdminTotpFactor\(/);
+  const submitStart = gate.indexOf('async function submit()');
+  assert.ok(submitStart > beginEnd);
+  const submitBlock = gate.slice(submitStart);
+  const challengeIndex = submitBlock.indexOf('challengeAdminTotpFactor(');
+  const verifyIndex = submitBlock.indexOf('verifyAdminTotp(');
+  assert.ok(challengeIndex >= 0);
+  assert.ok(verifyIndex > challengeIndex);
+});
+
 test('admin MFA does not persist the TOTP secret or URI', () => {
   assert.doesNotMatch(adminScreen, /localStorage\.(?:setItem|getItem)\([^)]*(?:secret|uri)/i);
   assert.doesNotMatch(adminMfa, /localStorage\.(?:setItem|getItem)\([^)]*(?:secret|uri)/i);
