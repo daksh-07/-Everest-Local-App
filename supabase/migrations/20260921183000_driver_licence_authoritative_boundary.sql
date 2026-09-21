@@ -142,8 +142,6 @@ begin
   return true;
 end;
 $$;
-revoke execute on function public.admin_set_driver_credential_details(uuid,text,date,text,text,text,text,date,text,text,text) from public,anon,authenticated;
-grant execute on function public.admin_set_driver_credential_details(uuid,text,date,text,text,text,date,text,text,text) to authenticated;
 
 CREATE OR REPLACE FUNCTION public.evaluate_driver_compliance(p_application_id uuid)
  RETURNS jsonb
