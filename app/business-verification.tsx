@@ -96,12 +96,21 @@ export default function BusinessVerification() {
           ? new Date(latest.provider_retrieved_at).getTime()
           : 0;
 
-        if (
+        const retryRevalidationDue =
           current.verification_status === 'VERIFIED' &&
-          current.abn &&
-          lastSuccessfulCheck > 0 &&
-          lastSuccessfulCheck < Date.now() - 30 * 24 * 60 * 60 * 1000
-        ) {
+          latest?.automated_decision === 'RETRY' &&
+          !!latest.retry_after &&
+          new Date(latest.retry_after).getTime() <= Date.now();
+
+        const revalidationDue =
+          current.verification_status === 'VERIFIED' &&
+          !!current.abn &&
+          (
+            (lastSuccessfulCheck > 0 && lastSuccessfulCheck < Date.now() - 30 * 24 * 60 * 60 * 1000) ||
+            retryRevalidationDue
+          );
+
+        if (revalidationDue) {
           try {
             await verifyBusinessAbn(current.id, current.abn, true);
             const refreshed = await myBusiness();
