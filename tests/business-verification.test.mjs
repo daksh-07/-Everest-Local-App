@@ -165,3 +165,13 @@ test('admin operations are exception-focused', () => {
   assert.match(adminScreen, /SERVICE ERRORS/);
   assert.match(adminScreen, /business_verification_reviews/);
 });
+
+
+test('verified businesses are revalidated only when the stored successful ABR check is stale', () => {
+  assert.match(migration, /p_revalidate boolean/);
+  assert.match(migration, /last_verified_at > now\(\) - interval '30 days'/);
+  assert.match(migration, /message = 'REVALIDATION_NOT_DUE'/);
+  assert.match(flow, /revalidate = false/);
+  assert.match(screen, /30 \* 24 \* 60 \* 60 \* 1000/);
+  assert.match(screen, /retryRevalidationDue/);
+});
