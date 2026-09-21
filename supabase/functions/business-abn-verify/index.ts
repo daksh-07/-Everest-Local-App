@@ -228,7 +228,7 @@ Deno.serve(async (req) => {
       return json({
         status: 'INVALID_ABN',
         error: "That ABN doesn't appear to be valid. Please check the number and try again.",
-      }, 422);
+      }, 200);
     }
 
     const { data: start, error: startError } = await adminClient.rpc(
@@ -311,7 +311,7 @@ Deno.serve(async (req) => {
           status: 'REJECTED',
           reason: 'ABN_NOT_FOUND',
           message: 'The ABN you entered could not be found in the Australian Business Register. Please check the number and try again.',
-        }, 422);
+        }, 200);
       }
 
       const result: VerificationResult = {
@@ -362,7 +362,7 @@ Deno.serve(async (req) => {
         status: 'REJECTED',
         reason: 'ABN_MISMATCH',
         message: 'The ABN returned by the Australian Business Register did not match the number you entered.',
-      }, 422);
+      }, 200);
     }
 
     if (!active || !current) {
@@ -391,7 +391,7 @@ Deno.serve(async (req) => {
         message: "This ABN is not currently active. Please check your ABN details or update your Australian Business Register information before applying again.",
         authoritative_name: parsed.entityName,
         abn_status: parsed.abnStatus,
-      }, 422);
+      }, 200);
     }
 
     const authoritativeNames = [
