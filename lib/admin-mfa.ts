@@ -240,6 +240,16 @@ export async function enrollAdminTotp() {
 
 export async function challengeAdminTotpFactor(factorId: string): Promise<{ challengeId: string; factorStatus: string; factorType: string; aalBefore: string | null }> {
   await assertAuthorizedAdmin();
+
+  const { error: refreshError } = await supabase.auth.refreshSession();
+  if (refreshError) {
+    throw diagnosticError('SESSION_REFRESH_FAILED', 'Your admin session could not be refreshed. Sign in again before verifying MFA.', refreshError, 'refresh', {
+      factorExists: false,
+      challengeCreated: false,
+      challengeIdExists: false,
+    });
+  }
+
   const { data: assuranceBefore, error: assuranceBeforeError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (assuranceBeforeError) {
     throw diagnosticError(classifyMfaError(assuranceBeforeError, 'challenge'), 'The MFA assurance state could not be read before challenge creation.', assuranceBeforeError, 'challenge', {
