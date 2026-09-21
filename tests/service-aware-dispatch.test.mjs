@@ -5,13 +5,22 @@ import path from 'node:path';
 import { cwd } from 'node:process';
 
 const root = cwd();
+const migrationsDir = path.join(root, 'supabase', 'migrations');
+const migrationFiles = fs.readdirSync(migrationsDir).filter((file) => file.endsWith('.sql'));
+
+function findMigration(fragment) {
+  const file = migrationFiles.find((name) => name.includes(fragment));
+  assert.ok(file, `migration containing ${fragment} must exist`);
+  return path.join(migrationsDir, file);
+}
+
 const migration = [
-  'supabase/migrations/20260921233000_service_aware_dispatch_engine.sql',
-  'supabase/migrations/20260921235900_dispatch_relationship_prerequisites.sql',
-  'supabase/migrations/20260921240000_dispatch_lifecycle_authority_correction.sql',
-  'supabase/migrations/20260921241000_dispatch_state_audit_and_acceptance_guards.sql',
-  'supabase/migrations/20260921241100_fix_dispatch_offer_response_guard.sql',
-].map((file) => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
+  findMigration('service_aware_dispatch_engine'),
+  findMigration('dispatch_relationship_prerequisites'),
+  findMigration('dispatch_lifecycle_authority_correction'),
+  findMigration('dispatch_state_audit_and_acceptance_guards'),
+  findMigration('fix_dispatch_offer_response_guard'),
+].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 
 const fn = (name) => {
   const start = migration.lastIndexOf(`create or replace function public.${name}`);
@@ -201,10 +210,7 @@ test('all dispatch SECURITY DEFINER functions pin search_path', () => {
 });
 
 test('Phase 1 migration remains present', () => {
-  const phase1 = fs.readFileSync(
-    path.join(root, 'supabase/migrations/20260921210000_driver_availability.sql'),
-    'utf8',
-  );
+  const phase1 = fs.readFileSync(findMigration('driver_availability'), 'utf8');
   assert.match(phase1, /driver_availability/);
   assert.match(phase1, /set_driver_availability/);
 });
