@@ -20,6 +20,18 @@ test('admin MFA enrollment is non-destructive until explicit restart', () => {
   assert.match(enrollmentBlock, /mfa\.enroll/);
 });
 
+test('admin MFA refreshes the session before creating a verification challenge', () => {
+  const challengeStart = adminMfa.indexOf('export async function challengeAdminTotpFactor');
+  const challengeEnd = adminMfa.indexOf('export async function verifyAdminTotp', challengeStart);
+  assert.ok(challengeStart >= 0 && challengeEnd > challengeStart);
+  const challengeBlock = adminMfa.slice(challengeStart, challengeEnd);
+  const refreshIndex = challengeBlock.indexOf('supabase.auth.refreshSession()');
+  const challengeIndex = challengeBlock.indexOf('supabase.auth.mfa.challenge');
+  assert.ok(refreshIndex >= 0);
+  assert.ok(challengeIndex > refreshIndex);
+  assert.match(challengeBlock, /SESSION_REFRESH_FAILED/);
+});
+
 test('admin MFA verification uses the exact stored factor and challenge without an automatic retry', () => {
   assert.match(adminMfa, /verifyAdminTotp\(\s*factorId: string,\s*challengeId: string,\s*code: string/);
   assert.match(adminMfa, /mfa\.verify\(\{[\s\S]*factorId,[\s\S]*challengeId/);
