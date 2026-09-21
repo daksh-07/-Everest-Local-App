@@ -49,7 +49,7 @@ The repository does not currently include a live integration/E2E environment. Re
 4. Exercise product and service payment success/failure/expiry/retry scenarios in Stripe test mode.
 5. Configure native/web Auth redirect URLs and test password recovery on iOS, Android and web.
 6. Configure the AI provider server-side if Ask Everest is enabled.
-7. Register for the free ABN Lookup web services and store the issued `ABR_AUTH_GUID` only as a Supabase Edge Function secret; the verification function uses ABR's latest `SearchByABNv202001` method and never exposes the GUID to the Expo client.
+7. Register for the free ABN Lookup web services and store the issued `ABR_LOOKUP_GUID` only as a Supabase Edge Function secret; the verification function uses ABR's latest `SearchByABNv202001` method and never exposes the GUID to the Expo client.
 8. Populate real verified businesses, categories, services and products through controlled workflows.
 9. Configure notification/delivery providers if those capabilities are enabled for launch.
 10. Build/sign and test the native applications on physical devices.
