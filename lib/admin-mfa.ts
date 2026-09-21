@@ -17,6 +17,13 @@ export type AdminMfaDiagnostic =
   | 'NETWORK_FAILURE'
   | 'UNKNOWN';
 
+export type AdminMfaState = {
+  authorizedAdmin: boolean;
+  aal: 'aal1' | 'aal2';
+  hasVerifiedTotp: boolean;
+  passwordAuthenticated: boolean;
+};
+
 export class AdminMfaError extends Error {
   readonly diagnostic: AdminMfaDiagnostic;
   constructor(diagnostic: AdminMfaDiagnostic, message: string) {
