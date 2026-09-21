@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import type { VerificationStatus } from '@/lib/types';
-import { AdminMfaError, challengeAdminTotpFactor, enrollAdminTotp, getAdminMfaState, listAbandonedAdminTotpFactors, restartAdminTotpSetup, verifyAdminTotp, type AdminMfaDiagnosticDetails } from '@/lib/admin-mfa';
+import { AdminMfaError, challengeAdminTotp, challengeAdminTotpFactor, enrollAdminTotp, getAdminMfaState, listAbandonedAdminTotpFactors, restartAdminTotpSetup, verifyAdminTotp, type AdminMfaDiagnosticDetails } from '@/lib/admin-mfa';
 
 type PendingBusiness={id:string;name:string;verification_status:VerificationStatus;abn:string|null;suburb:string|null;city:string|null;state:string|null};
 type Counts=Record<string,number>;
@@ -91,10 +91,10 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
  async function submit(){
    const c=code.replace(/\D/g,'').slice(0,6);
    if(c.length!==6){setError('Enter the newest 6-digit code from your authenticator app.');return}
-   if(!enrollment){
+   if(setup&&!enrollment){
      setDiagnostic('MFA_FACTOR_NOT_FOUND');
      setDiagnosticDetails({phase:'verification',factorExists:false,challengeIdExists:false});
-     setError('Your MFA setup expired before verification. Start a new setup.');
+     setError('MFA setup is incomplete. Restart setup to continue.');
      setRestartRequired(true);
      return;
    }
@@ -104,7 +104,24 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
    setDiagnosticDetails(null);
    setPhase('VERIFYING');
    try{
-     const challenge=await challengeAdminTotpFactor(enrollment.id);
+     if(!setup){
+       await challengeAdminTotp(c);
+       setDiagnosticDetails({
+         phase:'verification',
+         factorExists:true,
+         factorStatus:'verified',
+         factorType:'totp',
+         challengeCreated:true,
+         challengeIdExists:true,
+         aalAfter:'aal2',
+       });
+       setPhase('VERIFIED');
+       setCode('');
+       setPhase('COMPLETE');
+       onDone();
+       return;
+     }
+     const challenge=await challengeAdminTotpFactor(enrollment!.id);
      const activeChallengeId=challenge.challengeId;
      const activeAalBefore=challenge.aalBefore;
      const activeFactorStatus=challenge.factorStatus;
@@ -139,7 +156,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
      setDiagnostic(diag);
      setDiagnosticDetails(isMfa?(e.details ?? null):{phase:'verification'});
      if(diag==='MFA_FACTOR_NOT_FOUND'){
-       setError('Your MFA setup expired before verification. Start a new setup.');
+       setError('No admin MFA factor is currently registered for this account.');
        setRestartRequired(true);
        setPhase('IDLE');
      }else if(diag==='CHALLENGE_EXPIRED'){
