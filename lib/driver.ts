@@ -458,3 +458,20 @@ export async function getDriverComplianceRequirements() {
   if (error) throw new Error(error.message);
   return (data ?? []) as Array<{requirement_code:string;title:string;description:string;required:boolean;source_type:string;source_name:string|null;source_url:string|null;source_notes:string|null}>;
 }
+
+export type DriverAvailability = { status: 'ONLINE' | 'OFFLINE'; service_radius_km: number; updated_at: string; busy: boolean };
+
+export async function getDriverAvailability(): Promise<DriverAvailability> {
+  requireSupabaseConfig();
+  const { data, error } = await supabase.rpc('get_driver_availability');
+  if (error) throw new Error(error.message);
+  return data as DriverAvailability;
+}
+
+export async function setDriverAvailability(status: DriverAvailability['status'], serviceRadiusKm: number): Promise<DriverAvailability> {
+  requireSupabaseConfig();
+  if (!Number.isFinite(serviceRadiusKm) || serviceRadiusKm < 1 || serviceRadiusKm > 100) throw new Error('Service radius must be between 1 and 100 km.');
+  const { data, error } = await supabase.rpc('set_driver_availability', { p_status: status, p_service_radius_km: serviceRadiusKm });
+  if (error) throw new Error(error.message);
+  return data as DriverAvailability;
+}
