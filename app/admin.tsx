@@ -60,7 +60,7 @@ function MfaGate({setup,onDone}:{setup:boolean;onDone:()=>void}){
      setError(m);
      setPhase('IDLE');
    }finally{setLoading(false)}
- },[setup,phase]);
+ },[setup]);
 
  useEffect(()=>{void begin()},[begin]);
 
