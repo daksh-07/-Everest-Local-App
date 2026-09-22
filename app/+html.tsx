@@ -51,6 +51,24 @@ export default function Root({ children }: PropsWithChildren) {
             min-height: 100%;
           }
 
+          html.android-mobile-viewport-fallback,
+          html.android-mobile-viewport-fallback body {
+            width: var(--everest-device-width) !important;
+            min-width: var(--everest-device-width) !important;
+            max-width: var(--everest-device-width) !important;
+            overflow-x: hidden !important;
+          }
+
+          html.android-mobile-viewport-fallback body {
+            zoom: var(--everest-mobile-compensation);
+          }
+
+          html.android-mobile-viewport-fallback #root {
+            width: var(--everest-device-width) !important;
+            max-width: var(--everest-device-width) !important;
+            overflow-x: hidden !important;
+          }
+
           input,
           textarea,
           select,
@@ -92,6 +110,37 @@ export default function Root({ children }: PropsWithChildren) {
             caret-color: #111 !important;
           }
         ` }} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                function normalizeAndroidViewport() {
+                  var ua = navigator.userAgent || '';
+                  if (!/Android/i.test(ua)) return;
+
+                  var root = document.documentElement;
+                  var screenWidth = Number(window.screen && window.screen.width) || 0;
+                  var viewportWidth = Number(window.innerWidth) || 0;
+
+                  if (screenWidth > 0 && screenWidth <= 600 && viewportWidth > screenWidth * 1.35) {
+                    var compensation = viewportWidth / screenWidth;
+                    root.style.setProperty('--everest-device-width', screenWidth + 'px');
+                    root.style.setProperty('--everest-mobile-compensation', String(compensation));
+                    root.classList.add('android-mobile-viewport-fallback');
+                  } else {
+                    root.classList.remove('android-mobile-viewport-fallback');
+                    root.style.removeProperty('--everest-device-width');
+                    root.style.removeProperty('--everest-mobile-compensation');
+                  }
+                }
+
+                normalizeAndroidViewport();
+                window.addEventListener('resize', normalizeAndroidViewport, { passive: true });
+                window.addEventListener('orientationchange', normalizeAndroidViewport, { passive: true });
+              })();
+            `,
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>
