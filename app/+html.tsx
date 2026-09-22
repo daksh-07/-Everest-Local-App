@@ -23,6 +23,20 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <ScrollViewStyleReset />
+        <style dangerouslySetInnerHTML={{ __html: `
+          input[aria-label="Search Everest Local"],
+          input[aria-label="Search Everest Local"]:focus,
+          input[aria-label="Search Everest Local"]:focus-visible {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            outline: none !important;
+            outline-width: 0 !important;
+            outline-color: transparent !important;
+            box-shadow: none !important;
+            border: 0 !important;
+            -webkit-tap-highlight-color: transparent !important;
+          }
+        ` }} />
       </head>
       <body>{children}</body>
     </html>
