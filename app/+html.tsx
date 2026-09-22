@@ -97,7 +97,13 @@ export default function Root({ children }: PropsWithChildren) {
           #everest-search-input:focus-visible,
           input#everest-search-input,
           input#everest-search-input:focus,
-          input#everest-search-input:focus-visible {
+          input#everest-search-input:focus-visible,
+          #everest-assistant-input,
+          #everest-assistant-input:focus,
+          #everest-assistant-input:focus-visible,
+          input#everest-assistant-input,
+          input#everest-assistant-input:focus,
+          input#everest-assistant-input:focus-visible {
             -webkit-appearance: none !important;
             appearance: none !important;
             outline: none !important;
