@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { listPublicPosts, type SocialPost } from '@/lib/social';
 import { supabase } from '@/lib/supabase';
 
-type FeedPost = SocialPost & { businesses?: { name: string; slug: string } | null };
+type FeedPost = SocialPost & { businesses?: { name: string; slug: string; logo_url: string | null } | null; profile?: { display_name: string | null; avatar_url: string | null } | null };
 
 export default function Social() {
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -21,13 +21,18 @@ export default function Social() {
     try {
       const items = await listPublicPosts({ limit: 20, offset });
       const ids = items.map(item => item.business_id).filter((value): value is string => Boolean(value));
-      let businessMap: Record<string, { name: string; slug: string }> = {};
-      if (ids.length) {
-        const { data, error: businessError } = await supabase.from('businesses').select('id,name,slug').in('id', ids);
-        if (businessError) throw businessError;
-        businessMap = Object.fromEntries((data ?? []).map(item => [item.id, { name: item.name, slug: item.slug }]));
-      }
-      const enriched = items.map(item => ({ ...item, businesses: item.business_id ? businessMap[item.business_id] ?? null : null }));
+      const authorIds = [...new Set(items.map(item => item.author_id).filter(Boolean))];
+      let businessMap: Record<string, { name: string; slug: string; logo_url: string | null }> = {};
+      let profileMap: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
+      const [businessResult, profileResult] = await Promise.all([
+        ids.length ? supabase.from('businesses').select('id,name,slug,logo_url').in('id', ids) : Promise.resolve({ data: [], error: null }),
+        authorIds.length ? supabase.from('public_profiles').select('id,display_name,avatar_url').in('id', authorIds).eq('visibility','PUBLIC') : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (businessResult.error) throw businessResult.error;
+      if (profileResult.error) throw profileResult.error;
+      businessMap = Object.fromEntries((businessResult.data ?? []).map(item => [item.id, { name: item.name, slug: item.slug, logo_url: item.logo_url }]));
+      profileMap = Object.fromEntries((profileResult.data ?? []).map(item => [item.id, { display_name: item.display_name, avatar_url: item.avatar_url }]));
+      const enriched = items.map(item => ({ ...item, businesses: item.business_id ? businessMap[item.business_id] ?? null : null, profile: profileMap[item.author_id] ?? null }));
       setPosts(current => reset ? enriched : [...current, ...enriched]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'We could not load discovery right now.');
@@ -71,7 +76,7 @@ export default function Social() {
       ListEmptyComponent={<View style={s.empty}><Ionicons name="sparkles-outline" size={28}/><Text style={s.emptyTitle}>Nothing to discover yet</Text><Text style={s.emptyCopy}>Public business and customer posts will appear here as the community publishes them.</Text></View>}
       ListFooterComponent={loadingMore ? <ActivityIndicator style={{ marginVertical: 20 }} /> : null}
       renderItem={({ item }) => <View style={s.card}>
-        <View style={s.cardHeader}><View style={s.avatar}><Ionicons name={item.business_id ? 'business-outline' : 'person-outline'} size={18}/></View><View style={{flex:1}}><Text style={s.business}>{item.businesses?.name ?? 'Community post'}</Text><Text style={s.meta}>{item.post_type.replaceAll('_',' ')} · {new Date(item.created_at).toLocaleDateString()}</Text></View>{item.business_id ? <Pressable onPress={() => router.push('/business-profile?id=' + item.business_id)}><Text style={s.link}>VIEW</Text></Pressable> : null}</View>
+        <View style={s.cardHeader}><View style={s.avatar}>{(item.businesses?.logo_url||item.profile?.avatar_url)?<Image source={{uri:item.businesses?.logo_url??item.profile?.avatar_url??''}} style={s.avatarImage}/>:<Ionicons name={item.business_id ? 'business-outline' : 'person-outline'} size={18}/>}</View><View style={{flex:1}}><Text style={s.business}>{item.businesses?.name ?? item.profile?.display_name ?? 'Community member'}</Text><Text style={s.meta}>{item.post_type.replaceAll('_',' ')} · {new Date(item.created_at).toLocaleDateString()}</Text></View>{item.business_id ? <Pressable onPress={() => router.push('/business-profile?id=' + item.business_id)}><Text style={s.link}>VIEW</Text></Pressable> : null}</View>
         {item.caption ? <Text style={s.caption}>{item.caption}</Text> : null}
         <View style={s.ctas}>
           {item.service_id ? <Pressable style={s.cta} onPress={() => router.push('/request?serviceId=' + item.service_id)}><Text style={s.ctaText}>GET QUOTE</Text></Pressable> : null}
@@ -84,5 +89,5 @@ export default function Social() {
 }
 
 const s=StyleSheet.create({
-  safe:{flex:1,backgroundColor:'#f8f7f4'},page:{padding:20,paddingBottom:40},header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8},eyebrow:{fontSize:9,fontWeight:'900',letterSpacing:2,color:'#777'},title:{fontSize:30,fontWeight:'900',marginTop:3},search:{width:44,height:44,borderRadius:14,backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc',alignItems:'center',justifyContent:'center'},subtitle:{fontSize:12,lineHeight:18,color:'#666',marginBottom:16},card:{backgroundColor:'#fff',borderRadius:19,borderWidth:1,borderColor:'#e5e2dc',padding:16,marginBottom:12},cardHeader:{flexDirection:'row',alignItems:'center',gap:10},avatar:{width:42,height:42,borderRadius:14,backgroundColor:'#f0eee9',alignItems:'center',justifyContent:'center'},business:{fontSize:14,fontWeight:'800'},meta:{fontSize:9,fontWeight:'700',letterSpacing:.4,color:'#888',marginTop:3,textTransform:'uppercase'},caption:{fontSize:14,lineHeight:21,color:'#333',marginTop:14},link:{fontSize:9,fontWeight:'900'},ctas:{flexDirection:'row',gap:8,marginTop:14,flexWrap:'wrap'},cta:{height:38,paddingHorizontal:13,borderRadius:11,backgroundColor:'#111',alignItems:'center',justifyContent:'center'},ctaText:{color:'#fff',fontSize:9,fontWeight:'900'},secondaryCta:{height:38,paddingHorizontal:13,borderRadius:11,borderWidth:1,borderColor:'#d8d3ca',alignItems:'center',justifyContent:'center'},secondaryText:{fontSize:9,fontWeight:'900'},error:{backgroundColor:'#fff3f0',borderRadius:13,padding:13,marginBottom:12},errorText:{fontSize:11,color:'#8a2d20'},retry:{fontSize:10,fontWeight:'900',marginTop:7},empty:{alignItems:'center',padding:50},emptyTitle:{fontSize:18,fontWeight:'900',marginTop:12},emptyCopy:{fontSize:12,lineHeight:18,color:'#777',textAlign:'center',marginTop:6,maxWidth:320}
+  safe:{flex:1,backgroundColor:'#f8f7f4'},page:{padding:20,paddingBottom:40},header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8},eyebrow:{fontSize:9,fontWeight:'900',letterSpacing:2,color:'#777'},title:{fontSize:30,fontWeight:'900',marginTop:3},search:{width:44,height:44,borderRadius:14,backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc',alignItems:'center',justifyContent:'center'},subtitle:{fontSize:12,lineHeight:18,color:'#666',marginBottom:16},card:{backgroundColor:'#fff',borderRadius:19,borderWidth:1,borderColor:'#e5e2dc',padding:16,marginBottom:12},cardHeader:{flexDirection:'row',alignItems:'center',gap:10},avatar:{width:42,height:42,borderRadius:14,backgroundColor:'#f0eee9',alignItems:'center',justifyContent:'center',overflow:'hidden'},avatarImage:{width:42,height:42},business:{fontSize:14,fontWeight:'800'},meta:{fontSize:9,fontWeight:'700',letterSpacing:.4,color:'#888',marginTop:3,textTransform:'uppercase'},caption:{fontSize:14,lineHeight:21,color:'#333',marginTop:14},link:{fontSize:9,fontWeight:'900'},ctas:{flexDirection:'row',gap:8,marginTop:14,flexWrap:'wrap'},cta:{height:38,paddingHorizontal:13,borderRadius:11,backgroundColor:'#111',alignItems:'center',justifyContent:'center'},ctaText:{color:'#fff',fontSize:9,fontWeight:'900'},secondaryCta:{height:38,paddingHorizontal:13,borderRadius:11,borderWidth:1,borderColor:'#d8d3ca',alignItems:'center',justifyContent:'center'},secondaryText:{fontSize:9,fontWeight:'900'},error:{backgroundColor:'#fff3f0',borderRadius:13,padding:13,marginBottom:12},errorText:{fontSize:11,color:'#8a2d20'},retry:{fontSize:10,fontWeight:'900',marginTop:7},empty:{alignItems:'center',padding:50},emptyTitle:{fontSize:18,fontWeight:'900',marginTop:12},emptyCopy:{fontSize:12,lineHeight:18,color:'#777',textAlign:'center',marginTop:6,maxWidth:320}
 });
