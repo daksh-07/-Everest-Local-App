@@ -24,9 +24,12 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: `
-          input[aria-label="Search Everest Local"],
-          input[aria-label="Search Everest Local"]:focus,
-          input[aria-label="Search Everest Local"]:focus-visible {
+          #everest-search-input,
+          #everest-search-input:focus,
+          #everest-search-input:focus-visible,
+          input#everest-search-input,
+          input#everest-search-input:focus,
+          input#everest-search-input:focus-visible {
             -webkit-appearance: none !important;
             appearance: none !important;
             outline: none !important;
@@ -35,6 +38,8 @@ export default function Root({ children }: PropsWithChildren) {
             box-shadow: none !important;
             border: 0 !important;
             -webkit-tap-highlight-color: transparent !important;
+            -webkit-focus-ring-color: transparent !important;
+            caret-color: #111 !important;
           }
         ` }} />
       </head>
