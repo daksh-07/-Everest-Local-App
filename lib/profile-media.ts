@@ -75,7 +75,7 @@ async function uploadOwnedImage(ownerId: string, folder: 'avatar' | 'business', 
     cacheControl: '31536000',
     upsert: false,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error('The image could not be uploaded. Please try again.');
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   if (!data.publicUrl) {
     await supabase.storage.from(BUCKET).remove([path]);
