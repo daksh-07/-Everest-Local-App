@@ -1,3 +1,4 @@
+import { userFacingError } from './errors';
 import { supabase, requireSupabaseConfig } from './supabase';
 
 function idempotencyKey(){return `service-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;}
@@ -10,8 +11,8 @@ export async function createServiceCheckout(bookingId:string){
     body:{booking_id:id},
     headers:{'Idempotency-Key':idempotencyKey()},
   });
-  if(error)throw new Error(error.message);
+  if(error)throw new Error(userFacingError(error,'Payment could not be started. Please try again.'));
   const result=data as {checkoutUrl?:unknown};
-  if(typeof result.checkoutUrl!=='string'||!result.checkoutUrl)throw new Error('Service checkout did not return a payment link.');
+  if(typeof result.checkoutUrl!=='string'||!result.checkoutUrl)throw new Error('Payment could not be started. Please try again.');
   return result.checkoutUrl;
 }
