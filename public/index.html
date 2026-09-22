@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f8f7f4" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Everest Local" />
+    <meta name="description" content="Discover local services and products, request quotes and shop with verified businesses." />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <title>Everest Local</title>
+    <script>
+      (function () {
+        try {
+          var preference = localStorage.getItem('everest-local-theme');
+          var dark = preference === 'DARK' || (preference !== 'LIGHT' && matchMedia('(prefers-color-scheme: dark)').matches);
+          var canvas = dark ? '#151513' : '#f8f7f4';
+          document.documentElement.style.setProperty('--everest-canvas', canvas);
+          document.documentElement.style.setProperty('--everest-text', dark ? '#f7f1e8' : '#171715');
+          document.documentElement.style.backgroundColor = canvas;
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', canvas);
+        } catch (error) { /* Storage may be disabled; the system preference still works after startup. */ }
+      })();
+    </script>
+    <style id="expo-reset">
+      html, body { height: 100%; width: 100%; margin: 0; background: var(--everest-canvas, #f8f7f4); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+      html { touch-action: manipulation; }
+      body { overflow: hidden; overflow-x: hidden; overscroll-behavior-x: none; }
+      #root { display: flex; flex: 1; height: 100%; min-height: 100%; width: 100%; min-width: 0; }
+      @media (display-mode: standalone), (display-mode: fullscreen) {
+        body::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: env(safe-area-inset-top, 0px);
+          background: #151513;
+          pointer-events: none;
+          z-index: 1000;
+        }
+      }
+      input, textarea, select, button { font: inherit; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+      input, textarea, select { font-size: 16px !important; }
+      button, input, textarea, select, [role="button"] { touch-action: manipulation; }
+      #everest-search-input, #everest-search-input:focus, #everest-search-input:focus-visible,
+      #everest-assistant-input, #everest-assistant-input:focus, #everest-assistant-input:focus-visible {
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        border: 0 !important;
+        -webkit-tap-highlight-color: transparent !important;
+        caret-color: var(--everest-text, #171715) !important;
+      }
+      html.android-mobile-viewport-fallback,
+      html.android-mobile-viewport-fallback body {
+        width: var(--everest-device-width) !important;
+        min-width: var(--everest-device-width) !important;
+        max-width: var(--everest-device-width) !important;
+        overflow-x: hidden !important;
+      }
+      html.android-mobile-viewport-fallback body { zoom: var(--everest-mobile-compensation); }
+      html.android-mobile-viewport-fallback #root {
+        width: var(--everest-device-width) !important;
+        max-width: var(--everest-device-width) !important;
+        overflow-x: hidden !important;
+      }
+    </style>
+    <script>
+      (function () {
+        function normalizeAndroidViewport() {
+          if (!/Android/i.test(navigator.userAgent || '')) return;
+          var root = document.documentElement;
+          var screenWidth = Number(window.screen && window.screen.width) || 0;
+          var viewportWidth = Number(window.innerWidth) || 0;
+          if (screenWidth > 0 && screenWidth <= 600 && viewportWidth > screenWidth * 1.35) {
+            root.style.setProperty('--everest-device-width', screenWidth + 'px');
+            root.style.setProperty('--everest-mobile-compensation', String(viewportWidth / screenWidth));
+            root.classList.add('android-mobile-viewport-fallback');
+          } else {
+            root.classList.remove('android-mobile-viewport-fallback');
+            root.style.removeProperty('--everest-device-width');
+            root.style.removeProperty('--everest-mobile-compensation');
+          }
+        }
+        normalizeAndroidViewport();
+        window.addEventListener('resize', normalizeAndroidViewport, { passive: true });
+        window.addEventListener('orientationchange', normalizeAndroidViewport, { passive: true });
+      })();
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
