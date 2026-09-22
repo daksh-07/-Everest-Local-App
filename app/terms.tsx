@@ -1,7 +1,9 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAppTheme } from '@/lib/theme';
 
 export default function Terms() {
+  const {colors:c}=useAppTheme();const s={safe:{flex:1,backgroundColor:c.canvas},page:{padding:24,paddingBottom:60,maxWidth:760,width:'100%' as const,alignSelf:'center' as const},eyebrow:{fontSize:10,fontWeight:'900' as const,letterSpacing:2,color:c.muted},title:{fontSize:34,fontWeight:'900' as const,marginTop:8,color:c.text},updated:{fontSize:12,color:c.muted,marginTop:7},note:{fontSize:13,lineHeight:20,backgroundColor:c.soft,borderRadius:14,padding:15,marginTop:18,color:c.textSecondary}};
   return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page}>
     <Text style={s.eyebrow}>EVEREST LOCAL</Text><Text style={s.title}>Terms of Service</Text>
     <Text style={s.updated}>Draft for launch review · 17 September 2026</Text>
@@ -17,5 +19,4 @@ export default function Terms() {
     <Section title="9. Changes">These terms may be updated as the service changes. The final public version must identify the legal operator, governing law and a working support contact.</Section>
   </ScrollView></SafeAreaView>;
 }
-function Section({ title, children }: { title: string; children: string }) { return <View style={s.section}><Text style={s.heading}>{title}</Text><Text style={s.body}>{children}</Text></View>; }
-const s = StyleSheet.create({ safe:{flex:1,backgroundColor:'#f8f7f4'}, page:{padding:24,paddingBottom:60,maxWidth:760,width:'100%',alignSelf:'center'}, eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:2,color:'#777'}, title:{fontSize:34,fontWeight:'900',marginTop:8}, updated:{fontSize:12,color:'#777',marginTop:7}, note:{fontSize:13,lineHeight:20,backgroundColor:'#fff7e6',borderRadius:14,padding:15,marginTop:18,color:'#6b4e16'}, section:{marginTop:24}, heading:{fontSize:16,fontWeight:'900',marginBottom:7}, body:{fontSize:14,lineHeight:22,color:'#444'} });
+function Section({ title, children }: { title: string; children: string }) { const {colors:c}=useAppTheme();return <View style={{marginTop:24}}><Text style={{fontSize:16,fontWeight:'900',marginBottom:7,color:c.text}}>{title}</Text><Text style={{fontSize:14,lineHeight:22,color:c.textSecondary}}>{children}</Text></View>; }

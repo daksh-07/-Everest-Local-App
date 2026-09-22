@@ -1,0 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable,Text,View } from 'react-native';
+import { useAppTheme } from '@/lib/theme';
+
+export function SettingsRow({icon,title,detail,onPress,danger=false,disabled=false}:{icon:keyof typeof Ionicons.glyphMap;title:string;detail?:string;onPress:()=>void;danger?:boolean;disabled?:boolean}){
+ const {colors}=useAppTheme();return <Pressable accessibilityRole="button" accessibilityLabel={detail?`${title}. ${detail}`:title} disabled={disabled} onPress={onPress} style={({pressed})=>({minHeight:58,paddingHorizontal:15,paddingVertical:10,flexDirection:'row',alignItems:'center',gap:12,opacity:disabled?.5:pressed?.65:1})}><View style={{width:32,height:32,borderRadius:10,backgroundColor:colors.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name={icon} size={17} color={danger?colors.danger:colors.text}/></View><View style={{flex:1}}><Text style={{fontSize:14,fontWeight:'700',color:danger?colors.danger:colors.text}}>{title}</Text>{detail?<Text numberOfLines={2} style={{fontSize:11,lineHeight:16,color:colors.muted,marginTop:2}}>{detail}</Text>:null}</View><Ionicons name="chevron-forward" size={17} color={colors.muted}/></Pressable>
+}
+export function SettingsGroup({title,children}:{title:string;children:React.ReactNode}){const {colors}=useAppTheme();return <View style={{marginTop:22}}><Text style={{fontSize:10,fontWeight:'900',letterSpacing:1.3,color:colors.muted,marginBottom:8,marginLeft:4}}>{title}</Text><View style={{backgroundColor:colors.surface,borderRadius:18,borderWidth:1,borderColor:colors.border,overflow:'hidden'}}>{children}</View></View>}

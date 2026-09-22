@@ -23,6 +23,7 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <ScrollViewStyleReset />
+        <script dangerouslySetInnerHTML={{__html:`(function(){try{var p=localStorage.getItem('everest-local-theme');var d=p==='DARK'||(p!=='LIGHT'&&matchMedia('(prefers-color-scheme: dark)').matches);var c=d?'#171715':'#f8f7f4';document.documentElement.style.setProperty('--everest-canvas',c);document.documentElement.style.setProperty('--everest-text',d?'#f4efe6':'#171715');document.documentElement.style.background=c;document.documentElement.style.colorScheme=d?'dark':'light';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c)}catch(e){}})();`}} />
         <style dangerouslySetInnerHTML={{ __html: `
           html {
             width: 100%;
@@ -30,7 +31,7 @@ export default function Root({ children }: PropsWithChildren) {
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
             touch-action: manipulation;
-            background: #f8f7f4;
+            background: var(--everest-canvas, #f8f7f4);
           }
 
           body {
@@ -42,7 +43,7 @@ export default function Root({ children }: PropsWithChildren) {
             overscroll-behavior-x: none;
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
-            background: #f8f7f4;
+            background: var(--everest-canvas, #f8f7f4);
           }
 
           #root {
@@ -107,7 +108,7 @@ export default function Root({ children }: PropsWithChildren) {
             border: 0 !important;
             -webkit-tap-highlight-color: transparent !important;
             -webkit-focus-ring-color: transparent !important;
-            caret-color: #111 !important;
+            caret-color: var(--everest-text, #111) !important;
           }
         ` }} />
         <script

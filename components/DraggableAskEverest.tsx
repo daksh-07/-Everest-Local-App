@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '@/lib/theme';
 
 const BUTTON_WIDTH = 128;
 const BUTTON_HEIGHT = 44;
@@ -11,6 +12,7 @@ const BOTTOM_GUARD = 112;
 const TRASH_SIZE = 68;
 
 export function DraggableAskEverest({ pathname }: { pathname: string }) {
+  const theme=useAppTheme();
   const { width, height } = useWindowDimensions();
   const hiddenRoute = ['/assistant', '/auth', '/messages', '/cart'].includes(pathname);
   const [dismissed, setDismissed] = useState(false);
@@ -112,7 +114,7 @@ export function DraggableAskEverest({ pathname }: { pathname: string }) {
     <Animated.View
       {...responder.panHandlers}
       style={[
-        styles.askButton,
+        styles.askButton,{backgroundColor:theme.isDark?theme.colors.brand:'#111'},
         { transform: [{ translateX: pan.x }, { translateY: pan.y }] },
         dragging && styles.askDragging,
         shredding && {
@@ -128,8 +130,8 @@ export function DraggableAskEverest({ pathname }: { pathname: string }) {
       accessibilityRole="button"
       accessibilityLabel="Ask Everest. Drag to move, or drag to the remove target to hide."
     >
-      <Ionicons name="sparkles" size={13} color="#fff" />
-      <Text style={styles.askButtonText}>Ask Everest</Text>
+      <Ionicons name="sparkles" size={13} color={theme.isDark?theme.colors.onBrand:'#fff'} />
+      <Text style={[styles.askButtonText,theme.isDark&&{color:theme.colors.onBrand}]}>Ask Everest</Text>
       {shredding && <View pointerEvents="none" style={StyleSheet.absoluteFill}>
         {[0,1,2,3,4,5].map((i) => <Animated.View key={i} style={[
           styles.shredStrip,
