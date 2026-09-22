@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -152,7 +152,18 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 function Empty({ text }: { text: string }) { return <View style={s.emptyInline}><Text style={s.muted}>{text}</Text></View>; }
 
-const webSearchInputStyle = { outlineWidth: 0, outlineColor: 'transparent' } as const;
+const webSearchInputStyle = {
+  outline: 'none',
+  outlineStyle: 'none',
+  outlineWidth: 0,
+  outlineColor: 'transparent',
+  borderWidth: 0,
+  borderColor: 'transparent',
+  boxShadow: 'none',
+  WebkitAppearance: 'none',
+  appearance: 'none',
+  WebkitTapHighlightColor: 'transparent',
+} as unknown as TextStyle;
 
 const s = StyleSheet.create({
   safe:{flex:1,backgroundColor:'#f8f7f4'},page:{padding:20,paddingBottom:50},header:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},eyebrow:{fontSize:10,fontWeight:'800',letterSpacing:2,color:'#777'},title:{fontSize:30,fontWeight:'800',marginTop:5,marginBottom:20},cart:{width:44,height:44,borderRadius:14,backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc',alignItems:'center',justifyContent:'center'},search:{height:58,borderRadius:17,backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc',paddingHorizontal:16,flexDirection:'row',alignItems:'center',gap:10},input:{flex:1,minWidth:0,minHeight:44,fontSize:16,lineHeight:22,color:'#111',paddingVertical:0},tabs:{gap:8,paddingVertical:16},tab:{paddingHorizontal:14,paddingVertical:9,borderRadius:20,backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc'},tabActive:{backgroundColor:'#111',borderColor:'#111'},tabText:{fontSize:9,fontWeight:'900',letterSpacing:.7,color:'#777'},tabTextActive:{color:'#fff'},hint:{fontSize:11,lineHeight:17,color:'#777',marginBottom:4},heading:{fontSize:19,fontWeight:'800',marginTop:24,marginBottom:12},result:{backgroundColor:'#fff',borderRadius:17,borderWidth:1,borderColor:'#e5e2dc',padding:14,flexDirection:'row',alignItems:'center',gap:12,marginBottom:9},icon:{width:48,height:48,borderRadius:14,backgroundColor:'#f0eee9',alignItems:'center',justifyContent:'center'},resultTitle:{fontSize:14,fontWeight:'800'},resultCopy:{fontSize:12,color:'#777',marginTop:4,lineHeight:17},verified:{fontSize:9,fontWeight:'900',letterSpacing:.7,marginTop:5},add:{height:38,paddingHorizontal:12,borderRadius:11,backgroundColor:'#111',alignItems:'center',justifyContent:'center'},addText:{color:'#fff',fontSize:9,fontWeight:'900'},emptyInline:{backgroundColor:'#fff',borderRadius:17,padding:18,borderWidth:1,borderColor:'#e5e2dc'},empty:{backgroundColor:'#fff',borderRadius:20,borderWidth:1,borderColor:'#e5e2dc',padding:30,alignItems:'center',marginTop:25},emptyTitle:{fontSize:16,fontWeight:'800'},emptyCopy:{fontSize:13,lineHeight:20,color:'#777',textAlign:'center',marginTop:7},muted:{fontSize:12,color:'#777',lineHeight:18},retry:{height:44,borderRadius:12,backgroundColor:'#111',paddingHorizontal:20,alignItems:'center',justifyContent:'center',marginTop:14},retryText:{color:'#fff',fontSize:10,fontWeight:'900'},cartMessage:{fontSize:12,fontWeight:'700',textAlign:'center',marginTop:12},ai:{marginTop:24,backgroundColor:'#111',borderRadius:20,padding:15,flexDirection:'row',alignItems:'center',gap:12},aiIcon:{width:42,height:42,borderRadius:14,backgroundColor:'#292929',alignItems:'center',justifyContent:'center'},aiTitle:{color:'#fff',fontWeight:'800'},aiCopy:{color:'#aaa',fontSize:11,marginTop:3}
