@@ -14,7 +14,7 @@ export default function Root({ children }: PropsWithChildren) {
         />
         <meta name="theme-color" content="#f8f7f4" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Everest Local" />
         <meta
           name="description"
@@ -23,11 +23,12 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <ScrollViewStyleReset />
-        <script dangerouslySetInnerHTML={{__html:`(function(){try{var p=localStorage.getItem('everest-local-theme');var d=p==='DARK'||(p!=='LIGHT'&&matchMedia('(prefers-color-scheme: dark)').matches);var c=d?'#171715':'#f8f7f4';document.documentElement.style.setProperty('--everest-canvas',c);document.documentElement.style.setProperty('--everest-text',d?'#f4efe6':'#171715');document.documentElement.style.background=c;document.documentElement.style.colorScheme=d?'dark':'light';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c)}catch(e){}})();`}} />
+        <script dangerouslySetInnerHTML={{__html:`(function(){try{var p=localStorage.getItem('everest-local-theme');var d=p==='DARK'||(p!=='LIGHT'&&matchMedia('(prefers-color-scheme: dark)').matches);var c=d?'#151513':'#f8f7f4';document.documentElement.style.setProperty('--everest-canvas',c);document.documentElement.style.setProperty('--everest-text',d?'#f7f1e8':'#171715');document.documentElement.style.background=c;document.documentElement.style.colorScheme=d?'dark':'light';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c);var s=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(s)s.setAttribute('content',d?'black-translucent':'default')}catch(e){}})();`}} />
         <style dangerouslySetInnerHTML={{ __html: `
           html {
             width: 100%;
             min-height: 100%;
+            height: 100%;
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
             touch-action: manipulation;
@@ -38,6 +39,7 @@ export default function Root({ children }: PropsWithChildren) {
             width: 100%;
             min-width: 100%;
             min-height: 100%;
+            height: 100%;
             margin: 0;
             overflow-x: hidden;
             overscroll-behavior-x: none;
@@ -50,6 +52,7 @@ export default function Root({ children }: PropsWithChildren) {
             width: 100%;
             min-width: 0;
             min-height: 100%;
+            height: 100%;
           }
 
           html.android-mobile-viewport-fallback,

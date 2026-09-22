@@ -21,33 +21,33 @@ export default function Home() {
     <ScrollView contentContainerStyle={s.page} showsVerticalScrollIndicator={false}>
       <View style={s.header}>
         <View style={s.heading}><Text style={s.eyebrow}>EVEREST LOCAL</Text><Text style={s.title}>Local, when you need it.</Text><Text style={s.intro}>Find services, shop local products, or request quotes from verified businesses.</Text></View>
-        <Pressable style={s.avatar} onPress={() => router.push('/account')} accessibilityLabel="Open account">{avatarUrl?<Image source={{uri:avatarUrl}} style={s.avatarImage}/>:<Ionicons name="person-outline" size={20}/>}</Pressable>
+        <Pressable style={s.avatar} onPress={() => router.push('/account')} accessibilityLabel="Open account">{avatarUrl?<Image source={{uri:avatarUrl}} style={s.avatarImage}/>:<Ionicons name="person-outline" size={20} color={colors.text}/>}</Pressable>
       </View>
 
       <Pressable style={s.search} onPress={() => router.push('/search')} accessibilityRole="button">
-        <Ionicons name="search" size={20} color={ui.colors.muted}/><Text style={s.placeholder}>Search services, products or businesses</Text><Ionicons name="arrow-forward" size={19}/>
+        <Ionicons name="search" size={20} color={colors.muted}/><Text style={s.placeholder}>Search services, products or businesses</Text><Ionicons name="arrow-forward" size={19} color={colors.text}/>
       </Pressable>
-      <View style={s.location}><Ionicons name="location-outline" size={18}/><View style={{flex:1}}><Text style={s.label}>BROWSING AREA</Text><Text style={s.locationText}>Sydney, NSW</Text><Text style={s.areaNote}>Availability varies by suburb.</Text></View><Pressable onPress={() => router.push('/search')} accessibilityLabel="Explore Sydney"><Text style={s.change}>EXPLORE</Text></Pressable></View>
+      <View style={s.location}><Ionicons name="location-outline" size={18} color={colors.text}/><View style={{flex:1}}><Text style={s.label}>BROWSING AREA</Text><Text style={s.locationText}>Sydney, NSW</Text><Text style={s.areaNote}>Availability varies by suburb.</Text></View><Pressable onPress={() => router.push('/search')} accessibilityLabel="Explore Sydney"><Text style={s.change}>EXPLORE</Text></Pressable></View>
 
       <Text style={s.section}>Choose how to start</Text>
       <View style={s.primaryGrid}>
-        <Pressable accessibilityRole="button" style={({pressed})=>[s.primary,pressed&&s.pressed]} onPress={() => router.push('/search?tab=SERVICES')}><View style={s.primaryIcon}><Ionicons name="construct-outline" size={24}/></View><Text style={s.primaryTitle}>Find a service</Text><Text style={s.primaryCopy}>Browse local professionals</Text></Pressable>
-        <Pressable accessibilityRole="button" style={({pressed})=>[s.primary,pressed&&s.pressed]} onPress={() => router.push('/search?tab=PRODUCTS')}><View style={s.primaryIcon}><Ionicons name="bag-handle-outline" size={24}/></View><Text style={s.primaryTitle}>Shop local</Text><Text style={s.primaryCopy}>Products from nearby businesses</Text></Pressable>
-        <Pressable accessibilityRole="button" style={({pressed})=>[s.primaryWide,pressed&&s.pressed]} onPress={() => router.push('/request')}><View style={s.primaryIcon}><Ionicons name="document-text-outline" size={24}/></View><View style={{flex:1}}><Text style={[s.primaryTitle,s.wideTitle]}>Request quotes</Text><Text style={s.primaryCopy}>Tell eligible businesses what you need</Text></View><Ionicons name="arrow-forward" size={19}/></Pressable>
+        <Pressable accessibilityRole="button" style={({pressed})=>[s.primary,pressed&&s.pressed]} onPress={() => router.push('/search?tab=SERVICES')}><View style={s.primaryIcon}><Ionicons name="construct-outline" size={24} color={colors.text}/></View><Text style={s.primaryTitle}>Find a service</Text><Text style={s.primaryCopy}>Browse local professionals</Text></Pressable>
+        <Pressable accessibilityRole="button" style={({pressed})=>[s.primary,pressed&&s.pressed]} onPress={() => router.push('/search?tab=PRODUCTS')}><View style={s.primaryIcon}><Ionicons name="bag-handle-outline" size={24} color={colors.text}/></View><Text style={s.primaryTitle}>Shop local</Text><Text style={s.primaryCopy}>Products from nearby businesses</Text></Pressable>
+        <Pressable accessibilityRole="button" style={({pressed})=>[s.primaryWide,pressed&&s.pressed]} onPress={() => router.push('/request')}><View style={s.primaryIcon}><Ionicons name="document-text-outline" size={24} color={colors.text}/></View><View style={{flex:1}}><Text style={[s.primaryTitle,s.wideTitle]}>Request quotes</Text><Text style={s.primaryCopy}>Tell eligible businesses what you need</Text></View><Ionicons name="arrow-forward" size={19} color={colors.text}/></Pressable>
       </View>
 
       <Text style={s.section}>Browse services</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.categoryRow}>{categories.map(([name, icon]) => <Pressable key={name} accessibilityRole="button" style={({pressed})=>[s.category,pressed&&s.pressed]} onPress={() => router.push(`/search?q=${encodeURIComponent(name)}&tab=SERVICES`)}><View style={s.categoryIcon}><Ionicons name={icon} size={23}/></View><Text style={s.categoryText}>{name}</Text></Pressable>)}</ScrollView>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.categoryRow}>{categories.map(([name, icon]) => <Pressable key={name} accessibilityRole="button" style={({pressed})=>[s.category,pressed&&s.pressed]} onPress={() => router.push(`/search?q=${encodeURIComponent(name)}&tab=SERVICES`)}><View style={s.categoryIcon}><Ionicons name={icon} size={23} color={colors.text}/></View><Text style={s.categoryText}>{name}</Text></Pressable>)}</ScrollView>
 
       <Text style={s.section}>Your activity</Text>
       <View style={s.grid}>
-        <Pressable style={s.activity} onPress={() => router.push('/activity')}><Ionicons name="pulse-outline" size={21}/><Text style={s.activityText}>Activity</Text></Pressable>
-        <Pressable style={s.activity} onPress={() => router.push('/messages')}><Ionicons name="chatbubble-outline" size={21}/><Text style={s.activityText}>Messages</Text></Pressable>
-        <Pressable style={s.activity} onPress={() => router.push('/orders')}><Ionicons name="cube-outline" size={21}/><Text style={s.activityText}>Orders</Text></Pressable>
-        <Pressable style={s.activity} onPress={() => router.push('/cart')}><Ionicons name="bag-outline" size={21}/><Text style={s.activityText}>Cart</Text></Pressable>
+        <Pressable style={s.activity} onPress={() => router.push('/activity')}><Ionicons name="pulse-outline" size={21} color={colors.text}/><Text style={s.activityText}>Activity</Text></Pressable>
+        <Pressable style={s.activity} onPress={() => router.push('/messages')}><Ionicons name="chatbubble-outline" size={21} color={colors.text}/><Text style={s.activityText}>Messages</Text></Pressable>
+        <Pressable style={s.activity} onPress={() => router.push('/orders')}><Ionicons name="cube-outline" size={21} color={colors.text}/><Text style={s.activityText}>Orders</Text></Pressable>
+        <Pressable style={s.activity} onPress={() => router.push('/cart')}><Ionicons name="bag-outline" size={21} color={colors.text}/><Text style={s.activityText}>Cart</Text></Pressable>
       </View>
       <Pressable accessibilityRole="button" style={({pressed})=>[s.hero,pressed&&s.pressed]} onPress={() => router.push('/assistant')}>
-        <View style={s.aiIcon}><Ionicons name="sparkles" size={19} color={colors.onBrand}/></View>
+        <View style={s.aiIcon}><Ionicons name="sparkles" size={19} color={colors.text}/></View>
         <View style={{flex:1}}><Text style={s.heroTitle}>Not sure where to start?</Text><Text style={s.heroCopy}>Ask Everest to guide you through real marketplace options.</Text></View>
         <Ionicons name="arrow-forward" color={colors.onBrand} size={18}/>
       </Pressable>
