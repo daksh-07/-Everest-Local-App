@@ -33,8 +33,8 @@ export default function Assistant() {
   return <SafeAreaView style={s.safe}><View style={s.page}>
     <View style={s.top}><Pressable onPress={()=>router.back()} accessibilityLabel="Go back"><Ionicons name="arrow-back" size={23}/></Pressable><Text style={s.topTitle}>Ask Everest</Text><View style={{width:23}}/></View>
     <ScrollView contentContainerStyle={{paddingBottom:100}} keyboardShouldPersistTaps="handled">
-      <View style={s.hero}><View style={s.icon}><Ionicons name="sparkles" size={23} color="#fff"/></View><Text style={s.title}>What do you need?</Text><Text style={s.copy}>Ask about real businesses, services, products or your own orders, bookings and messages. Everest will not invent marketplace facts.</Text></View>
-      <View style={s.examples}>{['I need a car detailer this weekend','Find a cleaner near me','I want to buy detailing products','Where is my order?'].map(x=><Pressable onPress={()=>void ask(x)} style={s.chip} key={x}><Text style={s.chipText}>{x}</Text><Ionicons name="arrow-forward" size={15}/></Pressable>)}</View>
+      <View style={s.hero}><View style={s.icon}><Ionicons name="sparkles" size={23} color="#fff"/></View><Text style={s.title}>What do you need?</Text><Text style={s.copy}>Ask about Everest Local, your own orders and bookings, or general knowledge. Private data and internal secrets stay protected.</Text></View>
+      <View style={s.examples}>{['I need a car detailer this weekend','Who is Elon Musk?','I want to buy detailing products','Where is my order?'].map(x=><Pressable onPress={()=>void ask(x)} style={s.chip} key={x}><Text style={s.chipText}>{x}</Text><Ionicons name="arrow-forward" size={15}/></Pressable>)}</View>
       {busy&&<ActivityIndicator style={{marginTop:24}}/>}
       {!!error&&<View style={s.errorBox}><Text style={s.error}>{error}</Text><Pressable onPress={()=>router.push('/search')}><Text style={s.errorLink}>EXPLORE MARKETPLACE</Text></Pressable></View>}
       {!!answer&&<View style={s.answer}><Text style={s.answerLabel}>EVEREST</Text><Text style={s.answerText}>{answer}</Text></View>}
