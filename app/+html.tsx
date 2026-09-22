@@ -10,7 +10,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover"
         />
         <meta name="theme-color" content="#f8f7f4" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -24,6 +24,56 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: `
+          html {
+            width: 100%;
+            min-height: 100%;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            touch-action: manipulation;
+            background: #f8f7f4;
+          }
+
+          body {
+            width: 100%;
+            min-width: 100%;
+            min-height: 100%;
+            margin: 0;
+            overflow-x: hidden;
+            overscroll-behavior-x: none;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            background: #f8f7f4;
+          }
+
+          #root {
+            width: 100%;
+            min-width: 0;
+            min-height: 100%;
+          }
+
+          input,
+          textarea,
+          select,
+          button {
+            font: inherit;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+          }
+
+          input,
+          textarea,
+          select {
+            font-size: 16px !important;
+          }
+
+          button,
+          input,
+          textarea,
+          select,
+          [role="button"] {
+            touch-action: manipulation;
+          }
+
           #everest-search-input,
           #everest-search-input:focus,
           #everest-search-input:focus-visible,
