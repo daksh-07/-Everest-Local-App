@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAppTheme } from '@/lib/theme';
 
 export function PwaInstallPrompt() {
+  const {colors}=useAppTheme();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -38,10 +40,10 @@ export function PwaInstallPrompt() {
 
   return (
     <View style={styles.wrap} pointerEvents="box-none">
-      <View style={styles.card}>
+      <View style={[styles.card,{backgroundColor:colors.elevated,borderWidth:1,borderColor:colors.border}]}>
         <View style={styles.copy}>
-          <Text style={styles.title}>Install Everest Local</Text>
-          <Text style={styles.body}>
+          <Text style={[styles.title,{color:colors.text}]}>Install Everest Local</Text>
+          <Text style={[styles.body,{color:colors.textSecondary}]}>
             In Safari, tap Share, then Add to Home Screen to use Everest Local like an app.
           </Text>
         </View>
@@ -51,7 +53,7 @@ export function PwaInstallPrompt() {
           accessibilityLabel="Dismiss install instructions"
           style={styles.close}
         >
-          <Text style={styles.closeText}>×</Text>
+          <Text style={[styles.closeText,{color:colors.muted}]}>×</Text>
         </Pressable>
       </View>
     </View>

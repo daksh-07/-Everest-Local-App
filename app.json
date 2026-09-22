@@ -4,7 +4,7 @@
     "slug": "everest-local",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "scheme": "everestlocal",
     "ios": {
       "supportsTablet": true,
