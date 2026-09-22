@@ -34,7 +34,7 @@ function ThemedRootLayout() {
     async function load(){try{
       const {supabase,supabaseConfigured:configured}=await import('@/lib/supabase');if(!active)return;setSupabaseConfigured(configured);
       if(!configured){setAuthInitialized(true);return;}
-      const refresh=async(userId:string)=>{try{const {getMyAccessContext}=await import('@/lib/access');const next=await getMyAccessContext();if(!active)return;setSessionUserId(userId);setAccess(next);setStartupError('');}catch(e){if(active){setAccess(null);setStartupError('ACCESS_LOAD_FAILED')}}finally{if(active)setAuthInitialized(true)}};
+      const refresh=async(userId:string)=>{try{const {getMyAccessContext}=await import('@/lib/access');const next=await getMyAccessContext();if(!active)return;setSessionUserId(userId);setAccess(next);setStartupError('');}catch{if(active){setAccess(null);setStartupError('ACCESS_LOAD_FAILED')}}finally{if(active)setAuthInitialized(true)}};
       const {data:{session}}=await supabase.auth.getSession();if(!active)return;
       if(session?.user.id)void refresh(session.user.id);else {setSessionUserId(null);setAccess(null);setAuthInitialized(true);}
       const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,next)=>{if(!active)return;if(!next?.user.id){setSessionUserId(null);setAccess(null);setStartupError('');setAuthInitialized(true);return;}setAuthInitialized(false);void refresh(next.user.id)});
