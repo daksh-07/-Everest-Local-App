@@ -5,11 +5,15 @@ import { z } from 'zod';
 const emailSchema = z.string().trim().email().max(254);
 const passwordSchema = z.string().min(8).max(128);
 
-function passwordResetRedirect() {
+function authEmailRedirect() {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return `${window.location.origin}/auth`;
   }
   return 'everestlocal://auth';
+}
+
+function passwordResetRedirect() {
+  return authEmailRedirect();
 }
 
 function oauthRedirect(intent?: 'CUSTOMER' | 'BUSINESS' | 'DELIVERY_DRIVER') {
@@ -66,7 +70,14 @@ export async function signUp(email:string,password:string,fullName:string){
   const validPassword=passwordSchema.safeParse(password);
   if(!validPassword.success)throw new Error('Password must be 8–128 characters.');
   if(fullName.trim().length<2||fullName.trim().length>120)throw new Error('Enter your full name.');
-  const {data,error}=await supabase.auth.signUp({email:parsed.data.toLowerCase(),password:validPassword.data,options:{data:{full_name:fullName.trim()}}});
+  const {data,error}=await supabase.auth.signUp({
+    email:parsed.data.toLowerCase(),
+    password:validPassword.data,
+    options:{
+      data:{full_name:fullName.trim()},
+      emailRedirectTo:authEmailRedirect(),
+    },
+  });
   if(error)throw new Error(error.message);
   return data;
 }
