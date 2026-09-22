@@ -23,7 +23,7 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <ScrollViewStyleReset />
-        <script dangerouslySetInnerHTML={{__html:`(function(){try{var p=localStorage.getItem('everest-local-theme');var d=p==='DARK'||(p!=='LIGHT'&&matchMedia('(prefers-color-scheme: dark)').matches);var c=d?'#151513':'#f8f7f4';document.documentElement.style.setProperty('--everest-canvas',c);document.documentElement.style.setProperty('--everest-text',d?'#f7f1e8':'#171715');document.documentElement.style.background=c;document.documentElement.style.colorScheme=d?'dark':'light';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c);var s=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(s)s.setAttribute('content',d?'black-translucent':'default')}catch(e){}})();`}} />
+        <script dangerouslySetInnerHTML={{__html:`(function(){try{var p=localStorage.getItem('everest-local-theme');var d=p==='DARK'||(p!=='LIGHT'&&matchMedia('(prefers-color-scheme: dark)').matches);var c=d?'#151513':'#f8f7f4';document.documentElement.style.setProperty('--everest-canvas',c);document.documentElement.style.setProperty('--everest-text',d?'#f7f1e8':'#171715');document.documentElement.style.background=c;document.documentElement.style.colorScheme=d?'dark':'light';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c)}catch(e){}})();`}} />
         <style dangerouslySetInnerHTML={{ __html: `
           html {
             width: 100%;
@@ -46,6 +46,21 @@ export default function Root({ children }: PropsWithChildren) {
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
             background: var(--everest-canvas, #f8f7f4);
+          }
+
+          /* Installed apps keep a charcoal backdrop beneath the translucent iOS status bar. */
+          @media (display-mode: standalone), (display-mode: fullscreen) {
+            body::before {
+              content: '';
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              height: env(safe-area-inset-top, 0px);
+              background: #151513;
+              pointer-events: none;
+              z-index: 1000;
+            }
           }
 
           #root {

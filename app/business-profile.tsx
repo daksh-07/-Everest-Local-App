@@ -77,13 +77,13 @@ export default function BusinessProfile() {
   return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page}>
     <Pressable onPress={()=>router.back()}><Text style={s.back}>‹ Explore</Text></Pressable>
     <View style={s.hero}>
-      <View style={s.logo}>{business.logo_url?<Image source={{uri:business.logo_url}} style={s.logoImage}/>:<Ionicons name="business-outline" size={28}/>}</View>
+      <View style={s.logo}>{business.logo_url?<Image source={{uri:business.logo_url}} style={s.logoImage}/>:<Ionicons name="business-outline" size={28} color={colors.brand}/>}</View>
       <Text style={s.title}>{business.name}</Text>
       {business.verification_status==='VERIFIED'&&<Text style={s.verified}>✓ VERIFIED BUSINESS</Text>}
       <Text style={s.location}>{[business.suburb,business.city,business.state].filter(Boolean).join(', ') || 'Local business'}</Text>
       {rating!==null&&<Text style={s.rating}>★ {rating.toFixed(1)} · {reviewCount} review{reviewCount===1?'':'s'}</Text>}
     </View>
-    <View style={s.socialRow}><Pressable disabled={followBusy} onPress={()=>void toggleFollow()} style={[s.followButton,following&&s.followingButton]} accessibilityLabel={following?'Unfollow business':'Follow business'}><Ionicons name={following?'person':'person-add-outline'} size={18}/><Text style={s.followText}>{following?'FOLLOWING':'FOLLOW'}</Text></Pressable><View style={s.followerCount}><Text style={s.followerNumber}>{followers}</Text><Text style={s.followerLabel}>FOLLOWERS</Text></View><Pressable disabled={saving} onPress={()=>void saveBusiness()} style={s.saveRow} accessibilityLabel={saved?'Remove business from saved':'Save business'}><Ionicons name={saved?'bookmark':'bookmark-outline'} size={19}/><Text style={s.saveText}>{saved?'SAVED':'SAVE'}</Text></Pressable></View>
+    <View style={s.socialRow}><Pressable disabled={followBusy} onPress={()=>void toggleFollow()} style={[s.followButton,following&&s.followingButton]} accessibilityLabel={following?'Unfollow business':'Follow business'}><Ionicons name={following?'person':'person-add-outline'} size={18} color={following?colors.text:colors.onBrand}/><Text style={[s.followText,following&&{color:colors.text}]}>{following?'FOLLOWING':'FOLLOW'}</Text></Pressable><View style={s.followerCount}><Text style={s.followerNumber}>{followers}</Text><Text style={s.followerLabel}>FOLLOWERS</Text></View><Pressable disabled={saving} onPress={()=>void saveBusiness()} style={s.saveRow} accessibilityLabel={saved?'Remove business from saved':'Save business'}><Ionicons name={saved?'bookmark':'bookmark-outline'} size={19} color={colors.text}/><Text style={s.saveText}>{saved?'SAVED':'SAVE'}</Text></Pressable></View>
     {message&&<Text style={s.message}>{message}</Text>}
     {business.description&&<Text style={s.copy}>{business.description}</Text>}
     <View style={s.actions}><Pressable style={s.actionPrimary} onPress={()=>router.push('/request')}><Text style={s.actionPrimaryText}>POST REQUEST</Text></Pressable><Pressable style={s.actionSecondary} onPress={()=>router.push('/search?tab=SERVICES')}><Text style={s.actionSecondaryText}>VIEW SERVICES</Text></Pressable></View>
