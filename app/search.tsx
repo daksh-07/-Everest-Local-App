@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -7,11 +7,14 @@ import { listPublicPosts, type SocialPost } from '@/lib/social';
 import type { MarketplaceBusiness } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 import { searchServiceTaxonomy, type DeliveryMode, type ServiceDefinition } from '@/lib/taxonomy';
+import { CustomerTabBar } from '@/components/CustomerTabBar';
+import { LoadingList } from '@/components/LoadingList';
+import { ui } from '@/lib/ui';
 
 type Tab = 'ALL' | 'BUSINESSES' | 'SERVICES' | 'PRODUCTS' | 'POSTS' | 'JOBS';
 type TaxonomyResult = ServiceDefinition;
 type ServiceResult = { id: string; business_id: string; name: string; description: string | null; base_price: number | null; duration_minutes: number | null; businesses?: { name: string; suburb: string | null; city: string | null; state: string | null } | { name: string; suburb: string | null; city: string | null; state: string | null }[] | null };
-type SearchProduct = { id:string; business_id:string; name:string; description:string|null; price:number; sale_price:number|null; status:string; delivery_eligible:boolean; pickup_available:boolean; businesses?:{name:string;suburb:string|null;city:string|null;state:string|null}|{name:string;suburb:string|null;city:string|null;state:string|null}[]|null; inventory?:{stock_quantity:number;reserved_quantity:number}|{stock_quantity:number;reserved_quantity:number}[]|null };
+type SearchProduct = { id:string; business_id:string; name:string; description:string|null; price:number; sale_price:number|null; status:string; delivery_eligible:boolean; pickup_available:boolean; businesses?:{name:string;suburb:string|null;city:string|null;state:string|null}|{name:string;suburb:string|null;city:string|null;state:string|null}[]|null };
 type JobResult = { id: string; description: string; suburb: string; city: string; state: string; status: string; budget: number | null; preferred_date: string | null };
 
 function relationName(value: ServiceResult['businesses']) {
@@ -44,7 +47,9 @@ export default function Search() {
       const pattern = text ? `%${escapeIlike(text)}%` : null;
       const businessQuery = supabase.from('businesses').select('id,name,slug,description,logo_url,category_id,verification_status,suburb,city,state').eq('status', 'ACTIVE').eq('verification_status', 'VERIFIED').limit(50);
       const serviceQuery = supabase.from('services').select('id,business_id,name,description,base_price,duration_minutes,delivery_mode,businesses(name,suburb,city,state)').eq('active', true).limit(50);
-      const productQuery = supabase.from('products').select('id,business_id,name,description,price,sale_price,status,delivery_eligible,pickup_available,businesses(name,suburb,city,state),inventory(stock_quantity,reserved_quantity)').eq('status', 'ACTIVE').limit(50);
+      // Inventory is intentionally private operational data. Public discovery relies on
+      // the server-controlled product status and confirms stock during checkout.
+      const productQuery = supabase.from('products').select('id,business_id,name,description,price,sale_price,status,delivery_eligible,pickup_available,businesses(name,suburb,city,state)').eq('status', 'ACTIVE').limit(50);
 
       if (pattern) {
         businessQuery.or(`name.ilike.${pattern},description.ilike.${pattern},suburb.ilike.${pattern}`);
@@ -53,25 +58,28 @@ export default function Search() {
       }
 
       const remoteIntent = /\bremote\b|\bonline\b/i.test(text);
-      const taxonomy = await searchServiceTaxonomy(text.replace(/\bremote\b|\bonline\b/gi, '').trim(), remoteIntent ? 'REMOTE' : undefined);
-      const [b, s, p] = await Promise.all([businessQuery, serviceQuery, productQuery]);
+      const taxonomyPromise=searchServiceTaxonomy(text.replace(/\bremote\b|\bonline\b/gi, '').trim(), remoteIntent ? 'REMOTE' : undefined);
+      const [taxonomy,b,s,p] = await Promise.all([taxonomyPromise,businessQuery, serviceQuery, productQuery]);
       if (b.error) throw b.error;
       if (s.error) throw s.error;
       if (p.error) throw p.error;
-      const { data: { user } } = await supabase.auth.getUser();
       const budgetMatch = text.match(/(?:under|below)\s*\$?\s*(\d+(?:\.\d+)?)/i);
       const maxBudget = budgetMatch ? Number(budgetMatch[1]) : null;
-      const { data: locationProfile } = user ? await supabase.from('profiles').select('suburb').eq('id', user.id).maybeSingle() : { data: null };
+      const needsAccountContext=tab==='JOBS'||/\bnear me\b/i.test(text);
+      const { data: { user } } = needsAccountContext?await supabase.auth.getUser():{data:{user:null}};
+      const { data: locationProfile } = user&&/\bnear me\b/i.test(text) ? await supabase.from('profiles').select('suburb').eq('id', user.id).maybeSingle() : { data: null };
       const nearby = /\bnear me\b/i.test(text) && typeof locationProfile?.suburb === 'string' && locationProfile.suburb.trim().length > 0;
       const nearbySuburb = nearby ? locationProfile!.suburb!.toLowerCase() : '';
       setTaxonomyResults(taxonomy);
       setBusinesses(((b.data ?? []) as MarketplaceBusiness[]).filter(item => !nearby || item.suburb?.toLowerCase() === nearbySuburb));
       setServices(((s.data ?? []) as ServiceResult[]).filter(item => !maxBudget || item.base_price == null || Number(item.base_price) <= maxBudget).filter(item => !nearby || (Array.isArray(item.businesses) ? item.businesses[0]?.suburb : item.businesses?.suburb)?.toLowerCase() === nearbySuburb).filter(item => !remoteIntent || (item as ServiceResult & {delivery_mode?:DeliveryMode}).delivery_mode !== 'LOCAL'));
       setProducts(((p.data ?? []) as SearchProduct[]).filter(item => !maxBudget || Number(item.sale_price ?? item.price) <= maxBudget));
-      const postItems = await listPublicPosts({ limit: 50 });
-      setPosts(text ? postItems.filter(item => (item.caption ?? '').toLowerCase().includes(text.toLowerCase())) : postItems);
+      if(tab==='POSTS'){
+        const postItems = await listPublicPosts({ limit: 50 });
+        setPosts(text ? postItems.filter(item => (item.caption ?? '').toLowerCase().includes(text.toLowerCase())) : postItems);
+      }else setPosts([]);
 
-      if (user && (tab === 'JOBS' || tab === 'ALL')) {
+      if (user && tab === 'JOBS') {
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
         if (profile?.role === 'BUSINESS' || profile?.role === 'ADMIN') {
           const { data, error: jobsError } = await supabase.from('opportunities').select('id,status,service_requests(description,suburb,city,state,budget,preferred_date)').eq('status', 'OPEN').order('created_at', { ascending: false }).limit(50);
@@ -89,7 +97,8 @@ export default function Search() {
         setJobs([]);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Search is temporarily unavailable.');
+      if(typeof console!=='undefined')console.error('[Everest Local Explore]',e);
+      setError('Explore is temporarily unavailable. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -102,6 +111,8 @@ export default function Search() {
 
   async function add(productId: string) {
     try {
+      const {data:{user}}=await supabase.auth.getUser();
+      if(!user){router.push('/auth');return;}
       const { addToCart } = await import('@/lib/commerce');
       await addToCart(productId, 1);
       setCartMessage('Added to cart.');
@@ -112,46 +123,55 @@ export default function Search() {
   }
 
   const visibleCounts = useMemo(() => ({ businesses: businesses.length, services: services.length, taxonomy: taxonomyResults.length, products: products.length, posts: posts.length, jobs: jobs.length }), [businesses, services, taxonomyResults, products, posts, jobs]);
-  const show = (target: Tab) => tab === 'ALL' || tab === target;
+  const searching=!!q.trim();
+  const coreResultCount=visibleCounts.businesses+visibleCounts.services+visibleCounts.products;
+  const showBusinesses=tab==='BUSINESSES'||(tab==='ALL'&&visibleCounts.businesses>0);
+  const showServices=tab==='SERVICES'||(tab==='ALL'&&(visibleCounts.taxonomy>0||visibleCounts.services>0));
+  const showProducts=tab==='PRODUCTS'||(tab==='ALL'&&visibleCounts.products>0);
 
   return <SafeAreaView style={s.safe}>
-    <ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
       <View style={s.header}>
-        <View><Text style={s.eyebrow}>EVEREST LOCAL</Text><Text style={s.title}>Explore</Text></View>
+        <View style={{flex:1}}><Text style={s.eyebrow}>EVEREST LOCAL</Text><Text style={s.title}>Explore local</Text><Text style={s.intro}>Services, products and verified businesses across Sydney.</Text></View>
         <Pressable onPress={() => router.push('/cart')} style={s.cart} accessibilityLabel="Open cart"><Ionicons name="bag-handle-outline" size={21}/></Pressable>
       </View>
-      <View style={s.search}><Ionicons name="search" size={20} color="#777"/><TextInput autoFocus value={q} onChangeText={setQ} placeholder="Search businesses, services, products or jobs" placeholderTextColor="#888" style={s.input} returnKeyType="search"/></View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabs}>{(['ALL','BUSINESSES','SERVICES','PRODUCTS','POSTS','JOBS'] as Tab[]).map(value => <Pressable key={value} onPress={() => setTab(value)} style={[s.tab, tab === value && s.tabActive]}><Text style={[s.tabText, tab === value && s.tabTextActive]}>{value}</Text></Pressable>)}</ScrollView>
-      {q.trim() && <Text style={s.hint}>Searching real marketplace records for “{q.trim()}”. Availability is shown only when the backend has it.</Text>}
-      {loading ? <ActivityIndicator style={{ marginTop: 35 }}/> : error ? <View style={s.empty}><Text style={s.emptyTitle}>We couldn't load results.</Text><Text style={s.emptyCopy}>Please try again.</Text><Pressable onPress={() => void load()} style={s.retry}><Text style={s.retryText}>RETRY</Text></Pressable></View> : <>
-        {show('BUSINESSES') && <Section title={`Businesses ${visibleCounts.businesses ? `(${visibleCounts.businesses})` : ''}`}>
-          {businesses.length ? businesses.map(b => <Pressable key={b.id} style={s.result} onPress={() => router.push(`/business-profile?id=${b.id}`)}><View style={s.icon}><Ionicons name="business-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{b.name}</Text><Text style={s.resultCopy}>{[b.suburb,b.city,b.state].filter(Boolean).join(', ') || 'Local business'}</Text>{b.verification_status === 'VERIFIED' && <Text style={s.verified}>✓ VERIFIED</Text>}</View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>) : <Empty text="No verified businesses matched this search."/>}
+      <View style={s.search}><Ionicons name="search" size={20} color={ui.colors.muted}/><TextInput accessibilityLabel="Search Everest Local" value={q} onChangeText={setQ} placeholder="Try ‘car detailing’ or ‘gifts’" placeholderTextColor="#8b8780" selectionColor={ui.colors.ink} style={[s.input, webSearchInputStyle]} returnKeyType="search"/>{q.length>0&&<Pressable accessibilityLabel="Clear search" hitSlop={10} onPress={()=>setQ('')} style={s.clear}><Ionicons name="close-circle" size={20} color="#777"/></Pressable>}</View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabs}>{(['ALL','SERVICES','PRODUCTS','BUSINESSES','POSTS','JOBS'] as Tab[]).map(value => <Pressable accessibilityRole="tab" accessibilityState={{selected:tab===value}} key={value} onPress={() => setTab(value)} style={({pressed})=>[s.tab,tab===value&&s.tabActive,pressed&&s.pressed]}><Text style={[s.tabText,tab===value&&s.tabTextActive]}>{value.charAt(0)+value.slice(1).toLowerCase()}</Text></Pressable>)}</ScrollView>
+      {searching && <Text style={s.hint}>Showing real marketplace matches for “{q.trim()}”.</Text>}
+      {loading ? <LoadingList/> : error ? <StatePanel icon="cloud-offline-outline" title="Explore couldn't load" copy="Check your connection and try again. Your account and marketplace activity are unaffected." primary="TRY AGAIN" onPrimary={()=>void load()}/> : <>
+        {showBusinesses && <Section title={`Verified businesses${visibleCounts.businesses ? ` · ${visibleCounts.businesses}` : ''}`}>
+          {businesses.length ? businesses.map(b => <Pressable accessibilityRole="button" key={b.id} style={({pressed})=>[s.result,pressed&&s.pressed]} onPress={() => router.push(`/business-profile?id=${b.id}`)}><View style={s.icon}><Ionicons name="business-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{b.name}</Text><Text style={s.resultCopy}>{[b.suburb,b.city,b.state].filter(Boolean).join(', ') || 'Sydney'}</Text>{b.verification_status === 'VERIFIED' && <Text style={s.verified}>VERIFIED BUSINESS</Text>}</View><Ionicons name="chevron-forward" size={18} color={ui.colors.muted}/></Pressable>) : <StatePanel compact icon="business-outline" title="No business matches yet" copy="Try another search or request the service you need." primary="REQUEST A SERVICE" onPrimary={()=>router.push('/request')}/>}
         </Section>}
-        {show('SERVICES') && <Section title={`Services ${visibleCounts.services || visibleCounts.taxonomy ? `(${visibleCounts.services + visibleCounts.taxonomy})` : ''}`}>
-          {taxonomyResults.map(item => <Pressable key={'taxonomy-'+item.id} style={s.result} onPress={() => router.push('/search?q='+encodeURIComponent(item.name)+'&tab=SERVICES')}><View style={s.icon}><Ionicons name="layers-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{item.name}</Text><Text style={s.resultCopy}>{item.default_delivery_mode === 'REMOTE' ? 'Remote / online' : item.default_delivery_mode === 'BOTH' ? 'Local + remote' : 'Local service'}</Text></View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>)}
-          {services.length ? services.map(item => <Pressable key={item.id} style={s.result} onPress={() => router.push(`/business-profile?id=${item.business_id}`)}><View style={s.icon}><Ionicons name="construct-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{item.name}</Text><Text style={s.resultCopy}>{relationName(item.businesses) || 'Verified marketplace business'} · {((item as ServiceResult & {delivery_mode?:DeliveryMode}).delivery_mode === 'REMOTE') ? 'Remote' : (item as ServiceResult & {delivery_mode?:DeliveryMode}).delivery_mode === 'BOTH' ? 'Local + remote' : 'Local'}{item.base_price != null ? ` · from ${Number(item.base_price).toFixed(2)}` : ''}</Text></View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>) : <Empty text="No active services matched this search."/>}
+        {showServices && <Section title={tab==='ALL'&&!searching?'Browse service categories':`Services${visibleCounts.services ? ` · ${visibleCounts.services}` : ''}`}>
+          {taxonomyResults.map(item => <Pressable accessibilityRole="button" key={'taxonomy-'+item.id} style={({pressed})=>[s.result,pressed&&s.pressed]} onPress={() => {setQ(item.name);setTab('SERVICES')}}><View style={s.icon}><Ionicons name="layers-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{item.name}</Text><Text style={s.resultCopy}>Service category · {item.default_delivery_mode === 'REMOTE' ? 'remote' : item.default_delivery_mode === 'BOTH' ? 'local or remote' : 'local'}</Text></View><Ionicons name="chevron-forward" size={18} color={ui.colors.muted}/></Pressable>)}
+          {services.map(item => <Pressable accessibilityRole="button" key={item.id} style={({pressed})=>[s.result,pressed&&s.pressed]} onPress={() => router.push(`/business-profile?id=${item.business_id}`)}><View style={s.icon}><Ionicons name="construct-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{item.name}</Text><Text style={s.resultCopy}>{relationName(item.businesses) || 'Verified marketplace business'} · {((item as ServiceResult & {delivery_mode?:DeliveryMode}).delivery_mode === 'REMOTE') ? 'Remote' : (item as ServiceResult & {delivery_mode?:DeliveryMode}).delivery_mode === 'BOTH' ? 'Local + remote' : 'Local'}{item.base_price != null ? ` · from $${Number(item.base_price).toFixed(2)} AUD` : ' · Quote required'}</Text></View><Ionicons name="chevron-forward" size={18} color={ui.colors.muted}/></Pressable>)}
+          {tab==='SERVICES'&&!taxonomyResults.length&&!services.length&&<StatePanel compact icon="construct-outline" title="No service matches yet" copy="Post a request and eligible local businesses can respond with a quote." primary="POST A REQUEST" onPrimary={()=>router.push('/request')}/>}
         </Section>}
-        {show('PRODUCTS') && <Section title={`Products ${visibleCounts.products ? `(${visibleCounts.products})` : ''}`}>
-          {products.length ? products.map(p => <View style={s.result} key={p.id}><View style={s.icon}><Ionicons name="cube-outline" size={22}/></View><View style={{flex:1}}><Pressable onPress={()=>router.push(`/product?id=${p.id}`)}><Text style={s.resultTitle}>{p.name}</Text></Pressable><Text style={s.resultCopy}>${Number(p.sale_price ?? p.price).toFixed(2)} AUD · {((Array.isArray(p.inventory) ? p.inventory[0] : p.inventory)?.stock_quantity ?? 0) - ((Array.isArray(p.inventory) ? p.inventory[0] : p.inventory)?.reserved_quantity ?? 0) > 0 ? 'In stock' : 'Out of stock'} · {((Array.isArray(p.businesses) ? p.businesses[0] : p.businesses)?.name ?? 'Local business')}</Text></View><Pressable onPress={() => void add(p.id)} style={s.add}><Text style={s.addText}>ADD</Text></Pressable></View>) : <Empty text="No active products matched this search."/>}
+        {showProducts && <Section title={`Local products${visibleCounts.products ? ` · ${visibleCounts.products}` : ''}`}>
+          {products.length ? products.map(p => <View style={s.result} key={p.id}><Pressable accessibilityRole="button" style={s.productMain} onPress={()=>router.push(`/product?id=${p.id}`)}><View style={s.icon}><Ionicons name="cube-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{p.name}</Text><Text style={s.resultCopy}>${Number(p.sale_price ?? p.price).toFixed(2)} AUD · {((Array.isArray(p.businesses) ? p.businesses[0] : p.businesses)?.name ?? 'Local business')}</Text><Text style={s.availability}>STOCK CONFIRMED AT CHECKOUT</Text></View></Pressable><Pressable accessibilityRole="button" accessibilityLabel={`Add ${p.name} to cart`} onPress={() => void add(p.id)} style={({pressed})=>[s.add,pressed&&s.pressed]}><Text style={s.addText}>ADD</Text></Pressable></View>) : <StatePanel compact icon="bag-handle-outline" title="No products to show yet" copy="Try another search or check back as local businesses add their catalogues."/>}
         </Section>}
-        {show('POSTS') && <Section title={`Posts ${visibleCounts.posts ? `(${visibleCounts.posts})` : ''}`}>
-          {posts.length ? posts.map(post => <Pressable key={post.id} style={s.result} onPress={() => post.business_id ? router.push('/business-profile?id=' + post.business_id) : router.push('/social')}><View style={s.icon}><Ionicons name={post.business_id ? 'business-outline' : 'person-outline'} size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{post.caption || post.post_type.replaceAll('_',' ')}</Text><Text style={s.resultCopy}>{post.post_type.replaceAll('_',' ')} · {new Date(post.created_at).toLocaleDateString()}</Text></View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>) : <Empty text="No public posts matched this search."/>}
+        {tab==='POSTS' && <Section title={`Local updates${visibleCounts.posts ? ` · ${visibleCounts.posts}` : ''}`}>
+          {posts.length ? posts.map(post => <Pressable accessibilityRole="button" key={post.id} style={({pressed})=>[s.result,pressed&&s.pressed]} onPress={() => post.business_id ? router.push('/business-profile?id=' + post.business_id) : router.push('/social')}><View style={s.icon}><Ionicons name={post.business_id ? 'business-outline' : 'person-outline'} size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{post.caption || post.post_type.replaceAll('_',' ')}</Text><Text style={s.resultCopy}>{post.post_type.replaceAll('_',' ').toLowerCase()} · {new Date(post.created_at).toLocaleDateString()}</Text></View><Ionicons name="chevron-forward" size={18} color={ui.colors.muted}/></Pressable>) : <StatePanel compact icon="newspaper-outline" title="No local updates yet" copy="Updates from real marketplace businesses will appear here."/>}
         </Section>}
-        {show('JOBS') && <Section title={`Jobs ${visibleCounts.jobs ? `(${visibleCounts.jobs})` : ''}`}>
-          {jobs.length ? jobs.map(job => <Pressable key={job.id} style={s.result} onPress={() => router.push('/requests')}><View style={s.icon}><Ionicons name="briefcase-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{job.description}</Text><Text style={s.resultCopy}>{[job.suburb,job.city,job.state].filter(Boolean).join(', ')}{job.budget != null ? ` · Budget $${Number(job.budget).toFixed(0)}` : ''}</Text></View><Ionicons name="chevron-forward" size={18} color="#777"/></Pressable>) : <Empty text="No jobs are available for your current role yet."/>}
+        {tab==='JOBS' && <Section title={`Requests and opportunities${visibleCounts.jobs ? ` · ${visibleCounts.jobs}` : ''}`}>
+          {jobs.length ? jobs.map(job => <Pressable accessibilityRole="button" key={job.id} style={({pressed})=>[s.result,pressed&&s.pressed]} onPress={() => router.push('/requests')}><View style={s.icon}><Ionicons name="briefcase-outline" size={22}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{job.description}</Text><Text style={s.resultCopy}>{[job.suburb,job.city,job.state].filter(Boolean).join(', ')}{job.budget != null ? ` · Budget $${Number(job.budget).toFixed(0)}` : ''}</Text></View><Ionicons name="chevron-forward" size={18} color={ui.colors.muted}/></Pressable>) : <StatePanel compact icon="briefcase-outline" title="No active requests here" copy="Customer requests and eligible business opportunities appear according to your account access." primary="VIEW MY ACTIVITY" onPrimary={()=>router.push('/activity')}/>}
         </Section>}
+        {tab==='ALL'&&coreResultCount===0&&<StatePanel icon="location-outline" title={searching?'No local matches yet':'Local listings are limited right now'} copy={searching?'Try a broader search, browse a service category, or post what you need.':'You can still post a service request so eligible businesses know exactly what you need.'} primary="REQUEST A SERVICE" onPrimary={()=>router.push('/request')} secondary="JOIN AS A BUSINESS" onSecondary={()=>router.push('/business')}/>}
       </>}
-      {!!cartMessage && <Text style={s.cartMessage}>{cartMessage}</Text>}
-      <Pressable style={s.ai} onPress={() => router.push('/assistant')}><View style={s.aiIcon}><Ionicons name="sparkles" size={18} color="#fff"/></View><View style={{flex:1}}><Text style={s.aiTitle}>Ask Everest</Text><Text style={s.aiCopy}>Describe what you need in your own words.</Text></View><Ionicons name="chevron-forward" color="#fff" size={19}/></Pressable>
+      {!!cartMessage && <Text accessibilityLiveRegion="polite" style={s.cartMessage}>{cartMessage}</Text>}
+      <Pressable accessibilityRole="button" style={({pressed})=>[s.ai,pressed&&s.pressed]} onPress={() => router.push('/assistant')}><View style={s.aiIcon}><Ionicons name="sparkles" size={18} color="#fff"/></View><View style={{flex:1}}><Text style={s.aiTitle}>Need help choosing?</Text><Text style={s.aiCopy}>Describe what you need and Ask Everest will guide you.</Text></View><Ionicons name="chevron-forward" color="#fff" size={19}/></Pressable>
     </ScrollView>
+    <CustomerTabBar active="/search"/>
   </SafeAreaView>;
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return <View><Text style={s.heading}>{title}</Text>{children}</View>;
 }
-function Empty({ text }: { text: string }) { return <View style={s.emptyInline}><Text style={s.muted}>{text}</Text></View>; }
+function StatePanel({icon,title,copy,primary,onPrimary,secondary,onSecondary,compact=false}:{icon:keyof typeof Ionicons.glyphMap;title:string;copy:string;primary?:string;onPrimary?:()=>void;secondary?:string;onSecondary?:()=>void;compact?:boolean}){return <View style={[s.empty,compact&&s.emptyCompact]}><View style={s.emptyIcon}><Ionicons name={icon} size={25}/></View><Text style={s.emptyTitle}>{title}</Text><Text style={s.emptyCopy}>{copy}</Text>{primary&&onPrimary&&<Pressable accessibilityRole="button" onPress={onPrimary} style={s.retry}><Text style={s.retryText}>{primary}</Text></Pressable>}{secondary&&onSecondary&&<Pressable accessibilityRole="button" onPress={onSecondary} style={s.secondary}><Text style={s.secondaryText}>{secondary}</Text></Pressable>}</View>}
+
+const webSearchInputStyle = { outlineWidth: 0, outlineColor: 'transparent' } as const;
 
 const s = StyleSheet.create({
-  safe:{flex:1,backgroundColor:'#f8f7f4'},page:{padding:20,paddingBottom:50},header:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},eyebrow:{fontSize:10,fontWeight:'800',letterSpacing:2,color:'#777'},title:{fontSize:30,fontWeight:'800',marginTop:5,marginBottom:20},cart:{width:44,height:44,borderRadius:14,backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc',alignItems:'center',justifyContent:'center'},search:{height:58,borderRadius:17,backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc',paddingHorizontal:16,flexDirection:'row',alignItems:'center',gap:10},input:{flex:1,fontSize:15,color:'#111'},tabs:{gap:8,paddingVertical:16},tab:{paddingHorizontal:14,paddingVertical:9,borderRadius:20,backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc'},tabActive:{backgroundColor:'#111',borderColor:'#111'},tabText:{fontSize:9,fontWeight:'900',letterSpacing:.7,color:'#777'},tabTextActive:{color:'#fff'},hint:{fontSize:11,lineHeight:17,color:'#777',marginBottom:4},heading:{fontSize:19,fontWeight:'800',marginTop:24,marginBottom:12},result:{backgroundColor:'#fff',borderRadius:17,borderWidth:1,borderColor:'#e5e2dc',padding:14,flexDirection:'row',alignItems:'center',gap:12,marginBottom:9},icon:{width:48,height:48,borderRadius:14,backgroundColor:'#f0eee9',alignItems:'center',justifyContent:'center'},resultTitle:{fontSize:14,fontWeight:'800'},resultCopy:{fontSize:12,color:'#777',marginTop:4,lineHeight:17},verified:{fontSize:9,fontWeight:'900',letterSpacing:.7,marginTop:5},add:{height:38,paddingHorizontal:12,borderRadius:11,backgroundColor:'#111',alignItems:'center',justifyContent:'center'},addText:{color:'#fff',fontSize:9,fontWeight:'900'},emptyInline:{backgroundColor:'#fff',borderRadius:17,padding:18,borderWidth:1,borderColor:'#e5e2dc'},empty:{backgroundColor:'#fff',borderRadius:20,borderWidth:1,borderColor:'#e5e2dc',padding:30,alignItems:'center',marginTop:25},emptyTitle:{fontSize:16,fontWeight:'800'},emptyCopy:{fontSize:13,lineHeight:20,color:'#777',textAlign:'center',marginTop:7},muted:{fontSize:12,color:'#777',lineHeight:18},retry:{height:44,borderRadius:12,backgroundColor:'#111',paddingHorizontal:20,alignItems:'center',justifyContent:'center',marginTop:14},retryText:{color:'#fff',fontSize:10,fontWeight:'900'},cartMessage:{fontSize:12,fontWeight:'700',textAlign:'center',marginTop:12},ai:{marginTop:24,backgroundColor:'#111',borderRadius:20,padding:15,flexDirection:'row',alignItems:'center',gap:12},aiIcon:{width:42,height:42,borderRadius:14,backgroundColor:'#292929',alignItems:'center',justifyContent:'center'},aiTitle:{color:'#fff',fontWeight:'800'},aiCopy:{color:'#aaa',fontSize:11,marginTop:3}
+  safe:{flex:1,backgroundColor:ui.colors.canvas},page:{padding:20,paddingBottom:112,width:'100%',maxWidth:ui.contentMaxWidth,alignSelf:'center'},header:{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:16},eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:2,color:ui.colors.muted},title:{fontSize:31,lineHeight:36,fontWeight:'900',marginTop:5,color:ui.colors.ink},intro:{fontSize:13,lineHeight:19,color:ui.colors.muted,marginTop:6,marginBottom:19},cart:{width:44,height:44,borderRadius:14,backgroundColor:ui.colors.surface,borderWidth:1,borderColor:ui.colors.line,alignItems:'center',justifyContent:'center'},search:{minHeight:56,borderRadius:ui.radius.md,backgroundColor:ui.colors.surface,borderWidth:1,borderColor:ui.colors.line,paddingHorizontal:15,flexDirection:'row',alignItems:'center',gap:10},input:{flex:1,minWidth:0,minHeight:44,fontSize:16,lineHeight:22,color:ui.colors.ink,paddingVertical:0},clear:{width:36,height:44,alignItems:'center',justifyContent:'center'},tabs:{gap:8,paddingVertical:15,paddingRight:10},tab:{minHeight:40,paddingHorizontal:14,borderRadius:20,backgroundColor:ui.colors.surface,borderWidth:1,borderColor:ui.colors.line,alignItems:'center',justifyContent:'center'},tabActive:{backgroundColor:ui.colors.ink,borderColor:ui.colors.ink},tabText:{fontSize:11,fontWeight:'800',color:ui.colors.muted},tabTextActive:{color:'#fff'},pressed:{opacity:.62},hint:{fontSize:11,lineHeight:17,color:ui.colors.muted,marginBottom:2},heading:{fontSize:19,fontWeight:'900',marginTop:23,marginBottom:11,color:ui.colors.ink},result:{backgroundColor:ui.colors.surface,borderRadius:ui.radius.md,borderWidth:1,borderColor:ui.colors.line,padding:14,flexDirection:'row',alignItems:'center',gap:12,marginBottom:9},productMain:{flex:1,minWidth:0,flexDirection:'row',alignItems:'center',gap:12},icon:{width:48,height:48,borderRadius:14,backgroundColor:ui.colors.soft,alignItems:'center',justifyContent:'center'},resultTitle:{fontSize:14,fontWeight:'900',color:ui.colors.ink},resultCopy:{fontSize:12,color:ui.colors.muted,marginTop:4,lineHeight:17},verified:{fontSize:8,fontWeight:'900',letterSpacing:.8,marginTop:6,color:ui.colors.success},availability:{fontSize:8,fontWeight:'900',letterSpacing:.6,marginTop:6,color:ui.colors.muted},add:{minHeight:44,paddingHorizontal:13,borderRadius:12,backgroundColor:ui.colors.ink,alignItems:'center',justifyContent:'center'},addText:{color:'#fff',fontSize:9,fontWeight:'900'},empty:{backgroundColor:ui.colors.surface,borderRadius:ui.radius.lg,borderWidth:1,borderColor:ui.colors.line,padding:28,alignItems:'center',marginTop:22},emptyCompact:{marginTop:0,padding:23},emptyIcon:{width:52,height:52,borderRadius:16,backgroundColor:ui.colors.soft,alignItems:'center',justifyContent:'center'},emptyTitle:{fontSize:17,fontWeight:'900',textAlign:'center',marginTop:13,color:ui.colors.ink},emptyCopy:{fontSize:13,lineHeight:20,color:ui.colors.muted,textAlign:'center',marginTop:7,maxWidth:440},retry:{minHeight:44,borderRadius:12,backgroundColor:ui.colors.ink,paddingHorizontal:20,alignItems:'center',justifyContent:'center',marginTop:15},retryText:{color:'#fff',fontSize:10,fontWeight:'900'},secondary:{minHeight:44,paddingHorizontal:14,alignItems:'center',justifyContent:'center',marginTop:5},secondaryText:{fontSize:10,fontWeight:'900',color:ui.colors.ink},cartMessage:{fontSize:12,fontWeight:'800',textAlign:'center',marginTop:12,color:ui.colors.success},ai:{marginTop:24,backgroundColor:ui.colors.ink,borderRadius:ui.radius.lg,padding:15,flexDirection:'row',alignItems:'center',gap:12},aiIcon:{width:42,height:42,borderRadius:14,backgroundColor:'#2c2c2a',alignItems:'center',justifyContent:'center'},aiTitle:{color:'#fff',fontWeight:'900'},aiCopy:{color:'#bbb7b0',fontSize:11,lineHeight:17,marginTop:3}
 });

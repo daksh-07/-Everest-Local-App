@@ -39,6 +39,35 @@ export function AuthRolePicker({ selectedRole, onChange }: { selectedRole: AuthR
   );
 }
 
+export function AuthIntentTabs({ selectedRole, onChange }: { selectedRole: AuthRole | null; onChange: (role: AuthRole) => void }) {
+  const compactOptions: Array<{ role: AuthRole; label: string }> = [
+    { role: 'CUSTOMER', label: 'Customer' },
+    { role: 'BUSINESS', label: 'Business' },
+    { role: 'DELIVERY_DRIVER', label: 'Driver' },
+  ];
+  return (
+    <View style={s.intentWrap}>
+      <Text style={s.intentLabel}>CONTINUE AS</Text>
+      <View style={s.intentRow} accessibilityRole="tablist">
+        {compactOptions.map(option => {
+          const selected = selectedRole === option.role;
+          return (
+            <Pressable
+              key={option.role}
+              accessibilityRole="tab"
+              accessibilityState={{ selected }}
+              onPress={() => onChange(option.role)}
+              style={({ pressed }) => [s.intent, selected && s.intentSelected, pressed && s.pressed]}
+            >
+              <Text style={[s.intentText, selected && s.intentTextSelected]}>{option.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   wrap: { marginBottom: 24 },
   eyebrow: { color: '#77736c', fontSize: 9, fontWeight: '900', letterSpacing: 1.4 },
@@ -54,4 +83,11 @@ const s = StyleSheet.create({
   radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: '#bcb8b0', alignItems: 'center', justifyContent: 'center' },
   radioSelected: { borderColor: '#151515' },
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#151515' },
+  intentWrap: { marginBottom: 18 },
+  intentLabel: { color: '#77736c', fontSize: 9, fontWeight: '900', letterSpacing: 1.2, marginBottom: 8 },
+  intentRow: { flexDirection: 'row', padding: 3, borderRadius: 14, backgroundColor: '#eae8e2' },
+  intent: { flex: 1, minHeight: 44, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  intentSelected: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#d7d3cb' },
+  intentText: { color: '#696660', fontSize: 12, fontWeight: '800' },
+  intentTextSelected: { color: '#151515' },
 });

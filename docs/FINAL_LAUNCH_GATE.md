@@ -1,3 +1,5 @@
+> Current audit: [22 September 2026 beta readiness](BETA_READINESS_2026-09-22.md). The run #182 / initial-empty-project details below are historical. Do not use them to reset or blindly redeploy the current database.
+
 # Everest Local — Final Launch Gate
 
 **Audited repository head:** `564e4094615cb59a9277d2acad459ff235acdf29`  

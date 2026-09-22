@@ -10,7 +10,8 @@ Deno.serve(async req=>{
  if(!secret||!webhookSecret||!url||!service)return json({error:'Webhook not configured'},503);
  const signature=req.headers.get('stripe-signature');if(!signature)return json({error:'Missing signature'},400);
  const body=await req.text();const stripe=new Stripe(secret,{apiVersion:'2025-07-30.basil'});
- let event:Stripe.Event;try{event=stripe.webhooks.constructEvent(body,signature,webhookSecret);}catch{return json({error:'Invalid signature'},400)}
+ const cryptoProvider=Stripe.createSubtleCryptoProvider();
+ let event:Stripe.Event;try{event=await stripe.webhooks.constructEventAsync(body,signature,webhookSecret,undefined,cryptoProvider);}catch{return json({error:'Invalid signature'},400)}
  const db=createClient(url,service);
  const {data:claimed,error:claimError}=await db.rpc('claim_stripe_event',{p_event_id:event.id,p_event_type:event.type});
  if(claimError)return json({error:'Webhook event could not be claimed'},500);

@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@18.5.0?target=deno';
+import { checkoutReturnUrls } from '../_shared/checkout-redirects.ts';
 
 type OrderResult={order_id:string;order_number:string;total:number;reused:boolean};
 type CheckoutItem={product_name:string;unit_price:number;quantity:number};
@@ -11,6 +12,8 @@ Deno.serve(async req=>{
  if(req.method!=='POST')return json({error:'Method not allowed'},405);
  const url=Deno.env.get('SUPABASE_URL'),anon=Deno.env.get('SUPABASE_ANON_KEY'),service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),stripeKey=Deno.env.get('STRIPE_SECRET_KEY');
  if(!url||!anon||!service||!stripeKey)return json({error:'Checkout is not configured'},503);
+ const appOrigin=Deno.env.get('CHECKOUT_APP_ORIGIN');
+ try{checkoutReturnUrls(appOrigin,'order','configuration-check');}catch{return json({error:'Checkout return destination is not configured'},503);}
  const auth=req.headers.get('Authorization'),idem=req.headers.get('Idempotency-Key');
  if(!auth||!idem||idem.length<16||idem.length>128)return json({error:'Authentication and a valid Idempotency-Key are required'},401);
  const userClient=createClient(url,anon,{global:{headers:{Authorization:auth}}}),admin=createClient(url,service);
@@ -43,8 +46,7 @@ Deno.serve(async req=>{
     line_items:items.map(i=>({price_data:{currency:'aud',product_data:{name:i.product_name},unit_amount:Math.round(Number(i.unit_price)*100)},quantity:i.quantity})),
     metadata:{order_id:orderId,customer_id:user.id},
     payment_intent_data:{metadata:{order_id:orderId,customer_id:user.id}},
-    success_url:`everestlocal://order/success?order_id=${encodeURIComponent(orderId)}`,
-    cancel_url:`everestlocal://order/cancelled?order_id=${encodeURIComponent(orderId)}`,
+    ...checkoutReturnUrls(appOrigin,'order',orderId),
   },{idempotencyKey:idem});
   stripeSessionCreated=true;
   const {error:paymentError}=await admin.from('payments').update({provider_payment_id:typeof session.payment_intent==='string'?session.payment_intent:null,provider_checkout_session_id:session.id,updated_at:new Date().toISOString()}).eq('order_id',orderId).eq('idempotency_key',idem).eq('status','PENDING');

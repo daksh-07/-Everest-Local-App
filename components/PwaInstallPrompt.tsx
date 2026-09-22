@@ -18,11 +18,14 @@ export function PwaInstallPrompt() {
 
     try {
       if (window.localStorage.getItem('everest-local-pwa-install-dismissed') === '1') return;
+      const visits=Number(window.localStorage.getItem('everest-local-pwa-visits')??'0')+1;
+      window.localStorage.setItem('everest-local-pwa-visits',String(visits));
+      if(visits<2)return;
     } catch {
       // Storage is optional; the install instructions still work without it.
     }
-
-    setVisible(true);
+    const timer=setTimeout(()=>setVisible(true),5000);
+    return()=>clearTimeout(timer);
   }, []);
 
   if (!visible) return null;
