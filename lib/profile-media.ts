@@ -95,8 +95,8 @@ export async function uploadProfileAvatar(asset: ProfileMediaAsset) {
   const { data: current, error: readError } = await supabase.from('profiles').select('avatar_url').eq('id', userId).single();
   if (readError) throw new Error('Your profile could not be loaded.');
   const uploaded = await uploadOwnedImage(userId, 'avatar', asset);
-  const { error } = await supabase.from('profiles').update({ avatar_url: uploaded.url, updated_at: new Date().toISOString() }).eq('id', userId);
-  if (error) {
+  const { data: saved, error } = await supabase.rpc('set_my_profile_avatar', { p_avatar_url: uploaded.url });
+  if (error || saved !== true) {
     await supabase.storage.from(BUCKET).remove([uploaded.path]);
     throw new Error('Your profile photo could not be saved.');
   }
@@ -108,8 +108,8 @@ export async function removeProfileAvatar() {
   const userId = await currentUserId();
   const { data: current, error: readError } = await supabase.from('profiles').select('avatar_url').eq('id', userId).single();
   if (readError) throw new Error('Your profile could not be loaded.');
-  const { error } = await supabase.from('profiles').update({ avatar_url: null, updated_at: new Date().toISOString() }).eq('id', userId);
-  if (error) throw new Error('Your profile photo could not be removed.');
+  const { data: saved, error } = await supabase.rpc('set_my_profile_avatar', { p_avatar_url: null });
+  if (error || saved !== true) throw new Error('Your profile photo could not be removed.');
   await removeOwnedPrevious(current?.avatar_url, userId);
 }
 
@@ -119,8 +119,8 @@ export async function uploadBusinessLogo(businessId: string, asset: ProfileMedia
   if (readError || !current) throw new Error('Your business could not be loaded.');
   if (current.owner_id !== userId) throw new Error('Only the business owner can update this logo.');
   const uploaded = await uploadOwnedImage(userId, 'business', asset);
-  const { error } = await supabase.from('businesses').update({ logo_url: uploaded.url, updated_at: new Date().toISOString() }).eq('id', businessId).eq('owner_id', userId);
-  if (error) {
+  const { data: saved, error } = await supabase.rpc('set_my_business_logo', { p_business_id: businessId, p_logo_url: uploaded.url });
+  if (error || saved !== true) {
     await supabase.storage.from(BUCKET).remove([uploaded.path]);
     throw new Error('The business logo could not be saved.');
   }
@@ -133,7 +133,7 @@ export async function removeBusinessLogo(businessId: string) {
   const { data: current, error: readError } = await supabase.from('businesses').select('owner_id,logo_url').eq('id', businessId).single();
   if (readError || !current) throw new Error('Your business could not be loaded.');
   if (current.owner_id !== userId) throw new Error('Only the business owner can update this logo.');
-  const { error } = await supabase.from('businesses').update({ logo_url: null, updated_at: new Date().toISOString() }).eq('id', businessId).eq('owner_id', userId);
-  if (error) throw new Error('The business logo could not be removed.');
+  const { data: saved, error } = await supabase.rpc('set_my_business_logo', { p_business_id: businessId, p_logo_url: null });
+  if (error || saved !== true) throw new Error('The business logo could not be removed.');
   await removeOwnedPrevious(current.logo_url, userId);
 }
