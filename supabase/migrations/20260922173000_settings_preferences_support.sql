@@ -40,7 +40,7 @@ grant select,insert on public.support_requests to authenticated;
 create or replace function public.update_my_profile_settings(
   p_full_name text,p_bio text default null,p_phone text default null,p_suburb text default null,p_city text default null,p_state text default null,p_visibility text default 'PUBLIC'
 ) returns boolean language plpgsql security definer set search_path to public as $$
-declare v_uid uuid:=auth.uid();v_name text:=nullif(regexp_replace(trim(p_full_name),'\\s+',' ','g'),'');v_bio text:=nullif(trim(p_bio),'');v_phone text:=nullif(trim(p_phone),'');
+declare v_uid uuid:=auth.uid();v_name text:=nullif(regexp_replace(trim(p_full_name),'\s+',' ','g'),'');v_bio text:=nullif(trim(p_bio),'');v_phone text:=nullif(trim(p_phone),'');
 begin
  if v_uid is null then raise exception 'Authentication required'; end if;
  if v_name is null or length(v_name) not between 2 and 80 then raise exception 'Invalid display name'; end if;
