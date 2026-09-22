@@ -153,6 +153,7 @@ const styles = StyleSheet.create({
   askDragging:{shadowOpacity:.22,shadowRadius:16,elevation:12},
   askButtonText:{color:'#fff',fontSize:11,fontWeight:'900'},
   trashZone:{position:'absolute',left:'50%',bottom:78,marginLeft:-62,width:124,alignItems:'center',zIndex:89},
+  trashZoneActive:{transform:[{scale:1.03}]},
   trashCircle:{width:58,height:58,borderRadius:29,backgroundColor:'rgba(255,255,255,.96)',borderWidth:1,borderColor:'#d7d3cc',alignItems:'center',justifyContent:'center'},
   trashCircleActive:{backgroundColor:'#111',borderColor:'#111',transform:[{scale:1.08}]},
   trashText:{marginTop:6,fontSize:8,fontWeight:'900',letterSpacing:.7,color:'#777'},
