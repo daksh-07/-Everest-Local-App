@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@18.5.0?target=deno';
+import { checkoutReturnUrls } from '../_shared/checkout-redirects.ts';
 
 type ServicePaymentResult={payment_id:string;booking_id:string;amount:number;currency:string;provider_checkout_session_id:string|null;reused:boolean};
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key'};
@@ -10,6 +11,8 @@ Deno.serve(async req=>{
  if(req.method!=='POST')return json({error:'Method not allowed'},405);
  const url=Deno.env.get('SUPABASE_URL'),anon=Deno.env.get('SUPABASE_ANON_KEY'),service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),stripeKey=Deno.env.get('STRIPE_SECRET_KEY');
  if(!url||!anon||!service||!stripeKey)return json({error:'Service checkout is not configured'},503);
+ const appOrigin=Deno.env.get('CHECKOUT_APP_ORIGIN');
+ try{checkoutReturnUrls(appOrigin,'booking','configuration-check');}catch{return json({error:'Checkout return destination is not configured'},503);}
  const auth=req.headers.get('Authorization'),idem=req.headers.get('Idempotency-Key');
  if(!auth||!idem||idem.length<16||idem.length>128)return json({error:'Authentication and a valid Idempotency-Key are required'},401);
  const body=await req.json().catch(()=>null) as {booking_id?:unknown}|null;
@@ -36,8 +39,7 @@ Deno.serve(async req=>{
    line_items:[{price_data:{currency:payment.currency,product_data:{name:'Everest Local service booking deposit'},unit_amount:Math.round(Number(payment.amount)*100)},quantity:1}],
    metadata:{payment_kind:'service',service_payment_id:paymentId,booking_id:bookingId,customer_id:user.id},
    payment_intent_data:{metadata:{payment_kind:'service',service_payment_id:paymentId,booking_id:bookingId,customer_id:user.id}},
-   success_url:`everestlocal://booking/success?booking_id=${encodeURIComponent(bookingId)}`,
-   cancel_url:`everestlocal://booking/cancelled?booking_id=${encodeURIComponent(bookingId)}`,
+   ...checkoutReturnUrls(appOrigin,'booking',bookingId),
   },{idempotencyKey:paymentId});
   const {error:updateError}=await admin.from('service_payments').update({provider_payment_id:typeof session.payment_intent==='string'?session.payment_intent:null,provider_checkout_session_id:session.id,updated_at:new Date().toISOString()}).eq('id',paymentId).eq('status','PENDING');
   if(updateError)throw updateError;

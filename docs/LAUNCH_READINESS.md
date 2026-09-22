@@ -1,3 +1,5 @@
+> Current audit: [22 September 2026 beta readiness](BETA_READINESS_2026-09-22.md). The run #182 / initial-empty-project details below are historical. Do not use them to reset or blindly redeploy the current database.
+
 # Everest Local — Current Launch Readiness Audit
 
 **Audit date:** 2026-09-18  

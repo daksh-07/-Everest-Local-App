@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AccessibilityInfo,
   Animated,
   KeyboardAvoidingView,
   Linking,
@@ -15,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { AuthRolePicker } from '@/components/AuthRolePicker';
+import { AuthIntentTabs, AuthRolePicker } from '@/components/AuthRolePicker';
 
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   return (
@@ -220,10 +221,20 @@ export default function Auth() {
   const entryY = useRef(new Animated.Value(12)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(entryOpacity, { toValue: 1, duration: 360, useNativeDriver: true }),
-      Animated.timing(entryY, { toValue: 0, duration: 360, useNativeDriver: true }),
-    ]).start();
+    let active = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then(reducedMotion => {
+      if (!active) return;
+      if (reducedMotion) {
+        entryOpacity.setValue(1);
+        entryY.setValue(0);
+        return;
+      }
+      Animated.parallel([
+        Animated.timing(entryOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
+        Animated.timing(entryY, { toValue: 0, duration: 280, useNativeDriver: true }),
+      ]).start();
+    });
+    return () => { active = false; };
   }, [entryOpacity, entryY]);
 
   useEffect(() => {
@@ -414,12 +425,13 @@ export default function Auth() {
           <Animated.View style={[s.content, { opacity: entryOpacity, transform: [{ translateY: entryY }] }]}>
             <Brand />
 
-            <AuthRolePicker selectedRole={intent} onChange={setIntent} />
-
             <View style={s.hero}>
               <Text style={s.title}>{title}</Text>
               <Text style={s.copy}>{copy}</Text>
             </View>
+
+            {mode === 'signup' && <AuthRolePicker selectedRole={intent} onChange={setIntent} />}
+            {mode === 'login' && <AuthIntentTabs selectedRole={intent} onChange={setIntent} />}
 
             {showSocial && (
               <>
@@ -590,7 +602,7 @@ const s = StyleSheet.create({
   },
   brand: {
     alignItems: 'flex-start',
-    marginBottom: 42,
+    marginBottom: 28,
   },
   brandName: {
     color: '#151515',
@@ -727,7 +739,7 @@ const s = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     color: '#151515',
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 20,
     paddingHorizontal: 11,
     paddingVertical: 0,

@@ -9,8 +9,8 @@ assert.match(dispatchMigration, /availability\.status<>'ONLINE'/);
 assert.match(dispatchMigration, /active delivery/);
 assert.match(dispatchMigration, /delivery_assignments_one_active_job_per_driver_idx/);
 assert.match(dispatchMigration, /accepted_at is not null and completed_at is null/);
-assert.match(dispatchMigration, /SECURITY DEFINER/);
-assert.match(dispatchMigration, /SET search_path TO 'public'/);
+assert.match(dispatchMigration, /security\s+definer/i);
+assert.match(dispatchMigration, /set\s+search_path\s+to\s+'public'/i);
 
 assert.match(rlsMigration, /drop policy if exists driver_availability_select_own/);
 assert.match(rlsMigration, /create policy driver_availability_select_own/);
