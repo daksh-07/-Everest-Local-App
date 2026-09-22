@@ -300,3 +300,16 @@ test('initial admin UUID is bound to the intended email only during bootstrap an
 test('admin auth-state inspection does not require SECURITY DEFINER privileges', () => {
   assert.match(migrationText, /create\s+or\s+replace\s+function\s+public\.get_admin_auth_state\(\)[\s\S]{0,180}security\s+invoker/i);
 });
+
+
+test('profile and business identity media is owner-written and publicly readable only from the dedicated bucket', () => {
+  assert.match(migrationText, /'profile-media'[\s\S]{0,240}true[\s\S]{0,160}5242880/i);
+  assert.match(migrationText, /profile_media_owner_insert[\s\S]{0,500}storage\.foldername\(name\)[\s\S]{0,200}auth\.uid/i);
+  assert.match(migrationText, /profile_media_owner_update[\s\S]{0,700}storage\.foldername\(name\)[\s\S]{0,250}auth\.uid/i);
+  assert.match(migrationText, /profile_media_owner_delete[\s\S]{0,500}storage\.foldername\(name\)[\s\S]{0,200}auth\.uid/i);
+  assert.match(migrationText, /set_my_profile_avatar[\s\S]{0,1100}where\s+id\s*=\s*auth\.uid\(\)/i);
+  assert.match(migrationText, /set_my_business_logo[\s\S]{0,1400}owner_id\s*=\s*auth\.uid\(\)/i);
+  assert.match(migrationText, /revoke\s+execute\s+on\s+function\s+public\.set_my_profile_avatar\(text\)\s+from\s+public,\s*anon/i);
+  assert.match(migrationText, /revoke\s+execute\s+on\s+function\s+public\.set_my_business_logo\(uuid,text\)\s+from\s+public,\s*anon/i);
+  assert.match(migrationText, /sync_public_profile[\s\S]{0,900}new\.avatar_url/i);
+});
