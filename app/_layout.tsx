@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Stack, router, usePathname, useRouter } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
+import { DraggableAskEverest } from '@/components/DraggableAskEverest';
 import type { AccessContext } from '@/lib/access';
 
 const protectedRoutes = new Set([
@@ -24,11 +25,6 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
   if(typeof console!=='undefined') console.error('[Everest Local runtime error]',{pathname,name:error?.name,message,stack});
   return <View style={styles.errorScreen}><Text style={styles.eyebrow}>EVEREST LOCAL</Text><Text style={styles.errorTitle}>Something went wrong loading this page.</Text><ScrollView style={styles.errorDetails} contentContainerStyle={styles.errorDetailsContent}><Text selectable style={styles.errorCopy}>{details}</Text></ScrollView><Pressable onPress={retry} style={styles.retryButton}><Text style={styles.retry}>RETRY</Text></Pressable></View>;
 }
-function GlobalAskButton({ pathname }: { pathname: string }) {
-  if (['/assistant','/auth','/messages','/cart'].includes(pathname)) return null;
-  return <Pressable accessibilityRole="button" accessibilityLabel="Ask Everest" onPress={() => router.push('/assistant')} style={styles.askButton}><Text style={styles.askButtonText}>✦ Ask Everest</Text></Pressable>;
-}
-
 export default function RootLayout() {
   const pathname=usePathname();const nav=useRouter();
   const [authInitialized,setAuthInitialized]=useState(false);const [supabaseConfigured,setSupabaseConfigured]=useState(false);const [sessionUserId,setSessionUserId]=useState<string|null>(null);const [access,setAccess]=useState<AccessContext|null>(null);const [startupError,setStartupError]=useState('');const [retryNonce,setRetryNonce]=useState(0);
@@ -60,7 +56,7 @@ export default function RootLayout() {
   },[pathname,authInitialized,supabaseConfigured,sessionUserId,access,startupError,nav]);
 
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
-  return <><StatusBar style="dark"/><Stack screenOptions={{headerShown:false,animation:'fade'}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError message={startupError} onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<GlobalAskButton pathname={pathname}/><PwaInstallPrompt/></>;
+  return <><StatusBar style="dark"/><Stack screenOptions={{headerShown:false,animation:'fade'}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError message={startupError} onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></>;
 }
 
-const styles=StyleSheet.create({overlay:{position:'absolute',top:0,right:0,bottom:0,left:0},errorScreen:{flex:1,backgroundColor:'#f8f7f4',padding:24,justifyContent:'center',alignItems:'center'},eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:2,color:'#777'},errorTitle:{maxWidth:520,marginTop:10,fontSize:25,lineHeight:31,fontWeight:'900',textAlign:'center'},errorDetails:{width:'100%',maxWidth:760,maxHeight:360,marginTop:14},errorDetailsContent:{padding:4},errorCopy:{maxWidth:520,marginTop:10,color:'#777',fontSize:13,lineHeight:20,textAlign:'center'},retryButton:{marginTop:20,paddingVertical:12,paddingHorizontal:16},retry:{fontSize:12,fontWeight:'900',letterSpacing:.8},askButton:{position:'absolute',right:16,bottom:92,height:44,borderRadius:22,backgroundColor:'#111',paddingHorizontal:16,alignItems:'center',justifyContent:'center',shadowOpacity:.12,shadowRadius:8,shadowOffset:{width:0,height:3}},askButtonText:{color:'#fff',fontSize:11,fontWeight:'800'}});
+const styles=StyleSheet.create({overlay:{position:'absolute',top:0,right:0,bottom:0,left:0},errorScreen:{flex:1,backgroundColor:'#f8f7f4',padding:24,justifyContent:'center',alignItems:'center'},eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:2,color:'#777'},errorTitle:{maxWidth:520,marginTop:10,fontSize:25,lineHeight:31,fontWeight:'900',textAlign:'center'},errorDetails:{width:'100%',maxWidth:760,maxHeight:360,marginTop:14},errorDetailsContent:{padding:4},errorCopy:{maxWidth:520,marginTop:10,color:'#777',fontSize:13,lineHeight:20,textAlign:'center'},retryButton:{marginTop:20,paddingVertical:12,paddingHorizontal:16},retry:{fontSize:12,fontWeight:'900',letterSpacing:.8}});
