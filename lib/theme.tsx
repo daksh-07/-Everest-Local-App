@@ -8,7 +8,7 @@ export type AppTheme={preference:ThemePreference;isDark:boolean;colors:ThemeColo
 
 const STORAGE_KEY='everest-local-theme';
 const light:ThemeColors={canvas:'#f8f7f4',surface:'#ffffff',elevated:'#ffffff',text:'#171715',textSecondary:'#5f5c56',muted:'#77736c',border:'#e3e0d9',soft:'#f0eee9',input:'#ffffff',danger:'#9b2c24',success:'#2c6842',overlay:'rgba(17,17,15,.48)',navigation:'#fbfaf7',brand:'#9c8155',onBrand:'#ffffff'};
-const dark:ThemeColors={canvas:'#151513',surface:'#211f1b',elevated:'#2a2722',text:'#f7f1e8',textSecondary:'#c9c0b4',muted:'#a79d91',border:'#454038',soft:'#302c26',input:'#28241f',danger:'#efaaa0',success:'#a2d5b0',overlay:'rgba(0,0,0,.7)',navigation:'#1a1816',brand:'#d1ae75',onBrand:'#21180d'};
+const dark:ThemeColors={canvas:'#0b0b0b',surface:'#151513',elevated:'#1c1b18',text:'#f5f2ec',textSecondary:'#c9c1b6',muted:'#a79f94',border:'#34312c',soft:'#24211d',input:'#1e1c19',danger:'#efaaa0',success:'#a2d5b0',overlay:'rgba(0,0,0,.74)',navigation:'#10100f',brand:'#d8c3a5',onBrand:'#1b1711'};
 const ThemeContext=createContext<AppTheme|null>(null);
 
 function valid(value:string|null):value is ThemePreference{return value==='SYSTEM'||value==='LIGHT'||value==='DARK'}
