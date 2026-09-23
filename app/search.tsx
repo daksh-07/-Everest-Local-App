@@ -84,8 +84,8 @@ export default function Search() {
         .join(', ');
       const externalQuery = text.length >= 5
         ? text
-        : ((tab === 'BUSINESSES' || tab === 'ALL') && savedLocation
-          ? `local businesses in ${savedLocation}`
+        : ((tab === 'BUSINESSES' || tab === 'ALL')
+          ? `local businesses in ${savedLocation || 'Sydney, NSW'}`
           : '');
       if (externalQuery.length >= 5 && !remoteIntent && (tab === 'ALL' || tab === 'BUSINESSES')) {
         void supabase.functions.invoke('external-discovery', { body: { query: externalQuery } }).then(result => {
