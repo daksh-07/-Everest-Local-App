@@ -15,7 +15,8 @@
     "audit:migrations": "node scripts/migration-audit.mjs",
     "test:security": "node --test tests/security-invariants.test.mjs tests/quote-authority.test.mjs tests/cart-authority.test.mjs tests/cart-integrity.test.mjs tests/delivery-request-integrity.test.mjs tests/inventory-integrity.test.mjs tests/commerce-financial-integrity.test.mjs tests/admin-mfa-integrity.test.mjs tests/trigger-security.test.mjs tests/settings-preferences.test.mjs",
     "test:business-verification": "node --experimental-strip-types --test tests/business-verification.test.mjs",
-    "test:dispatch": "node --test tests/service-aware-dispatch.test.mjs"
+    "test:dispatch": "node --test tests/service-aware-dispatch.test.mjs",
+    "test:external": "node --test tests/external-flow.test.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

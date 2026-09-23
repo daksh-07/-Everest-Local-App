@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextStyle } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -14,6 +14,7 @@ type TaxonomyResult = ServiceDefinition;
 type ServiceResult = { id: string; business_id: string; name: string; description: string | null; base_price: number | null; duration_minutes: number | null; businesses?: { name: string; suburb: string | null; city: string | null; state: string | null } | { name: string; suburb: string | null; city: string | null; state: string | null }[] | null };
 type SearchProduct = { id:string; business_id:string; name:string; description:string|null; price:number; sale_price:number|null; status:string; delivery_eligible:boolean; pickup_available:boolean; businesses?:{name:string;suburb:string|null;city:string|null;state:string|null}|{name:string;suburb:string|null;city:string|null;state:string|null}[]|null; inventory?:{stock_quantity:number;reserved_quantity:number}|{stock_quantity:number;reserved_quantity:number}[]|null };
 type JobResult = { id: string; description: string; suburb: string; city: string; state: string; status: string; budget: number | null; preferred_date: string | null };
+type ExternalResult = { source: 'google_places'; externalId: string; referenceId: string; name: string; address: string };
 
 function relationName(value: ServiceResult['businesses']) {
   return Array.isArray(value) ? value[0]?.name : value?.name;
@@ -24,11 +25,14 @@ function escapeIlike(value: string) {
 }
 
 export default function Search() {
-  const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
+  const {colors,isDark}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
   const params = useLocalSearchParams<{ q?: string; tab?: string }>();
   const [q, setQ] = useState(typeof params.q === 'string' ? params.q : '');
   const [tab, setTab] = useState<Tab>(['ALL', 'BUSINESSES', 'SERVICES', 'PRODUCTS', 'POSTS', 'JOBS'].includes(params.tab ?? '') ? params.tab as Tab : 'ALL');
   const [businesses, setBusinesses] = useState<MarketplaceBusiness[]>([]);
+  const [externalBusinesses, setExternalBusinesses] = useState<ExternalResult[]>([]);
+  const [externalEnquiriesEnabled, setExternalEnquiriesEnabled] = useState(false);
+  const [selectedExternal, setSelectedExternal] = useState<ExternalResult | null>(null);
   const [services, setServices] = useState<ServiceResult[]>([]);
   const [taxonomyResults, setTaxonomyResults] = useState<TaxonomyResult[]>([]);
   const [products, setProducts] = useState<SearchProduct[]>([]);
@@ -37,8 +41,10 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cartMessage, setCartMessage] = useState('');
+  const searchVersion = useRef(0);
 
   const load = useCallback(async () => {
+    const version = ++searchVersion.current;
     setLoading(true);
     setError('');
     try {
@@ -68,6 +74,16 @@ export default function Search() {
       const nearbySuburb = nearby ? locationProfile!.suburb!.toLowerCase() : '';
       setTaxonomyResults(taxonomy);
       setBusinesses(((b.data ?? []) as MarketplaceBusiness[]).filter(item => !nearby || item.suburb?.toLowerCase() === nearbySuburb));
+      // Explicit intent only; provider failure must never fail native search.
+      setExternalBusinesses([]);
+      setExternalEnquiriesEnabled(false);
+      if (text.length >= 5 && (b.data?.length ?? 0) < 3 && !remoteIntent && (tab === 'ALL' || tab === 'BUSINESSES')) {
+        void supabase.functions.invoke('external-discovery', { body: { query: text } }).then(result => {
+          if (searchVersion.current !== version || result.error || !result.data?.enabled || !Array.isArray(result.data.businesses)) return;
+          setExternalBusinesses(result.data.businesses.slice(0, 5));
+          setExternalEnquiriesEnabled(result.data.enquiriesEnabled === true);
+        }).catch(() => { /* Native results remain available. */ });
+      }
       setServices(((s.data ?? []) as ServiceResult[]).filter(item => !maxBudget || item.base_price == null || Number(item.base_price) <= maxBudget).filter(item => !nearby || (Array.isArray(item.businesses) ? item.businesses[0]?.suburb : item.businesses?.suburb)?.toLowerCase() === nearbySuburb).filter(item => !remoteIntent || (item as ServiceResult & {delivery_mode?:DeliveryMode}).delivery_mode !== 'LOCAL'));
       setProducts(((p.data ?? []) as SearchProduct[]).filter(item => !maxBudget || Number(item.sale_price ?? item.price) <= maxBudget));
       const postItems = await listPublicPosts({ limit: 50 });
@@ -98,7 +114,7 @@ export default function Search() {
   }, [q, tab]);
 
   useEffect(() => {
-    const timer = setTimeout(() => { void load(); }, 250);
+    const timer = setTimeout(() => { void load(); }, 750);
     return () => clearTimeout(timer);
   }, [load]);
 
@@ -127,7 +143,9 @@ export default function Search() {
       {q.trim() && <Text style={s.hint}>Searching real marketplace records for “{q.trim()}”. Availability is shown only when the backend has it.</Text>}
       {loading ? <ActivityIndicator style={{ marginTop: 35 }}/> : error ? <View style={s.empty}><Text style={s.emptyTitle}>We couldn't load results.</Text><Text style={s.emptyCopy}>Please try again.</Text><Pressable onPress={() => void load()} style={s.retry}><Text style={s.retryText}>RETRY</Text></Pressable></View> : <>
         {show('BUSINESSES') && <Section title={`Businesses ${visibleCounts.businesses ? `(${visibleCounts.businesses})` : ''}`}>
-          {businesses.length ? businesses.map(b => <Pressable key={b.id} style={s.result} onPress={() => router.push(`/business-profile?id=${b.id}`)}><View style={s.icon}>{b.logo_url?<Image source={{uri:b.logo_url}} style={s.resultImage}/>:<Ionicons name="business-outline" size={22} color={colors.text}/>}</View><View style={{flex:1}}><Text style={s.resultTitle}>{b.name}</Text><Text style={s.resultCopy}>{[b.suburb,b.city,b.state].filter(Boolean).join(', ') || 'Local business'}</Text>{b.verification_status === 'VERIFIED' && <Text style={s.verified}>✓ VERIFIED</Text>}</View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>) : <Empty text="No verified businesses matched this search."/>}
+          {businesses.length ? businesses.map(b => <Pressable key={b.id} style={s.result} onPress={() => router.push(`/business-profile?id=${b.id}`)}><View style={s.icon}>{b.logo_url?<Image source={{uri:b.logo_url}} style={s.resultImage}/>:<Ionicons name="business-outline" size={22} color={colors.text}/>}</View><View style={{flex:1}}><Text style={s.resultTitle}>{b.name}</Text><Text style={s.resultCopy}>{[b.suburb,b.city,b.state].filter(Boolean).join(', ') || 'Local business'}</Text>{b.verification_status === 'VERIFIED' && <Text style={s.verified}>✓ VERIFIED</Text>}</View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>) : !externalBusinesses.length && <Empty text="No verified businesses matched this search."/>}
+          {externalBusinesses.length > 0 && <View><Text style={s.hint}>External businesses · Not yet on Everest. No Everest affiliation or verification is implied.</Text><Text accessibilityLabel="Information from Google Maps" style={{fontSize:12,fontWeight:'400',color:isDark?'#fff':'#1F1F1F',marginBottom:12}}>Information from Google Maps</Text></View>}
+          {externalBusinesses.map(item => <View key={item.source + item.externalId} style={s.result}><View style={s.icon}><Ionicons name="business-outline" size={22} color={colors.muted}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{item.name}</Text><Text style={s.resultCopy}>{item.address}</Text><Text style={s.resultCopy}>External business · Not yet on Everest</Text>{externalEnquiriesEnabled && <Pressable accessibilityRole="button" onPress={() => {setSelectedExternal(item);void supabase.rpc('record_external_business_selection',{p_reference_id:item.referenceId})}}><Text style={s.verified}>REQUEST QUOTE</Text></Pressable>}</View></View>)}
         </Section>}
         {show('SERVICES') && <Section title={`Services ${visibleCounts.services || visibleCounts.taxonomy ? `(${visibleCounts.services + visibleCounts.taxonomy})` : ''}`}>
           {taxonomyResults.map(item => <Pressable key={'taxonomy-'+item.id} style={s.result} onPress={() => router.push('/search?q='+encodeURIComponent(item.name)+'&tab=SERVICES')}><View style={s.icon}><Ionicons name="layers-outline" size={22} color={colors.text}/></View><View style={{flex:1}}><Text style={s.resultTitle}>{item.name}</Text><Text style={s.resultCopy}>{item.default_delivery_mode === 'REMOTE' ? 'Remote / online' : item.default_delivery_mode === 'BOTH' ? 'Local + remote' : 'Local service'}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>)}
@@ -145,7 +163,44 @@ export default function Search() {
       </>}
       {!!cartMessage && <Text style={s.cartMessage}>{cartMessage}</Text>}
     </ScrollView>
+    <ExternalEnquiryDialog business={selectedExternal} onClose={() => setSelectedExternal(null)}/>
   </SafeAreaView>;
+}
+
+function ExternalEnquiryDialog({business,onClose}:{business:ExternalResult|null;onClose:()=>void}) {
+  const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
+  const [requests,setRequests]=useState<Array<{id:string;description:string;suburb:string|null;city:string|null;state:string|null;preferred_date:string|null;preferred_time:string|null}>>([]);
+  const [chosen,setChosen]=useState('');const [email,setEmail]=useState('');const [phone,setPhone]=useState('');
+  const [shareEmail,setShareEmail]=useState(false);const [sharePhone,setSharePhone]=useState(false);
+  const [error,setError]=useState('');const [busy,setBusy]=useState(false);
+  useEffect(()=>{if(!business)return;let live=true;(async()=>{
+    const {data:{user}}=await supabase.auth.getUser();if(!user)return;
+    const [r,p]=await Promise.all([
+      supabase.from('service_requests').select('id,description,suburb,city,state,preferred_date,preferred_time').eq('customer_id',user.id).in('status',['OPEN','MATCHING','QUOTING']).order('created_at',{ascending:false}).limit(10),
+      supabase.from('profiles').select('phone').eq('id',user.id).maybeSingle(),
+    ]);
+    if(live){setRequests(r.data??[]);setChosen('');setEmail(user.email??'');setPhone(p.data?.phone??'');setError(r.error?'Could not load your requests.':'');}
+  })();return()=>{live=false}},[business]);
+  const request=requests.find(item=>item.id===chosen);
+  async function authorise(){if(!business||!request)return;setBusy(true);setError('');
+    const {error:failure}=await supabase.rpc('authorise_external_enquiry',{p_request_id:request.id,p_reference_id:business.referenceId,p_share_email:shareEmail,p_share_phone:sharePhone});
+    setBusy(false);if(failure){setError('Could not authorise this enquiry. It may be unavailable or already requested.');return;}
+    onClose();router.push('/external-quotes');
+  }
+  return <Modal visible={!!business} onRequestClose={onClose} animationType="slide" presentationStyle="pageSheet"><SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page}>
+    <Pressable onPress={onClose}><Text style={s.resultTitle}>✕ Close</Text></Pressable><Text style={s.title}>Review external enquiry</Text>
+    <Text style={s.resultTitle}>{business?.name}</Text><Text style={s.resultCopy}>{business?.address}</Text>
+    <Text style={s.resultCopy}>External business · Not yet on Everest. Information from Google Maps. Everest does not verify or endorse this business.</Text>
+    <Text style={s.heading}>Choose your request</Text>
+    {requests.map(item=><Pressable key={item.id} onPress={()=>setChosen(item.id)} style={[s.result,chosen===item.id&&{borderColor:colors.brand}]}><Text style={s.resultCopy}>{item.description} · {[item.suburb,item.city,item.state].filter(Boolean).join(', ')} · {item.preferred_date??'Flexible date'}{item.preferred_time?` · ${item.preferred_time}`:''}</Text></Pressable>)}
+    {!requests.length&&<><Text style={s.resultCopy}>Create a service request first, then return to this search.</Text><Pressable onPress={()=>{onClose();router.push('/request')}} style={s.add}><Text style={s.addText}>CREATE REQUEST</Text></Pressable></>}
+    {!!request&&<><Text style={s.heading}>Information shared</Text><Text style={s.resultCopy}>Your request description, suburb, city, state, preferred date and preferred time shown above will be shared. Photos and your full profile will not be shared.</Text>
+      {!!email&&<Pressable onPress={()=>setShareEmail(value=>!value)} style={s.result}><Text style={s.resultTitle}>{shareEmail?'☑':'☐'} Share email: {email}</Text></Pressable>}
+      {!!phone&&<Pressable onPress={()=>setSharePhone(value=>!value)} style={s.result}><Text style={s.resultTitle}>{sharePhone?'☑':'☐'} Share phone: {phone}</Text></Pressable>}
+      <Text style={s.resultCopy}>Authorising saves this enquiry for this external business. Everest will only notify a verified contact when delivery is enabled. You can revoke the enquiry before a quote arrives in External enquiries.</Text>
+      <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void authorise()} style={s.add}><Text style={s.addText}>{busy?'SAVING…':'AUTHORISE THIS ENQUIRY'}</Text></Pressable></>}
+    {!!error&&<Text style={s.resultCopy}>{error}</Text>}
+  </ScrollView></SafeAreaView></Modal>;
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {

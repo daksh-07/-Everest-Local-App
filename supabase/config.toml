@@ -14,3 +14,12 @@ verify_jwt = true
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.external-discovery]
+verify_jwt = true
+
+[functions.external-quote-gateway]
+verify_jwt = false
+
+[functions.external-message-dispatch]
+verify_jwt = false
