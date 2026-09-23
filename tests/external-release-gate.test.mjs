@@ -5,6 +5,23 @@ import fs from 'node:fs';
 const cryptoCompat = fs.readFileSync('supabase/migrations/20260923045959_external_crypto_compat.sql','utf8');
 const optOut = fs.readFileSync('supabase/migrations/20260923093000_external_gateway_self_service_opt_out.sql','utf8');
 const gateway = fs.readFileSync('supabase/functions/external-quote-gateway/index.ts','utf8');
+const lockOrder = fs.readFileSync('supabase/migrations/20260923110000_external_gateway_lock_order.sql','utf8');
+const directory = fs.readFileSync('app/search.tsx','utf8');
+
+test('gateway operations lock enquiry before token and recheck the token hash', () => {
+  for (const functionName of ['read_external_gateway', 'submit_external_gateway_quote', 'opt_out_external_gateway_contact']) {
+    const body = lockOrder.split(`create or replace function public.${functionName}(`)[1]?.split('end; $$;')[0] ?? '';
+    assert.ok(body.indexOf('for update') > -1, `${functionName} takes a row lock`);
+    const enquiryLock = body.search(/from public\.external_enquiries\s+where[^;]*for update/i);
+    const tokenLock = body.search(/from public\.external_gateway_tokens\s+where enquiry_id[^;]*for update/i);
+    assert.ok(enquiryLock >= 0 && tokenLock > enquiryLock, `${functionName} locks enquiry first`);
+    assert.match(body, /token_hash\s*=\s*public\.digest\(p_token,'sha256'\)/);
+  }
+});
+
+test('external directory cards do not appear under a no-businesses message', () => {
+  assert.match(directory, /!externalBusinesses\.length && <Empty text="No verified businesses matched this search\."/);
+});
 
 test('pgcrypto compatibility helpers are locked away from API roles', () => {
   assert.match(cryptoCompat, /extensions\.digest/);

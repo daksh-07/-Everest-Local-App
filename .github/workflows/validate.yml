@@ -65,7 +65,7 @@ jobs:
       - name: Business verification tests
         run: npm run test:business-verification
       - name: External flow boundary tests
-        run: npm run test:external
+        run: npm run test:external && node --test tests/external-release-gate.test.mjs
       - name: Upload security test diagnostics
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
