@@ -14,7 +14,7 @@ for (const file of requiredFiles) {
 }
 
 const manifest = JSON.parse(await readFile(join(dist, 'manifest.json'), 'utf8'));
-if (manifest?.name !== 'Everest Local' || manifest?.display !== 'standalone' || manifest?.start_url !== '/') {
+if (manifest?.name !== 'Everest Local' || manifest?.display !== 'standalone' || manifest?.start_url !== '/' || manifest?.background_color !== '#151513') {
   throw new Error('Web export is incomplete: manifest.json is missing the required Everest Local PWA settings.');
 }
 for (const icon of ['/icon-192.png', '/icon-512.png']) {
@@ -28,6 +28,23 @@ for (const icon of ['/icon-192.png', '/icon-512.png']) {
 const html = await readFile(join(dist, 'index.html'), 'utf8');
 if (!/<html[\s>]/i.test(html) || !html.includes('<script')) {
   throw new Error('Web export is incomplete: dist/index.html does not contain a usable HTML shell.');
+}
+for (const required of [
+  'viewport-fit=cover',
+  'apple-mobile-web-app-capable',
+  'apple-mobile-web-app-status-bar-style',
+  'black-translucent',
+  'everest-local-theme',
+  '--everest-canvas',
+  '/manifest.json',
+  'everest-search-input',
+]) {
+  if (!html.includes(required)) {
+    throw new Error(`Web export is incomplete: dist/index.html is missing ${required}.`);
+  }
+}
+if (/shrink-to-fit=no/.test(html)) {
+  throw new Error('Web export is incomplete: default Expo viewport replaced the Everest Local mobile viewport.');
 }
 
 const buildInfo = JSON.parse(await readFile(join(dist, 'build-info.json'), 'utf8'));
