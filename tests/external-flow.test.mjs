@@ -4,8 +4,10 @@ import { readFileSync } from 'node:fs';
 import { URL } from 'node:url';
 
 const migration=readFileSync(new URL('../supabase/migrations/20260923050000_external_business_identity_enquiries.sql',import.meta.url),'utf8');
+const messagingMigration=readFileSync(new URL('../supabase/migrations/20260923090000_external_messaging_safety.sql',import.meta.url),'utf8');
 const discovery=readFileSync(new URL('../supabase/functions/external-discovery/index.ts',import.meta.url),'utf8');
 const gateway=readFileSync(new URL('../supabase/functions/external-quote-gateway/index.ts',import.meta.url),'utf8');
+const dispatcher=readFileSync(new URL('../supabase/functions/external-message-dispatch/index.ts',import.meta.url),'utf8');
 const search=readFileSync(new URL('../app/search.tsx',import.meta.url),'utf8');
 
 test('external identities hold provider identifiers only, remain distinct and require trusted registration',()=>{
@@ -73,4 +75,36 @@ test('revocation and suppression block later access without changing native book
  assert.match(migration,/v_token\.used_at is not null/);
  assert.match(migration,/insert into public\.external_quote_responses/);
  assert.doesNotMatch(migration,/insert into public\.(quotes|bookings|payments|service_matches|opportunities)\b/);
+});
+
+test('outbound contact is verified, bound, suppressible and service-role queued',()=>{
+ for(const table of ['external_business_contacts','external_contact_suppressions','external_message_deliveries']){
+  assert.match(messagingMigration,new RegExp(`alter table public\\.${table} enable row level security`));
+  assert.match(messagingMigration,new RegExp(`revoke all on public\\.${table} from public,anon,authenticated`));
+ }
+ assert.match(messagingMigration,/recipient_contact_id uuid references public\.external_business_contacts/);
+ assert.match(messagingMigration,/verification_status='VERIFIED'/);
+ assert.match(messagingMigration,/RECIPIENT_CONTACT_BOUND/);
+ assert.match(messagingMigration,/BUSINESS_OPTOUT/);
+ assert.match(messagingMigration,/destination_hash/);
+ assert.match(messagingMigration,/Recipient cooldown active/);
+ assert.match(messagingMigration,/External messaging disabled/);
+ assert.match(messagingMigration,/grant execute on function public\.enqueue_external_enquiry_delivery\(uuid\) to service_role/);
+ assert.match(messagingMigration,/revoke execute on function public\.prepare_external_gateway\(uuid,text\) from authenticated/);
+});
+
+test('message worker is sandbox-only and contains no production provider transport',()=>{
+ assert.match(dispatcher,/EXTERNAL_MESSAGING_ENABLED/);
+ assert.match(dispatcher,/EXTERNAL_MESSAGING_TRANSPORT/);
+ assert.match(dispatcher,/!== 'sandbox'/);
+ assert.match(dispatcher,/EXTERNAL_MESSAGE_WORKER_SECRET/);
+ assert.match(dispatcher,/sent:false/);
+ assert.doesNotMatch(dispatcher,/sendgrid|twilio|resend|mailgun|postmark|ses|messagebird|clicksend/i);
+ assert.doesNotMatch(dispatcher,/fetch\(['\"]https:\/\//);
+ assert.match(messagingMigration,/RAW_TOKEN_HANDOFF_NOT_IMPLEMENTED/);
+});
+
+test('external messaging never mutates native quote, booking, payment or dispatch authority',()=>{
+ assert.doesNotMatch(messagingMigration,/insert into public\.(quotes|bookings|payments|service_matches|opportunities|dispatch_jobs)\b/);
+ assert.doesNotMatch(dispatcher,/from\(['\"](?:quotes|bookings|payments|service_matches|opportunities|dispatch_jobs)['\"]\)/);
 });
