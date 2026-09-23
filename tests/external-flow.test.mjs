@@ -50,7 +50,8 @@ test('private tables and gateway do not expose arbitrary customer data',()=>{
 });
 
 test('discovery is authenticated, metered and native search retains failure isolation',()=>{
- assert.match(discovery,/EXTERNAL_BUSINESS_DISCOVERY_ENABLED'\) !== 'true'/);
+ assert.match(discovery,/\.from\('external_feature_flags'\)/);
+ assert.match(discovery,/\.eq\('name', 'discovery'\)/);
  assert.match(discovery,/userClient\.auth\.getUser\(\)/);
  assert.match(discovery,/consume_external_discovery_quota/);
  assert.match(discovery,/pageSize: 5/);
