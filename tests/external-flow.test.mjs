@@ -100,11 +100,11 @@ test('message worker is sandbox-only and contains no production provider transpo
  assert.match(dispatcher,/EXTERNAL_MESSAGE_WORKER_SECRET/);
  assert.match(dispatcher,/sent:false/);
  assert.doesNotMatch(dispatcher,/sendgrid|twilio|resend|mailgun|postmark|ses|messagebird|clicksend/i);
- assert.doesNotMatch(dispatcher,/fetch\(['\"]https:\/\//);
+ assert.doesNotMatch(dispatcher,/fetch\(['"]https:\/\//);
  assert.match(messagingMigration,/RAW_TOKEN_HANDOFF_NOT_IMPLEMENTED/);
 });
 
 test('external messaging never mutates native quote, booking, payment or dispatch authority',()=>{
  assert.doesNotMatch(messagingMigration,/insert into public\.(quotes|bookings|payments|service_matches|opportunities|dispatch_jobs)\b/);
- assert.doesNotMatch(dispatcher,/from\(['\"](?:quotes|bookings|payments|service_matches|opportunities|dispatch_jobs)['\"]\)/);
+ assert.doesNotMatch(dispatcher,/from\(['"](?:quotes|bookings|payments|service_matches|opportunities|dispatch_jobs)['"]\)/);
 });
