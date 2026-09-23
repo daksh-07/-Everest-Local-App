@@ -10,6 +10,7 @@ as $$
 declare
   v_contact public.external_business_contacts;
   v_enquiry_id uuid;
+  v_contact_id uuid;
 begin
   if auth.role() <> 'service_role' then
     raise exception 'Service role required';
@@ -18,20 +19,25 @@ begin
     return false;
   end if;
 
-  select e.id, c.*
-    into v_enquiry_id, v_contact
+  select e.id, e.recipient_contact_id
+    into v_enquiry_id, v_contact_id
   from public.external_gateway_tokens t
   join public.external_enquiries e on e.id = t.enquiry_id
-  join public.external_business_contacts c on c.id = e.recipient_contact_id
   where t.token_hash = public.digest(p_token,'sha256')
     and t.revoked_at is null
     and t.used_at is null
     and t.expires_at > now()
-  for update of t, e, c;
+  for update of t, e;
 
-  if v_enquiry_id is null or v_contact.id is null then
+  if v_enquiry_id is null or v_contact_id is null then
     return false;
   end if;
+
+  select * into v_contact
+  from public.external_business_contacts
+  where id = v_contact_id
+  for update;
+  if not found then return false; end if;
 
   perform public.suppress_external_contact(
     v_contact.channel,
