@@ -108,3 +108,12 @@ test('external messaging never mutates native quote, booking, payment or dispatc
  assert.doesNotMatch(messagingMigration,/insert into public\.(quotes|bookings|payments|service_matches|opportunities|dispatch_jobs)\b/);
  assert.doesNotMatch(dispatcher,/from\(['"](?:quotes|bookings|payments|service_matches|opportunities|dispatch_jobs)['"]\)/);
 });
+
+test('production handoff can only issue a transient bearer value to a trusted worker',()=>{
+ assert.match(messagingMigration,/revoke execute on function public\.issue_external_gateway_token\(uuid\) from public,anon,authenticated/);
+ assert.match(messagingMigration,/grant execute on function public\.claim_external_delivery_for_send\(\) to service_role/);
+ assert.match(messagingMigration,/public\.digest\(v_token,'sha256'\)/);
+ assert.doesNotMatch([...messagingMigration.matchAll(/create table public\.\w+ \(([\s\S]*?)\n\);/g)].map(match=>match[1]).join('\n'),/\b(?:raw_token|gateway_token)\s+(?:text|varchar)\b/i);
+ assert.match(messagingMigration,/grant execute on function public\.complete_external_delivery\(uuid,boolean,text,text\) to service_role/);
+ assert.match(messagingMigration,/public\.external_discovery_daily_quota\.requests<100/);
+});

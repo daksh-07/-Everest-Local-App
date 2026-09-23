@@ -15,11 +15,15 @@ Do not enable this flag in production yet. Confirm Google's current display and 
 - Claim intent and admin approval require an existing verified business, ABN and an independently reviewed control method. Receiving a gateway token never proves ownership. Linking revokes outstanding links and leaves historical responses external.
 - Database flags `discovery`, `enquiries`, `gateway`, `messaging`, `claiming` default to false. Environment flags independently protect discovery, enquiries UI and gateway. No automatic email or SMS exists.
 
+## Phase 3 draft hardening (not applied)
+
+The un-applied Phase 3 migration now caps Places discovery at 100 requests per UTC day across all users in addition to 10 per user per hour. The client waits 750 ms after typing stops. The authorisation dialog previews preferred time, which is included in the stored snapshot. The old authenticated admin token RPC is revoked. A separate service-role RPC can atomically claim one verified, unsuppressed queued delivery, store a SHA-256 token hash, and return the raw 256-bit bearer token only in that RPC response for an immediate trusted send. A service-role acknowledgment records a send or revokes the token and schedules a bounded retry. Neither the sandbox worker nor a real provider uses this handoff yet. There is no provider integration or controlled delivery proof. The production worker must be designed and validated before any messaging activation.
+
 ## Remaining activation work
 
 1. Run the migration against a disposable PostgreSQL/Supabase project and exercise authenticated RPCs, RLS, token expiry/replay, races, admin MFA and real provider outage cases. Source-level tests do not establish database runtime behavior. Do not apply this migration to production until that passes.
-2. Add a verified business recipient/contact binding and a compliant delivery provider. Manual admin validation currently records the claimed channel but cannot independently prove the person receiving a link is the intended business. Do not issue links to real businesses yet.
-3. Add durable provider quotas and budget alarms, verify required Google logo/attribution, privacy notices, approved use of business contact data, and dedupe against verified Everest listings. Current dedupe is exact provider ID and admin-reviewed linking only.
+2. Verify contact binding independently and implement a compliant provider adapter and worker using the trusted handoff. The sandbox worker never sends. Do not issue links to real businesses yet.
+3. Configure Google Cloud hard API quota and billing alerts, verify rendered attribution, privacy/terms notices, approved use of business contact data, and dedupe against verified Everest listings. The database daily ceiling does not establish Google Cloud billing controls. Current dedupe is exact provider ID and admin-reviewed linking only.
 4. Build MFA-protected admin views for conflicts, suppression and delivery, plus a formal business self-service opt-out path before any automated outbound operation.
 5. The claim RPC exists but there is no self-service claim screen or provider-independent ownership challenge. An admin must independently review ownership evidence before approving.
 

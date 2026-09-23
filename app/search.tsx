@@ -114,7 +114,7 @@ export default function Search() {
   }, [q, tab]);
 
   useEffect(() => {
-    const timer = setTimeout(() => { void load(); }, 250);
+    const timer = setTimeout(() => { void load(); }, 750);
     return () => clearTimeout(timer);
   }, [load]);
 
@@ -169,14 +169,14 @@ export default function Search() {
 
 function ExternalEnquiryDialog({business,onClose}:{business:ExternalResult|null;onClose:()=>void}) {
   const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
-  const [requests,setRequests]=useState<Array<{id:string;description:string;suburb:string|null;city:string|null;state:string|null;preferred_date:string|null}>>([]);
+  const [requests,setRequests]=useState<Array<{id:string;description:string;suburb:string|null;city:string|null;state:string|null;preferred_date:string|null;preferred_time:string|null}>>([]);
   const [chosen,setChosen]=useState('');const [email,setEmail]=useState('');const [phone,setPhone]=useState('');
   const [shareEmail,setShareEmail]=useState(false);const [sharePhone,setSharePhone]=useState(false);
   const [error,setError]=useState('');const [busy,setBusy]=useState(false);
   useEffect(()=>{if(!business)return;let live=true;(async()=>{
     const {data:{user}}=await supabase.auth.getUser();if(!user)return;
     const [r,p]=await Promise.all([
-      supabase.from('service_requests').select('id,description,suburb,city,state,preferred_date').eq('customer_id',user.id).in('status',['OPEN','MATCHING','QUOTING']).order('created_at',{ascending:false}).limit(10),
+      supabase.from('service_requests').select('id,description,suburb,city,state,preferred_date,preferred_time').eq('customer_id',user.id).in('status',['OPEN','MATCHING','QUOTING']).order('created_at',{ascending:false}).limit(10),
       supabase.from('profiles').select('phone').eq('id',user.id).maybeSingle(),
     ]);
     if(live){setRequests(r.data??[]);setChosen('');setEmail(user.email??'');setPhone(p.data?.phone??'');setError(r.error?'Could not load your requests.':'');}
@@ -192,12 +192,12 @@ function ExternalEnquiryDialog({business,onClose}:{business:ExternalResult|null;
     <Text style={s.resultTitle}>{business?.name}</Text><Text style={s.resultCopy}>{business?.address}</Text>
     <Text style={s.resultCopy}>External business · Not yet on Everest. Information from Google Maps. Everest does not verify or endorse this business.</Text>
     <Text style={s.heading}>Choose your request</Text>
-    {requests.map(item=><Pressable key={item.id} onPress={()=>setChosen(item.id)} style={[s.result,chosen===item.id&&{borderColor:colors.brand}]}><Text style={s.resultCopy}>{item.description} · {[item.suburb,item.city,item.state].filter(Boolean).join(', ')} · {item.preferred_date??'Flexible date'}</Text></Pressable>)}
+    {requests.map(item=><Pressable key={item.id} onPress={()=>setChosen(item.id)} style={[s.result,chosen===item.id&&{borderColor:colors.brand}]}><Text style={s.resultCopy}>{item.description} · {[item.suburb,item.city,item.state].filter(Boolean).join(', ')} · {item.preferred_date??'Flexible date'}{item.preferred_time?` · ${item.preferred_time}`:''}</Text></Pressable>)}
     {!requests.length&&<><Text style={s.resultCopy}>Create a service request first, then return to this search.</Text><Pressable onPress={()=>{onClose();router.push('/request')}} style={s.add}><Text style={s.addText}>CREATE REQUEST</Text></Pressable></>}
-    {!!request&&<><Text style={s.heading}>Information shared</Text><Text style={s.resultCopy}>Your request description, service location and preferred date shown above will be shared. Photos and your full profile will not be shared.</Text>
+    {!!request&&<><Text style={s.heading}>Information shared</Text><Text style={s.resultCopy}>Your request description, suburb, city, state, preferred date and preferred time shown above will be shared. Photos and your full profile will not be shared.</Text>
       {!!email&&<Pressable onPress={()=>setShareEmail(value=>!value)} style={s.result}><Text style={s.resultTitle}>{shareEmail?'☑':'☐'} Share email: {email}</Text></Pressable>}
       {!!phone&&<Pressable onPress={()=>setSharePhone(value=>!value)} style={s.result}><Text style={s.resultTitle}>{sharePhone?'☑':'☐'} Share phone: {phone}</Text></Pressable>}
-      <Text style={s.resultCopy}>Authorising saves this enquiry. It does not send a message while external delivery is disabled. You can revoke it in External enquiries.</Text>
+      <Text style={s.resultCopy}>Authorising saves this enquiry for this external business. Everest will only notify a verified contact when delivery is enabled. You can revoke the enquiry before a quote arrives in External enquiries.</Text>
       <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void authorise()} style={s.add}><Text style={s.addText}>{busy?'SAVING…':'AUTHORISE THIS ENQUIRY'}</Text></Pressable></>}
     {!!error&&<Text style={s.resultCopy}>{error}</Text>}
   </ScrollView></SafeAreaView></Modal>;
