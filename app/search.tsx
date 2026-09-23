@@ -69,16 +69,26 @@ export default function Search() {
       const { data: { user } } = await supabase.auth.getUser();
       const budgetMatch = text.match(/(?:under|below)\s*\$?\s*(\d+(?:\.\d+)?)/i);
       const maxBudget = budgetMatch ? Number(budgetMatch[1]) : null;
-      const { data: locationProfile } = user ? await supabase.from('profiles').select('suburb').eq('id', user.id).maybeSingle() : { data: null };
+      const { data: locationProfile } = user ? await supabase.from('profiles').select('suburb,city,state').eq('id', user.id).maybeSingle() : { data: null };
       const nearby = /\bnear me\b/i.test(text) && typeof locationProfile?.suburb === 'string' && locationProfile.suburb.trim().length > 0;
       const nearbySuburb = nearby ? locationProfile!.suburb!.toLowerCase() : '';
       setTaxonomyResults(taxonomy);
       setBusinesses(((b.data ?? []) as MarketplaceBusiness[]).filter(item => !nearby || item.suburb?.toLowerCase() === nearbySuburb));
-      // Explicit intent only; provider failure must never fail native search.
+      // External discovery remains cost-controlled and never blocks native results.
+      // In the Businesses tab, a blank search gets one local discovery call using
+      // the signed-in user's saved suburb/city so the directory is useful on open.
       setExternalBusinesses([]);
       setExternalEnquiriesEnabled(false);
-      if (text.length >= 5 && (b.data?.length ?? 0) < 3 && !remoteIntent && (tab === 'ALL' || tab === 'BUSINESSES')) {
-        void supabase.functions.invoke('external-discovery', { body: { query: text } }).then(result => {
+      const savedLocation = [locationProfile?.suburb, locationProfile?.city, locationProfile?.state]
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .join(', ');
+      const externalQuery = text.length >= 5
+        ? text
+        : ((tab === 'BUSINESSES' || tab === 'ALL') && savedLocation
+          ? `local businesses in ${savedLocation}`
+          : '');
+      if (externalQuery.length >= 5 && !remoteIntent && (tab === 'ALL' || tab === 'BUSINESSES')) {
+        void supabase.functions.invoke('external-discovery', { body: { query: externalQuery } }).then(result => {
           if (searchVersion.current !== version || result.error || !result.data?.enabled || !Array.isArray(result.data.businesses)) return;
           setExternalBusinesses(result.data.businesses.slice(0, 5));
           setExternalEnquiriesEnabled(result.data.enquiriesEnabled === true);
@@ -129,7 +139,7 @@ export default function Search() {
     }
   }
 
-  const visibleCounts = useMemo(() => ({ businesses: businesses.length, services: services.length, taxonomy: taxonomyResults.length, products: products.length, posts: posts.length, jobs: jobs.length }), [businesses, services, taxonomyResults, products, posts, jobs]);
+  const visibleCounts = useMemo(() => ({ businesses: businesses.length + externalBusinesses.length, services: services.length, taxonomy: taxonomyResults.length, products: products.length, posts: posts.length, jobs: jobs.length }), [businesses, externalBusinesses, services, taxonomyResults, products, posts, jobs]);
   const show = (target: Tab) => tab === 'ALL' || tab === target;
 
   return <SafeAreaView style={s.safe}>
