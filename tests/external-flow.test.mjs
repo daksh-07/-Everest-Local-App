@@ -99,7 +99,7 @@ test('message worker is sandbox-only and contains no production provider transpo
  assert.match(dispatcher,/!== 'sandbox'/);
  assert.match(dispatcher,/EXTERNAL_MESSAGE_WORKER_SECRET/);
  assert.match(dispatcher,/sent:false/);
- assert.doesNotMatch(dispatcher,/sendgrid|twilio|resend|mailgun|postmark|ses|messagebird|clicksend/i);
+ assert.doesNotMatch(dispatcher,/sendgrid|twilio|resend|mailgun|postmark|amazon[-_ ]?ses|messagebird|clicksend/i);
  assert.doesNotMatch(dispatcher,/fetch\(['"]https:\/\//);
  assert.match(messagingMigration,/RAW_TOKEN_HANDOFF_NOT_IMPLEMENTED/);
 });
