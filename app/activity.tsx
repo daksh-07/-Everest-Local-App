@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -6,30 +6,32 @@ import { supabase } from '@/lib/supabase';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
 
 type ActivityRoute = '/requests' | '/quotes' | '/bookings' | '/orders';
-type Item = { key:string; label:string; status:string; detail:string; route:ActivityRoute; created_at:string };
+type ActivityKind = 'request' | 'quote' | 'booking' | 'order';
+type Item = { key:string; kind:ActivityKind; label:string; status:string; detail:string; route:ActivityRoute; created_at:string };
 const statusLabel=(value:string|null|undefined)=>(value??'PENDING').replaceAll('_',' ');
 
 export default function Activity(){
  const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
- const [items,setItems]=useState<Item[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [hasLoaded,setHasLoaded]=useState(false);const [error,setError]=useState('');const [warning,setWarning]=useState('');
- async function load(refresh=false){if(refresh)setRefreshing(true);else if(!hasLoaded)setLoading(true);setError('');setWarning('');try{
-  const {data:{user},error:authError}=await supabase.auth.getUser();if(authError)throw authError;if(!user){setItems([]);setHasLoaded(true);return;}
+ const [items,setItems]=useState<Item[]>([]);const itemsRef=useRef<Item[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [hasLoaded,setHasLoaded]=useState(false);const [error,setError]=useState('');const [warning,setWarning]=useState('');const busyRef=useRef(false);
+ function commitItems(next:Item[]){itemsRef.current=next;setItems(next)}
+ async function load(refresh=false){if(busyRef.current)return;busyRef.current=true;if(refresh)setRefreshing(true);else if(!hasLoaded)setLoading(true);setError('');setWarning('');try{
+  const {data:{user},error:authError}=await supabase.auth.getUser();if(authError)throw authError;if(!user){commitItems([]);setHasLoaded(true);return;}
   const [requests,quotes,bookings,orders]=await Promise.all([
    supabase.from('service_requests').select('id,description,status,created_at').eq('customer_id',user.id).order('created_at',{ascending:false}).limit(15),
    supabase.from('quotes').select('id,status,total,created_at').eq('customer_id',user.id).order('created_at',{ascending:false}).limit(15),
    supabase.from('bookings').select('id,status,scheduled_date,scheduled_time,created_at').eq('customer_id',user.id).order('created_at',{ascending:false}).limit(15),
    supabase.from('orders').select('id,order_number,status,total,created_at').eq('customer_id',user.id).order('created_at',{ascending:false}).limit(15),
   ]);
-  const failed=[requests,quotes,bookings,orders].filter(result=>result.error).length;
-  if(failed===4)throw new Error('activity unavailable');
-  const next:Item[]=[
-   ...(!requests.error?((requests.data??[]) as Array<{id:string;description:string;status:string;created_at:string}>).map(r=>({key:`request:${r.id}`,label:'Job request',status:statusLabel(r.status),detail:r.description,route:'/requests' as const,created_at:r.created_at})):[]),
-   ...(!quotes.error?((quotes.data??[]) as Array<{id:string;status:string;total:number;created_at:string}>).map(q=>({key:`quote:${q.id}`,label:'Quote',status:statusLabel(q.status),detail:`$${Number(q.total).toFixed(2)} AUD`,route:'/quotes' as const,created_at:q.created_at})):[]),
-   ...(!bookings.error?((bookings.data??[]) as Array<{id:string;status:string;scheduled_date:string|null;scheduled_time:string|null;created_at:string}>).map(b=>({key:`booking:${b.id}`,label:'Booking',status:statusLabel(b.status),detail:b.scheduled_date?`Scheduled ${b.scheduled_date}${b.scheduled_time?` at ${b.scheduled_time}`:''}`:'Date pending',route:'/bookings' as const,created_at:b.created_at})):[]),
-   ...(!orders.error?((orders.data??[]) as Array<{id:string;order_number:string;status:string;total:number;created_at:string}>).map(o=>({key:`order:${o.id}`,label:`Order ${o.order_number}`,status:statusLabel(o.status),detail:`$${Number(o.total).toFixed(2)} AUD`,route:'/orders' as const,created_at:o.created_at})):[]),
+  const results=[requests,quotes,bookings,orders];const failed=results.filter(result=>result.error).length;if(failed===4)throw new Error('activity unavailable');
+  const fresh:Item[]=[
+   ...(!requests.error?((requests.data??[]) as Array<{id:string;description:string;status:string;created_at:string}>).map(r=>({key:`request:${r.id}`,kind:'request' as const,label:'Job request',status:statusLabel(r.status),detail:r.description,route:'/requests' as const,created_at:r.created_at})):[]),
+   ...(!quotes.error?((quotes.data??[]) as Array<{id:string;status:string;total:number;created_at:string}>).map(q=>({key:`quote:${q.id}`,kind:'quote' as const,label:'Quote',status:statusLabel(q.status),detail:`$${Number(q.total).toFixed(2)} AUD`,route:'/quotes' as const,created_at:q.created_at})):[]),
+   ...(!bookings.error?((bookings.data??[]) as Array<{id:string;status:string;scheduled_date:string|null;scheduled_time:string|null;created_at:string}>).map(b=>({key:`booking:${b.id}`,kind:'booking' as const,label:'Booking',status:statusLabel(b.status),detail:b.scheduled_date?`Scheduled ${b.scheduled_date}${b.scheduled_time?` at ${b.scheduled_time}`:''}`:'Date pending',route:'/bookings' as const,created_at:b.created_at})):[]),
+   ...(!orders.error?((orders.data??[]) as Array<{id:string;order_number:string;status:string;total:number;created_at:string}>).map(o=>({key:`order:${o.id}`,kind:'order' as const,label:`Order ${o.order_number}`,status:statusLabel(o.status),detail:`$${Number(o.total).toFixed(2)} AUD`,route:'/orders' as const,created_at:o.created_at})):[]),
   ];
-  next.sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at));setItems(next);setHasLoaded(true);if(failed)setWarning('Some activity could not be refreshed. The items shown below are still available.');
- }catch{if(hasLoaded||items.length)setWarning('We could not refresh your activity. Showing your last loaded activity.');else setError('We could not load your activity right now. Please try again.')}finally{setLoading(false);setRefreshing(false)}}
+  const failedKinds=new Set<ActivityKind>();if(requests.error)failedKinds.add('request');if(quotes.error)failedKinds.add('quote');if(bookings.error)failedKinds.add('booking');if(orders.error)failedKinds.add('order');
+  const preserved=failedKinds.size?itemsRef.current.filter(item=>failedKinds.has(item.kind)):[];const next=[...fresh,...preserved];next.sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at));commitItems(next);setHasLoaded(true);if(failed)setWarning('Some activity could not be refreshed. Showing the last loaded items for those sections.');
+ }catch{if(hasLoaded||itemsRef.current.length)setWarning('We could not refresh your activity. Showing your last loaded activity.');else setError('We could not load your activity right now. Please try again.')}finally{setLoading(false);setRefreshing(false);busyRef.current=false}}
  useEffect(()=>{void load()},[]);
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.brand} progressBackgroundColor={colors.surface}/>}><Text style={s.eyebrow}>EVEREST LOCAL</Text><Text style={s.title}>Activity</Text><Text style={s.copy}>Requests, quotes, bookings and orders in one place.</Text>{loading?<ActivityIndicator style={{marginTop:30}} color={colors.brand}/>:error?<View style={s.empty}><Text style={s.emptyTitle}>We couldn't load your activity.</Text><Text style={s.emptyCopy}>Please try again.</Text><Pressable onPress={()=>void load()} style={s.button}><Text style={s.buttonText}>RETRY</Text></Pressable></View>:<>{warning?<View style={s.warning}><View style={{flex:1}}><Text style={s.warningTitle}>Activity may be out of date</Text><Text style={s.warningCopy}>{warning}</Text></View><Pressable disabled={refreshing} onPress={()=>void load(true)} accessibilityRole="button" accessibilityLabel="Retry loading all activity"><Text style={s.retry}>{refreshing?'REFRESHING…':'RETRY'}</Text></Pressable></View>:null}{items.length?items.map(item=><Pressable key={item.key} onPress={()=>router.push(item.route)} style={s.card}><View style={{flex:1}}><Text style={s.label}>{item.label}</Text><Text style={s.detail} numberOfLines={2}>{item.detail}</Text></View><View style={s.status}><Text style={s.statusText}>{item.status}</Text><Text style={s.arrow}>›</Text></View></Pressable>):<View style={s.empty}><Text style={s.emptyTitle}>{warning?'No available activity to show.':'Nothing here yet.'}</Text><Text style={s.emptyCopy}>{warning?'Retry to load the activity that is temporarily unavailable.':'Post a job, request a quote, book a service or buy a product and your activity will appear here.'}</Text>{warning?<Pressable disabled={refreshing} onPress={()=>void load(true)} style={s.button}><Text style={s.buttonText}>{refreshing?'REFRESHING…':'RETRY'}</Text></Pressable>:<Pressable onPress={()=>router.push('/search')} style={s.button}><Text style={s.buttonText}>EXPLORE LOCAL</Text></Pressable>}</View>}</>}<View style={s.links}><Pressable onPress={()=>router.push('/notifications')}><Text style={s.link}>Notifications</Text></Pressable><Pressable onPress={()=>router.push('/reviews')}><Text style={s.link}>Reviews</Text></Pressable></View></ScrollView></SafeAreaView>;
 }
