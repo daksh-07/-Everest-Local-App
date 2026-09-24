@@ -45,10 +45,10 @@ test('read state and unread summary are based on persisted read_at',()=>{
 });
 
 test('message destructive actions are contextual, not rendered as bubble footer controls',()=>{
- assert.match(messages,/onLongPress=\{\(\)=>onAction\(m\)\}/);
- assert.match(messages,/MessageActionSheet/);
- assert.equal((messages.match(/label="Delete for me"/g)??[]).length,1);
- assert.equal((messages.match(/label="Delete for everyone"/g)??[]).length,1);
+ assert.match(messages,/onLongPress=\{event=>onAction\(m,event\.nativeEvent\.pageX/);
+ assert.match(messages,/MessageActionMenu/);
+ assert.match(messages,/DeleteMessageMenu/);
+ assert.doesNotMatch(messages,/function MessageActionSheet/);
 });
 
 test('pending requests remain sender-visible and duplicate conversation prevention remains database-backed',()=>{
