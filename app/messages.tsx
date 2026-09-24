@@ -1,10 +1,10 @@
 import {useEffect,useState} from 'react';
-import {ActivityIndicator,Image,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+import {ActivityIndicator,Alert,Image,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {conversations,messages,sendMessage} from '@/lib/messaging';
 import {currentUser} from '@/lib/marketplace';
-import {blockUser,listPersonalConversations,personalMessages,reportUser,respondMessageRequest,sendPersonalMessage,type PersonalConversation,type PersonalMessage} from '@/lib/connections';
+import {blockUser,deletePersonalMessageForEveryone,deletePersonalMessageForMe,listPersonalConversations,personalMessages,reportUser,respondMessageRequest,sendPersonalMessage,type PersonalConversation,type PersonalMessage} from '@/lib/connections';
 import {supabase} from '@/lib/supabase';
 import {useAppTheme} from '@/lib/theme';
 
@@ -12,7 +12,22 @@ type MarketConversation={id:string;customer_id:string;business_id:string;created
 type MarketMessage={id:string;sender_id:string;body:string;created_at:string};
 
 export default function Messages(){
- const {colors:c}=useAppTheme();const params=useLocalSearchParams<{personalId?:string}>();const [tab,setTab]=useState<'CHATS'|'REQUESTS'|'MARKETPLACE'>('CHATS');const [personal,setPersonal]=useState<PersonalConversation[]>([]);const [requests,setRequests]=useState<PersonalConversation[]>([]);const [market,setMarket]=useState<MarketConversation[]>([]);const [selectedPersonal,setSelectedPersonal]=useState<PersonalConversation|null>(null);const [selectedMarket,setSelectedMarket]=useState<MarketConversation|null>(null);const [personalThread,setPersonalThread]=useState<PersonalMessage[]>([]);const [marketThread,setMarketThread]=useState<MarketMessage[]>([]);const [draft,setDraft]=useState('');const [userId,setUserId]=useState('');const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
+ const {colors:c}=useAppTheme();
+ const params=useLocalSearchParams<{personalId?:string}>();
+ const [tab,setTab]=useState<'CHATS'|'REQUESTS'|'MARKETPLACE'>('CHATS');
+ const [personal,setPersonal]=useState<PersonalConversation[]>([]);
+ const [requests,setRequests]=useState<PersonalConversation[]>([]);
+ const [market,setMarket]=useState<MarketConversation[]>([]);
+ const [selectedPersonal,setSelectedPersonal]=useState<PersonalConversation|null>(null);
+ const [selectedMarket,setSelectedMarket]=useState<MarketConversation|null>(null);
+ const [personalThread,setPersonalThread]=useState<PersonalMessage[]>([]);
+ const [marketThread,setMarketThread]=useState<MarketMessage[]>([]);
+ const [draft,setDraft]=useState('');
+ const [userId,setUserId]=useState('');
+ const [loading,setLoading]=useState(true);
+ const [busy,setBusy]=useState(false);
+ const [error,setError]=useState('');
+
  async function load(){
   setLoading(true);setError('');
   try{
@@ -33,36 +48,137 @@ export default function Messages(){
    const requested=typeof params.personalId==='string'?params.personalId:'';
    if(requested){
     const found=[...p,...r].find(x=>x.id===requested);
-    if(found){setSelectedPersonal(found);setTab(found.status==='REQUEST'&&found.initiated_by!==user?.id?'REQUESTS':'CHATS');}
+    if(found){
+     setSelectedPersonal(found);
+     setTab(found.status==='REQUEST'&&found.initiated_by!==user?.id?'REQUESTS':'CHATS');
+    }
    }
   }catch(e){setError(e instanceof Error?e.message:'Messages could not be loaded.')}
-  finally{setLoading(false);}
+  finally{setLoading(false)}
  }
+
  useEffect(()=>{void load()},[]);
- useEffect(()=>{if(selectedPersonal)void personalMessages(selectedPersonal.id).then(setPersonalThread).catch(e=>setError(e instanceof Error?e.message:'Conversation could not be loaded.'))},[selectedPersonal?.id]);
+ useEffect(()=>{if(selectedPersonal)void refreshPersonalThread(selectedPersonal.id)},[selectedPersonal?.id]);
  useEffect(()=>{if(selectedMarket)void messages(selectedMarket.id).then(x=>setMarketThread(x as MarketMessage[])).catch(e=>setError(e instanceof Error?e.message:'Conversation could not be loaded.'))},[selectedMarket?.id]);
- async function submitPersonal(){if(!selectedPersonal||!draft.trim())return;setBusy(true);try{await sendPersonalMessage(selectedPersonal.other_user_id,draft);setDraft('');setPersonalThread(await personalMessages(selectedPersonal.id));await load()}catch(e){setError(e instanceof Error?e.message:'Message could not be sent.')}finally{setBusy(false)}}
- async function submitMarket(){if(!selectedMarket||!draft.trim())return;setBusy(true);try{await sendMessage(selectedMarket.id,draft);setDraft('');setMarketThread(await messages(selectedMarket.id) as MarketMessage[])}catch(e){setError(e instanceof Error?e.message:'Message could not be sent.')}finally{setBusy(false)}}
- async function acceptRequest(){if(!selectedPersonal)return;setBusy(true);try{await respondMessageRequest(selectedPersonal.id,true);setSelectedPersonal({...selectedPersonal,status:'ACTIVE'});await load()}catch(e){setError(e instanceof Error?e.message:'Request could not be accepted.')}finally{setBusy(false)}}
- async function declineRequest(){if(!selectedPersonal)return;setBusy(true);try{await respondMessageRequest(selectedPersonal.id,false);setSelectedPersonal(null);await load()}catch(e){setError(e instanceof Error?e.message:'Request could not be declined.')}finally{setBusy(false)}}
- async function blockRequestSender(){if(!selectedPersonal)return;setBusy(true);try{await blockUser(selectedPersonal.other_user_id);setSelectedPersonal(null);await load()}catch(e){setError(e instanceof Error?e.message:'User could not be blocked.')}finally{setBusy(false)}}
- async function reportRequestSender(){if(!selectedPersonal)return;setBusy(true);try{await reportUser(selectedPersonal.other_user_id,'OTHER');setError('Report sent for review.')}catch(e){setError(e instanceof Error?e.message:'Report could not be sent.')}finally{setBusy(false)}}
- if(selectedPersonal)return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
+
+ async function refreshPersonalThread(id:string){
+  try{setPersonalThread(await personalMessages(id))}
+  catch(e){setError(e instanceof Error?e.message:'Conversation could not be loaded.')}
+ }
+
+ async function submitPersonal(){
+  if(!selectedPersonal||!draft.trim())return;
+  setBusy(true);setError('');
+  try{
+   const conversationId=await sendPersonalMessage(selectedPersonal.other_user_id,draft);
+   setDraft('');
+   await refreshPersonalThread(conversationId);
+   await load();
+  }catch(e){setError(e instanceof Error?e.message:'Message could not be sent.')}
+  finally{setBusy(false)}
+ }
+
+ async function submitMarket(){
+  if(!selectedMarket||!draft.trim())return;
+  setBusy(true);
+  try{await sendMessage(selectedMarket.id,draft);setDraft('');setMarketThread(await messages(selectedMarket.id) as MarketMessage[])}
+  catch(e){setError(e instanceof Error?e.message:'Message could not be sent.')}
+  finally{setBusy(false)}
+ }
+
+ async function acceptRequest(){
+  if(!selectedPersonal)return;
+  setBusy(true);
+  try{await respondMessageRequest(selectedPersonal.id,true);setSelectedPersonal({...selectedPersonal,status:'ACTIVE'});await load()}
+  catch(e){setError(e instanceof Error?e.message:'Request could not be accepted.')}
+  finally{setBusy(false)}
+ }
+
+ async function declineRequest(){
+  if(!selectedPersonal)return;
+  setBusy(true);
+  try{await respondMessageRequest(selectedPersonal.id,false);setSelectedPersonal(null);setPersonalThread([]);await load()}
+  catch(e){setError(e instanceof Error?e.message:'Request could not be declined.')}
+  finally{setBusy(false)}
+ }
+
+ async function blockRequestSender(){
+  if(!selectedPersonal)return;
+  setBusy(true);
+  try{await blockUser(selectedPersonal.other_user_id);setSelectedPersonal(null);setPersonalThread([]);await load()}
+  catch(e){setError(e instanceof Error?e.message:'User could not be blocked.')}
+  finally{setBusy(false)}
+ }
+
+ async function reportRequestSender(){
+  if(!selectedPersonal)return;
+  setBusy(true);
+  try{await reportUser(selectedPersonal.other_user_id,'OTHER');Alert.alert('Report sent','Everest Local will review this report.')}
+  catch(e){setError(e instanceof Error?e.message:'Report could not be sent.')}
+  finally{setBusy(false)}
+ }
+
+ function confirmDeleteForMe(messageId:string){
+  Alert.alert('Delete for me','This message will disappear only from your view.',[
+   {text:'Cancel',style:'cancel'},
+   {text:'Delete',style:'destructive',onPress:()=>void deleteForMe(messageId)}
+  ]);
+ }
+ async function deleteForMe(messageId:string){
+  if(!selectedPersonal)return;
+  setBusy(true);setError('');
+  try{await deletePersonalMessageForMe(messageId);await refreshPersonalThread(selectedPersonal.id)}
+  catch(e){setError(e instanceof Error?e.message:'Message could not be deleted.')}
+  finally{setBusy(false)}
+ }
+
+ function confirmDeleteForEveryone(messageId:string){
+  Alert.alert('Delete for everyone','The message will be replaced with “Message deleted” for both people.',[
+   {text:'Cancel',style:'cancel'},
+   {text:'Delete',style:'destructive',onPress:()=>void deleteForEveryone(messageId)}
+  ]);
+ }
+ async function deleteForEveryone(messageId:string){
+  if(!selectedPersonal)return;
+  setBusy(true);setError('');
+  try{await deletePersonalMessageForEveryone(messageId);await refreshPersonalThread(selectedPersonal.id)}
+  catch(e){setError(e instanceof Error?e.message:'Message could not be deleted for everyone.')}
+  finally{setBusy(false)}
+ }
+
+ if(selectedPersonal){
+  const incomingRequest=selectedPersonal.status==='REQUEST'&&selectedPersonal.initiated_by!==userId;
+  const outgoingRequest=selectedPersonal.status==='REQUEST'&&selectedPersonal.initiated_by===userId;
+  const canCompose=selectedPersonal.status==='ACTIVE'||outgoingRequest;
+  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
+   <View style={{padding:18,borderBottomWidth:1,borderBottomColor:c.border}}>
+    <Pressable onPress={()=>{setSelectedPersonal(null);setPersonalThread([])}}><Text style={{fontSize:13,fontWeight:'900',color:c.text}}>‹ Messages</Text></Pressable>
+    <Text style={{fontSize:20,fontWeight:'900',color:c.text,marginTop:8}}>{selectedPersonal.display_name??'Everest member'}</Text>
+    {outgoingRequest?<Text style={{fontSize:10,fontWeight:'800',color:c.muted,marginTop:5}}>MESSAGE REQUEST PENDING</Text>:null}
+   </View>
+   {incomingRequest?<View style={{padding:14,flexDirection:'row',gap:8,flexWrap:'wrap'}}>
+    <Pressable onPress={()=>void acceptRequest()} disabled={busy} style={{paddingHorizontal:16,paddingVertical:10,borderRadius:11,backgroundColor:c.brand}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>ACCEPT</Text></Pressable>
+    <Pressable onPress={()=>void declineRequest()} disabled={busy} style={{paddingHorizontal:16,paddingVertical:10,borderRadius:11,borderWidth:1,borderColor:c.border}}><Text style={{fontSize:9,fontWeight:'900',color:c.text}}>DECLINE</Text></Pressable>
+    <Pressable onPress={()=>void blockRequestSender()} disabled={busy} style={{paddingHorizontal:12,paddingVertical:10}}><Text style={{fontSize:9,fontWeight:'900',color:c.danger}}>BLOCK</Text></Pressable>
+    <Pressable onPress={()=>void reportRequestSender()} disabled={busy} style={{paddingHorizontal:12,paddingVertical:10}}><Text style={{fontSize:9,fontWeight:'900',color:c.muted}}>REPORT</Text></Pressable>
+    <Pressable onPress={()=>router.push('/public-user?id='+selectedPersonal.other_user_id)} disabled={busy} style={{paddingHorizontal:12,paddingVertical:10}}><Text style={{fontSize:9,fontWeight:'900',color:c.muted}}>PROFILE</Text></Pressable>
+   </View>:null}
+   <Thread items={personalThread} userId={userId} c={c} busy={busy} onDeleteForMe={confirmDeleteForMe} onDeleteForEveryone={confirmDeleteForEveryone}/>
+   {canCompose?<Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitPersonal()} c={c}/>:null}
+   {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:18,paddingBottom:8}}>{error}</Text>:null}
+  </SafeAreaView>;
+ }
+
+ if(selectedMarket)return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
   <View style={{padding:18,borderBottomWidth:1,borderBottomColor:c.border}}>
-   <Pressable onPress={()=>{setSelectedPersonal(null);setPersonalThread([])}}><Text style={{fontSize:13,fontWeight:'900',color:c.text}}>‹ Messages</Text></Pressable>
-   <Text style={{fontSize:20,fontWeight:'900',color:c.text,marginTop:8}}>{selectedPersonal.display_name??'Everest member'}</Text>
+   <Pressable onPress={()=>{setSelectedMarket(null);setMarketThread([])}}><Text style={{fontSize:13,fontWeight:'900',color:c.text}}>‹ Messages</Text></Pressable>
+   <Text style={{fontSize:20,fontWeight:'900',color:c.text,marginTop:8}}>{selectedMarket.counterpart_name}</Text>
+   <Text style={{fontSize:10,color:c.muted,marginTop:4}}>Marketplace conversation</Text>
   </View>
-  {selectedPersonal.status==='REQUEST'&&selectedPersonal.initiated_by!==userId?<View style={{padding:14,flexDirection:'row',gap:8,flexWrap:'wrap'}}>
-   <Pressable onPress={()=>void acceptRequest()} disabled={busy} style={{paddingHorizontal:16,paddingVertical:10,borderRadius:11,backgroundColor:c.brand}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>ACCEPT</Text></Pressable>
-   <Pressable onPress={()=>void declineRequest()} disabled={busy} style={{paddingHorizontal:16,paddingVertical:10,borderRadius:11,borderWidth:1,borderColor:c.border}}><Text style={{fontSize:9,fontWeight:'900',color:c.text}}>DECLINE</Text></Pressable>
-   <Pressable onPress={()=>void blockRequestSender()} disabled={busy} style={{paddingHorizontal:12,paddingVertical:10}}><Text style={{fontSize:9,fontWeight:'900',color:c.danger}}>BLOCK</Text></Pressable>
-   <Pressable onPress={()=>void reportRequestSender()} disabled={busy} style={{paddingHorizontal:12,paddingVertical:10}}><Text style={{fontSize:9,fontWeight:'900',color:c.muted}}>REPORT</Text></Pressable>
-   <Pressable onPress={()=>router.push('/public-user?id='+selectedPersonal.other_user_id)} disabled={busy} style={{paddingHorizontal:12,paddingVertical:10}}><Text style={{fontSize:9,fontWeight:'900',color:c.muted}}>PROFILE</Text></Pressable>
-  </View>:null}
-  <Thread items={personalThread} userId={userId} c={c}/>
-  {selectedPersonal.status==='ACTIVE'?<Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitPersonal()} c={c}/>:null}
+  <MarketThread items={marketThread} userId={userId} c={c}/>
+  <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} c={c}/>
  </SafeAreaView>;
- if(selectedMarket)return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}><View style={{padding:18,borderBottomWidth:1,borderBottomColor:c.border}}><Pressable onPress={()=>{setSelectedMarket(null);setMarketThread([])}}><Text style={{fontSize:13,fontWeight:'900',color:c.text}}>‹ Messages</Text></Pressable><Text style={{fontSize:20,fontWeight:'900',color:c.text,marginTop:8}}>{selectedMarket.counterpart_name}</Text><Text style={{fontSize:10,color:c.muted,marginTop:4}}>Marketplace conversation</Text></View><Thread items={marketThread} userId={userId} c={c}/><Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} c={c}/></SafeAreaView>;
+
  const personalList=tab==='CHATS'?personal:requests;
  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
   <ScrollView contentContainerStyle={{padding:20,paddingBottom:60,maxWidth:760,width:'100%',alignSelf:'center'}}>
@@ -74,12 +190,45 @@ export default function Messages(){
    {loading?<ActivityIndicator style={{marginTop:40}} color={c.text}/>:tab==='MARKETPLACE'?(
     market.length?market.map(item=><Pressable key={item.id} onPress={()=>setSelectedMarket(item)} style={{padding:14,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginBottom:9,flexDirection:'row',alignItems:'center',gap:11}}><View style={{width:44,height:44,borderRadius:22,backgroundColor:c.soft}}/><View style={{flex:1}}><Text style={{fontSize:14,fontWeight:'900',color:c.text}}>{item.counterpart_name??'Marketplace conversation'}</Text><Text style={{fontSize:10,color:c.muted,marginTop:3}}>Business enquiry / booking chat</Text></View></Pressable>):<EmptyList copy="Your marketplace conversations will appear here." c={c}/>
    ):(
-    personalList.length?personalList.map(item=><Pressable key={item.id} onPress={()=>setSelectedPersonal(item)} style={{padding:14,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginBottom:9,flexDirection:'row',alignItems:'center',gap:11}}>{item.avatar_url?<Image source={{uri:item.avatar_url}} style={{width:44,height:44,borderRadius:22}}/>:<View style={{width:44,height:44,borderRadius:22,backgroundColor:c.soft}}/>}<View style={{flex:1}}><Text style={{fontSize:14,fontWeight:'900',color:c.text}}>{item.display_name??'Everest member'}</Text><Text style={{fontSize:10,color:c.muted,marginTop:3}}>{tab==='REQUESTS'?'Message request':'Personal chat'}</Text></View></Pressable>):<EmptyList copy={tab==='REQUESTS'?'New unsolicited messages will appear here for approval.':'Your personal conversations will appear here.'} c={c}/>
+    personalList.length?personalList.map(item=>{
+     const pending=tab==='CHATS'&&item.status==='REQUEST'&&item.initiated_by===userId;
+     return <Pressable key={item.id} onPress={()=>setSelectedPersonal(item)} style={{padding:14,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginBottom:9,flexDirection:'row',alignItems:'center',gap:11}}>
+      {item.avatar_url?<Image source={{uri:item.avatar_url}} style={{width:44,height:44,borderRadius:22}}/>:<View style={{width:44,height:44,borderRadius:22,backgroundColor:c.soft}}/>}
+      <View style={{flex:1}}><Text style={{fontSize:14,fontWeight:'900',color:c.text}}>{item.display_name??'Everest member'}</Text><Text style={{fontSize:10,color:c.muted,marginTop:3}}>{tab==='REQUESTS'?'Message request':pending?'Message request pending':'Personal chat'}</Text></View>
+     </Pressable>;
+    }):<EmptyList copy={tab==='REQUESTS'?'New unsolicited messages will appear here for approval.':'Your personal conversations will appear here.'} c={c}/>
    )}
    {error?<Text style={{fontSize:12,color:c.danger,marginTop:12}}>{error}</Text>:null}
   </ScrollView>
- </SafeAreaView>
+ </SafeAreaView>;
 }
-function EmptyList({copy,c}:{copy:string;c:ReturnType<typeof useAppTheme>['colors']}){return <View style={{paddingVertical:50,alignItems:'center'}}><Text style={{fontSize:16,fontWeight:'900',color:c.text}}>Nothing here yet</Text><Text style={{fontSize:11,color:c.muted,marginTop:6,textAlign:'center'}}>{copy}</Text></View>}
-function Thread({items,userId,c}:{items:Array<{id:string;sender_id:string;body:string;created_at:string}>;userId:string;c:ReturnType<typeof useAppTheme>['colors']}){return <ScrollView style={{flex:1}} contentContainerStyle={{padding:18}}>{items.map(m=><View key={m.id} style={{alignSelf:m.sender_id===userId?'flex-end':'flex-start',maxWidth:'84%',backgroundColor:m.sender_id===userId?c.brand:c.surface,borderWidth:m.sender_id===userId?0:1,borderColor:c.border,borderRadius:16,padding:12,marginBottom:8}}><Text style={{fontSize:14,lineHeight:20,color:m.sender_id===userId?c.onBrand:c.text}}>{m.body}</Text><Text style={{fontSize:9,color:c.muted,marginTop:5}}>{new Date(m.created_at).toLocaleString()}</Text></View>)}</ScrollView>}
-function Composer({draft,setDraft,busy,submit,c}:{draft:string;setDraft:(v:string)=>void;busy:boolean;submit:()=>void;c:ReturnType<typeof useAppTheme>['colors']}){return <View style={{padding:12,borderTopWidth:1,borderTopColor:c.border,backgroundColor:c.surface,flexDirection:'row',gap:8,alignItems:'flex-end'}}><TextInput value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={c.muted} multiline maxLength={5000} style={{flex:1,minHeight:46,maxHeight:120,borderWidth:1,borderColor:c.border,borderRadius:14,paddingHorizontal:14,paddingVertical:10,color:c.text,backgroundColor:c.input}}/><Pressable disabled={busy||!draft.trim()} onPress={submit} style={{height:46,paddingHorizontal:16,borderRadius:13,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',opacity:busy||!draft.trim()?0.5:1}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>SEND</Text></Pressable></View>}
+
+function EmptyList({copy,c}:{copy:string;c:ReturnType<typeof useAppTheme>['colors']}){
+ return <View style={{paddingVertical:50,alignItems:'center'}}><Text style={{fontSize:16,fontWeight:'900',color:c.text}}>Nothing here yet</Text><Text style={{fontSize:11,color:c.muted,marginTop:6,textAlign:'center'}}>{copy}</Text></View>;
+}
+
+function Thread({items,userId,c,busy,onDeleteForMe,onDeleteForEveryone}:{items:PersonalMessage[];userId:string;c:ReturnType<typeof useAppTheme>['colors'];busy:boolean;onDeleteForMe:(id:string)=>void;onDeleteForEveryone:(id:string)=>void}){
+ return <ScrollView style={{flex:1}} contentContainerStyle={{padding:18}}>
+  {items.map(m=>{
+   const mine=m.sender_id===userId;
+   return <View key={m.id} style={{alignSelf:mine?'flex-end':'flex-start',maxWidth:'84%',marginBottom:10}}>
+    <View style={{backgroundColor:mine?c.brand:c.surface,borderWidth:mine?0:1,borderColor:c.border,borderRadius:16,padding:12}}>
+     <Text style={{fontSize:14,lineHeight:20,fontStyle:m.deleted_for_everyone?'italic':'normal',color:mine?c.onBrand:c.text}}>{m.body}</Text>
+     <Text style={{fontSize:9,color:c.muted,marginTop:5}}>{new Date(m.created_at).toLocaleString()}</Text>
+    </View>
+    <View style={{flexDirection:'row',gap:12,justifyContent:mine?'flex-end':'flex-start',marginTop:4}}>
+     <Pressable disabled={busy} onPress={()=>onDeleteForMe(m.id)}><Text style={{fontSize:8,fontWeight:'800',color:c.muted}}>DELETE FOR ME</Text></Pressable>
+     {mine&&!m.deleted_for_everyone?<Pressable disabled={busy} onPress={()=>onDeleteForEveryone(m.id)}><Text style={{fontSize:8,fontWeight:'800',color:c.danger}}>DELETE FOR EVERYONE</Text></Pressable>:null}
+    </View>
+   </View>;
+  })}
+ </ScrollView>;
+}
+
+function MarketThread({items,userId,c}:{items:MarketMessage[];userId:string;c:ReturnType<typeof useAppTheme>['colors']}){
+ return <ScrollView style={{flex:1}} contentContainerStyle={{padding:18}}>{items.map(m=><View key={m.id} style={{alignSelf:m.sender_id===userId?'flex-end':'flex-start',maxWidth:'84%',backgroundColor:m.sender_id===userId?c.brand:c.surface,borderWidth:m.sender_id===userId?0:1,borderColor:c.border,borderRadius:16,padding:12,marginBottom:8}}><Text style={{fontSize:14,lineHeight:20,color:m.sender_id===userId?c.onBrand:c.text}}>{m.body}</Text><Text style={{fontSize:9,color:c.muted,marginTop:5}}>{new Date(m.created_at).toLocaleString()}</Text></View>)}</ScrollView>;
+}
+
+function Composer({draft,setDraft,busy,submit,c}:{draft:string;setDraft:(v:string)=>void;busy:boolean;submit:()=>void;c:ReturnType<typeof useAppTheme>['colors']}){
+ return <View style={{padding:12,borderTopWidth:1,borderTopColor:c.border,backgroundColor:c.surface,flexDirection:'row',gap:8,alignItems:'flex-end'}}><TextInput value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={c.muted} multiline maxLength={5000} style={{flex:1,minHeight:46,maxHeight:120,borderWidth:1,borderColor:c.border,borderRadius:14,paddingHorizontal:14,paddingVertical:10,color:c.text,backgroundColor:c.input}}/><Pressable disabled={busy||!draft.trim()} onPress={submit} style={{height:46,paddingHorizontal:16,borderRadius:13,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',opacity:busy||!draft.trim()?0.5:1}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>SEND</Text></Pressable></View>;
+}

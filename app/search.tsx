@@ -26,9 +26,12 @@ export default function Search(){
  useEffect(()=>{
   const timer=setTimeout(()=>{
    const current=++version.current;
-   setLoading(true);setError('');setItems([]);setJobs([]);
-   if(tab==='JOB')void loadJobs(q,current);
-   else void universalSearch(q,tab as UniversalKind,30,0)
+   const text=q.trim();
+   setError('');setItems([]);setJobs([]);
+   if(!text){setLoading(false);return}
+   setLoading(true);
+   if(tab==='JOB')void loadJobs(text,current);
+   else void universalSearch(text,tab as UniversalKind,30,0)
     .then(x=>{if(version.current===current)setItems(x)})
     .catch(e=>{if(version.current===current)setError(e instanceof Error?e.message:'Search is unavailable.')})
     .finally(()=>{if(version.current===current)setLoading(false)});
@@ -104,7 +107,7 @@ export default function Search(){
     {tabs.map(x=><Pressable key={x} onPress={()=>setTab(x)} style={{paddingHorizontal:13,paddingVertical:9,borderRadius:12,borderWidth:1,borderColor:tab===x?c.brand:c.border,backgroundColor:tab===x?c.brand:c.surface}}><Text style={{fontSize:9,fontWeight:'900',color:tab===x?c.onBrand:c.text}}>{labels[x]}</Text></Pressable>)}
    </ScrollView>
 
-   {loading?<ActivityIndicator style={{marginTop:40}} color={c.text}/>:error?<Text style={{fontSize:12,color:c.danger,marginTop:20}}>{error}</Text>:tab==='JOB'?(
+   {!q.trim()?<View style={{paddingVertical:46,alignItems:'center'}}><Ionicons name="search-outline" size={28} color={c.muted}/><Text style={{fontSize:16,fontWeight:'900',color:c.text,marginTop:12}}>Search Everest Local</Text><Text style={{fontSize:12,lineHeight:18,color:c.muted,marginTop:7,textAlign:'center',maxWidth:420}}>Enter a name, username, business, service, post, product or job. People only appear when their searchable profile matches your query.</Text></View>:loading?<ActivityIndicator style={{marginTop:40}} color={c.text}/>:error?<Text style={{fontSize:12,color:c.danger,marginTop:20}}>{error}</Text>:tab==='JOB'?(
     jobs.length?jobs.map(job=><Pressable key={job.id} onPress={()=>router.push('/requests')} style={{flexDirection:'row',alignItems:'center',gap:12,padding:14,borderRadius:17,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginBottom:9}}>
      <View style={{width:44,height:44,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="briefcase-outline" size={20} color={c.text}/></View>
      <View style={{flex:1}}>
