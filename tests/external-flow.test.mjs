@@ -9,6 +9,7 @@ const discovery=readFileSync(new URL('../supabase/functions/external-discovery/i
 const gateway=readFileSync(new URL('../supabase/functions/external-quote-gateway/index.ts',import.meta.url),'utf8');
 const dispatcher=readFileSync(new URL('../supabase/functions/external-message-dispatch/index.ts',import.meta.url),'utf8');
 const search=readFileSync(new URL('../app/search.tsx',import.meta.url),'utf8');
+const externalDirectory=readFileSync(new URL('../app/external-businesses.tsx',import.meta.url),'utf8');
 
 test('external identities hold provider identifiers only, remain distinct and require trusted registration',()=>{
  const table=migration.match(/create table public\.external_business_references \(([\s\S]*?)\n\);/)?.[1]??'';
@@ -28,8 +29,9 @@ test('customer authorisation has ownership, fresh identity, suppression and abus
  assert.match(migration,/created_at>now\(\)-interval '30 days'/);
  assert.match(migration,/unique\(request_id,reference_id\)/);
  assert.match(migration,/request_snapshot jsonb not null/);
- assert.match(search,/AUTHORISE THIS ENQUIRY/);
- assert.match(search,/p_share_email:shareEmail,p_share_phone:sharePhone/);
+ assert.match(externalDirectory,/AUTHORISE THIS ENQUIRY/);
+ assert.match(externalDirectory,/p_share_email:shareEmail,p_share_phone:sharePhone/);
+ assert.match(externalDirectory,/record_external_business_selection/);
 });
 
 test('private tables and gateway do not expose arbitrary customer data',()=>{
@@ -56,8 +58,10 @@ test('discovery is authenticated, metered and native search retains failure isol
  assert.match(discovery,/consume_external_discovery_quota/);
  assert.match(discovery,/pageSize: 5/);
  assert.match(discovery,/AbortSignal\.timeout\(4500\)/);
- assert.match(search,/\.catch\(\(\) => \{ \/\* Native results remain available\. \*\/ \}\)/);
- assert.match(search,/searchVersion\.current !== version/);
+ assert.doesNotMatch(search,/functions\.invoke\('external-discovery'/);
+ assert.match(search,/external-businesses/);
+ assert.match(externalDirectory,/functions\.invoke\('external-discovery'/);
+ assert.match(externalDirectory,/search itself never contacts them/i);
  assert.match(migration,/values \('discovery'\),\('enquiries'\),\('gateway'\),\('messaging'\),\('claiming'\)/);
 });
 
