@@ -44,10 +44,11 @@ test('read state and unread summary are based on persisted read_at',()=>{
  assert.match(messages,/unread_count/);
 });
 
-test('message destructive actions are contextual, not rendered below every bubble',()=>{
+test('message destructive actions are contextual, not rendered as bubble footer controls',()=>{
  assert.match(messages,/onLongPress=\{\(\)=>onAction\(m\)\}/);
  assert.match(messages,/MessageActionSheet/);
- assert.doesNotMatch(messages,/marginTop:4\}[\s\S]*DELETE FOR ME[\s\S]*DELETE FOR EVERYONE[\s\S]*<\/View>\s*<\/View>\s*;\s*}\s*}\s*<\/ScrollView>/);
+ assert.equal((messages.match(/label="Delete for me"/g)??[]).length,1);
+ assert.equal((messages.match(/label="Delete for everyone"/g)??[]).length,1);
 });
 
 test('pending requests remain sender-visible and duplicate conversation prevention remains database-backed',()=>{
