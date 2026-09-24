@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -59,10 +59,13 @@ export default function Messages(){
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
- const [actionMessage,setActionMessage]=useState<PersonalMessage|null>(null);
+ const [actionTarget,setActionTarget]=useState<{message:PersonalMessage;x:number;y:number}|null>(null);
+ const [deleteTarget,setDeleteTarget]=useState<PersonalMessage|null>(null);
  const [replying,setReplying]=useState<PersonalMessage|null>(null);
  const [editing,setEditing]=useState<PersonalMessage|null>(null);
  const [headerMenu,setHeaderMenu]=useState(false);
+ const [conversationSearchOpen,setConversationSearchOpen]=useState(false);
+ const [conversationQuery,setConversationQuery]=useState('');
  const threadRef=useRef<ScrollView|null>(null);
  const initialScrollRef=useRef(true);
 
@@ -205,42 +208,41 @@ export default function Messages(){
  }
  async function reportOther(messageId?:string){
   if(!selectedPersonal)return;setBusy(true);
-  try{await reportUser(selectedPersonal.other_user_id,'OTHER',messageId?'Reported from message '+messageId:undefined);setActionMessage(null);setHeaderMenu(false);Alert.alert('Report sent','Everest Local will review this report.')}
+  try{await reportUser(selectedPersonal.other_user_id,'OTHER',messageId?'Reported from message '+messageId:undefined);setActionTarget(null);setHeaderMenu(false);Alert.alert('Report sent','Everest Local will review this report.')}
   catch{setError('Report could not be sent.')}
   finally{setBusy(false)}
  }
  async function deleteForMe(message:PersonalMessage){
-  setActionMessage(null);setBusy(true);
+  setActionTarget(null);setDeleteTarget(null);setBusy(true);
   try{await deletePersonalMessageForMe(message.id);setPersonalThread(current=>current.filter(m=>m.id!==message.id));void loadHome(true)}
   catch{setError('Message could not be deleted.')}
   finally{setBusy(false)}
  }
- function confirmDeleteForEveryone(message:PersonalMessage){
-  setActionMessage(null);
-  Alert.alert('Delete message?','This removes the message content for both people.',[
-   {text:'Cancel',style:'cancel'},
-   {text:'Delete for everyone',style:'destructive',onPress:()=>void deleteForEveryone(message)}
-  ]);
+ function openDeleteMenu(message:PersonalMessage){
+  setActionTarget(null);
+  setDeleteTarget(message);
  }
  async function deleteForEveryone(message:PersonalMessage){
   setBusy(true);
   try{
-   await deletePersonalMessageForEveryone(message.id);
-   setPersonalThread(current=>current.map(m=>m.id===message.id?{...m,body:'You deleted this message',deleted_for_everyone:true,reactions:[]}:m));
+   const result=await deletePersonalMessageForEveryone(message.id);
+   setDeleteTarget(null);
+   setPersonalThread(current=>current.map(m=>m.id===message.id?{...m,body:result.placeholder||'You deleted this message',deleted_for_everyone:true,reactions:[]}:m));
+   if(selectedPersonal)await refreshPersonalThread(selectedPersonal.id,true);
    void loadHome(true);
   }catch{setError('Message could not be deleted for everyone.')}
   finally{setBusy(false)}
  }
  async function react(message:PersonalMessage,reaction:MessageReaction['reaction']){
-  setActionMessage(null);
+  setActionTarget(null);
   try{await togglePersonalMessageReaction(message.id,reaction);if(selectedPersonal)await refreshPersonalThread(selectedPersonal.id,true)}
   catch{setError('Reaction could not be updated.')}
  }
- function beginReply(message:PersonalMessage){setReplying(message);setEditing(null);setActionMessage(null)}
- function beginEdit(message:PersonalMessage){setEditing(message);setReplying(null);setDraft(message.body);setActionMessage(null)}
+ function beginReply(message:PersonalMessage){setReplying(message);setEditing(null);setActionTarget(null)}
+ function beginEdit(message:PersonalMessage){setEditing(message);setReplying(null);setDraft(message.body);setActionTarget(null)}
  async function copyOnWeb(message:PersonalMessage){
   if(Platform.OS!=='web'||typeof navigator==='undefined'||!navigator.clipboard)return;
-  try{await navigator.clipboard.writeText(message.body);setActionMessage(null)}
+  try{await navigator.clipboard.writeText(message.body);setActionTarget(null)}
   catch{setError('Could not copy this message.')}
  }
 
@@ -251,6 +253,7 @@ export default function Messages(){
   return [...people,...businesses].filter(x=>!q||x.name.toLowerCase().includes(q)||x.preview.toLowerCase().includes(q)).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
  },[personal,market,query,userId]);
  const requestRows=useMemo(()=>{const q=query.trim().toLowerCase();return requests.filter(x=>!q||(x.display_name??'').toLowerCase().includes(q)||(x.latest_message??'').toLowerCase().includes(q))},[requests,query]);
+ const visiblePersonalThread=useMemo(()=>{const q=conversationQuery.trim().toLowerCase();return q?personalThread.filter(m=>m.body.toLowerCase().includes(q)||m.reply_preview?.toLowerCase().includes(q)):personalThread},[personalThread,conversationQuery]);
 
  if(selectedPersonal){
   const incomingRequest=selectedPersonal.status==='REQUEST'&&selectedPersonal.initiated_by!==userId;
@@ -268,12 +271,13 @@ export default function Messages(){
     </View>
 
     {hasOlder?<Pressable disabled={loadingOlder} onPress={()=>void loadOlder()} style={{alignSelf:'center',paddingHorizontal:14,paddingVertical:8,marginTop:8,borderRadius:14,backgroundColor:c.soft}}><Text style={{fontSize:9,fontWeight:'900',color:c.text}}>{loadingOlder?'LOADING…':'LOAD EARLIER MESSAGES'}</Text></Pressable>:null}
+    {conversationSearchOpen?<View style={{paddingHorizontal:12,paddingVertical:7,borderBottomWidth:1,borderBottomColor:c.border,backgroundColor:c.canvas,flexDirection:'row',alignItems:'center',gap:8}}><Ionicons name="search-outline" size={17} color={c.muted}/><TextInput nativeID="everest-conversation-search" autoFocus value={conversationQuery} onChangeText={setConversationQuery} placeholder="Search this conversation" placeholderTextColor={c.muted} style={{flex:1,minHeight:36,fontSize:16,color:c.text}}/><Pressable onPress={()=>{setConversationSearchOpen(false);setConversationQuery('')}} style={{width:34,height:34,alignItems:'center',justifyContent:'center'}}><Ionicons name="close" size={19} color={c.muted}/></Pressable></View>:null}
     <PersonalThread
       refValue={threadRef}
-      items={personalThread}
+      items={visiblePersonalThread}
       userId={userId}
       colors={c}
-      onAction={setActionMessage}
+      onAction={(message,x,y)=>setActionTarget({message,x,y})}
       onRetry={retryMessage}
       onReachTop={()=>void loadOlder()}
       onInitialContent={()=>{if(initialScrollRef.current){initialScrollRef.current=false;threadRef.current?.scrollToEnd({animated:false})}}}
@@ -298,8 +302,9 @@ export default function Messages(){
     />:null}
     {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
    </KeyboardAvoidingView>
-   <MessageActionSheet message={actionMessage} userId={userId} colors={c} otherName={selectedPersonal.display_name??'User'} onClose={()=>setActionMessage(null)} onReply={beginReply} onEdit={beginEdit} onReact={react} onDeleteMe={deleteForMe} onDeleteEveryone={confirmDeleteForEveryone} onReport={m=>void reportOther(m.id)} onCopyWeb={copyOnWeb}/>
-   <ConversationMenu visible={headerMenu} colors={c} onClose={()=>setHeaderMenu(false)} onProfile={()=>{setHeaderMenu(false);router.push('/public-user?id='+selectedPersonal.other_user_id)}} onBlock={()=>void blockOther()} onReport={()=>void reportOther()}/>
+   <MessageActionMenu target={actionTarget} userId={userId} colors={c} onClose={()=>setActionTarget(null)} onReply={beginReply} onEdit={beginEdit} onReact={react} onDelete={openDeleteMenu} onReport={m=>void reportOther(m.id)} onCopyWeb={copyOnWeb}/>
+   <DeleteMessageMenu message={deleteTarget} userId={userId} colors={c} busy={busy} onClose={()=>setDeleteTarget(null)} onDeleteMe={deleteForMe} onDeleteEveryone={deleteForEveryone}/>
+   <ConversationMenu visible={headerMenu} colors={c} onClose={()=>setHeaderMenu(false)} onProfile={()=>{setHeaderMenu(false);router.push('/public-user?id='+selectedPersonal.other_user_id)}} onSearch={()=>{setHeaderMenu(false);setConversationSearchOpen(true)}} onBlock={()=>void blockOther()} onReport={()=>void reportOther()}/>
   </SafeAreaView>;
  }
 
@@ -344,7 +349,7 @@ function ConversationRow({row,colors:c,onPress}:{row:ChatRow;colors:ReturnType<t
   <View style={{flex:1,minWidth:0}}>
    <View style={{flexDirection:'row',alignItems:'center',gap:8}}><Text numberOfLines={1} style={{fontSize:14,fontWeight:row.unread?'900':'800',color:c.text,flex:1}}>{row.name}</Text><Text style={{fontSize:10,color:row.unread?c.text:c.muted}}>{relativeTime(row.at)}</Text></View>
    <View style={{flexDirection:'row',alignItems:'center',gap:7,marginTop:4}}><Text numberOfLines={1} style={{fontSize:12,color:row.unread?c.text:c.muted,flex:1,fontWeight:row.unread?'700':'400'}}>{row.preview}</Text>{row.unread?<View style={{minWidth:18,height:18,borderRadius:9,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',paddingHorizontal:5}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>{row.unread>99?'99+':row.unread}</Text></View>:null}</View>
-   {row.pending?<Text style={{fontSize:9,fontWeight:'800',color:c.muted,marginTop:4}}>PENDING REQUEST</Text>:row.kind==='MARKET'?<Text style={{fontSize:9,fontWeight:'800',color:c.muted,marginTop:4}}>BUSINESS</Text>:null}
+   {row.pending?<View style={{alignSelf:'flex-start',marginTop:5,paddingHorizontal:7,paddingVertical:3,borderRadius:9,backgroundColor:c.soft}}><Text style={{fontSize:8,fontWeight:'800',color:c.muted}}>Pending</Text></View>:row.kind==='MARKET'?<Text style={{fontSize:9,fontWeight:'800',color:c.muted,marginTop:4}}>BUSINESS</Text>:null}
   </View>
  </Pressable>;
 }
@@ -353,26 +358,32 @@ function EmptyState({title,copy,colors:c}:{title:string;copy:string;colors:Retur
  return <View style={{paddingVertical:58,alignItems:'center'}}><View style={{width:52,height:52,borderRadius:26,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="chatbubbles-outline" size={22} color={c.text}/></View><Text style={{fontSize:17,fontWeight:'900',color:c.text,marginTop:14}}>{title}</Text><Text style={{fontSize:11,lineHeight:17,color:c.muted,marginTop:6,textAlign:'center',maxWidth:330}}>{copy}</Text></View>;
 }
 
-function PersonalThread({refValue,items,userId,colors:c,onAction,onRetry,onReachTop,onInitialContent}:{refValue:React.MutableRefObject<ScrollView|null>;items:PersonalMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onAction:(m:PersonalMessage)=>void;onRetry:(m:PersonalMessage)=>void;onReachTop:()=>void;onInitialContent:()=>void}){
- return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1}} keyboardShouldPersistTaps="handled" maintainVisibleContentPosition={{minIndexForVisible:0}} onScroll={e=>{if(e.nativeEvent.contentOffset.y<36)onReachTop()}} scrollEventThrottle={250} onContentSizeChange={onInitialContent} contentContainerStyle={{paddingHorizontal:14,paddingTop:12,paddingBottom:12}}>
+
+function PersonalThread({refValue,items,userId,colors:c,onAction,onRetry,onReachTop,onInitialContent}:{refValue:React.MutableRefObject<ScrollView|null>;items:PersonalMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onAction:(m:PersonalMessage,x:number,y:number)=>void;onRetry:(m:PersonalMessage)=>void;onReachTop:()=>void;onInitialContent:()=>void}){
+ const noSelect=Platform.OS==='web'?({userSelect:'none',WebkitUserSelect:'none',WebkitTouchCallout:'none',touchAction:'manipulation'} as never):undefined;
+ return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1}} keyboardShouldPersistTaps="handled" maintainVisibleContentPosition={{minIndexForVisible:0}} onScroll={e=>{if(e.nativeEvent.contentOffset.y<36)onReachTop()}} scrollEventThrottle={250} onContentSizeChange={onInitialContent} contentContainerStyle={{paddingHorizontal:12,paddingTop:8,paddingBottom:8}}>
   {items.map((m,index)=>{
    const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;
    const showDate=!prev||!sameDay(prev.created_at,m.created_at);
-   const groupedPrev=prev&&prev.sender_id===m.sender_id&&sameDay(prev.created_at,m.created_at)&&Date.parse(m.created_at)-Date.parse(prev.created_at)<5*60_000;
-   const groupedNext=next&&next.sender_id===m.sender_id&&sameDay(next.created_at,m.created_at)&&Date.parse(next.created_at)-Date.parse(m.created_at)<5*60_000;
-   const webProps=Platform.OS==='web'?{onContextMenu:(event:{preventDefault?:()=>void})=>{event.preventDefault?.();onAction(m)}}:{};
+   const groupedPrev=Boolean(prev&&prev.sender_id===m.sender_id&&sameDay(prev.created_at,m.created_at)&&Date.parse(m.created_at)-Date.parse(prev.created_at)<5*60_000);
+   const groupedNext=Boolean(next&&next.sender_id===m.sender_id&&sameDay(next.created_at,m.created_at)&&Date.parse(next.created_at)-Date.parse(m.created_at)<5*60_000);
+   const webProps=Platform.OS==='web'?{dataSet:{everestMessageBubble:'true'},onContextMenu:(event:{preventDefault?:()=>void;clientX?:number;clientY?:number})=>{event.preventDefault?.();onAction(m,event.clientX??160,event.clientY??300)}}:{};
+   const radiusStyle=mine
+    ?{borderTopRightRadius:groupedPrev?8:18,borderBottomRightRadius:groupedNext?8:5}
+    :{borderTopLeftRadius:groupedPrev?8:18,borderBottomLeftRadius:groupedNext?8:5};
+   const meta=mine?(m.sending?'Sending':m.failed?'Failed · tap to retry':m.read_at?'Seen':'Sent'):'';
    return <View key={m.id}>
-    {showDate?<View style={{alignItems:'center',marginVertical:14}}><Text style={{fontSize:9,fontWeight:'900',letterSpacing:.8,color:c.muted}}>{dateLabel(m.created_at)}</Text></View>:null}
-    <View style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?2:9}}>
-     <Pressable {...webProps} onLongPress={()=>onAction(m)} delayLongPress={280} onPress={()=>{if(m.failed)onRetry(m)}} style={{maxWidth:'78%'}}>
-      <View style={{backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:1,borderColor:c.border,borderRadius:18,borderBottomRightRadius:mine&&!groupedNext?5:18,borderBottomLeftRadius:!mine&&!groupedNext?5:18,paddingHorizontal:12,paddingVertical:9}}>
-       {m.reply_to_message_id?<View style={{borderLeftWidth:2,borderLeftColor:mine?c.onBrand:c.brand,paddingLeft:8,marginBottom:7,opacity:.78}}><Text numberOfLines={2} style={{fontSize:10,lineHeight:14,color:mine?c.onBrand:c.textSecondary}}>{m.reply_preview??'Message unavailable'}</Text></View>:null}
-       <Text style={{fontSize:15,lineHeight:20,color:mine?c.onBrand:c.text,fontStyle:m.deleted_for_everyone?'italic':'normal'}}>{m.body}</Text>
-       {m.edited_at&&!m.deleted_for_everyone?<Text style={{fontSize:8,color:mine?c.onBrand:c.muted,opacity:.7,marginTop:3}}>edited</Text>:null}
+    {showDate?<View style={{alignItems:'center',marginVertical:10}}><Text selectable={false} style={[{fontSize:9,fontWeight:'900',letterSpacing:.8,color:c.muted},noSelect]}>{dateLabel(m.created_at)}</Text></View>:null}
+    <View style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}>
+     <Pressable {...webProps} onLongPress={event=>onAction(m,event.nativeEvent.pageX??160,event.nativeEvent.pageY??300)} delayLongPress={260} onPress={()=>{if(m.failed)onRetry(m)}} style={[{maxWidth:'76%'},noSelect]}>
+      <View style={[{backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:1,borderColor:c.border,borderRadius:18,paddingHorizontal:10,paddingVertical:7},radiusStyle]}>
+       {m.reply_to_message_id?<View style={{borderLeftWidth:2,borderLeftColor:mine?c.onBrand:c.brand,paddingLeft:7,marginBottom:5,opacity:.76}}><Text selectable={false} numberOfLines={2} style={[{fontSize:10,lineHeight:13,color:mine?c.onBrand:c.textSecondary},noSelect]}>{m.reply_preview??'Message unavailable'}</Text></View>:null}
+       <Text selectable={false} style={[{fontSize:15,lineHeight:20,color:mine?c.onBrand:c.text,fontStyle:m.deleted_for_everyone?'italic':'normal'},noSelect]}>{m.body}</Text>
+       {m.edited_at&&!m.deleted_for_everyone?<Text selectable={false} style={[{fontSize:8,color:mine?c.onBrand:c.muted,opacity:.68,marginTop:2},noSelect]}>edited</Text>:null}
       </View>
-      {m.reactions.length?<View style={{alignSelf:mine?'flex-end':'flex-start',marginTop:-5,marginHorizontal:6,flexDirection:'row',gap:3,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,borderRadius:12,paddingHorizontal:6,paddingVertical:3}}>{m.reactions.map(r=><Text key={r.reaction} style={{fontSize:11,color:c.text}}>{r.reaction}{r.count>1?' '+r.count:''}</Text>)}</View>:null}
+      {m.reactions.length?<View style={{alignSelf:mine?'flex-end':'flex-start',marginTop:-5,marginHorizontal:6,flexDirection:'row',gap:3,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,borderRadius:11,paddingHorizontal:6,paddingVertical:2}}>{m.reactions.map(r=><Text selectable={false} key={r.reaction} style={[{fontSize:10,color:c.text},noSelect]}>{r.reaction}{r.count>1?' '+r.count:''}</Text>)}</View>:null}
      </Pressable>
-     {!groupedNext?<View style={{flexDirection:'row',gap:6,alignItems:'center',marginTop:3,marginHorizontal:4}}><Text style={{fontSize:8,color:c.muted}}>{timeOnly(m.created_at)}</Text>{mine&&m.sending?<Text style={{fontSize:8,color:c.muted}}>Sending</Text>:mine&&m.failed?<Text style={{fontSize:8,color:c.danger,fontWeight:'800'}}>Failed · tap to retry</Text>:mine?<Text style={{fontSize:8,color:c.muted}}>{m.read_at?'Seen':'Sent'}</Text>:null}</View>:null}
+     {!groupedNext?<Text selectable={false} style={[{fontSize:8,color:m.failed?c.danger:c.muted,marginTop:3,marginHorizontal:4,fontWeight:m.failed?'800':'400'},noSelect]}>{timeOnly(m.created_at)}{meta?' · '+meta:''}</Text>:null}
     </View>
    </View>;
   })}
@@ -380,46 +391,69 @@ function PersonalThread({refValue,items,userId,colors:c,onAction,onRetry,onReach
 }
 
 function MarketThread({refValue,items,userId,colors:c}:{refValue:React.MutableRefObject<ScrollView|null>;items:MarketMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors']}){
- return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1}} onContentSizeChange={()=>refValue.current?.scrollToEnd({animated:false})} contentContainerStyle={{paddingHorizontal:14,paddingVertical:12}}>
-  {items.map((m,index)=>{const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;const groupedPrev=prev&&prev.sender_id===m.sender_id&&sameDay(prev.created_at,m.created_at);const groupedNext=next&&next.sender_id===m.sender_id&&sameDay(next.created_at,m.created_at);return <View key={m.id} style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?2:9}}><View style={{maxWidth:'78%',backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:1,borderColor:c.border,borderRadius:18,borderBottomRightRadius:mine&&!groupedNext?5:18,borderBottomLeftRadius:!mine&&!groupedNext?5:18,paddingHorizontal:12,paddingVertical:9}}><Text style={{fontSize:15,lineHeight:20,color:mine?c.onBrand:c.text}}>{m.body}</Text></View>{!groupedNext?<Text style={{fontSize:8,color:c.muted,marginTop:3,marginHorizontal:4}}>{timeOnly(m.created_at)}</Text>:null}</View>})}
+ return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1}} onContentSizeChange={()=>refValue.current?.scrollToEnd({animated:false})} contentContainerStyle={{paddingHorizontal:12,paddingVertical:8}}>
+  {items.map((m,index)=>{const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;const groupedPrev=Boolean(prev&&prev.sender_id===m.sender_id&&sameDay(prev.created_at,m.created_at));const groupedNext=Boolean(next&&next.sender_id===m.sender_id&&sameDay(next.created_at,m.created_at));return <View key={m.id} style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}><View style={{maxWidth:'76%',backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:1,borderColor:c.border,borderRadius:18,borderTopRightRadius:mine&&groupedPrev?8:18,borderTopLeftRadius:!mine&&groupedPrev?8:18,borderBottomRightRadius:mine&&!groupedNext?5:18,borderBottomLeftRadius:!mine&&!groupedNext?5:18,paddingHorizontal:10,paddingVertical:7}}><Text style={{fontSize:15,lineHeight:20,color:mine?c.onBrand:c.text}}>{m.body}</Text></View>{!groupedNext?<Text style={{fontSize:8,color:c.muted,marginTop:3,marginHorizontal:4}}>{timeOnly(m.created_at)}</Text>:null}</View>})}
  </ScrollView>;
 }
 
 function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,cancelReply,cancelEdit}:{draft:string;setDraft:(v:string)=>void;busy:boolean;submit:()=>void;colors:ReturnType<typeof useAppTheme>['colors'];reply:PersonalMessage|null;edit:PersonalMessage|null;cancelReply:()=>void;cancelEdit:()=>void}){
- return <View style={{borderTopWidth:1,borderTopColor:c.border,backgroundColor:c.canvas,paddingHorizontal:10,paddingTop:8,paddingBottom:Platform.OS==='ios'?6:10}}>
-  {reply||edit?<View style={{marginHorizontal:4,marginBottom:7,paddingHorizontal:10,paddingVertical:7,borderRadius:12,backgroundColor:c.soft,flexDirection:'row',alignItems:'center',gap:8}}><View style={{flex:1}}><Text style={{fontSize:9,fontWeight:'900',color:c.muted}}>{edit?'EDITING MESSAGE':'REPLYING'}</Text><Text numberOfLines={1} style={{fontSize:11,color:c.text,marginTop:2}}>{edit?edit.body:reply?.body}</Text></View><Pressable onPress={edit?cancelEdit:cancelReply}><Ionicons name="close" size={18} color={c.muted}/></Pressable></View>:null}
-  <View style={{minHeight:46,maxHeight:126,borderRadius:23,borderWidth:1,borderColor:c.border,backgroundColor:c.input,flexDirection:'row',alignItems:'flex-end',paddingLeft:14,paddingRight:5,paddingVertical:5}}>
-   <TextInput value={draft} onChangeText={setDraft} placeholder="Message…" placeholderTextColor={c.muted} multiline maxLength={5000} style={{flex:1,minHeight:34,maxHeight:110,color:c.text,fontSize:15,lineHeight:20,paddingVertical:7,textAlignVertical:'center'}}/>
-   <Pressable accessibilityLabel={edit?'Save edited message':'Send message'} disabled={busy||!draft.trim()} onPress={submit} style={{width:36,height:36,borderRadius:18,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',opacity:busy||!draft.trim()?0.45:1}}>{busy?<ActivityIndicator size="small" color={c.onBrand}/>:<Ionicons name={edit?'checkmark':'arrow-up'} size={19} color={c.onBrand}/>}</Pressable>
+ const [focused,setFocused]=useState(false);
+ return <View style={{backgroundColor:c.canvas,paddingHorizontal:9,paddingTop:5,paddingBottom:Platform.OS==='ios'?5:8}}>
+  {reply||edit?<View style={{marginHorizontal:4,marginBottom:5,paddingHorizontal:9,paddingVertical:6,borderRadius:11,backgroundColor:c.soft,flexDirection:'row',alignItems:'center',gap:8}}><View style={{flex:1}}><Text style={{fontSize:8,fontWeight:'900',color:c.muted}}>{edit?'EDITING MESSAGE':'REPLYING'}</Text><Text numberOfLines={1} style={{fontSize:10,color:c.text,marginTop:1}}>{edit?edit.body:reply?.body}</Text></View><Pressable onPress={edit?cancelEdit:cancelReply} style={{width:28,height:28,alignItems:'center',justifyContent:'center'}}><Ionicons name="close" size={17} color={c.muted}/></Pressable></View>:null}
+  <View style={{minHeight:42,maxHeight:98,borderRadius:22,borderWidth:1,borderColor:focused?c.textSecondary:c.border,backgroundColor:c.input,flexDirection:'row',alignItems:'flex-end',paddingLeft:12,paddingRight:4,paddingVertical:3}}>
+   <TextInput nativeID="everest-message-composer" value={draft} onChangeText={setDraft} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Message…" placeholderTextColor={c.muted} multiline scrollEnabled maxLength={5000} style={{flex:1,minHeight:34,maxHeight:88,color:c.text,fontSize:16,lineHeight:20,paddingTop:7,paddingBottom:7,paddingHorizontal:0,textAlignVertical:'center',borderWidth:0}}/>
+   <Pressable accessibilityLabel={edit?'Save edited message':'Send message'} disabled={busy||!draft.trim()} onPress={submit} style={{width:34,height:34,borderRadius:17,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:1,opacity:busy||!draft.trim()?0.42:1}}>{busy?<ActivityIndicator size="small" color={c.onBrand}/>:<Ionicons name={edit?'checkmark':'arrow-up'} size={18} color={c.onBrand}/>}</Pressable>
   </View>
  </View>;
 }
 
-function MessageActionSheet({message,userId,colors:c,otherName,onClose,onReply,onEdit,onReact,onDeleteMe,onDeleteEveryone,onReport,onCopyWeb}:{message:PersonalMessage|null;userId:string;colors:ReturnType<typeof useAppTheme>['colors'];otherName:string;onClose:()=>void;onReply:(m:PersonalMessage)=>void;onEdit:(m:PersonalMessage)=>void;onReact:(m:PersonalMessage,r:MessageReaction['reaction'])=>void;onDeleteMe:(m:PersonalMessage)=>void;onDeleteEveryone:(m:PersonalMessage)=>void;onReport:(m:PersonalMessage)=>void;onCopyWeb:(m:PersonalMessage)=>void}){
+function MessageActionMenu({target,userId,colors:c,onClose,onReply,onEdit,onReact,onDelete,onReport,onCopyWeb}:{target:{message:PersonalMessage;x:number;y:number}|null;userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onClose:()=>void;onReply:(m:PersonalMessage)=>void;onEdit:(m:PersonalMessage)=>void;onReact:(m:PersonalMessage,r:MessageReaction['reaction'])=>void;onDelete:(m:PersonalMessage)=>void;onReport:(m:PersonalMessage)=>void;onCopyWeb:(m:PersonalMessage)=>void}){
+ const {width,height}=useWindowDimensions();
+ if(!target)return null;
+ const message=target.message;const mine=message.sender_id===userId;
+ const editable=mine&&!message.deleted_for_everyone&&Date.now()-Date.parse(message.created_at)<15*60_000;
+ const cardWidth=Math.min(316,Math.max(270,width-24));
+ const left=Math.max(12,Math.min(target.x-cardWidth/2,width-cardWidth-12));
+ const estimatedHeight=message.deleted_for_everyone?58:116;
+ const top=Math.max(72,Math.min(target.y-estimatedHeight-18,height-estimatedHeight-90));
+ const compactActions=[
+  !message.deleted_for_everyone?{key:'reply',icon:'arrow-undo-outline' as const,label:'Reply',fn:()=>onReply(message)}:null,
+  Platform.OS==='web'&&!message.deleted_for_everyone?{key:'copy',icon:'copy-outline' as const,label:'Copy',fn:()=>void onCopyWeb(message)}:null,
+  editable?{key:'edit',icon:'create-outline' as const,label:'Edit',fn:()=>onEdit(message)}:null,
+  {key:'delete',icon:'trash-outline' as const,label:'Delete',fn:()=>onDelete(message)},
+  !mine?{key:'report',icon:'flag-outline' as const,label:'Report',fn:()=>onReport(message)}:null,
+ ].filter(Boolean) as Array<{key:string;icon:React.ComponentProps<typeof Ionicons>['name'];label:string;fn:()=>void}>;
+ return <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+  <Pressable onPress={onClose} style={{flex:1,backgroundColor:'rgba(0,0,0,.18)'}}>
+   <Pressable onPress={()=>{}} style={{position:'absolute',left,top,width:cardWidth}}>
+    {!message.deleted_for_everyone?<View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',backgroundColor:c.elevated,borderRadius:24,borderWidth:1,borderColor:c.border,paddingHorizontal:7,paddingVertical:6}}>{REACTIONS.map(r=><Pressable key={r} accessibilityLabel={'React '+r} onPress={()=>onReact(message,r)} style={{width:38,height:38,borderRadius:19,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Text selectable={false} style={{fontSize:19}}>{r}</Text></Pressable>)}</View>:null}
+    <View style={{marginTop:6,alignSelf:mine?'flex-end':'flex-start',flexDirection:'row',backgroundColor:c.elevated,borderRadius:16,borderWidth:1,borderColor:c.border,padding:4}}>
+     {compactActions.map(action=><Pressable key={action.key} accessibilityLabel={action.label} onPress={action.fn} style={{minWidth:48,height:44,paddingHorizontal:8,borderRadius:12,alignItems:'center',justifyContent:'center'}}><Ionicons name={action.icon} size={18} color={action.key==='report'?c.danger:c.text}/><Text selectable={false} style={{fontSize:8,fontWeight:'800',color:action.key==='report'?c.danger:c.muted,marginTop:2}}>{action.label}</Text></Pressable>)}
+    </View>
+   </Pressable>
+  </Pressable>
+ </Modal>;
+}
+
+function DeleteMessageMenu({message,userId,colors:c,busy,onClose,onDeleteMe,onDeleteEveryone}:{message:PersonalMessage|null;userId:string;colors:ReturnType<typeof useAppTheme>['colors'];busy:boolean;onClose:()=>void;onDeleteMe:(m:PersonalMessage)=>void;onDeleteEveryone:(m:PersonalMessage)=>void}){
  if(!message)return null;
  const mine=message.sender_id===userId;
- const editable=mine&&!message.deleted_for_everyone&&Date.now()-Date.parse(message.created_at)<15*60_000;
- return <Modal transparent visible animationType="slide" onRequestClose={onClose}>
-  <Pressable onPress={onClose} style={{flex:1,backgroundColor:'rgba(0,0,0,.45)',justifyContent:'flex-end'}}>
-   <Pressable onPress={()=>{}} style={{backgroundColor:c.elevated,borderTopLeftRadius:24,borderTopRightRadius:24,padding:18,paddingBottom:Platform.OS==='ios'?30:18,borderWidth:1,borderColor:c.border}}>
-    <View style={{width:38,height:4,borderRadius:2,backgroundColor:c.border,alignSelf:'center',marginBottom:15}}/>
-    <Text style={{fontSize:11,color:c.muted,textAlign:'center',marginBottom:12}}>{timeOnly(message.created_at)}{message.edited_at?' · edited':''}</Text>
-    {!message.deleted_for_everyone?<View style={{flexDirection:'row',justifyContent:'space-between',paddingHorizontal:6,marginBottom:14}}>{REACTIONS.map(r=><Pressable key={r} onPress={()=>onReact(message,r)} style={{width:42,height:42,borderRadius:21,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:20}}>{r}</Text></Pressable>)}</View>:null}
-    {!message.deleted_for_everyone?<SheetRow icon="arrow-undo-outline" label="Reply" colors={c} onPress={()=>onReply(message)}/>:null}
-    {Platform.OS==='web'&&!message.deleted_for_everyone?<SheetRow icon="copy-outline" label="Copy" colors={c} onPress={()=>void onCopyWeb(message)}/>:null}
-    {editable?<SheetRow icon="create-outline" label="Edit" colors={c} onPress={()=>onEdit(message)}/>:null}
-    <SheetRow icon="eye-off-outline" label="Delete for me" colors={c} onPress={()=>onDeleteMe(message)}/>
-    {mine&&!message.deleted_for_everyone?<SheetRow icon="trash-outline" label="Delete for everyone" destructive colors={c} onPress={()=>onDeleteEveryone(message)}/>:null}
-    {!mine?<SheetRow icon="flag-outline" label={'Report '+otherName} destructive colors={c} onPress={()=>onReport(message)}/>:null}
+ return <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+  <Pressable onPress={onClose} style={{flex:1,backgroundColor:'rgba(0,0,0,.34)',justifyContent:'flex-end'}}>
+   <Pressable onPress={()=>{}} style={{margin:10,marginBottom:Platform.OS==='ios'?18:10,borderRadius:20,backgroundColor:c.elevated,borderWidth:1,borderColor:c.border,overflow:'hidden'}}>
+    <View style={{paddingHorizontal:16,paddingTop:14,paddingBottom:9}}><Text style={{fontSize:14,fontWeight:'900',color:c.text}}>Delete message?</Text><Text style={{fontSize:10,lineHeight:15,color:c.muted,marginTop:3}}>Choose where this message should disappear.</Text></View>
+    <Pressable disabled={busy} onPress={()=>void onDeleteMe(message)} style={{minHeight:46,paddingHorizontal:16,justifyContent:'center',borderTopWidth:1,borderTopColor:c.border}}><Text style={{fontSize:13,fontWeight:'700',color:c.text}}>Delete for me</Text></Pressable>
+    {mine&&!message.deleted_for_everyone?<Pressable disabled={busy} onPress={()=>void onDeleteEveryone(message)} style={{minHeight:46,paddingHorizontal:16,justifyContent:'center',borderTopWidth:1,borderTopColor:c.border}}><Text style={{fontSize:13,fontWeight:'800',color:c.danger}}>Delete for everyone</Text></Pressable>:null}
+    <Pressable disabled={busy} onPress={onClose} style={{minHeight:46,paddingHorizontal:16,justifyContent:'center',alignItems:'center',borderTopWidth:1,borderTopColor:c.border}}><Text style={{fontSize:13,fontWeight:'700',color:c.muted}}>Cancel</Text></Pressable>
    </Pressable>
   </Pressable>
  </Modal>;
 }
 
 function SheetRow({icon,label,colors:c,onPress,destructive=false}:{icon:React.ComponentProps<typeof Ionicons>['name'];label:string;colors:ReturnType<typeof useAppTheme>['colors'];onPress:()=>void;destructive?:boolean}){
- return <Pressable onPress={onPress} style={{minHeight:48,flexDirection:'row',alignItems:'center',gap:12,borderTopWidth:1,borderTopColor:c.border}}><Ionicons name={icon} size={20} color={destructive?c.danger:c.text}/><Text style={{fontSize:14,fontWeight:'700',color:destructive?c.danger:c.text}}>{label}</Text></Pressable>;
+ return <Pressable onPress={onPress} style={{minHeight:46,flexDirection:'row',alignItems:'center',gap:12,borderTopWidth:1,borderTopColor:c.border}}><Ionicons name={icon} size={19} color={destructive?c.danger:c.text}/><Text style={{fontSize:13,fontWeight:'700',color:destructive?c.danger:c.text}}>{label}</Text></Pressable>;
 }
 
-function ConversationMenu({visible,colors:c,onClose,onProfile,onBlock,onReport}:{visible:boolean;colors:ReturnType<typeof useAppTheme>['colors'];onClose:()=>void;onProfile:()=>void;onBlock:()=>void;onReport:()=>void}){
- return <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}><Pressable onPress={onClose} style={{flex:1,backgroundColor:'rgba(0,0,0,.35)',justifyContent:'flex-end'}}><Pressable onPress={()=>{}} style={{backgroundColor:c.elevated,borderTopLeftRadius:22,borderTopRightRadius:22,padding:18,paddingBottom:Platform.OS==='ios'?30:18}}><SheetRow icon="person-outline" label="View profile" colors={c} onPress={onProfile}/><SheetRow icon="ban-outline" label="Block" colors={c} destructive onPress={onBlock}/><SheetRow icon="flag-outline" label="Report" colors={c} destructive onPress={onReport}/></Pressable></Pressable></Modal>;
+function ConversationMenu({visible,colors:c,onClose,onProfile,onSearch,onBlock,onReport}:{visible:boolean;colors:ReturnType<typeof useAppTheme>['colors'];onClose:()=>void;onProfile:()=>void;onSearch:()=>void;onBlock:()=>void;onReport:()=>void}){
+ return <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}><Pressable onPress={onClose} style={{flex:1,backgroundColor:'rgba(0,0,0,.28)',justifyContent:'flex-end'}}><Pressable onPress={()=>{}} style={{margin:10,marginBottom:Platform.OS==='ios'?18:10,backgroundColor:c.elevated,borderRadius:20,paddingHorizontal:16,paddingVertical:6,borderWidth:1,borderColor:c.border}}><SheetRow icon="person-outline" label="View profile" colors={c} onPress={onProfile}/><SheetRow icon="search-outline" label="Search conversation" colors={c} onPress={onSearch}/><SheetRow icon="ban-outline" label="Block" colors={c} destructive onPress={onBlock}/><SheetRow icon="flag-outline" label="Report" colors={c} destructive onPress={onReport}/></Pressable></Pressable></Modal>;
 }
