@@ -40,8 +40,25 @@ test('search and profile RPCs suppress blocked users and private discovery',()=>
  assert.match(migration,/profile_visibility/);
 });
 test('new social tables use RLS and direct writes are revoked',()=>{
- for(const table of ['user_social_preferences','user_connection_requests','user_connections','user_blocks','personal_conversations','personal_messages']){
+ for(const table of ['user_social_preferences','user_connection_requests','user_connections','user_blocks','user_reports','personal_conversations','personal_messages']){
   assert.match(migration,new RegExp('alter table public\\.'+table+' enable row level security'));
   assert.match(migration,new RegExp('revoke all on public\\.'+table));
  }
+});
+
+test('social migration uses valid dollar quoting and named universal-search columns',()=>{
+ assert.doesNotMatch(migration,/\bas \$\n/);
+ assert.doesNotMatch(migration,/end; \$;/);
+ assert.match(migration,/'PERSON'::text as kind/);
+ assert.match(migration,/as title/);
+ assert.match(migration,/as subtitle/);
+ assert.match(migration,/as score/);
+ assert.match(migration,/as metadata/);
+});
+test('universal search preserves the existing jobs entry point without client table scans',()=>{
+ assert.match(search,/JOB:'JOBS'/);
+ assert.match(search,/from\('opportunities'\)/);
+ assert.match(search,/from\('service_requests'\)/);
+ assert.match(search,/\.ilike\('service_requests\.description',pattern\)/);
+ assert.match(search,/\.ilike\('description',pattern\)/);
 });
