@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -59,10 +59,13 @@ export default function Messages(){
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
- const [actionMessage,setActionMessage]=useState<PersonalMessage|null>(null);
+ const [actionTarget,setActionTarget]=useState<{message:PersonalMessage;x:number;y:number}|null>(null);
+ const [deleteTarget,setDeleteTarget]=useState<PersonalMessage|null>(null);
  const [replying,setReplying]=useState<PersonalMessage|null>(null);
  const [editing,setEditing]=useState<PersonalMessage|null>(null);
  const [headerMenu,setHeaderMenu]=useState(false);
+ const [conversationSearchOpen,setConversationSearchOpen]=useState(false);
+ const [conversationQuery,setConversationQuery]=useState('');
  const threadRef=useRef<ScrollView|null>(null);
  const initialScrollRef=useRef(true);
 
@@ -205,42 +208,41 @@ export default function Messages(){
  }
  async function reportOther(messageId?:string){
   if(!selectedPersonal)return;setBusy(true);
-  try{await reportUser(selectedPersonal.other_user_id,'OTHER',messageId?'Reported from message '+messageId:undefined);setActionMessage(null);setHeaderMenu(false);Alert.alert('Report sent','Everest Local will review this report.')}
+  try{await reportUser(selectedPersonal.other_user_id,'OTHER',messageId?'Reported from message '+messageId:undefined);setActionTarget(null);setHeaderMenu(false);Alert.alert('Report sent','Everest Local will review this report.')}
   catch{setError('Report could not be sent.')}
   finally{setBusy(false)}
  }
  async function deleteForMe(message:PersonalMessage){
-  setActionMessage(null);setBusy(true);
+  setActionTarget(null);setDeleteTarget(null);setBusy(true);
   try{await deletePersonalMessageForMe(message.id);setPersonalThread(current=>current.filter(m=>m.id!==message.id));void loadHome(true)}
   catch{setError('Message could not be deleted.')}
   finally{setBusy(false)}
  }
- function confirmDeleteForEveryone(message:PersonalMessage){
-  setActionMessage(null);
-  Alert.alert('Delete message?','This removes the message content for both people.',[
-   {text:'Cancel',style:'cancel'},
-   {text:'Delete for everyone',style:'destructive',onPress:()=>void deleteForEveryone(message)}
-  ]);
+ function openDeleteMenu(message:PersonalMessage){
+  setActionTarget(null);
+  setDeleteTarget(message);
  }
  async function deleteForEveryone(message:PersonalMessage){
   setBusy(true);
   try{
-   await deletePersonalMessageForEveryone(message.id);
-   setPersonalThread(current=>current.map(m=>m.id===message.id?{...m,body:'You deleted this message',deleted_for_everyone:true,reactions:[]}:m));
+   const result=await deletePersonalMessageForEveryone(message.id);
+   setDeleteTarget(null);
+   setPersonalThread(current=>current.map(m=>m.id===message.id?{...m,body:result.placeholder||'You deleted this message',deleted_for_everyone:true,reactions:[]}:m));
+   if(selectedPersonal)await refreshPersonalThread(selectedPersonal.id,true);
    void loadHome(true);
   }catch{setError('Message could not be deleted for everyone.')}
   finally{setBusy(false)}
  }
  async function react(message:PersonalMessage,reaction:MessageReaction['reaction']){
-  setActionMessage(null);
+  setActionTarget(null);
   try{await togglePersonalMessageReaction(message.id,reaction);if(selectedPersonal)await refreshPersonalThread(selectedPersonal.id,true)}
   catch{setError('Reaction could not be updated.')}
  }
- function beginReply(message:PersonalMessage){setReplying(message);setEditing(null);setActionMessage(null)}
- function beginEdit(message:PersonalMessage){setEditing(message);setReplying(null);setDraft(message.body);setActionMessage(null)}
+ function beginReply(message:PersonalMessage){setReplying(message);setEditing(null);setActionTarget(null)}
+ function beginEdit(message:PersonalMessage){setEditing(message);setReplying(null);setDraft(message.body);setActionTarget(null)}
  async function copyOnWeb(message:PersonalMessage){
   if(Platform.OS!=='web'||typeof navigator==='undefined'||!navigator.clipboard)return;
-  try{await navigator.clipboard.writeText(message.body);setActionMessage(null)}
+  try{await navigator.clipboard.writeText(message.body);setActionTarget(null)}
   catch{setError('Could not copy this message.')}
  }
 
@@ -251,6 +253,7 @@ export default function Messages(){
   return [...people,...businesses].filter(x=>!q||x.name.toLowerCase().includes(q)||x.preview.toLowerCase().includes(q)).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
  },[personal,market,query,userId]);
  const requestRows=useMemo(()=>{const q=query.trim().toLowerCase();return requests.filter(x=>!q||(x.display_name??'').toLowerCase().includes(q)||(x.latest_message??'').toLowerCase().includes(q))},[requests,query]);
+ const visiblePersonalThread=useMemo(()=>{const q=conversationQuery.trim().toLowerCase();return q?personalThread.filter(m=>m.body.toLowerCase().includes(q)||m.reply_preview?.toLowerCase().includes(q)):personalThread},[personalThread,conversationQuery]);
 
  if(selectedPersonal){
   const incomingRequest=selectedPersonal.status==='REQUEST'&&selectedPersonal.initiated_by!==userId;
@@ -268,12 +271,13 @@ export default function Messages(){
     </View>
 
     {hasOlder?<Pressable disabled={loadingOlder} onPress={()=>void loadOlder()} style={{alignSelf:'center',paddingHorizontal:14,paddingVertical:8,marginTop:8,borderRadius:14,backgroundColor:c.soft}}><Text style={{fontSize:9,fontWeight:'900',color:c.text}}>{loadingOlder?'LOADING…':'LOAD EARLIER MESSAGES'}</Text></Pressable>:null}
+    {conversationSearchOpen?<View style={{paddingHorizontal:12,paddingVertical:7,borderBottomWidth:1,borderBottomColor:c.border,backgroundColor:c.canvas,flexDirection:'row',alignItems:'center',gap:8}}><Ionicons name="search-outline" size={17} color={c.muted}/><TextInput nativeID="everest-conversation-search" autoFocus value={conversationQuery} onChangeText={setConversationQuery} placeholder="Search this conversation" placeholderTextColor={c.muted} style={{flex:1,minHeight:36,fontSize:16,color:c.text}}/><Pressable onPress={()=>{setConversationSearchOpen(false);setConversationQuery('')}} style={{width:34,height:34,alignItems:'center',justifyContent:'center'}}><Ionicons name="close" size={19} color={c.muted}/></Pressable></View>:null}
     <PersonalThread
       refValue={threadRef}
-      items={personalThread}
+      items={visiblePersonalThread}
       userId={userId}
       colors={c}
-      onAction={setActionMessage}
+      onAction={(message,x,y)=>setActionTarget({message,x,y})}
       onRetry={retryMessage}
       onReachTop={()=>void loadOlder()}
       onInitialContent={()=>{if(initialScrollRef.current){initialScrollRef.current=false;threadRef.current?.scrollToEnd({animated:false})}}}
@@ -298,7 +302,7 @@ export default function Messages(){
     />:null}
     {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
    </KeyboardAvoidingView>
-   <MessageActionSheet message={actionMessage} userId={userId} colors={c} otherName={selectedPersonal.display_name??'User'} onClose={()=>setActionMessage(null)} onReply={beginReply} onEdit={beginEdit} onReact={react} onDeleteMe={deleteForMe} onDeleteEveryone={confirmDeleteForEveryone} onReport={m=>void reportOther(m.id)} onCopyWeb={copyOnWeb}/>
+   <MessageActionSheet message={actionMessage} userId={userId} colors={c} otherName={selectedPersonal.display_name??'User'} onClose={()=>setActionTarget(null)} onReply={beginReply} onEdit={beginEdit} onReact={react} onDeleteMe={deleteForMe} onDeleteEveryone={confirmDeleteForEveryone} onReport={m=>void reportOther(m.id)} onCopyWeb={copyOnWeb}/>
    <ConversationMenu visible={headerMenu} colors={c} onClose={()=>setHeaderMenu(false)} onProfile={()=>{setHeaderMenu(false);router.push('/public-user?id='+selectedPersonal.other_user_id)}} onBlock={()=>void blockOther()} onReport={()=>void reportOther()}/>
   </SafeAreaView>;
  }
@@ -344,7 +348,7 @@ function ConversationRow({row,colors:c,onPress}:{row:ChatRow;colors:ReturnType<t
   <View style={{flex:1,minWidth:0}}>
    <View style={{flexDirection:'row',alignItems:'center',gap:8}}><Text numberOfLines={1} style={{fontSize:14,fontWeight:row.unread?'900':'800',color:c.text,flex:1}}>{row.name}</Text><Text style={{fontSize:10,color:row.unread?c.text:c.muted}}>{relativeTime(row.at)}</Text></View>
    <View style={{flexDirection:'row',alignItems:'center',gap:7,marginTop:4}}><Text numberOfLines={1} style={{fontSize:12,color:row.unread?c.text:c.muted,flex:1,fontWeight:row.unread?'700':'400'}}>{row.preview}</Text>{row.unread?<View style={{minWidth:18,height:18,borderRadius:9,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',paddingHorizontal:5}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>{row.unread>99?'99+':row.unread}</Text></View>:null}</View>
-   {row.pending?<Text style={{fontSize:9,fontWeight:'800',color:c.muted,marginTop:4}}>PENDING REQUEST</Text>:row.kind==='MARKET'?<Text style={{fontSize:9,fontWeight:'800',color:c.muted,marginTop:4}}>BUSINESS</Text>:null}
+   {row.pending?<View style={{alignSelf:'flex-start',marginTop:5,paddingHorizontal:7,paddingVertical:3,borderRadius:9,backgroundColor:c.soft}}><Text style={{fontSize:8,fontWeight:'800',color:c.muted}}>Pending</Text></View>:row.kind==='MARKET'?<Text style={{fontSize:9,fontWeight:'800',color:c.muted,marginTop:4}}>BUSINESS</Text>:null}
   </View>
  </Pressable>;
 }
