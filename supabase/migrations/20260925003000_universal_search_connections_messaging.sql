@@ -48,6 +48,18 @@ create table if not exists public.user_blocks (
 );
 create index if not exists user_blocks_reverse_idx on public.user_blocks(blocked_id,blocker_id);
 
+create table if not exists public.user_reports (
+  id uuid primary key default gen_random_uuid(),
+  reporter_id uuid not null references auth.users(id) on delete cascade,
+  reported_user_id uuid not null references auth.users(id) on delete cascade,
+  reason text not null check (reason in ('SPAM','HARASSMENT','IMPERSONATION','INAPPROPRIATE','OTHER')),
+  details text check (details is null or length(details) <= 1000),
+  status text not null default 'OPEN' check (status in ('OPEN','REVIEWED','CLOSED')),
+  created_at timestamptz not null default now(),
+  check (reporter_id <> reported_user_id)
+);
+create index if not exists user_reports_review_idx on public.user_reports(status,created_at desc);
+
 create table if not exists public.personal_conversations (
   id uuid primary key default gen_random_uuid(),
   user_a uuid not null references auth.users(id) on delete cascade,
@@ -103,6 +115,7 @@ alter table public.user_social_preferences enable row level security;
 alter table public.user_connection_requests enable row level security;
 alter table public.user_connections enable row level security;
 alter table public.user_blocks enable row level security;
+alter table public.user_reports enable row level security;
 alter table public.personal_conversations enable row level security;
 alter table public.personal_messages enable row level security;
 
@@ -110,6 +123,7 @@ revoke all on public.user_social_preferences from public,anon,authenticated;
 revoke all on public.user_connection_requests from public,anon,authenticated;
 revoke all on public.user_connections from public,anon,authenticated;
 revoke all on public.user_blocks from public,anon,authenticated;
+revoke all on public.user_reports from public,anon,authenticated;
 revoke all on public.personal_conversations from public,anon,authenticated;
 revoke all on public.personal_messages from public,anon,authenticated;
 
@@ -117,6 +131,7 @@ grant select on public.user_social_preferences to authenticated;
 grant select on public.user_connection_requests to authenticated;
 grant select on public.user_connections to authenticated;
 grant select on public.user_blocks to authenticated;
+grant select on public.user_reports to authenticated;
 grant select on public.personal_conversations to authenticated;
 grant select on public.personal_messages to authenticated;
 
@@ -131,6 +146,9 @@ for select to authenticated using(user_a=(select auth.uid()) or user_b=(select a
 
 create policy blocks_owner_read on public.user_blocks
 for select to authenticated using(blocker_id=(select auth.uid()) or public.is_admin());
+
+create policy user_reports_own_read on public.user_reports
+for select to authenticated using(reporter_id=(select auth.uid()) or public.is_admin());
 
 create policy personal_conversations_participant_read on public.personal_conversations
 for select to authenticated using(user_a=(select auth.uid()) or user_b=(select auth.uid()) or public.is_admin());
@@ -286,6 +304,20 @@ begin
 end; $$;
 revoke all on function public.block_user(uuid) from public,anon;
 grant execute on function public.block_user(uuid) to authenticated;
+
+create or replace function public.report_user(p_other uuid,p_reason text,p_details text default null)
+returns uuid language plpgsql security definer set search_path='' as $
+declare v_id uuid; v_reason text:=upper(trim(coalesce(p_reason,''))); v_details text:=nullif(trim(coalesce(p_details,'')),'');
+begin
+ if auth.uid() is null or p_other=auth.uid() then raise exception 'Invalid report'; end if;
+ if v_reason not in ('SPAM','HARASSMENT','IMPERSONATION','INAPPROPRIATE','OTHER') then raise exception 'Invalid report reason'; end if;
+ if v_details is not null and length(v_details)>1000 then raise exception 'Report details too long'; end if;
+ insert into public.user_reports(reporter_id,reported_user_id,reason,details)
+ values(auth.uid(),p_other,v_reason,v_details) returning id into v_id;
+ return v_id;
+end; $;
+revoke all on function public.report_user(uuid,text,text) from public,anon;
+grant execute on function public.report_user(uuid,text,text) to authenticated;
 
 create or replace function public.unblock_user(p_other uuid)
 returns boolean language plpgsql security definer set search_path='' as $
