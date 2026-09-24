@@ -513,3 +513,7 @@ begin
  return new;
 end; $$;
 revoke all on function public.sync_public_profile() from public,anon,authenticated;
+
+-- Normal people use Connections. Keep legacy user-follow RPCs non-callable while business Follow remains intact.
+revoke execute on function public.follow_user(uuid) from authenticated;
+revoke execute on function public.unfollow_user(uuid) from authenticated;
