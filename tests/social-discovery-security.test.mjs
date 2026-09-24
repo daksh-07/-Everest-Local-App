@@ -25,7 +25,7 @@ test('blocking suppresses connections, pending requests and personal conversatio
 test('personal message requests are distinct from marketplace conversations',()=>{
  assert.match(migration,/create table if not exists public\.personal_conversations/);
  assert.match(migration,/status text not null check \(status in \('REQUEST','ACTIVE','DECLINED'\)\)/);
- assert.match(messages,/MARKETPLACE/);
+ assert.match(messages,/Business enquiry \/ booking/);
  assert.match(messages,/REQUESTS/);
 });
 test('universal search is server-side and external results are separate',()=>{
