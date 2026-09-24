@@ -111,6 +111,36 @@ export default function Root({ children }: PropsWithChildren) {
             touch-action: manipulation;
           }
 
+          #everest-message-composer,
+          #everest-message-composer:focus,
+          #everest-message-composer:focus-visible,
+          textarea#everest-message-composer,
+          textarea#everest-message-composer:focus,
+          textarea#everest-message-composer:focus-visible {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            outline: none !important;
+            outline-width: 0 !important;
+            outline-color: transparent !important;
+            box-shadow: none !important;
+            -webkit-box-shadow: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-focus-ring-color: transparent !important;
+            caret-color: var(--everest-text, #111) !important;
+          }
+
+          [data-everest-message-bubble="true"],
+          [data-everest-message-bubble="true"] * {
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+          }
+
+          [data-everest-message-bubble="true"] {
+            touch-action: manipulation;
+          }
+
           #everest-search-input,
           #everest-search-input:focus,
           #everest-search-input:focus-visible,
