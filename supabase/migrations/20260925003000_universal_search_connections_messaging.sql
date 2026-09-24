@@ -488,10 +488,10 @@ returns table(kind text,id uuid,title text,subtitle text,score int,metadata json
 language sql stable security definer set search_path='' as $$
 with q as (select lower(trim(coalesce(p_query,''))) t),
 people as (
- select 'PERSON'::text,pp.id,coalesce(pp.display_name,'Everest member'),
-   case when pp.username is not null then '@'||pp.username else coalesce(pp.bio,'Person') end,
-   (case when lower(coalesce(pp.display_name,''))=(select t from q) then 100 when lower(coalesce(pp.display_name,'')) like (select t from q)||'%' then 80 else 50 end)::int,
-   jsonb_build_object('avatar_url',pp.avatar_url,'username',pp.username)
+ select 'PERSON'::text as kind,pp.id as id,coalesce(pp.display_name,'Everest member') as title,
+   case when pp.username is not null then '@'||pp.username else coalesce(pp.bio,'Person') end as subtitle,
+   (case when lower(coalesce(pp.display_name,''))=(select t from q) then 100 when lower(coalesce(pp.display_name,'')) like (select t from q)||'%' then 80 else 50 end)::int as score,
+   jsonb_build_object('avatar_url',pp.avatar_url,'username',pp.username) as metadata
  from public.public_profiles pp
  join public.user_social_preferences sp on sp.user_id=pp.id
  where pp.visibility='PUBLIC' and sp.search_visible
