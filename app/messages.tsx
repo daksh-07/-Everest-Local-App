@@ -302,7 +302,7 @@ export default function Messages(){
     />:null}
     {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
    </KeyboardAvoidingView>
-   <MessageActionMenu target={actionTarget} userId={userId} colors={c} otherName={selectedPersonal.display_name??'User'} onClose={()=>setActionTarget(null)} onReply={beginReply} onEdit={beginEdit} onReact={react} onDelete={openDeleteMenu} onReport={m=>void reportOther(m.id)} onCopyWeb={copyOnWeb}/>
+   <MessageActionMenu target={actionTarget} userId={userId} colors={c} onClose={()=>setActionTarget(null)} onReply={beginReply} onEdit={beginEdit} onReact={react} onDelete={openDeleteMenu} onReport={m=>void reportOther(m.id)} onCopyWeb={copyOnWeb}/>
    <DeleteMessageMenu message={deleteTarget} userId={userId} colors={c} busy={busy} onClose={()=>setDeleteTarget(null)} onDeleteMe={deleteForMe} onDeleteEveryone={deleteForEveryone}/>
    <ConversationMenu visible={headerMenu} colors={c} onClose={()=>setHeaderMenu(false)} onProfile={()=>{setHeaderMenu(false);router.push('/public-user?id='+selectedPersonal.other_user_id)}} onSearch={()=>{setHeaderMenu(false);setConversationSearchOpen(true)}} onBlock={()=>void blockOther()} onReport={()=>void reportOther()}/>
   </SafeAreaView>;
@@ -407,7 +407,7 @@ function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,cancelReply,ca
  </View>;
 }
 
-function MessageActionMenu({target,userId,colors:c,otherName,onClose,onReply,onEdit,onReact,onDelete,onReport,onCopyWeb}:{target:{message:PersonalMessage;x:number;y:number}|null;userId:string;colors:ReturnType<typeof useAppTheme>['colors'];otherName:string;onClose:()=>void;onReply:(m:PersonalMessage)=>void;onEdit:(m:PersonalMessage)=>void;onReact:(m:PersonalMessage,r:MessageReaction['reaction'])=>void;onDelete:(m:PersonalMessage)=>void;onReport:(m:PersonalMessage)=>void;onCopyWeb:(m:PersonalMessage)=>void}){
+function MessageActionMenu({target,userId,colors:c,onClose,onReply,onEdit,onReact,onDelete,onReport,onCopyWeb}:{target:{message:PersonalMessage;x:number;y:number}|null;userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onClose:()=>void;onReply:(m:PersonalMessage)=>void;onEdit:(m:PersonalMessage)=>void;onReact:(m:PersonalMessage,r:MessageReaction['reaction'])=>void;onDelete:(m:PersonalMessage)=>void;onReport:(m:PersonalMessage)=>void;onCopyWeb:(m:PersonalMessage)=>void}){
  const {width,height}=useWindowDimensions();
  if(!target)return null;
  const message=target.message;const mine=message.sender_id===userId;
