@@ -302,8 +302,9 @@ export default function Messages(){
     />:null}
     {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
    </KeyboardAvoidingView>
-   <MessageActionSheet message={actionMessage} userId={userId} colors={c} otherName={selectedPersonal.display_name??'User'} onClose={()=>setActionTarget(null)} onReply={beginReply} onEdit={beginEdit} onReact={react} onDeleteMe={deleteForMe} onDeleteEveryone={confirmDeleteForEveryone} onReport={m=>void reportOther(m.id)} onCopyWeb={copyOnWeb}/>
-   <ConversationMenu visible={headerMenu} colors={c} onClose={()=>setHeaderMenu(false)} onProfile={()=>{setHeaderMenu(false);router.push('/public-user?id='+selectedPersonal.other_user_id)}} onBlock={()=>void blockOther()} onReport={()=>void reportOther()}/>
+   <MessageActionMenu target={actionTarget} userId={userId} colors={c} otherName={selectedPersonal.display_name??'User'} onClose={()=>setActionTarget(null)} onReply={beginReply} onEdit={beginEdit} onReact={react} onDelete={openDeleteMenu} onReport={m=>void reportOther(m.id)} onCopyWeb={copyOnWeb}/>
+   <DeleteMessageMenu message={deleteTarget} userId={userId} colors={c} busy={busy} onClose={()=>setDeleteTarget(null)} onDeleteMe={deleteForMe} onDeleteEveryone={deleteForEveryone}/>
+   <ConversationMenu visible={headerMenu} colors={c} onClose={()=>setHeaderMenu(false)} onProfile={()=>{setHeaderMenu(false);router.push('/public-user?id='+selectedPersonal.other_user_id)}} onSearch={()=>{setHeaderMenu(false);setConversationSearchOpen(true)}} onBlock={()=>void blockOther()} onReport={()=>void reportOther()}/>
   </SafeAreaView>;
  }
 
