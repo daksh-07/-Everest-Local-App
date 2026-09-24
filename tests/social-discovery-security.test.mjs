@@ -4,12 +4,13 @@ import fs from 'node:fs';
 
 const migration=fs.readFileSync('supabase/migrations/20260925003000_universal_search_connections_messaging.sql','utf8');
 const search=fs.readFileSync('app/search.tsx','utf8');
+const social=fs.readFileSync('lib/social.ts','utf8');
 const messages=fs.readFileSync('app/messages.tsx','utf8');
 
 test('people use connections while business follow RPC remains separate',()=>{
  assert.match(migration,/create table if not exists public\.user_connections/);
  assert.match(migration,/revoke execute on function public\.follow_user\(uuid\) from authenticated/);
- assert.match(migration,/follow_business/);
+ assert.match(social,/follow_business/);
 });
 test('connection mutations derive actor from auth uid and prevent self requests',()=>{
  assert.match(migration,/p_recipient=auth\.uid\(\)/);
