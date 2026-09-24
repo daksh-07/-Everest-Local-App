@@ -209,8 +209,8 @@ begin
  if p_recipient=auth.uid() then raise exception 'Cannot connect to yourself'; end if;
  if public.users_blocked(auth.uid(),p_recipient) then raise exception 'Connection unavailable'; end if;
  if public.users_connected(auth.uid(),p_recipient) then raise exception 'Already connected'; end if;
- if not exists(select 1 from public.public_profiles pp join public.user_social_preferences sp on sp.user_id=pp.id
-   where pp.id=p_recipient and pp.visibility='PUBLIC' and sp.search_visible) then raise exception 'Profile unavailable'; end if;
+ if not exists(select 1 from public.public_profiles pp
+   where pp.id=p_recipient and pp.visibility='PUBLIC') then raise exception 'Profile unavailable'; end if;
  select connection_requests into v_rule from public.user_social_preferences where user_id=p_recipient;
  if coalesce(v_rule,'EVERYONE')='NOBODY' then raise exception 'Connection requests disabled'; end if;
  if v_rule='MUTUALS' then
@@ -437,11 +437,12 @@ begin
  if auth.uid() is null then raise exception 'Authentication required'; end if;
  if public.users_blocked(auth.uid(),p_user) then return null; end if;
  select * into v_pref from public.user_social_preferences where user_id=p_user;
- if p_user<>auth.uid() and (coalesce(v_pref.profile_visibility,'PUBLIC')='PRIVATE' or not coalesce(v_pref.search_visible,true)) then return null; end if;
+ if p_user<>auth.uid() and coalesce(v_pref.profile_visibility,'PUBLIC')='PRIVATE' then return null; end if;
  select count(*) into v_count from public.user_connections c where c.user_a=p_user or c.user_b=p_user;
  select jsonb_build_object(
-   'id',pp.id,'display_name',pp.display_name,'username',pp.username,'avatar_url',pp.avatar_url,'bio',pp.bio,
-   'suburb',case when coalesce(v_pref.show_location,false) then pp.suburb else null end,
+   'id',pp.id,'display_name',pp.display_name,'username',pp.username,'avatar_url',pp.avatar_url,
+   'bio',case when coalesce(v_pref.profile_visibility,'PUBLIC')='LIMITED' and p_user<>auth.uid() and not public.users_connected(auth.uid(),p_user) then null else pp.bio end,
+   'suburb',case when coalesce(v_pref.show_location,false) and (coalesce(v_pref.profile_visibility,'PUBLIC')<>'LIMITED' or p_user=auth.uid() or public.users_connected(auth.uid(),p_user)) then pp.suburb else null end,
    'joined_at',pp.joined_at,'connection_count',v_count,'mutual_count',public.mutual_connection_count(p_user),
    'connection_state',case when p_user=auth.uid() then 'SELF' else public.get_connection_state(p_user) end
  ) into v from public.public_profiles pp where pp.id=p_user and (pp.visibility='PUBLIC' or pp.id=auth.uid());
@@ -484,6 +485,7 @@ posts_q as (
  jsonb_build_object('author_id',p.author_id,'business_id',p.business_id)
  from public.posts p where p.status='PUBLISHED' and p.visibility='PUBLIC'
  and not public.users_blocked(auth.uid(),p.author_id)
+ and (p.business_id is null or exists(select 1 from public.businesses b where b.id=p.business_id and b.status='ACTIVE' and b.verification_status='VERIFIED'))
  and ((select t from q)='' or lower(coalesce(p.caption,'')) like '%'||(select t from q)||'%')
 ),
 products_q as (
