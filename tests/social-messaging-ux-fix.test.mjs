@@ -11,7 +11,7 @@ const businessProfile=fs.readFileSync('app/business-profile.tsx','utf8');
 
 test('outgoing pending message requests stay visible in chats',()=>{
  assert.match(migration,/c\.status='REQUEST' and c\.initiated_by=auth\.uid\(\)/);
- assert.match(messages,/Message request pending/);
+ assert.match(messages,/Request pending/);
  assert.match(messages,/selectedPersonal\.status==='ACTIVE'\|\|outgoingRequest/);
 });
 
@@ -29,8 +29,8 @@ test('delete for me is per-user and delete for everyone is sender-only',()=>{
  assert.match(migration,/Only the original sender can delete this message for everyone/);
  assert.match(connections,/delete_personal_message_for_me/);
  assert.match(connections,/delete_personal_message_for_everyone/);
- assert.match(messages,/DELETE FOR ME/);
- assert.match(messages,/DELETE FOR EVERYONE/);
+ assert.match(messages,/Delete for me/);
+ assert.match(messages,/Delete for everyone/);
 });
 
 test('ordinary clients cannot read raw deleted personal message content',()=>{
