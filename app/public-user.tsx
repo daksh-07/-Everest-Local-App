@@ -8,7 +8,7 @@ import {useAppTheme} from '@/lib/theme';
 
 export default function PublicUser(){
  const {colors:c}=useAppTheme(); const {id}=useLocalSearchParams<{id?:string}>(); const userId=typeof id==='string'?id:'';
- const [p,setP]=useState<PublicUserProfile|null>(null); const [posts,setPosts]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [busy,setBusy]=useState(false); const [message,setMessage]=useState(''); const [error,setError]=useState('');
+ const [p,setP]=useState<PublicUserProfile|null>(null); const [posts,setPosts]=useState<Awaited<ReturnType<typeof publicPostsForUser>>>([]); const [loading,setLoading]=useState(true); const [busy,setBusy]=useState(false); const [message,setMessage]=useState(''); const [error,setError]=useState('');
  async function load(){if(!userId)return;setLoading(true);setError('');try{const [profile,content]=await Promise.all([getPublicUserProfile(userId),publicPostsForUser(userId)]);setP(profile);setPosts(content)}catch(e){setError(e instanceof Error?e.message:'Profile could not be loaded.')}finally{setLoading(false)}}
  useEffect(()=>{void load()},[userId]);
  async function connect(){if(!p)return;setBusy(true);try{if(p.connection_state==='NONE')await sendConnectionRequest(p.id);else if(p.connection_state==='OUTGOING')await cancelConnectionRequest(p.id);else if(p.connection_state==='CONNECTED')await removeConnection(p.id);await load()}catch(e){setError(e instanceof Error?e.message:'Connection action failed.')}finally{setBusy(false)}}
