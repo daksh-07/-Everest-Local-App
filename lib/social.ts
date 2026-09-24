@@ -32,6 +32,8 @@ export interface FollowCounts {
   following_count: number;
 }
 
+export type BusinessFollower={id:string;display_name:string|null;username:string|null;avatar_url:string|null;bio:string|null;connection_state:string;mutual_count:number;followed_at:string};
+
 export async function followBusiness(businessId: string): Promise<boolean> {
   requireSupabaseConfig();
   const { data, error } = await supabase.rpc('follow_business', { p_business_id: businessId });
@@ -72,6 +74,13 @@ export async function getFollowCounts(input: { businessId?: string; userId?: str
     follower_count: Number(row?.follower_count ?? 0),
     following_count: Number(row?.following_count ?? 0),
   };
+}
+
+export async function listBusinessFollowers(businessId:string,limit=25,offset=0):Promise<BusinessFollower[]>{
+  requireSupabaseConfig();
+  const {data,error}=await supabase.rpc('list_business_followers',{p_business:businessId,p_limit:Math.min(Math.max(limit,1),50),p_offset:Math.max(offset,0)});
+  if(error)throw new Error(error.message);
+  return (data??[]) as BusinessFollower[];
 }
 
 export async function isFollowing(input: { businessId?: string; userId?: string }): Promise<boolean> {
