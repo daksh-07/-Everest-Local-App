@@ -6,7 +6,8 @@ const cryptoCompat = fs.readFileSync('supabase/migrations/20260923045959_externa
 const optOut = fs.readFileSync('supabase/migrations/20260923093000_external_gateway_self_service_opt_out.sql','utf8');
 const gateway = fs.readFileSync('supabase/functions/external-quote-gateway/index.ts','utf8');
 const lockOrder = fs.readFileSync('supabase/migrations/20260923110000_external_gateway_lock_order.sql','utf8');
-const directory = fs.readFileSync('app/search.tsx','utf8');
+const search = fs.readFileSync('app/search.tsx','utf8');
+const directory = fs.readFileSync('app/external-businesses.tsx','utf8');
 
 test('gateway operations lock enquiry before token and recheck the token hash', () => {
   for (const functionName of ['read_external_gateway', 'submit_external_gateway_quote', 'opt_out_external_gateway_contact']) {
@@ -19,8 +20,12 @@ test('gateway operations lock enquiry before token and recheck the token hash', 
   }
 });
 
-test('external directory cards do not appear under a no-businesses message', () => {
-  assert.match(directory, /!externalBusinesses\.length && <Empty text="No verified businesses matched this search\."/);
+test('external directory remains visually and operationally separate from native search', () => {
+  assert.match(search, /Search businesses outside Everest/);
+  assert.match(search, /external-businesses/);
+  assert.doesNotMatch(search, /functions\.invoke\('external-discovery'/);
+  assert.match(directory, /NOT YET ON EVEREST/);
+  assert.match(directory, /AUTHORISE THIS ENQUIRY/);
 });
 
 test('pgcrypto compatibility helpers are locked away from API roles', () => {
