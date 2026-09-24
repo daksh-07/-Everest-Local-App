@@ -272,12 +272,12 @@ revoke all on function public.respond_connection_request(uuid,boolean) from publ
 grant execute on function public.respond_connection_request(uuid,boolean) to authenticated;
 
 create or replace function public.cancel_connection_request(p_recipient uuid)
-returns boolean language plpgsql security definer set search_path='' as $
+returns boolean language plpgsql security definer set search_path='' as $$
 begin
  update public.user_connection_requests set status='CANCELLED',responded_at=now()
  where requester_id=auth.uid() and recipient_id=p_recipient and status='PENDING';
  return found;
-end; $;
+end; $$;
 revoke all on function public.cancel_connection_request(uuid) from public,anon;
 grant execute on function public.cancel_connection_request(uuid) to authenticated;
 
@@ -306,7 +306,7 @@ revoke all on function public.block_user(uuid) from public,anon;
 grant execute on function public.block_user(uuid) to authenticated;
 
 create or replace function public.report_user(p_other uuid,p_reason text,p_details text default null)
-returns uuid language plpgsql security definer set search_path='' as $
+returns uuid language plpgsql security definer set search_path='' as $$
 declare v_id uuid; v_reason text:=upper(trim(coalesce(p_reason,''))); v_details text:=nullif(trim(coalesce(p_details,'')),'');
 begin
  if auth.uid() is null or p_other=auth.uid() then raise exception 'Invalid report'; end if;
@@ -315,16 +315,16 @@ begin
  insert into public.user_reports(reporter_id,reported_user_id,reason,details)
  values(auth.uid(),p_other,v_reason,v_details) returning id into v_id;
  return v_id;
-end; $;
+end; $$;
 revoke all on function public.report_user(uuid,text,text) from public,anon;
 grant execute on function public.report_user(uuid,text,text) to authenticated;
 
 create or replace function public.unblock_user(p_other uuid)
-returns boolean language plpgsql security definer set search_path='' as $
+returns boolean language plpgsql security definer set search_path='' as $$
 begin
  delete from public.user_blocks where blocker_id=auth.uid() and blocked_id=p_other;
  return found;
-end; $;
+end; $$;
 revoke all on function public.unblock_user(uuid) from public,anon;
 grant execute on function public.unblock_user(uuid) to authenticated;
 
