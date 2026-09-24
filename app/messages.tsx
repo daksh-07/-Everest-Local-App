@@ -13,7 +13,31 @@ type MarketMessage={id:string;sender_id:string;body:string;created_at:string};
 
 export default function Messages(){
  const {colors:c}=useAppTheme();const params=useLocalSearchParams<{personalId?:string}>();const [tab,setTab]=useState<'CHATS'|'REQUESTS'|'MARKETPLACE'>('CHATS');const [personal,setPersonal]=useState<PersonalConversation[]>([]);const [requests,setRequests]=useState<PersonalConversation[]>([]);const [market,setMarket]=useState<MarketConversation[]>([]);const [selectedPersonal,setSelectedPersonal]=useState<PersonalConversation|null>(null);const [selectedMarket,setSelectedMarket]=useState<MarketConversation|null>(null);const [personalThread,setPersonalThread]=useState<PersonalMessage[]>([]);const [marketThread,setMarketThread]=useState<MarketMessage[]>([]);const [draft,setDraft]=useState('');const [userId,setUserId]=useState('');const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
- async function load(){setLoading(true);setError('');try{const user=await currentUser();setUserId(user?.id??'');const [p,r,m]=await Promise.all([listPersonalConversations(false),listPersonalConversations(true),conversations()]);setPersonal(p);setRequests(r);const rows=m as MarketConversation[];const ids=[...new Set(rows.map(x=>x.business_id))];const {data}=ids.length?await supabase.from('businesses').select('id,name').in('id',ids):{data:[] as any[]};const names=Object.fromEntries((data??[]).map(x=>[x.id,x.name]));setMarket(rows.map(x=>({...x,counterpart_name:names[x.business_id]??'Marketplace conversation'})));const requested=typeof params.personalId==='string'?params.personalId:'';if(requested){const found=[...p,...r].find(x=>x.id===requested);if(found){setSelectedPersonal(found);setTab(found.status==='REQUEST'&&found.initiated_by!==user?.id?'REQUESTS':'CHATS')}}}catch(e){setError(e instanceof Error?e.message:'Messages could not be loaded.')}finally{setLoading(false)}}
+ async function load(){
+  setLoading(true);setError('');
+  try{
+   const user=await currentUser();
+   setUserId(user?.id??'');
+   const [p,r,m]=await Promise.all([listPersonalConversations(false),listPersonalConversations(true),conversations()]);
+   setPersonal(p);setRequests(r);
+   const rows=m as MarketConversation[];
+   const ids=[...new Set(rows.map(x=>x.business_id))];
+   let businessRows:Array<{id:string;name:string}>=[];
+   if(ids.length){
+    const result=await supabase.from('businesses').select('id,name').in('id',ids);
+    if(result.error)throw result.error;
+    businessRows=result.data??[];
+   }
+   const names=Object.fromEntries(businessRows.map(x=>[x.id,x.name]));
+   setMarket(rows.map(x=>({...x,counterpart_name:names[x.business_id]??'Marketplace conversation'})));
+   const requested=typeof params.personalId==='string'?params.personalId:'';
+   if(requested){
+    const found=[...p,...r].find(x=>x.id===requested);
+    if(found){setSelectedPersonal(found);setTab(found.status==='REQUEST'&&found.initiated_by!==user?.id?'REQUESTS':'CHATS');}
+   }
+  }catch(e){setError(e instanceof Error?e.message:'Messages could not be loaded.')}
+  finally{setLoading(false);}
+ }
  useEffect(()=>{void load()},[]);
  useEffect(()=>{if(selectedPersonal)void personalMessages(selectedPersonal.id).then(setPersonalThread).catch(e=>setError(e instanceof Error?e.message:'Conversation could not be loaded.'))},[selectedPersonal?.id]);
  useEffect(()=>{if(selectedMarket)void messages(selectedMarket.id).then(x=>setMarketThread(x as MarketMessage[])).catch(e=>setError(e instanceof Error?e.message:'Conversation could not be loaded.'))},[selectedMarket?.id]);
