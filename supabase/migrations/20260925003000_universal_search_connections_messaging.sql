@@ -254,11 +254,12 @@ revoke all on function public.respond_connection_request(uuid,boolean) from publ
 grant execute on function public.respond_connection_request(uuid,boolean) to authenticated;
 
 create or replace function public.cancel_connection_request(p_recipient uuid)
-returns boolean language sql security definer set search_path='' as $$
+returns boolean language plpgsql security definer set search_path='' as $
+begin
  update public.user_connection_requests set status='CANCELLED',responded_at=now()
  where requester_id=auth.uid() and recipient_id=p_recipient and status='PENDING';
- select found;
-$$;
+ return found;
+end; $;
 revoke all on function public.cancel_connection_request(uuid) from public,anon;
 grant execute on function public.cancel_connection_request(uuid) to authenticated;
 
@@ -287,10 +288,11 @@ revoke all on function public.block_user(uuid) from public,anon;
 grant execute on function public.block_user(uuid) to authenticated;
 
 create or replace function public.unblock_user(p_other uuid)
-returns boolean language sql security definer set search_path='' as $$
+returns boolean language plpgsql security definer set search_path='' as $
+begin
  delete from public.user_blocks where blocker_id=auth.uid() and blocked_id=p_other;
- select found;
-$$;
+ return found;
+end; $;
 revoke all on function public.unblock_user(uuid) from public,anon;
 grant execute on function public.unblock_user(uuid) to authenticated;
 
@@ -344,7 +346,7 @@ grant execute on function public.list_connection_requests() to authenticated;
 
 create or replace function public.send_personal_message(p_recipient uuid,p_body text)
 returns uuid language plpgsql security definer set search_path='' as $$
-declare v_id uuid; v_status text; v_rule text; v_connected boolean; v_body text:=trim(p_body);
+declare v_id uuid; v_status text; v_initiated uuid; v_rule text; v_connected boolean; v_body text:=trim(p_body);
 begin
  if auth.uid() is null then raise exception 'Authentication required'; end if;
  if p_recipient=auth.uid() then raise exception 'Cannot message yourself'; end if;
@@ -354,7 +356,7 @@ begin
  select message_requests into v_rule from public.user_social_preferences where user_id=p_recipient;
  if not v_connected and coalesce(v_rule,'EVERYONE')='NOBODY' then raise exception 'Message requests disabled'; end if;
  if not v_connected and v_rule='CONNECTIONS' then raise exception 'Connect before messaging'; end if;
- select id,status into v_id,v_status from public.personal_conversations
+ select id,status,initiated_by into v_id,v_status,v_initiated from public.personal_conversations
  where (user_a=auth.uid() and user_b=p_recipient) or (user_a=p_recipient and user_b=auth.uid()) for update;
  if v_id is null then
   insert into public.personal_conversations(user_a,user_b,initiated_by,status)
@@ -364,7 +366,7 @@ begin
  elsif v_connected and v_status<>'ACTIVE' then
   update public.personal_conversations set status='ACTIVE',accepted_at=coalesce(accepted_at,now()),updated_at=now() where id=v_id;
   v_status:='ACTIVE';
- elsif v_status='REQUEST' and initiated_by<>auth.uid() then
+ elsif v_status='REQUEST' and v_initiated<>auth.uid() then
   raise exception 'Accept the incoming request before replying';
  end if;
  if v_status='REQUEST' and exists(select 1 from public.personal_messages where conversation_id=v_id) then raise exception 'Message request already sent'; end if;
