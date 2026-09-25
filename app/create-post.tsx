@@ -90,18 +90,25 @@ export default function CreatePost(){
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">
   <View style={s.header}>
    <Pressable onPress={()=>router.back()} style={s.headerIcon}><Ionicons name="close" size={24} color={colors.text}/></Pressable>
-   <Text style={s.headerTitle}>New post</Text>
+   <Text style={s.headerTitle}>Create post</Text>
    <Pressable disabled={busy||loading} onPress={()=>void publish()} style={[s.postTop,(busy||loading)&&s.dim]}><Text style={s.postTopText}>{busy?'POSTING':'POST'}</Text></Pressable>
   </View>
 
   {loading?<ActivityIndicator color={colors.brand} style={{marginTop:60}}/>:<>
-   <View style={s.identityLine}>
-    <View style={s.avatar}><Ionicons name={identity?.kind==='BUSINESS'?'business':'person'} size={18} color={colors.text}/></View>
-    <View style={{flex:1}}><Text style={s.identityName}>{identity?.name}</Text><Text style={s.identityMeta}>{identity?.kind==='BUSINESS'?'Posting as business · Public':'Posting from your profile'}</Text></View>
-    {identities.length>1?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.switcher}>{identities.filter(i=>i.id!==identity?.id||i.kind!==identity?.kind).slice(0,2).map(i=><Pressable key={i.kind+i.id} onPress={()=>{setIdentity(i);setType(i.kind==='BUSINESS'?'COMPLETED_WORK':'UPDATE');setShowServicePicker(false);setShowProductPicker(false);void haptic.selection();}} style={s.switchChip}><Text numberOfLines={1} style={s.switchText}>{i.kind==='BUSINESS'?'Business':'Personal'}</Text></Pressable>)}</ScrollView>:null}
+   <Text style={s.eyebrow}>POSTING AS</Text>
+   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.identityRail}>
+    {identities.map(i=>{const selected=i.id===identity?.id&&i.kind===identity?.kind;return <Pressable key={i.kind+i.id} onPress={()=>{setIdentity(i);setType(i.kind==='BUSINESS'?'COMPLETED_WORK':'UPDATE');setShowServicePicker(false);setShowProductPicker(false);void haptic.selection();}} style={[s.identityPill,selected&&s.identityPillActive]}>
+     <View style={[s.identityPillIcon,selected&&s.identityPillIconActive]}><Ionicons name={i.kind==='BUSINESS'?'business-outline':'person-outline'} size={18} color={selected?colors.onBrand:colors.text}/></View>
+     <Text numberOfLines={1} style={[s.identityPillText,selected&&s.identityPillTextActive]}>{i.kind==='PERSONAL'?'My profile':i.name}</Text>
+    </Pressable>})}
+   </ScrollView>
+
+   <View style={s.composerCard}>
+    <TextInput nativeID="everest-post-caption" value={caption} onChangeText={setCaption} multiline maxLength={3000} placeholder={selectedChoice.placeholder} placeholderTextColor={colors.muted} style={[s.caption,Platform.OS==='web'&&({outlineStyle:'none'} as object)]}/>
+    <View style={s.composerFooter}><Text style={s.counter}>{caption.length}/3000</Text></View>
    </View>
 
-   <Text style={s.sectionTitle}>What kind of post?</Text>
+   <Text style={s.sectionTitle}>POST TYPE</Text>
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.intentRail}>
     {choices.map(choice=><Pressable key={choice.type} onPress={()=>chooseType(choice)} style={[s.intentCard,type===choice.type&&s.intentCardActive]}>
      <Ionicons name={choice.icon} size={19} color={type===choice.type?colors.onBrand:colors.text}/>
@@ -110,12 +117,7 @@ export default function CreatePost(){
    </ScrollView>
    <Text style={s.intentHint}>{selectedChoice.hint}</Text>
 
-   <View style={s.composerCard}>
-    <TextInput nativeID="everest-post-caption" value={caption} onChangeText={setCaption} multiline maxLength={3000} placeholder={selectedChoice.placeholder} placeholderTextColor={colors.muted} style={[s.caption,Platform.OS==='web'&&({outlineStyle:'none'} as object)]}/>
-    <View style={s.composerFooter}><Text style={s.counter}>{caption.length}/3000</Text></View>
-   </View>
-
-   <Text style={s.sectionTitle}>Add photos</Text>
+   <Text style={s.sectionTitle}>MEDIA</Text>
    {photos.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.photoRow}>{photos.map((p,i)=><View key={p.assetId??p.uri} style={s.photoWrap}>
     <Image source={{uri:p.uri}} style={s.photo}/>
     {i===0?<View style={s.cover}><Text style={s.coverText}>COVER</Text></View>:null}
@@ -131,7 +133,7 @@ export default function CreatePost(){
    </View>
 
    <View style={s.addToPost}>
-    <Text style={s.addTitle}>Add to your post</Text>
+    <Text style={s.addTitle}>POST DETAILS</Text>
     <Pressable onPress={()=>setShowDetails(v=>!v)} style={s.detailRow}><View style={s.detailIcon}><Ionicons name="location-outline" size={19} color={colors.text}/></View><Text style={s.detailText}>{location||'Location'}</Text><Ionicons name={showDetails?'chevron-up':'chevron-down'} size={18} color={colors.muted}/></Pressable>
     {showDetails?<View style={s.detailPanel}><TextInput value={location} onChangeText={setLocation} maxLength={120} placeholder="Add suburb or area (optional)" placeholderTextColor={colors.muted} style={[s.input,Platform.OS==='web'&&({outlineStyle:'none'} as object)]}/>{identity?.kind==='PERSONAL'?<View style={s.visibilityRow}><Text style={s.detailLabel}>Audience</Text><Pressable onPress={()=>setVisibility(visibility==='PUBLIC'?'FOLLOWERS':'PUBLIC')} style={s.audience}><Ionicons name={visibility==='PUBLIC'?'globe-outline':'people-outline'} size={16} color={colors.text}/><Text style={s.audienceText}>{visibility==='PUBLIC'?'Public':'Connections'}</Text></Pressable></View>:null}</View>:null}
 
@@ -152,17 +154,19 @@ export default function CreatePost(){
 }
 
 const styles=(c:ThemeColors)=>StyleSheet.create({
- safe:{flex:1,backgroundColor:c.canvas},page:{paddingHorizontal:18,paddingBottom:70,maxWidth:720,width:'100%',alignSelf:'center'},
- header:{height:58,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},headerIcon:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:c.surface},
- headerTitle:{fontSize:17,fontWeight:'900',color:c.text},postTop:{minHeight:36,paddingHorizontal:15,borderRadius:18,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'},postTopText:{fontSize:10,fontWeight:'900',letterSpacing:.7,color:c.onBrand},dim:{opacity:.5},
+ safe:{flex:1,backgroundColor:c.canvas},page:{paddingHorizontal:16,paddingBottom:70,maxWidth:720,width:'100%',alignSelf:'center'},
+ header:{height:62,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},headerIcon:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:'transparent'},
+ headerTitle:{fontSize:20,fontWeight:'900',letterSpacing:-.45,color:c.text},postTop:{minHeight:38,paddingHorizontal:10,borderRadius:19,backgroundColor:'transparent',alignItems:'center',justifyContent:'center'},postTopText:{fontSize:11,fontWeight:'900',letterSpacing:.9,color:c.brand},dim:{opacity:.5},
+ eyebrow:{fontSize:9,fontWeight:'900',letterSpacing:2,color:c.muted,marginTop:15,marginBottom:10},
+ identityRail:{gap:9,paddingRight:12},identityPill:{minHeight:52,maxWidth:260,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:12,flexDirection:'row',alignItems:'center',gap:9},identityPillActive:{borderColor:c.brand,backgroundColor:c.soft},identityPillIcon:{width:34,height:34,borderRadius:12,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},identityPillIconActive:{backgroundColor:c.brand},identityPillText:{fontSize:12,fontWeight:'900',color:c.text,maxWidth:190},identityPillTextActive:{color:c.text},
  identityLine:{flexDirection:'row',alignItems:'center',gap:11,paddingVertical:14},avatar:{width:42,height:42,borderRadius:21,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},identityName:{fontSize:14,fontWeight:'900',color:c.text},identityMeta:{fontSize:10,color:c.muted,marginTop:2},
  switcher:{gap:6},switchChip:{borderWidth:1,borderColor:c.border,borderRadius:16,minHeight:32,paddingHorizontal:11,alignItems:'center',justifyContent:'center',maxWidth:100},switchText:{fontSize:9,fontWeight:'800',color:c.text},
- sectionTitle:{fontSize:12,fontWeight:'900',color:c.text,marginTop:18,marginBottom:9},intentRail:{gap:8,paddingRight:12},intentCard:{minHeight:44,borderRadius:22,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:7},intentCardActive:{backgroundColor:c.brand,borderColor:c.brand},intentText:{fontSize:10,fontWeight:'900',color:c.text},intentTextActive:{color:c.onBrand},intentHint:{fontSize:11,lineHeight:17,color:c.muted,marginTop:8},
- composerCard:{marginTop:14,borderWidth:1,borderColor:c.border,borderRadius:18,backgroundColor:c.surface,overflow:'hidden'},caption:{minHeight:112,fontSize:17,lineHeight:25,color:c.text,textAlignVertical:'top',paddingHorizontal:16,paddingTop:16,paddingBottom:8,borderWidth:0},composerFooter:{height:30,paddingHorizontal:14,alignItems:'flex-end',justifyContent:'center'},counter:{fontSize:9,color:c.muted},
- mediaHero:{minHeight:150,borderRadius:18,borderWidth:1,borderStyle:'dashed',borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',padding:20},mediaHeroIcon:{width:52,height:52,borderRadius:26,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},mediaHeroTitle:{fontSize:15,fontWeight:'900',color:c.text,marginTop:10},mediaHeroCopy:{fontSize:11,lineHeight:17,color:c.muted,textAlign:'center',marginTop:4},
+ sectionTitle:{fontSize:9,fontWeight:'900',letterSpacing:1.8,color:c.muted,marginTop:20,marginBottom:10},intentRail:{gap:8,paddingRight:12},intentCard:{minHeight:44,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:7},intentCardActive:{backgroundColor:c.soft,borderColor:c.brand},intentText:{fontSize:10,fontWeight:'900',color:c.text},intentTextActive:{color:c.text},intentHint:{fontSize:10,lineHeight:16,color:c.muted,marginTop:7},
+ composerCard:{marginTop:14,borderWidth:1,borderColor:c.border,borderRadius:24,backgroundColor:c.surface,overflow:'hidden',shadowColor:'#000',shadowOpacity:.16,shadowRadius:20,shadowOffset:{width:0,height:10}},caption:{minHeight:170,fontSize:18,lineHeight:27,color:c.text,textAlignVertical:'top',paddingHorizontal:17,paddingTop:18,paddingBottom:8,borderWidth:0},composerFooter:{height:34,paddingHorizontal:15,alignItems:'flex-end',justifyContent:'center'},counter:{fontSize:9,color:c.muted},
+ mediaHero:{minHeight:124,borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',padding:18},mediaHeroIcon:{width:52,height:52,borderRadius:26,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},mediaHeroTitle:{fontSize:15,fontWeight:'900',color:c.text,marginTop:10},mediaHeroCopy:{fontSize:11,lineHeight:17,color:c.muted,textAlign:'center',marginTop:4},
  photoRow:{gap:10,paddingRight:12},photoWrap:{width:220,height:220,borderRadius:18,overflow:'hidden',position:'relative',backgroundColor:c.surface},photo:{width:'100%',height:'100%'},cover:{position:'absolute',left:9,top:9,borderRadius:10,backgroundColor:'rgba(0,0,0,.72)',paddingHorizontal:8,paddingVertical:5},coverText:{fontSize:8,fontWeight:'900',letterSpacing:.8,color:'#fff'},remove:{position:'absolute',top:8,right:8,width:30,height:30,borderRadius:15,backgroundColor:'rgba(0,0,0,.72)',alignItems:'center',justifyContent:'center'},reorder:{position:'absolute',bottom:9,left:9,right:9,flexDirection:'row',justifyContent:'space-between'},
- mediaActions:{flexDirection:'row',gap:8,marginTop:9},mediaButton:{minHeight:42,borderWidth:1,borderColor:c.border,borderRadius:21,backgroundColor:c.surface,paddingHorizontal:14,flexDirection:'row',gap:7,alignItems:'center'},mediaText:{fontSize:10,fontWeight:'900',color:c.text},
- addToPost:{marginTop:22,borderWidth:1,borderColor:c.border,borderRadius:18,backgroundColor:c.surface,overflow:'hidden'},addTitle:{fontSize:11,fontWeight:'900',color:c.text,paddingHorizontal:15,paddingTop:14,paddingBottom:5},detailRow:{minHeight:52,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:10,borderTopWidth:1,borderTopColor:c.border},detailIcon:{width:34,height:34,borderRadius:17,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},detailText:{flex:1,fontSize:12,fontWeight:'700',color:c.text},detailPanel:{paddingHorizontal:13,paddingBottom:12},input:{minHeight:48,borderWidth:1,borderColor:c.border,borderRadius:13,backgroundColor:c.input,color:c.text,paddingHorizontal:13,fontSize:16},visibilityRow:{marginTop:10,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},detailLabel:{fontSize:10,fontWeight:'800',color:c.muted},audience:{minHeight:36,borderRadius:18,borderWidth:1,borderColor:c.border,paddingHorizontal:11,flexDirection:'row',alignItems:'center',gap:6},audienceText:{fontSize:10,fontWeight:'800',color:c.text},
+ mediaActions:{flexDirection:'row',gap:9,marginTop:10},mediaButton:{flex:1,minHeight:48,borderWidth:1,borderColor:c.border,borderRadius:16,backgroundColor:c.surface,paddingHorizontal:14,flexDirection:'row',gap:8,alignItems:'center',justifyContent:'center'},mediaText:{fontSize:10,fontWeight:'900',color:c.text},
+ addToPost:{marginTop:22,borderWidth:1,borderColor:c.border,borderRadius:20,backgroundColor:c.surface,overflow:'hidden'},addTitle:{fontSize:9,fontWeight:'900',letterSpacing:1.6,color:c.muted,paddingHorizontal:15,paddingTop:15,paddingBottom:8},detailRow:{minHeight:52,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:10,borderTopWidth:1,borderTopColor:c.border},detailIcon:{width:34,height:34,borderRadius:17,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},detailText:{flex:1,fontSize:12,fontWeight:'700',color:c.text},detailPanel:{paddingHorizontal:13,paddingBottom:12},input:{minHeight:48,borderWidth:1,borderColor:c.border,borderRadius:13,backgroundColor:c.input,color:c.text,paddingHorizontal:13,fontSize:16},visibilityRow:{marginTop:10,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},detailLabel:{fontSize:10,fontWeight:'800',color:c.muted},audience:{minHeight:36,borderRadius:18,borderWidth:1,borderColor:c.border,paddingHorizontal:11,flexDirection:'row',alignItems:'center',gap:6},audienceText:{fontSize:10,fontWeight:'800',color:c.text},
  linkRail:{gap:7,paddingHorizontal:12,paddingBottom:12},linkChip:{minHeight:36,borderRadius:18,borderWidth:1,borderColor:c.border,paddingHorizontal:12,alignItems:'center',justifyContent:'center'},linkChipActive:{borderColor:c.brand,backgroundColor:c.soft},linkText:{fontSize:9,fontWeight:'900',color:c.text},
  afterWork:{marginTop:14,borderRadius:16,backgroundColor:c.soft,padding:14,flexDirection:'row',gap:10,alignItems:'flex-start'},afterWorkTitle:{fontSize:12,fontWeight:'900',color:c.text},afterWorkCopy:{fontSize:10,lineHeight:16,color:c.muted,marginTop:3},
  note:{fontSize:11,lineHeight:17,color:c.muted,marginTop:12},error:{fontSize:12,lineHeight:18,color:c.danger,marginTop:13},primary:{minHeight:56,borderRadius:18,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginTop:20,flexDirection:'row',gap:8},primaryText:{fontSize:11,fontWeight:'900',letterSpacing:.7,color:c.onBrand}
