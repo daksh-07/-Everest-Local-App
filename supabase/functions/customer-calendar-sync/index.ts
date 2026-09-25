@@ -8,7 +8,7 @@ const b64u=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes)).replaceAll('+
 async function key(raw:string,usage:KeyUsage[]){const digest=await crypto.subtle.digest('SHA-256',enc.encode(raw));return crypto.subtle.importKey('raw',digest,'AES-GCM',false,usage)}
 async function decrypt(ciphertext:string,iv:string,secret:string){const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64u(iv)},await key(secret,['decrypt']),fromB64u(ciphertext));return JSON.parse(dec.decode(plain))}
 async function encrypt(tokens:unknown,secret:string){const iv=crypto.getRandomValues(new Uint8Array(12));const cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv},await key(secret,['encrypt']),enc.encode(JSON.stringify(tokens)));return{ciphertext:b64u(new Uint8Array(cipher)),iv:b64u(iv)}}
-function bookingTimes(date:string,time:string|null){const start=new Date(date+'T'+(time||'12:00:00'));if(Number.isNaN(start.getTime()))return null;const end=new Date(start.getTime()+60*60*1000);return{start:start.toISOString(),end:end.toISOString()}}
+function bookingTimes(date:string,time:string|null){const raw=(time||'12:00').slice(0,5);const [hour,minute]=raw.split(':').map(Number);if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!Number.isInteger(hour)||!Number.isInteger(minute))return null;const cursor=new Date(date+'T00:00:00Z');cursor.setUTCMinutes(hour*60+minute+60);const endDate=cursor.toISOString().slice(0,10),endTime=cursor.toISOString().slice(11,19);return{start:date+'T'+raw+':00',end:endDate+'T'+endTime}}
 
 Deno.serve(async req=>{
  if(req.method==='OPTIONS')return new Response('ok',{headers:cors});
@@ -69,7 +69,7 @@ Deno.serve(async req=>{
     continue;
    }
    if(!['CONFIRMED','UPCOMING','IN_PROGRESS'].includes(String(booking.status)))continue;
-   const event={summary:'Everest booking',description:'Managed by Everest Local',start:{dateTime:times.start},end:{dateTime:times.end},extendedProperties:{private:{everest_customer_booking_id:booking.id}}};
+   const event={summary:'Everest booking',description:'Managed by Everest Local',start:{dateTime:times.start,timeZone:connection.time_zone||'Australia/Sydney'},end:{dateTime:times.end,timeZone:connection.time_zone||'Australia/Sydney'},extendedProperties:{private:{everest_customer_booking_id:booking.id}}};
    let externalId=link?.external_event_id;
    if(link){
     const response=await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${encodeURIComponent(externalId)}`,{method:'PATCH',headers,body:JSON.stringify(event)});if(!response.ok)continue;
