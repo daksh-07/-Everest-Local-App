@@ -15,6 +15,7 @@ test('chat web layout follows the iOS visual viewport rather than fixed 100vh',(
  assert.match(viewport,/--everest-visual-height/);
  assert.match(html,/100dvh/);
  assert.match(html,/#everest-chat-shell/);
+ assert.match(html,/transform: none !important/);
 });
 
 test('composer focus reset covers wrapper descendants and RN Web textbox variants',()=>{
@@ -67,4 +68,11 @@ test('haptic helper truthfully distinguishes native web vibration and unsupporte
 test('delete for everyone continues using the hardened v2 RPC',()=>{
  assert.match(connections,/delete_personal_message_for_everyone_v2/);
  assert.match(messages,/result\.placeholder\|\|'You deleted this message'/);
+});
+
+
+test('message thread never dismisses keyboard while composer is active',()=>{
+ assert.match(messages,/keyboardShouldPersistTaps="always"/);
+ assert.match(messages,/keyboardDismissMode="none"/);
+ assert.match(messages,/showSoftInputOnFocus/);
 });
