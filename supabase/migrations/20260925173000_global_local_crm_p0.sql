@@ -135,6 +135,27 @@ create table if not exists public.crm_external_bookings (
 create index if not exists crm_external_bookings_calendar_idx on public.crm_external_bookings(business_id,scheduled_start,status);
 create index if not exists crm_external_bookings_contact_idx on public.crm_external_bookings(business_id,contact_id,scheduled_start desc);
 
+-- Same-tenant relational integrity: a child row cannot point at another business's contact/quote.
+alter table public.business_contacts drop constraint if exists business_contacts_id_business_unique;
+alter table public.business_contacts add constraint business_contacts_id_business_unique unique(id,business_id);
+alter table public.crm_external_quotes drop constraint if exists crm_external_quotes_id_business_unique;
+alter table public.crm_external_quotes add constraint crm_external_quotes_id_business_unique unique(id,business_id);
+
+alter table public.crm_activities drop constraint if exists crm_activities_contact_business_fk;
+alter table public.crm_activities add constraint crm_activities_contact_business_fk foreign key(contact_id,business_id) references public.business_contacts(id,business_id) on delete cascade;
+alter table public.crm_notes drop constraint if exists crm_notes_contact_business_fk;
+alter table public.crm_notes add constraint crm_notes_contact_business_fk foreign key(contact_id,business_id) references public.business_contacts(id,business_id) on delete cascade;
+alter table public.crm_tasks drop constraint if exists crm_tasks_contact_business_fk;
+alter table public.crm_tasks add constraint crm_tasks_contact_business_fk foreign key(contact_id,business_id) references public.business_contacts(id,business_id) on delete cascade;
+alter table public.crm_external_quotes drop constraint if exists crm_external_quotes_contact_business_fk;
+alter table public.crm_external_quotes add constraint crm_external_quotes_contact_business_fk foreign key(contact_id,business_id) references public.business_contacts(id,business_id) on delete cascade;
+alter table public.crm_external_quote_items drop constraint if exists crm_external_quote_items_quote_business_fk;
+alter table public.crm_external_quote_items add constraint crm_external_quote_items_quote_business_fk foreign key(quote_id,business_id) references public.crm_external_quotes(id,business_id) on delete cascade;
+alter table public.crm_external_bookings drop constraint if exists crm_external_bookings_contact_business_fk;
+alter table public.crm_external_bookings add constraint crm_external_bookings_contact_business_fk foreign key(contact_id,business_id) references public.business_contacts(id,business_id) on delete cascade;
+alter table public.crm_external_bookings drop constraint if exists crm_external_bookings_quote_business_fk;
+alter table public.crm_external_bookings add constraint crm_external_bookings_quote_business_fk foreign key(external_quote_id,business_id) references public.crm_external_quotes(id,business_id) on delete set null;
+
 -- Public marker contains no private booking/customer identifier. The private link is server-only.
 create table if not exists public.verified_work_posts (
   post_id uuid primary key references public.posts(id) on delete cascade,
