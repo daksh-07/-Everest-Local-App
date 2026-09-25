@@ -1,0 +1,67 @@
+import { Ionicons } from '@expo/vector-icons';
+import { router,useLocalSearchParams } from 'expo-router';
+import { useCallback,useEffect,useMemo,useState } from 'react';
+import { ActivityIndicator,Linking,Pressable,RefreshControl,ScrollView,StyleSheet,Text,View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getJobWorkspace,type JobChecklistItem,type JobRecord } from '@/lib/job-operations';
+import { getOrCreateConversation } from '@/lib/messaging';
+import { createServiceCheckout } from '@/lib/service-payments';
+import { supabase } from '@/lib/supabase';
+import { type ThemeColors,useAppTheme } from '@/lib/theme';
+import type { BookingStatus } from '@/lib/types';
+
+type Booking={id:string;business_id:string;request_id:string|null;quote_id:string|null;price:number;scheduled_date:string|null;scheduled_time:string|null;status:BookingStatus;created_at:string;completed_at:string|null};
+type Payment={amount:number;status:string;created_at:string};
+type PageData={booking:Booking;businessName:string;payment:Payment|null;hasReview:boolean;record:JobRecord|null;checklist:JobChecklistItem[]};
+const stages:ReadonlyArray<{label:string;statuses:BookingStatus[]}>= [
+ {label:'Booked',statuses:['REQUESTED','PENDING_PAYMENT','CONFIRMED','UPCOMING','IN_PROGRESS','COMPLETED']},
+ {label:'Confirmed',statuses:['CONFIRMED','UPCOMING','IN_PROGRESS','COMPLETED']},
+ {label:'Scheduled',statuses:['UPCOMING','IN_PROGRESS','COMPLETED']},
+ {label:'In progress',statuses:['IN_PROGRESS','COMPLETED']},
+ {label:'Complete',statuses:['COMPLETED']},
+];
+
+export default function BookingPortal(){
+ const {id}=useLocalSearchParams<{id?:string}>();const bookingId=typeof id==='string'?id:'';
+ const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
+ const [data,setData]=useState<PageData|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [busy,setBusy]=useState('');const [error,setError]=useState('');
+ const load=useCallback(async(refresh=false)=>{if(!bookingId){setError('Booking reference is missing.');setLoading(false);return;}if(refresh)setRefreshing(true);else setLoading(true);setError('');try{
+  const {data:booking,error:bookingError}=await supabase.from('bookings').select('id,business_id,request_id,quote_id,price,scheduled_date,scheduled_time,status,created_at,completed_at').eq('id',bookingId).single();if(bookingError)throw bookingError;
+  const typed=booking as Booking;
+  const [businessResult,paymentResult,reviewResult,workspace]=await Promise.all([
+   supabase.from('businesses').select('name').eq('id',typed.business_id).single(),
+   supabase.from('service_payments').select('amount,status,created_at').eq('booking_id',typed.id).order('created_at',{ascending:false}).limit(1).maybeSingle(),
+   supabase.from('reviews').select('id').eq('booking_id',typed.id).limit(1).maybeSingle(),
+   getJobWorkspace(typed.id),
+  ]);
+  if(businessResult.error)throw businessResult.error;if(paymentResult.error)throw paymentResult.error;if(reviewResult.error)throw reviewResult.error;
+  setData({booking:typed,businessName:String(businessResult.data?.name??'Local business'),payment:paymentResult.data as Payment|null,hasReview:Boolean(reviewResult.data),...workspace});
+ }catch{setError('This booking could not be loaded. Check your connection and try again.');}finally{setLoading(false);setRefreshing(false)}},[bookingId]);
+ useEffect(()=>{void load()},[load]);
+ async function action(key:string,work:()=>Promise<void>){if(busy)return;setBusy(key);setError('');try{await work()}catch(e){setError(e instanceof Error?e.message:'That action could not be completed.')}finally{setBusy('')}}
+ if(loading)return <SafeAreaView style={s.safe}><ActivityIndicator color={colors.brand} style={{marginTop:80}}/></SafeAreaView>;
+ if(!data)return <SafeAreaView style={s.safe}><View style={s.center}><Text style={s.title}>Booking unavailable</Text><Text style={s.copy}>{error}</Text><Pressable onPress={()=>void load()} style={s.primary}><Text style={s.primaryText}>TRY AGAIN</Text></Pressable></View></SafeAreaView>;
+ const {booking,record,checklist}=data;const cancelled=booking.status==='CANCELLED';const activeStage=stages.findLastIndex(stage=>stage.statuses.includes(booking.status));
+ const operational=record?.arrival_status&&record.arrival_status!=='NOT_STARTED'?record.arrival_status.replaceAll('_',' '):null;
+ const date=booking.scheduled_date?new Date(`${booking.scheduled_date}T${booking.scheduled_time||'12:00'}`).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}):'Scheduling with business';
+ return <SafeAreaView style={s.safe} edges={['top']}><ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.brand}/>} contentContainerStyle={s.page}>
+  <Pressable onPress={()=>router.back()} accessibilityLabel="Go back" style={s.back}><Ionicons name="arrow-back" size={21} color={colors.text}/></Pressable>
+  <Text style={s.eyebrow}>YOUR JOB</Text><Text style={s.title}>{data.businessName}</Text><Text style={s.subtitle}>{date}{booking.scheduled_time?` · ${booking.scheduled_time.slice(0,5)}`:''}</Text>
+  <View style={[s.hero,cancelled&&s.heroCancelled]}><View style={s.heroTop}><View><Text style={s.heroLabel}>{cancelled?'BOOKING CANCELLED':operational||booking.status.replaceAll('_',' ')}</Text><Text style={s.heroTitle}>{cancelled?'This job is no longer active':booking.status==='COMPLETED'?'Job completed':operational==='ON MY WAY'?'Your professional is on the way':'Everything in one place'}</Text></View><Text style={s.price}>${Number(booking.price).toFixed(2)}</Text></View>
+   {!cancelled&&<View style={s.timeline}>{stages.map((stage,index)=>{const done=index<=activeStage;return <View key={stage.label} style={s.stage}><View style={[s.dot,done&&s.dotOn]}>{done&&<Ionicons name="checkmark" size={11} color={colors.onBrand}/>}</View><Text style={[s.stageText,done&&s.stageOn]} numberOfLines={1}>{stage.label}</Text></View>})}</View>}
+  </View>
+  {error?<View style={s.notice}><Ionicons name="alert-circle-outline" size={18} color={colors.danger}/><Text style={s.noticeText}>{error}</Text></View>:null}
+  {!cancelled&&<View style={s.actions}>
+   {booking.status==='PENDING_PAYMENT'?<Pressable disabled={!!busy} onPress={()=>void action('pay',async()=>{const url=await createServiceCheckout(booking.id);await Linking.openURL(url)})} style={s.primary}><Ionicons name="card-outline" size={18} color={colors.onBrand}/><Text style={s.primaryText}>{busy==='pay'?'OPENING…':'PAY SECURELY'}</Text></Pressable>:null}
+   {booking.request_id?<Pressable disabled={!!busy} onPress={()=>void action('message',async()=>{const conversationId=await getOrCreateConversation({requestId:booking.request_id!,businessId:booking.business_id,bookingId:booking.id});router.push({pathname:'/messages',params:{conversationId}})})} style={s.secondary}><Ionicons name="chatbubble-outline" size={18} color={colors.text}/><Text style={s.secondaryText}>{busy==='message'?'OPENING…':'MESSAGE'}</Text></Pressable>:null}
+   {booking.quote_id?<Pressable onPress={()=>router.push('/quotes')} style={s.secondary}><Ionicons name="document-text-outline" size={18} color={colors.text}/><Text style={s.secondaryText}>VIEW QUOTE</Text></Pressable>:null}
+  </View>}
+  {checklist.length>0&&<View style={s.section}><Text style={s.sectionKicker}>WORK PLAN</Text><Text style={s.sectionTitle}>What’s included</Text>{checklist.map(item=><View key={item.id} style={s.checkRow}><Ionicons name={item.is_complete?'checkmark-circle':'ellipse-outline'} size={20} color={item.is_complete?colors.brand:colors.muted}/><Text style={[s.checkText,item.is_complete&&s.checkDone]}>{item.label}</Text></View>)}</View>}
+  <View style={s.section}><Text style={s.sectionKicker}>PAYMENT</Text><View style={s.infoRow}><View><Text style={s.sectionTitle}>Booking payment</Text><Text style={s.copy}>{data.payment?`${data.payment.status.replaceAll('_',' ')} · $${Number(data.payment.amount).toFixed(2)}`:booking.status==='PENDING_PAYMENT'?'Deposit awaiting payment':'No online payment recorded'}</Text></View><Ionicons name={data.payment?.status==='SUCCEEDED'?'shield-checkmark':'card-outline'} size={25} color={data.payment?.status==='SUCCEEDED'?colors.brand:colors.muted}/></View></View>
+  {record?.completion_summary?<View style={s.section}><Text style={s.sectionKicker}>COMPLETION NOTE</Text><Text style={s.sectionTitle}>From {data.businessName}</Text><Text style={s.summary}>{record.completion_summary}</Text></View>:null}
+  {booking.status==='COMPLETED'&&<View style={s.finish}><Text style={s.finishTitle}>How did it go?</Text><Text style={s.copy}>Your feedback helps trustworthy local businesses stand out.</Text><View style={s.actions}>{!data.hasReview&&<Pressable onPress={()=>router.push('/reviews')} style={s.primary}><Text style={s.primaryText}>LEAVE A REVIEW</Text></Pressable>}<Pressable onPress={()=>router.push({pathname:'/share-result',params:{bookingId:booking.id}})} style={s.secondary}><Text style={s.secondaryText}>SHARE RESULT</Text></Pressable></View><Pressable onPress={()=>router.push('/request')} style={s.rebook}><Ionicons name="refresh" size={17} color={colors.brand}/><Text style={s.rebookText}>BOOK ANOTHER LOCAL PRO</Text></Pressable></View>}
+  <Text style={s.reference}>Booking {booking.id.slice(0,8).toUpperCase()}</Text>
+ </ScrollView></SafeAreaView>;
+}
+
+const styles=(c:ThemeColors)=>StyleSheet.create({safe:{flex:1,backgroundColor:c.canvas},page:{padding:20,paddingBottom:60,maxWidth:860,width:'100%',alignSelf:'center'},center:{flex:1,padding:24,alignItems:'center',justifyContent:'center'},back:{width:42,height:42,borderRadius:21,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center',marginBottom:22},eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:1.7,color:c.brand},title:{fontSize:31,lineHeight:37,fontWeight:'900',color:c.text,marginTop:6},subtitle:{fontSize:13,lineHeight:20,color:c.muted,marginTop:5},hero:{backgroundColor:c.brand,borderRadius:24,padding:20,marginTop:22},heroCancelled:{backgroundColor:c.muted},heroTop:{flexDirection:'row',justifyContent:'space-between',gap:16},heroLabel:{fontSize:10,fontWeight:'900',letterSpacing:1.1,color:c.onBrand,opacity:.82},heroTitle:{fontSize:20,lineHeight:26,fontWeight:'900',color:c.onBrand,marginTop:6,maxWidth:430},price:{fontSize:21,fontWeight:'900',color:c.onBrand},timeline:{flexDirection:'row',marginTop:26},stage:{flex:1,alignItems:'center',position:'relative'},dot:{width:22,height:22,borderRadius:11,borderWidth:2,borderColor:'rgba(255,255,255,.45)',alignItems:'center',justifyContent:'center'},dotOn:{backgroundColor:c.accent,borderColor:c.accent},stageText:{fontSize:8,color:c.onBrand,opacity:.65,fontWeight:'700',marginTop:7,textAlign:'center'},stageOn:{opacity:1,fontWeight:'900'},actions:{flexDirection:'row',flexWrap:'wrap',gap:9,marginTop:14},primary:{minHeight:48,borderRadius:14,backgroundColor:c.brand,paddingHorizontal:18,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8,flexGrow:1},primaryText:{fontSize:10,fontWeight:'900',letterSpacing:.3,color:c.onBrand},secondary:{minHeight:48,borderRadius:14,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:17,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8,flexGrow:1},secondaryText:{fontSize:10,fontWeight:'900',color:c.text},section:{backgroundColor:c.surface,borderWidth:1,borderColor:c.border,borderRadius:18,padding:18,marginTop:12},sectionKicker:{fontSize:9,fontWeight:'900',letterSpacing:1.3,color:c.accent},sectionTitle:{fontSize:17,fontWeight:'900',color:c.text,marginTop:5},copy:{fontSize:12,lineHeight:18,color:c.muted,marginTop:5},checkRow:{flexDirection:'row',alignItems:'center',gap:10,minHeight:42,borderTopWidth:1,borderTopColor:c.border,marginTop:10,paddingTop:10},checkText:{fontSize:13,fontWeight:'700',color:c.text,flex:1},checkDone:{color:c.muted,textDecorationLine:'line-through'},infoRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},summary:{fontSize:14,lineHeight:22,color:c.text,marginTop:11},notice:{flexDirection:'row',gap:9,alignItems:'center',backgroundColor:c.surface,borderWidth:1,borderColor:c.border,borderRadius:14,padding:13,marginTop:12},noticeText:{fontSize:12,color:c.danger,flex:1},finish:{backgroundColor:c.accentSoft,borderRadius:20,padding:20,marginTop:12},finishTitle:{fontSize:21,fontWeight:'900',color:c.text},rebook:{minHeight:46,marginTop:10,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8},rebookText:{fontSize:10,fontWeight:'900',color:c.brand},reference:{fontSize:9,color:c.muted,textAlign:'center',marginTop:24,letterSpacing:.8}});

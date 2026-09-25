@@ -6,7 +6,7 @@ import { BusinessTabBar } from '@/components/BusinessTabBar';
 import { ModeSwitcher } from '@/components/ModeSwitcher';
 import { getWorkspaceContext,type BusinessWorkspace } from '@/lib/workspace';
 import { supabase } from '@/lib/supabase';
-import { getOrCreateBookingConversation,updateBookingStatus } from '@/lib/marketplace';
+import { getOrCreateBookingConversation } from '@/lib/marketplace';
 import type { BookingStatus } from '@/lib/types';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
 
@@ -32,7 +32,6 @@ export default function BusinessJobs(){
  },[tab]);
  useEffect(()=>{void load();},[load]);
 
- async function advance(job:Job){const next=nextStatus(job.status);if(!next)return;setBusy(job.id);setError('');try{await updateBookingStatus(job.id,next);await load(true);}catch{setError('Job status could not be updated.');}finally{setBusy(null);}}
  async function message(job:Job){if(!business||!job.request_id)return;setBusy('message:'+job.id);setError('');try{const id=await getOrCreateBookingConversation({requestId:job.request_id,businessId:business.id,bookingId:job.id});router.push({pathname:'/messages',params:{conversationId:id,businessMode:'1',businessId:business.id}});}catch{setError('Customer conversation could not be opened.');}finally{setBusy(null);}}
 
  const verified=business?.verification_status==='VERIFIED';
@@ -41,7 +40,7 @@ export default function BusinessJobs(){
   <Text style={st.title}>Jobs</Text><Text style={st.copy}>Operational bookings for this business, using the existing Everest booking lifecycle.</Text>
   {!verified&&business?<View style={st.restricted}><Text style={st.restrictedTitle}>Jobs are restricted</Text><Text style={st.copy}>Complete verification before operating customer bookings.</Text></View>:null}
   {verified?<><View style={st.tabs}>{(['UPCOMING','ACTIVE','COMPLETED'] as const).map(value=><Pressable key={value} onPress={()=>setTab(value)} style={[st.tab,tab===value&&st.tabOn]}><Text style={[st.tabText,tab===value&&st.tabTextOn]}>{value}</Text></Pressable>)}</View>
-  {loading?<ActivityIndicator color={colors.brand} style={{marginTop:40}}/>:items.length?items.map(job=>{const next=nextStatus(job.status);return <View style={st.card} key={job.id}><View style={st.row}><Text style={st.status}>{job.status.replaceAll('_',' ')}</Text><Text style={st.price}>${Number(job.price).toFixed(2)}</Text></View><Text style={st.when}>{job.scheduled_date??'Date pending'}{job.scheduled_time?' · '+job.scheduled_time:''}</Text><Text style={st.copy}>Booking {job.id.slice(0,8).toUpperCase()}</Text><View style={st.actions}>{job.status==='COMPLETED'&&<Pressable onPress={()=>router.push({pathname:'/share-result',params:{bookingId:job.id,businessMode:'1'}})} style={st.secondary}><Text style={st.secondaryText}>SHARE RESULT</Text></Pressable>}{job.request_id&&<Pressable disabled={!!busy} onPress={()=>void message(job)} style={st.secondary}><Text style={st.secondaryText}>{busy==='message:'+job.id?'OPENING…':'MESSAGE'}</Text></Pressable>}{next&&<Pressable disabled={!!busy} onPress={()=>void advance(job)} style={st.primary}><Text style={st.primaryText}>{busy===job.id?'UPDATING…':next==='IN_PROGRESS'?'START JOB':next==='COMPLETED'?'COMPLETE JOB':'MARK UPCOMING'}</Text></Pressable>}</View></View>}):<View style={st.empty}><Text style={st.emptyTitle}>No {tab.toLowerCase()} jobs.</Text><Text style={st.copy}>Accepted quotes appear here through the existing booking lifecycle.</Text></View>}</>:null}
+  {loading?<ActivityIndicator color={colors.brand} style={{marginTop:40}}/>:items.length?items.map(job=>{const next=nextStatus(job.status);return <Pressable onPress={()=>router.push({pathname:'/business-job',params:{id:job.id}})} style={({pressed})=>[st.card,pressed&&{opacity:.72}]} key={job.id}><View style={st.row}><Text style={st.status}>{job.status.replaceAll('_',' ')}</Text><Text style={st.price}>${Number(job.price).toFixed(2)}</Text></View><Text style={st.when}>{job.scheduled_date??'Date pending'}{job.scheduled_time?' · '+job.scheduled_time:''}</Text><Text style={st.copy}>Open workspace · Checklist, arrival updates and completion</Text><View style={st.actions}>{job.request_id&&<Pressable disabled={!!busy} onPress={event=>{event.stopPropagation();void message(job)}} style={st.secondary}><Text style={st.secondaryText}>{busy==='message:'+job.id?'OPENING…':'MESSAGE'}</Text></Pressable>}{next&&<Pressable disabled={!!busy} onPress={event=>{event.stopPropagation();router.push({pathname:'/business-job',params:{id:job.id}})}} style={st.primary}><Text style={st.primaryText}>OPEN JOB</Text></Pressable>}</View></Pressable>}):<View style={st.empty}><Text style={st.emptyTitle}>No {tab.toLowerCase()} jobs.</Text><Text style={st.copy}>Accepted quotes appear here through the existing booking lifecycle.</Text></View>}</>:null}
   {error&&<Text style={st.error}>{error}</Text>}
  </ScrollView><BusinessTabBar active="/business-jobs"/></View></SafeAreaView>;
 }
