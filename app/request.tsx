@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,Image,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
+import {ActivityIndicator,Image,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
@@ -13,12 +13,26 @@ import {userFacingError} from '@/lib/errors';
 import type {DeliveryMode} from '@/lib/taxonomy';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 
-type LocationValue={suburb:string;city:string;state:string;latitude?:number;longitude?:number;accuracy?:number;source:LocationSource;confirmed:boolean};
+type LocationValue={suburb:string;city:string;state:string;latitude?:number;longitude?:number;accuracy?:number;source:LocationSource;confirmed:boolean;geocoder?:'DEVICE'|'OSM'};
 type BudgetChoice='NONE'|'UNDER_100'|'100_250'|'250_500'|'500_PLUS'|'CUSTOM';
 const timingWindows:Record<string,[string,string]|undefined>={MORNING:['08:00','12:00'],AFTERNOON:['12:00','17:00'],EVENING:['17:00','21:00']};
 function localDate(d:Date){const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 function nextSaturday(){const d=new Date();const add=(6-d.getDay()+7)%7;d.setDate(d.getDate()+(add||7));d.setHours(12,0,0,0);return d;}
 function timeValue(d:Date){return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
+
+async function reverseGeocodeWebFallback(latitude:number,longitude:number){
+ try{
+  const params=new URLSearchParams({format:'jsonv2',lat:String(latitude),lon:String(longitude),zoom:'16',addressdetails:'1'});
+  const response=await fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`,{headers:{Accept:'application/json'}});
+  if(!response.ok)return null;
+  const payload=await response.json() as {address?:Record<string,string|undefined>};
+  const address=payload.address??{};
+  const suburb=(address.suburb||address.neighbourhood||address.quarter||address.city_district||address.town||address.village||'').trim();
+  const city=(address.city||address.town||address.municipality||address.county||suburb).trim();
+  const state=(address.state||address.state_district||'').trim();
+  return suburb&&city&&state?{suburb,city,state}:null;
+ }catch{return null;}
+}
 
 export default function Request(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const params=useLocalSearchParams<{serviceId?:string;mode?:string}>();
@@ -49,11 +63,18 @@ export default function Request(){
    const permission=await Location.requestForegroundPermissionsAsync();
    if(permission.status!=='granted')throw new Error('Location permission was not granted. You can enter the suburb manually.');
    const current=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.Balanced});
-   const places=await Location.reverseGeocodeAsync({latitude:current.coords.latitude,longitude:current.coords.longitude});
-   const place=places[0];if(!place)throw new Error('We found your position but could not name the area. Enter it manually.');
-   const suburb=(place.district||place.subregion||place.city||'').trim();const city=(place.city||place.subregion||suburb).trim();const state=(place.region||'').trim();
-   if(!suburb||!city||!state)throw new Error('We could not confidently identify your suburb. Enter it manually.');
-   setLocation({suburb,city,state,latitude:current.coords.latitude,longitude:current.coords.longitude,accuracy:current.coords.accuracy??undefined,source:'DEVICE',confirmed:false});
+   let named:{suburb:string;city:string;state:string}|null=null;let geocoder:'DEVICE'|'OSM'='DEVICE';
+   try{
+    const places=await Location.reverseGeocodeAsync({latitude:current.coords.latitude,longitude:current.coords.longitude});
+    const place=places[0];
+    if(place){
+     const suburb=(place.district||place.subregion||place.city||'').trim();const city=(place.city||place.subregion||suburb).trim();const state=(place.region||'').trim();
+     if(suburb&&city&&state)named={suburb,city,state};
+    }
+   }catch{/* Web/PWA fallback below handles reverse-geocode failures. */}
+   if(!named&&Platform.OS==='web'){named=await reverseGeocodeWebFallback(current.coords.latitude,current.coords.longitude);if(named)geocoder='OSM';}
+   if(!named)throw new Error('We found your position but could not name the area. Enter it manually.');
+   setLocation({...named,latitude:current.coords.latitude,longitude:current.coords.longitude,accuracy:current.coords.accuracy??undefined,source:'DEVICE',confirmed:false,geocoder});
   }catch(e){setError(e instanceof Error?e.message:'Location is unavailable. Enter your suburb manually.');}
   finally{setLocating(false);}
  }
@@ -94,7 +115,7 @@ export default function Request(){
   {step===1?<><Text style={s.title}>What do you need?</Text><Text style={s.copy}>Describe the result you want. Everest will handle the matching.</Text><TextInput value={description} onChangeText={setDescription} placeholder="Example: Full interior + exterior car detail this Saturday" placeholderTextColor={colors.muted} multiline maxLength={5000} style={[s.input,s.area]}/>
    {serviceMode==='BOTH'?<View style={s.chips}><Chip active={mode==='LOCAL'} text="Local" onPress={()=>setMode('LOCAL')} colors={colors}/><Chip active={mode==='REMOTE'} text="Remote" onPress={()=>setMode('REMOTE')} colors={colors}/></View>:null}
    {effectiveMode==='LOCAL'?<View style={s.section}><Text style={s.heading}>Where do you need it?</Text>
-    {location.suburb?<View style={s.locationCard}><Ionicons name="location" size={21} color={colors.brand}/><View style={{flex:1}}><Text style={s.locationName}>{location.suburb}, {location.state}</Text><Text style={s.meta}>{location.source==='DEVICE'?'Based on your device location':location.source==='PROFILE'?'From your profile':'Entered manually'}</Text></View>{location.confirmed?<Ionicons name="checkmark-circle" size={23} color={colors.brand}/>:null}</View>:null}
+    {location.suburb?<View style={s.locationCard}><Ionicons name="location" size={21} color={colors.brand}/><View style={{flex:1}}><Text style={s.locationName}>{location.suburb}, {location.state}</Text><Text style={s.meta}>{location.source==='DEVICE'?(location.geocoder==='OSM'?'Based on your device location · © OpenStreetMap contributors':'Based on your device location'):location.source==='PROFILE'?'From your profile':'Entered manually'}</Text></View>{location.confirmed?<Ionicons name="checkmark-circle" size={23} color={colors.brand}/>:null}</View>:null}
     {!location.confirmed?<><View style={s.row}><Pressable disabled={locating} onPress={()=>void locateDevice()} style={[s.primarySmall,locating&&s.disabled]}><Ionicons name="navigate-outline" size={16} color={colors.onBrand}/><Text style={s.primaryText}>{locating?'LOCATING…':'USE MY LOCATION'}</Text></Pressable>{location.suburb?<Pressable onPress={confirmLocation} style={s.outlineSmall}><Text style={s.outlineText}>USE THIS LOCATION</Text></Pressable>:null}</View><Text style={s.or}>OR CHANGE MANUALLY</Text><TextInput value={location.suburb} onChangeText={v=>setManual('suburb',v)} placeholder="Suburb" placeholderTextColor={colors.muted} style={s.input}/><View style={s.row}><TextInput value={location.city} onChangeText={v=>setManual('city',v)} placeholder="City" placeholderTextColor={colors.muted} style={[s.input,{flex:1}]}/><TextInput value={location.state} onChangeText={v=>setManual('state',v)} placeholder="State" placeholderTextColor={colors.muted} style={[s.input,{flex:1}]}/></View>{location.suburb&&location.city&&location.state?<Pressable onPress={confirmLocation} style={s.outline}><Text style={s.outlineText}>CONFIRM LOCATION</Text></Pressable>:null}</>:<Pressable onPress={()=>setLocation(v=>({...v,confirmed:false}))} style={s.textButton}><Text style={s.textButtonText}>CHANGE LOCATION</Text></Pressable>}
    </View>:<View style={s.remote}><Ionicons name="globe-outline" size={20} color={colors.brand}/><Text style={s.meta}>Remote request — no GPS or local address is required.</Text></View>}
   </>:null}
