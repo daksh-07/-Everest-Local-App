@@ -1,5 +1,6 @@
 export const ui={
- colors:{ink:'#171715',muted:'#6f6c66',soft:'#f0eee9',canvas:'#f8f7f4',surface:'#ffffff',elevated:'#ffffff',line:'#e3e0d9',input:'#ffffff',danger:'#9b2c24',success:'#2c6842',overlay:'rgba(17,17,15,.48)',navigation:'#fbfaf7',brand:'#a78b5c'},
- radius:{sm:12,md:16,lg:20},
- contentMaxWidth:760,
+ colors:{ink:'#101513',muted:'#737b77',soft:'#ecefe9',canvas:'#f6f5f1',surface:'#ffffff',elevated:'#fbfaf7',line:'#deded7',input:'#ffffff',danger:'#ad352e',success:'#216b4b',overlay:'rgba(11,18,15,.52)',navigation:'#fbfaf7',brand:'#195b43',accent:'#9a7540'},
+ radius:{sm:12,md:16,lg:20,xl:28},
+ contentMaxWidth:1180,
+ navMaxWidth:760,
 } as const;

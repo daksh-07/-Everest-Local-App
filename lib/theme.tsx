@@ -3,12 +3,14 @@ import { Platform, useColorScheme } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 export type ThemePreference='SYSTEM'|'LIGHT'|'DARK';
-export type ThemeColors={canvas:string;surface:string;elevated:string;text:string;textSecondary:string;muted:string;border:string;soft:string;input:string;danger:string;success:string;overlay:string;navigation:string;brand:string;onBrand:string};
+export type ThemeColors={canvas:string;surface:string;elevated:string;text:string;textSecondary:string;muted:string;border:string;soft:string;input:string;danger:string;success:string;overlay:string;navigation:string;brand:string;onBrand:string;accent:string;accentSoft:string;info:string};
 export type AppTheme={preference:ThemePreference;isDark:boolean;colors:ThemeColors;setPreference:(value:ThemePreference)=>Promise<void>;ready:boolean};
 
 const STORAGE_KEY='everest-local-theme';
-const light:ThemeColors={canvas:'#f8f7f4',surface:'#ffffff',elevated:'#ffffff',text:'#171715',textSecondary:'#5f5c56',muted:'#77736c',border:'#e3e0d9',soft:'#f0eee9',input:'#ffffff',danger:'#9b2c24',success:'#2c6842',overlay:'rgba(17,17,15,.48)',navigation:'#fbfaf7',brand:'#9c8155',onBrand:'#ffffff'};
-const dark:ThemeColors={canvas:'#0b0b0b',surface:'#151513',elevated:'#1c1b18',text:'#f5f2ec',textSecondary:'#c9c1b6',muted:'#a79f94',border:'#34312c',soft:'#24211d',input:'#1e1c19',danger:'#efaaa0',success:'#a2d5b0',overlay:'rgba(0,0,0,.74)',navigation:'#10100f',brand:'#d8c3a5',onBrand:'#1b1711'};
+// Alpine green gives primary actions stronger contrast and trust; champagne remains the
+// premium accent. Both palettes meet the product's black/beige identity without looking muted.
+const light:ThemeColors={canvas:'#f6f5f1',surface:'#ffffff',elevated:'#fbfaf7',text:'#101513',textSecondary:'#4f5954',muted:'#737b77',border:'#deded7',soft:'#ecefe9',input:'#ffffff',danger:'#ad352e',success:'#216b4b',overlay:'rgba(11,18,15,.52)',navigation:'#fbfaf7',brand:'#195b43',onBrand:'#ffffff',accent:'#9a7540',accentSoft:'#f2eadc',info:'#315f8a'};
+const dark:ThemeColors={canvas:'#090d0b',surface:'#131816',elevated:'#191f1c',text:'#f5f2eb',textSecondary:'#c7cec9',muted:'#98a29d',border:'#303a35',soft:'#202a25',input:'#171d1a',danger:'#f1a39b',success:'#9bd5b8',overlay:'rgba(0,0,0,.76)',navigation:'#0f1412',brand:'#d8c3a5',onBrand:'#17130d',accent:'#d8c3a5',accentSoft:'#29241d',info:'#9fc2e5'};
 const ThemeContext=createContext<AppTheme|null>(null);
 
 function valid(value:string|null):value is ThemePreference{return value==='SYSTEM'||value==='LIGHT'||value==='DARK'}

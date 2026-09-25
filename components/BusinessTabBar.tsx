@@ -14,6 +14,7 @@ export type BusinessActiveRoute=
  |'/business-crm-quote'
  |'/business-crm-booking'
  |'/business-jobs'
+ |'/business-job'
  |'/business-availability'
  |'/business-orders';
 
@@ -28,7 +29,7 @@ const items:ReadonlyArray<{route:PrimaryRoute;label:string;icon:IconName;activeI
 
 function primaryFor(active:BusinessActiveRoute):PrimaryRoute{
  if(['/business-leads','/business-customers','/business-customer','/business-deal','/business-crm-quote','/business-crm-booking'].includes(active))return'/business-crm';
- if(['/business-jobs'].includes(active))return'/business-calendar';
+ if(['/business-jobs','/business-job'].includes(active))return'/business-calendar';
  if(active==='/business-availability'||active==='/business-orders')return'/business-control';
  return active as PrimaryRoute;
 }
