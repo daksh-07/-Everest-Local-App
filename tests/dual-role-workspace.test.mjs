@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { URL } from 'node:url';
 
 const migration=fs.readFileSync(new URL('../supabase/migrations/20260925150000_dual_role_workspace_preferences.sql',import.meta.url),'utf8');
+const requestPostsMigration=fs.readFileSync(new URL('../supabase/migrations/20260925162000_request_posts_matching_ux.sql',import.meta.url),'utf8');
 const workspace=fs.readFileSync(new URL('../lib/workspace.ts',import.meta.url),'utf8');
 const tabbar=fs.readFileSync(new URL('../components/BusinessTabBar.tsx',import.meta.url),'utf8');
 const today=fs.readFileSync(new URL('../app/business-today.tsx',import.meta.url),'utf8');
@@ -40,7 +41,9 @@ test('business navigation is operationally distinct',()=>{
 
 test('business surfaces scope queries to active business',()=>{
  for(const source of [today,leads,jobs,inbox,control]) assert.match(source,/active_business_id/);
- for(const source of [today,leads,jobs,inbox,control]) assert.match(source,/\.eq\('business_id'/);
+ for(const source of [today,jobs,inbox,control]) assert.match(source,/\.eq\('business_id'/);
+ assert.match(leads,/p_business_id:current\.id/);
+ assert.match(requestPostsMigration,/list_my_business_opportunities[\s\S]*public\.is_business_member\(p_business_id\)/);
 });
 
 test('business inbox explicitly excludes personal chat surface',()=>{

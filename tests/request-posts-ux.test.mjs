@@ -23,7 +23,7 @@ test('request UX removes typed date/time and Sydney hardcode',()=>{
  assert.match(request,/Afternoon/);
  assert.match(request,/Evening/);
  assert.match(request,/ADD PHOTOS/);
- assert.match(request,/1\/3/);
+ assert.match(request,/\{step\}\/3/);
 });
 
 test('remote requests do not trigger location collection automatically',()=>{
