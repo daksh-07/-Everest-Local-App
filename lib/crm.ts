@@ -306,3 +306,9 @@ export async function createCrmCalendarBlock(businessId:string,title:string,star
 export async function deleteCrmCalendarBlock(businessId:string,id:string){
  const {error}=await supabase.from('crm_calendar_blocks').delete().eq('business_id',businessId).eq('id',id);if(error)throw new Error(error.message);
 }
+
+
+export async function rescheduleCrmBooking(businessId:string,bookingId:string,scheduledStart:string,durationMinutes:number){
+ const {data,error}=await supabase.rpc('crm_reschedule_booking',{p_business_id:businessId,p_booking_id:bookingId,p_scheduled_start:scheduledStart,p_duration_minutes:durationMinutes});
+ if(error)throw new Error(error.message);return data===true;
+}
