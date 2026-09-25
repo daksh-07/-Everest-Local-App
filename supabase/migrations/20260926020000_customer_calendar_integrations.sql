@@ -11,6 +11,7 @@ create table public.customer_calendar_connections (
   granted_scopes text[] not null default '{}',
   provider_calendar_id text,
   calendar_label text,
+  time_zone text not null default 'Australia/Sydney',
   sync_enabled boolean not null default true,
   import_busy_time boolean not null default true,
   export_marketplace_bookings boolean not null default true,
