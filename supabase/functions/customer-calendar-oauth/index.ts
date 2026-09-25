@@ -85,6 +85,7 @@ Deno.serve(async req=>{
   const {data:connection}=await admin.from('customer_calendar_connections').select('id').eq('id',connectionId).eq('user_id',user.id).maybeSingle();
   if(!connection)return json({error:'Calendar connection not found.'},404);
   await admin.from('customer_calendar_oauth_credentials').delete().eq('connection_id',connectionId).eq('user_id',user.id);
+  await admin.from('customer_calendar_busy_blocks').delete().eq('connection_id',connectionId).eq('user_id',user.id);
   await admin.from('customer_calendar_connections').update({status:'REVOKED',revoked_at:new Date().toISOString(),sync_enabled:false,updated_at:new Date().toISOString()}).eq('id',connectionId).eq('user_id',user.id);
   await admin.from('audit_logs').insert({actor_id:user.id,action:'CUSTOMER_CALENDAR_DISCONNECTED',entity_type:'customer_calendar_connection',entity_id:connectionId,metadata:{provider:'GOOGLE_CALENDAR'}});
   return json({disconnected:true});
