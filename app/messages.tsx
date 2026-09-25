@@ -1,18 +1,20 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from 'react-native';
+import {ActivityIndicator,Alert,Animated,Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {conversations,messages,sendMessage} from '@/lib/messaging';
 import {currentUser} from '@/lib/marketplace';
 import {
- blockUser,deletePersonalMessageForEveryone,deletePersonalMessageForMe,editPersonalMessage,
+ blockUser,deletePersonalMessageForEveryone,deletePersonalMessageForMe,editPersonalMessage,hidePersonalConversation,
  listPersonalConversations,markPersonalConversationRead,personalMessages,reportUser,respondMessageRequest,
  sendPersonalMessageDetailed,togglePersonalMessageReaction,
  type MessageReaction,type PersonalConversation,type PersonalMessage
 } from '@/lib/connections';
 import {supabase} from '@/lib/supabase';
 import {useAppTheme} from '@/lib/theme';
+import {haptic} from '@/lib/haptics';
+import {MOTION,ease,useReducedMotion} from '@/lib/motion';
 
 type MarketConversation={id:string;customer_id:string;business_id:string;created_at:string;counterpart_name?:string;logo_url?:string|null};
 type MarketMessage={id:string;sender_id:string;body:string;created_at:string;read_at?:string|null};
@@ -65,6 +67,8 @@ export default function Messages(){
  const [editing,setEditing]=useState<PersonalMessage|null>(null);
  const [headerMenu,setHeaderMenu]=useState(false);
  const [conversationSearchOpen,setConversationSearchOpen]=useState(false);
+ const [rowMenu,setRowMenu]=useState<ChatRow|null>(null);
+ const reducedMotion=useReducedMotion();
  const [conversationQuery,setConversationQuery]=useState('');
  const threadRef=useRef<ScrollView|null>(null);
  const initialScrollRef=useRef(true);
@@ -162,6 +166,14 @@ export default function Messages(){
   }
  }
 
+ async function hideConversation(row:ChatRow){
+  if(row.kind!=='PERSONAL')return;
+  setBusy(true);
+  try{await hidePersonalConversation(row.id);void haptic.success();setRowMenu(null);setPersonal(current=>current.filter(x=>x.id!==row.id))}
+  catch{setError('Conversation could not be removed.')}
+  finally{setBusy(false)}
+ }
+
  async function retryMessage(message:PersonalMessage){
   if(!message.failed)return;
   setPersonalThread(current=>current.filter(m=>m.id!==message.id));
@@ -190,7 +202,7 @@ export default function Messages(){
 
  async function acceptRequest(){
   if(!selectedPersonal)return;setBusy(true);
-  try{await respondMessageRequest(selectedPersonal.id,true);setSelectedPersonal({...selectedPersonal,status:'ACTIVE'});await loadHome(true)}
+  try{await respondMessageRequest(selectedPersonal.id,true);void haptic.success();setSelectedPersonal({...selectedPersonal,status:'ACTIVE'});await loadHome(true)}
   catch{setError('Request could not be accepted.')}
   finally{setBusy(false)}
  }
@@ -225,7 +237,7 @@ export default function Messages(){
  async function deleteForEveryone(message:PersonalMessage){
   setBusy(true);
   try{
-   const result=await deletePersonalMessageForEveryone(message.id);
+   const result=await deletePersonalMessageForEveryone(message.id);void haptic.warning();
    setDeleteTarget(null);
    setPersonalThread(current=>current.map(m=>m.id===message.id?{...m,body:result.placeholder||'You deleted this message',deleted_for_everyone:true,reactions:[]}:m));
    if(selectedPersonal)await refreshPersonalThread(selectedPersonal.id,true);
@@ -235,7 +247,7 @@ export default function Messages(){
  }
  async function react(message:PersonalMessage,reaction:MessageReaction['reaction']){
   setActionTarget(null);
-  try{await togglePersonalMessageReaction(message.id,reaction);if(selectedPersonal)await refreshPersonalThread(selectedPersonal.id,true)}
+  try{await togglePersonalMessageReaction(message.id,reaction);void haptic.light();if(selectedPersonal)await refreshPersonalThread(selectedPersonal.id,true)}
   catch{setError('Reaction could not be updated.')}
  }
  function beginReply(message:PersonalMessage){setReplying(message);setEditing(null);setActionTarget(null)}
