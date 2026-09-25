@@ -5,7 +5,7 @@ import {createDeviceBookingEvent,deleteDeviceBookingEvent,readDeviceCalendarBusy
 export type CustomerCalendarProvider='APPLE_DEVICE'|'GOOGLE_CALENDAR';
 export type CustomerCalendarConnection={
  id:string;user_id:string;provider:CustomerCalendarProvider;provider_account_id:string;account_label:string|null;status:'PENDING'|'CONNECTED'|'NEEDS_ATTENTION'|'REVOKED';
- provider_calendar_id:string|null;calendar_label:string|null;sync_enabled:boolean;import_busy_time:boolean;export_marketplace_bookings:boolean;allow_ask_everest:boolean;
+ provider_calendar_id:string|null;calendar_label:string|null;time_zone:string;sync_enabled:boolean;import_busy_time:boolean;export_marketplace_bookings:boolean;allow_ask_everest:boolean;
  last_error_code:string|null;connected_at:string;last_synced_at:string|null;updated_at:string;
 };
 type BookingRow={id:string;status:string;scheduled_date:string|null;scheduled_time:string|null};
@@ -18,7 +18,7 @@ async function currentUserId(){
 
 export async function listCustomerCalendarConnections(){
  const {data,error}=await supabase.from('customer_calendar_connections')
-  .select('id,user_id,provider,provider_account_id,account_label,status,provider_calendar_id,calendar_label,sync_enabled,import_busy_time,export_marketplace_bookings,allow_ask_everest,last_error_code,connected_at,last_synced_at,updated_at')
+  .select('id,user_id,provider,provider_account_id,account_label,status,provider_calendar_id,calendar_label,time_zone,sync_enabled,import_busy_time,export_marketplace_bookings,allow_ask_everest,last_error_code,connected_at,last_synced_at,updated_at')
   .neq('status','REVOKED').order('provider');
  if(error)throw new Error(error.message);
  return(data??[]) as CustomerCalendarConnection[];
@@ -54,9 +54,9 @@ export async function connectDeviceCalendar(){
  const access=await readDeviceCalendarBusyWindows();
  const {data,error}=await supabase.from('customer_calendar_connections').upsert({
   user_id:userId,provider:'APPLE_DEVICE',provider_account_id:'device',account_label:Platform.OS==='ios'?'Apple Calendar':'Device Calendar',
-  status:'CONNECTED',provider_calendar_id:access.calendarId,calendar_label:access.label,sync_enabled:true,import_busy_time:true,
+  status:'CONNECTED',provider_calendar_id:access.calendarId,calendar_label:access.label,time_zone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Australia/Sydney',sync_enabled:true,import_busy_time:true,
   export_marketplace_bookings:true,allow_ask_everest:true,last_error_code:null,revoked_at:null,connected_at:new Date().toISOString(),updated_at:new Date().toISOString()
- },{onConflict:'user_id,provider,provider_account_id'}).select('id,user_id,provider,provider_account_id,account_label,status,provider_calendar_id,calendar_label,sync_enabled,import_busy_time,export_marketplace_bookings,allow_ask_everest,last_error_code,connected_at,last_synced_at,updated_at').single();
+ },{onConflict:'user_id,provider,provider_account_id'}).select('id,user_id,provider,provider_account_id,account_label,status,provider_calendar_id,calendar_label,time_zone,sync_enabled,import_busy_time,export_marketplace_bookings,allow_ask_everest,last_error_code,connected_at,last_synced_at,updated_at').single();
  if(error)throw new Error(error.message);
  await syncDeviceCalendar(data as CustomerCalendarConnection,access);
  return data as CustomerCalendarConnection;
@@ -70,6 +70,10 @@ function bookingRange(row:BookingRow){
 }
 
 export async function syncCustomerGoogleCalendar(connectionId:string){
+ const userId=await currentUserId();
+ const timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Australia/Sydney';
+ const {error:zoneError}=await supabase.from('customer_calendar_connections').update({time_zone:timeZone,updated_at:new Date().toISOString()}).eq('id',connectionId).eq('user_id',userId);
+ if(zoneError)throw new Error(zoneError.message);
  const {data,error}=await supabase.functions.invoke('customer-calendar-sync',{body:{connectionId}});
  if(error)throw new Error(error.message);
  return data as {synced:boolean;importedBusyBlocks:number;exportedBookings:number};
