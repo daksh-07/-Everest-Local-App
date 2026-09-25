@@ -1,8 +1,8 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { supabase, supabaseConfigured } from '@/lib/supabase';
 import { useAppTheme, type ThemeColors } from '@/lib/theme';
 
@@ -28,6 +28,9 @@ function isSafeAssistantAction(value:unknown):value is AssistantAction{
 
 export default function Assistant() {
   const { colors } = useAppTheme();
+  const params=useLocalSearchParams<{prompt?:string}>();
+  const initialPrompt=typeof params.prompt==='string'?params.prompt.trim().slice(0,2000):'';
+  const consumedPrompt=useRef('');
   const s = useMemo(() => createStyles(colors), [colors]);
   const [input,setInput]=useState('');
   const [answer,setAnswer]=useState('');
@@ -52,6 +55,8 @@ export default function Assistant() {
       if(__DEV__) console.warn('[Ask Everest] request failed', e instanceof Error ? e.message : 'unknown error');
     } finally { busyRef.current=false; setBusy(false); }
   }
+
+  useEffect(()=>{if(!initialPrompt||consumedPrompt.current===initialPrompt)return;consumedPrompt.current=initialPrompt;void ask(initialPrompt)},[initialPrompt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <SafeAreaView style={s.safe}><View style={s.page}>
     <View style={s.top}><Pressable onPress={()=>router.back()} accessibilityLabel="Go back"><Ionicons name="arrow-back" size={23} color={colors.text}/></Pressable><Text style={s.topTitle}>Ask Everest</Text><View style={{width:23}}/></View>
