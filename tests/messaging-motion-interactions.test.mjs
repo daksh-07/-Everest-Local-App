@@ -12,9 +12,9 @@ const motion=fs.readFileSync('lib/motion.ts','utf8');
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
 
 test('composer focus styling targets the actual scoped RN Web DOM path',()=>{
- assert.match(messages,/dataSet=\{Platform\.OS==='web'\?\{everestComposer:'true'\}/);
- assert.match(html,/\[data-everest-composer="true"\]:focus-within/);
- assert.match(html,/\[data-everest-composer="true"\] \*:focus-visible/);
+ assert.match(messages,/nativeID="everest-composer-shell"/);
+ assert.match(html,/#everest-composer-shell:focus-within/);
+ assert.match(html,/#everest-composer-shell \*:focus-visible/);
  assert.match(html,/-webkit-focus-ring-color: transparent !important/);
  assert.match(html,/box-shadow: none !important/);
 });
