@@ -16,7 +16,7 @@ const categories: ReadonlyArray<readonly [string, IconName]> = [
 export default function Home() {
   const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
   const [avatarUrl,setAvatarUrl]=useState<string|null>(null);
-  useEffect(()=>{let active=true;void (async()=>{try{const {supabase,supabaseConfigured}=await import('@/lib/supabase');if(!supabaseConfigured)return;const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data}=await supabase.from('profiles').select('avatar_url').eq('id',user.id).maybeSingle();if(active)setAvatarUrl(data?.avatar_url??null)}catch{if(active)setAvatarUrl(null)}})();return()=>{active=false}},[]);
+  useEffect(()=>{let active=true;void (async()=>{try{const {supabase,supabaseConfigured}=await import('@/lib/supabase');if(!supabaseConfigured)return;const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {getWorkspaceContext}=await import('@/lib/workspace');const [profile,workspace]=await Promise.all([supabase.from('profiles').select('avatar_url').eq('id',user.id).maybeSingle(),getWorkspaceContext()]);if(!active)return;if(workspace.mode==='BUSINESS'&&workspace.active_business_id){router.replace('/business-today');return;}setAvatarUrl(profile.data?.avatar_url??null)}catch{if(active)setAvatarUrl(null)}})();return()=>{active=false}},[]);
   return <SafeAreaView style={s.safe}>
     <ScrollView contentContainerStyle={s.page} showsVerticalScrollIndicator={false}>
       <View style={s.header}>
