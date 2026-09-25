@@ -45,7 +45,7 @@ test('read state and unread summary are based on persisted read_at',()=>{
 });
 
 test('message destructive actions are contextual, not rendered as bubble footer controls',()=>{
- assert.match(messages,/onLongPress=\{event=>onAction\(m,event\.nativeEvent\.pageX/);
+ assert.match(messages,/onLongPress=\{\(\)=>openAction\(m\)\}/);
  assert.match(messages,/MessageActionMenu/);
  assert.match(messages,/DeleteMessageMenu/);
  assert.doesNotMatch(messages,/function MessageActionSheet/);
