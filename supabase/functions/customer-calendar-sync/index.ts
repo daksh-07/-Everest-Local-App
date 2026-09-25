@@ -45,16 +45,15 @@ Deno.serve(async req=>{
  let importedBusyBlocks=0,exportedBookings=0;
  if(connection.import_busy_time){
   const timeMin=new Date(Date.now()-7*86400000).toISOString(),timeMax=new Date(Date.now()+180*86400000).toISOString();
-  const endpoint=`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?singleEvents=true&showDeleted=true&timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&maxResults=2500&fields=items(id,status,transparency,start,end,updated,extendedProperties)`;
-  const response=await fetch(endpoint,{headers});if(!response.ok)return json({error:'Google Calendar import failed.'},502);
+  const response=await fetch('https://www.googleapis.com/calendar/v3/freeBusy',{method:'POST',headers,body:JSON.stringify({timeMin,timeMax,items:[{id:connection.provider_calendar_id||'primary'}]})});
+  if(!response.ok)return json({error:'Google Calendar availability import failed.'},502);
   const payload=await response.json();
-  for(const event of payload.items??[]){
-   if(event.extendedProperties?.private?.everest_customer_booking_id)continue;
-   const start=event.start?.dateTime??(event.start?.date?event.start.date+'T00:00:00Z':null);
-   const end=event.end?.dateTime??(event.end?.date?event.end.date+'T00:00:00Z':null);
-   if(!event.id||!start||!end)continue;
-   const status=event.status==='cancelled'||event.transparency==='transparent'?'CANCELLED':'BUSY';
-   await admin.from('customer_calendar_busy_blocks').upsert({user_id:user.id,connection_id:connectionId,external_event_id:event.id,starts_at:start,ends_at:end,status,privacy:'OPAQUE',safe_label:'Busy',provider_updated_at:event.updated??null,synced_at:new Date().toISOString()},{onConflict:'user_id,connection_id,external_event_id'});
+  const busy=Object.values(payload.calendars??{}).flatMap((calendar:unknown)=>Array.isArray((calendar as {busy?:unknown[]})?.busy)?(calendar as {busy:Array<{start?:string;end?:string}>}).busy:[]);
+  await admin.from('customer_calendar_busy_blocks').delete().eq('user_id',user.id).eq('connection_id',connectionId);
+  for(const block of busy){
+   const start=String(block.start??''),end=String(block.end??'');if(!start||!end)continue;
+   const externalEventId='busy:'+start+':'+end;
+   await admin.from('customer_calendar_busy_blocks').insert({user_id:user.id,connection_id:connectionId,external_event_id:externalEventId,starts_at:start,ends_at:end,status:'BUSY',privacy:'OPAQUE',safe_label:'Busy',provider_updated_at:null,synced_at:new Date().toISOString()});
    importedBusyBlocks++;
   }
  }
