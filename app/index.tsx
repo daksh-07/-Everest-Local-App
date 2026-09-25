@@ -39,6 +39,7 @@ export default function Home(){
   const {data:{user}}=await supabase.auth.getUser();
   const businessQuery=supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').limit(8);
   if(!user){const [biz,feed]=await Promise.all([businessQuery,listPublicPosts({limit:4})]);if(active){setBusinesses((biz.data??[]) as BusinessPreview[]);setPosts(feed)}return}
+  const {getWorkspaceContext}=await import('@/lib/workspace');const workspace=await getWorkspaceContext();if(!active)return;if(workspace.mode==='BUSINESS'&&workspace.active_business_id){router.replace('/business-today');return;}
   const [profile,biz,feed,notifications,booking,request]=await Promise.all([
    supabase.from('profiles').select('full_name,avatar_url,suburb,city').eq('id',user.id).maybeSingle(),businessQuery,listPublicPosts({limit:4}),
    supabase.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',user.id).is('read_at',null),
