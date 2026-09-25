@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {URL} from 'node:url';
 
 const read=(p)=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const request=read('app/request.tsx');
