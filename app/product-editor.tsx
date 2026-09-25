@@ -4,7 +4,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {createProduct,myBusiness,setProductStatus} from '@/lib/catalog';
+import {createProduct,myBusiness} from '@/lib/catalog';
 import {getProductDetail,listProductCategories,publishProduct,removeProductImage,reorderProductImages,saveProductDetails,saveVariant,setProductInventory,setVariantImage,signedProductMedia,uploadProductImage,type ProductCategory,type ProductImage} from '@/lib/product-commerce';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 
