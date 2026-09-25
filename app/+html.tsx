@@ -153,6 +153,42 @@ export default function Root({ children }: PropsWithChildren) {
                         transform 180ms cubic-bezier(.2,.8,.2,1);
           }
 
+          [data-everest-composer="true"]:focus-within {
+            border-color: #d8c3a5 !important;
+            box-shadow: 0 0 0 1px rgba(216,195,165,.14), 0 8px 22px rgba(0,0,0,.12) !important;
+          }
+
+          [data-everest-composer="true"] *,
+          [data-everest-composer="true"] *:focus,
+          [data-everest-composer="true"] *:focus-visible,
+          [data-everest-searchbox="true"] *,
+          [data-everest-searchbox="true"] *:focus,
+          [data-everest-searchbox="true"] *:focus-visible {
+            outline: 0 !important;
+            outline-color: transparent !important;
+            box-shadow: none !important;
+            -webkit-box-shadow: none !important;
+            -webkit-focus-ring-color: transparent !important;
+            -webkit-tap-highlight-color: transparent !important;
+          }
+
+          [data-everest-searchbox="true"] input,
+          [data-everest-searchbox="true"] input:focus,
+          [data-everest-searchbox="true"] input:focus-visible {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            border: 0 !important;
+            background: transparent !important;
+          }
+
+          [data-everest-conversation-row="true"],
+          [data-everest-conversation-row="true"] * {
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+          }
+
           [data-everest-message-bubble="true"],
           [data-everest-message-bubble="true"] * {
             -webkit-user-select: none !important;
