@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 
-async function safe(run:()=>Promise<void>){try{await run()}catch{}}
+async function safe(run:()=>Promise<void>){try{await run()}catch{return}}
 export const haptic={
  light:()=>safe(()=>Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)),
  medium:()=>safe(()=>Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)),
