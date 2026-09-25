@@ -3,7 +3,7 @@ import { webkit, devices } from 'playwright';
 const browser=await webkit.launch();
 const context=await browser.newContext({...devices['iPhone 15 Pro']});
 const page=await context.newPage();
-await page.goto('http://127.0.0.1:4173/messages?focusProbe=1',{waitUntil:'networkidle'});
+await page.goto('http://127.0.0.1:4173/focus-probe',{waitUntil:'domcontentloaded'});
 const input=page.locator('#everest-message-composer');
 await input.waitFor({state:'visible'});
 await input.focus();
