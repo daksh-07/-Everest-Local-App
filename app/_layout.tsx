@@ -10,8 +10,8 @@ import { ThemeProvider,useAppTheme } from '@/lib/theme';
 const protectedRoutes = new Set([
   '/account','/activity','/assistant','/request','/requests','/quotes','/bookings','/orders','/cart','/messages','/reviews','/notifications','/settings','/edit-profile','/appearance','/notification-settings','/help',
 ]);
-const businessApplicationRoutes = new Set(['/business','/business-onboarding','/business-dashboard','/business-verification']);
-const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities']);
+const businessApplicationRoutes = new Set(['/business','/business-onboarding','/business-dashboard','/business-verification','/business-today','/business-control']);
+const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities','/business-leads','/business-jobs','/business-inbox']);
 const adminRoutes = new Set(['/admin','/admin-operations','/driver-verification']);
 const deliveryRoutes = new Set(['/delivery','/driver-dashboard']);
 const driverApplicationRoutes = new Set(['/driver-onboarding']);
@@ -50,11 +50,11 @@ function ThemedRootLayout() {
     if(driverApplicationRoutes.has(pathname))return;
     if(deliveryRoutes.has(pathname)){if(!access?.is_active_driver&&!access?.is_admin)nav.replace('/driver-onboarding');return;}
     if(businessApplicationRoutes.has(pathname)){
-      if(pathname==='/business' || pathname==='/business-onboarding'){if(access?.is_business_member)nav.replace('/business-dashboard');return;}
+      if(pathname==='/business' || pathname==='/business-onboarding'){if(access?.is_business_member)nav.replace('/business-today');return;}
       if(!access?.is_business_member&&!access?.is_admin){nav.replace('/business-onboarding');return;}
       return;
     }
-    if(businessRestrictedRoutes.has(pathname)){if(!access?.is_verified_business&&!access?.is_admin)nav.replace('/business-dashboard');return;}
+    if(businessRestrictedRoutes.has(pathname)){if(!access?.is_verified_business&&!access?.is_admin)nav.replace('/business-today');return;}
   },[pathname,authInitialized,supabaseConfigured,sessionUserId,access,startupError,nav]);
 
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
