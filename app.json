@@ -35,12 +35,6 @@
         {
           "locationWhenInUsePermission": "Everest Local uses your location only when you choose it to confirm where a local service is needed."
         }
-      ],
-      [
-        "expo-location",
-        {
-          "locationWhenInUsePermission": "Everest Local uses your location only when you ask to find nearby services. Background location is not used."
-        }
       ]
     ],
     "extra": {
