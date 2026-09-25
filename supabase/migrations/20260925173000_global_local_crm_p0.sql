@@ -154,7 +154,7 @@ alter table public.crm_external_quote_items add constraint crm_external_quote_it
 alter table public.crm_external_bookings drop constraint if exists crm_external_bookings_contact_business_fk;
 alter table public.crm_external_bookings add constraint crm_external_bookings_contact_business_fk foreign key(contact_id,business_id) references public.business_contacts(id,business_id) on delete cascade;
 alter table public.crm_external_bookings drop constraint if exists crm_external_bookings_quote_business_fk;
-alter table public.crm_external_bookings add constraint crm_external_bookings_quote_business_fk foreign key(external_quote_id,business_id) references public.crm_external_quotes(id,business_id) on delete set null;
+alter table public.crm_external_bookings add constraint crm_external_bookings_quote_business_fk foreign key(external_quote_id,business_id) references public.crm_external_quotes(id,business_id);
 
 -- Public marker contains no private booking/customer identifier. The private link is server-only.
 create table if not exists public.verified_work_posts (
