@@ -14,7 +14,7 @@ export default function BusinessInbox(){
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);
  const [business,setBusiness]=useState<BusinessWorkspace|null>(null);const [items,setItems]=useState<Conversation[]>([]);
  const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState('');const [userId,setUserId]=useState('');
- const load=useCallback(async(refresh=false)=>{refresh?setRefreshing(true):setLoading(true);setError('');
+ const load=useCallback(async(refresh=false)=>{if(refresh)setRefreshing(true);else setLoading(true);setError('');
   try{
    const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
    const current=ctx.businesses.find(item=>item.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
