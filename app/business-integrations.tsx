@@ -6,6 +6,7 @@ import {router} from 'expo-router';
 import {BusinessTabBar} from '@/components/BusinessTabBar';
 import {ModeSwitcher} from '@/components/ModeSwitcher';
 import {beginIntegrationOAuth,listIntegrationConnections,type IntegrationConnection,type IntegrationProvider} from '@/lib/integrations';
+import {getBusinessSubscription,hasEverestPro} from '@/lib/billing';
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 
@@ -36,6 +37,7 @@ export default function BusinessIntegrations(){
  const [loading,setLoading]=useState(true);
  const [working,setWorking]=useState('');
  const [error,setError]=useState('');
+ const [proActive,setProActive]=useState(false);
 
  const load=useCallback(async()=>{
   setLoading(true);
@@ -46,7 +48,9 @@ export default function BusinessIntegrations(){
    const current=ctx.businesses.find(x=>x.id===ctx.active_business_id);
    if(!current)throw new Error('Business access unavailable.');
    setBusiness(current);
-   setConnections(await listIntegrationConnections(current.id));
+   const [nextConnections,subscription]=await Promise.all([listIntegrationConnections(current.id),getBusinessSubscription(current.id)]);
+   setConnections(nextConnections);
+   setProActive(hasEverestPro(subscription));
   }catch(e){
    setError(e instanceof Error?e.message:'Integrations could not be loaded.');
   }finally{
@@ -100,7 +104,7 @@ export default function BusinessIntegrations(){
      const connection=byProvider.get(item.provider);
      const status=connection?.status??'NOT_CONNECTED';
      const connected=status==='CONNECTED';
-     const locked=Boolean(item.premium);
+     const locked=Boolean(item.premium)&&!proActive;
      return <View key={item.provider}>
       {index===0||catalog[index-1].category!==item.category?<View style={st.categoryRow}><Text style={st.category}>{item.category}</Text>{item.category==='CALENDAR'?<Text style={st.freeLabel}>INCLUDED</Text>:null}</View>:null}
       <View style={[st.card,locked&&st.premiumCard]}>
@@ -109,7 +113,7 @@ export default function BusinessIntegrations(){
         <View style={st.cardBody}>
          <View style={st.titleRow}>
           <Text style={st.cardTitle}>{item.title}</Text>
-          {locked?<View style={st.proBadge}><Ionicons name="lock-closed" size={9} color={colors.onBrand}/><Text style={st.proBadgeText}>PRO</Text></View>:null}
+          {item.premium?<View style={st.proBadge}><Ionicons name={locked?'lock-closed':'checkmark'} size={9} color={colors.onBrand}/><Text style={st.proBadgeText}>{locked?'PRO':'PRO ACTIVE'}</Text></View>:null}
           {!locked?<View style={[st.badge,connected?st.connected:status==='NEEDS_ATTENTION'?st.warning:st.neutral]}><View style={[st.statusDot,connected&&{backgroundColor:colors.brand}]}/><Text style={st.badgeText}>{status.replaceAll('_',' ')}</Text></View>:null}
          </View>
          <Text style={st.cardCopy}>{item.copy}</Text>
@@ -122,7 +126,7 @@ export default function BusinessIntegrations(){
         <Pressable onPress={()=>openPremium(item)} style={st.upgradeButton}>
          <Text style={st.upgradeText}>UNLOCK</Text><Ionicons name="arrow-forward" size={14} color={colors.onBrand}/>
         </Pressable>
-       </View>:<Pressable disabled={working===item.provider||!item.available} onPress={()=>connected&&item.provider.includes('CALENDAR')?router.push('/business-calendar-integrations'):void connect(item.provider)} style={st.action}>
+       </View>:item.provider==='OPENAI'?<View style={st.lockStrip}><View style={st.lockInfo}><Ionicons name="sparkles-outline" size={15} color={colors.brand}/><Text style={st.lockCopy}>Everest AI is included with Pro and is being connected next.</Text></View></View>:<Pressable disabled={working===item.provider||!item.available} onPress={()=>connected&&item.provider.includes('CALENDAR')?router.push('/business-calendar-integrations'):void connect(item.provider)} style={st.action}>
         <Text style={st.actionText}>{working===item.provider?'OPENING…':connected?'CONFIGURE':'CONNECT'}</Text>
         <Ionicons name={connected?'settings-outline':'arrow-forward'} size={15} color={colors.text}/>
        </Pressable>}
