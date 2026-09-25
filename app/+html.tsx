@@ -70,6 +70,21 @@ export default function Root({ children }: PropsWithChildren) {
             height: 100%;
           }
 
+          #everest-chat-shell {
+            min-height: 0 !important;
+            height: var(--everest-visual-height, 100dvh) !important;
+            max-height: var(--everest-visual-height, 100dvh) !important;
+            overflow: hidden !important;
+            transform: translateY(var(--everest-visual-top, 0px));
+          }
+
+          @supports not (height: 100dvh) {
+            #everest-chat-shell {
+              height: var(--everest-visual-height, 100vh) !important;
+              max-height: var(--everest-visual-height, 100vh) !important;
+            }
+          }
+
           html.android-mobile-viewport-fallback,
           html.android-mobile-viewport-fallback body {
             width: var(--everest-device-width) !important;
@@ -115,12 +130,19 @@ export default function Root({ children }: PropsWithChildren) {
           #everest-composer-shell:focus,
           #everest-composer-shell:focus-visible,
           #everest-composer-shell:focus-within,
+          #everest-composer-shell *,
+          #everest-composer-shell *:focus,
+          #everest-composer-shell *:focus-visible,
           #everest-composer-shell textarea,
           #everest-composer-shell textarea:focus,
           #everest-composer-shell textarea:focus-visible,
           #everest-composer-shell input,
           #everest-composer-shell input:focus,
           #everest-composer-shell input:focus-visible,
+          #everest-composer-shell [contenteditable="true"],
+          #everest-composer-shell [contenteditable="true"]:focus,
+          #everest-composer-shell [role="textbox"],
+          #everest-composer-shell [role="textbox"]:focus,
           #everest-message-composer,
           #everest-message-composer:focus,
           #everest-message-composer:focus-visible,
@@ -129,13 +151,15 @@ export default function Root({ children }: PropsWithChildren) {
           textarea#everest-message-composer:focus-visible {
             -webkit-appearance: none !important;
             appearance: none !important;
-            outline: 0 !important;
+            outline: none !important;
+            outline-style: none !important;
             outline-width: 0 !important;
             outline-color: transparent !important;
             box-shadow: none !important;
             -webkit-box-shadow: none !important;
             -webkit-tap-highlight-color: transparent !important;
             -webkit-focus-ring-color: transparent !important;
+            border-image: none !important;
           }
 
           #everest-composer-shell textarea,
@@ -199,6 +223,14 @@ export default function Root({ children }: PropsWithChildren) {
 
           [data-everest-message-bubble="true"] {
             touch-action: manipulation;
+          }
+
+          #everest-message-action-overlay,
+          #everest-message-action-overlay * {
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+            -webkit-tap-highlight-color: transparent !important;
           }
 
           #everest-search-input,

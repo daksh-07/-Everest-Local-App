@@ -19,7 +19,7 @@ test('message composer suppresses browser focus chrome without disabling app-wid
 
 test('long press message surface prevents scoped web text selection and opens contextual menu',()=>{
  assert.match(messages,/dataSet:\{everestMessageBubble:'true'\}/);
- assert.match(messages,/onLongPress=\{event=>onAction\(m,event\.nativeEvent\.pageX/);
+ assert.match(messages,/onLongPress=\{\(\)=>openAction\(m\)\}/);
  assert.match(html,/\[data-everest-message-bubble="true"\]/);
  assert.match(html,/-webkit-user-select: none !important/);
  assert.match(html,/-webkit-touch-callout: none !important/);
