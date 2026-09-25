@@ -25,8 +25,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Everest Local uses your photos when you choose to add images to posts, service requests, products or verification.",
-          "cameraPermission": "Everest Local uses your camera when you choose to capture images for posts, service requests, products or verification.",
+          "photosPermission": "Everest Local uses photos you choose for service requests, posts, products, profile images and verification.",
+          "cameraPermission": "Everest Local uses the camera only when you choose to capture media for supported features.",
           "microphonePermission": false
         }
       ],
