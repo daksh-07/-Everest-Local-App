@@ -11,6 +11,7 @@ import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {ui} from '@/lib/ui';
 import {resolveCustomerLocality,saveLocalityToProfile,type CustomerLocality} from '@/lib/customer-location';
+import {useExperience} from '@/lib/experience';
 
 
 type IconName=keyof typeof Ionicons.glyphMap;
@@ -32,7 +33,8 @@ function greeting(){const h=new Date().getHours();return h<12?'Good morning':h<1
 function initials(name:string){return name.trim().split(/\s+/).slice(0,2).map(v=>v[0]?.toUpperCase()).join('')||'EL'}
 
 export default function Home(){
- const {colors:c}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const s=useMemo(()=>styles(c,desktop),[c,desktop]);const reduced=useReducedMotion();
+ const experience=useExperience();
+ const {colors:c}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const s=useMemo(()=>styles(c,desktop),[c,desktop]);const osReducedMotion=useReducedMotion();const reduced=osReducedMotion||experience.mode==='CLASSIC';
  const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Set location');
  const [unread,setUnread]=useState(0);const [businesses,setBusinesses]=useState<BusinessPreview[]>([]);const [posts,setPosts]=useState<SocialPost[]>([]);
  const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);const [locating,setLocating]=useState(false);
@@ -101,19 +103,20 @@ export default function Home(){
  const appear={opacity:enter,transform:[{translateY:enter.interpolate({inputRange:[0,1],outputRange:[reduced?0:8,0]})}]};
  const go=(route:string)=>{void haptic.selection();router.push(route as never)};
  const hello=name?greeting()+', '+name.split(' ')[0]:'What’s happening nearby?';
+ const classic=experience.mode==='CLASSIC';const pulse=experience.mode==='PULSE';
 
  return <View style={s.root}><SafeAreaView edges={['top','left','right']} style={s.safe}>
-  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.page}>
+  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[s.page,{paddingHorizontal:desktop?28:experience.tokens.spacing.screen}]}>
    <Animated.View style={appear}>
     <View style={s.topbar}><View style={{flex:1}}><Text style={s.brand}>EVEREST LOCAL</Text><Pressable onPress={()=>void refreshLocality(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityLabel="Update your location"><Ionicons name={locating?'locate':'location-outline'} size={13} color={c.muted}/><Text style={s.place}>{locating?'Finding you…':suburb}</Text><Ionicons name="chevron-down" size={11} color={c.muted}/></Pressable></View>
      <Pressable onPress={()=>go('/notifications')} style={({pressed})=>[s.iconButton,pressed&&s.press]} accessibilityLabel="Notifications"><Ionicons name="notifications-outline" size={20} color={c.text}/>{unread>0?<View style={s.dot}/>:null}</Pressable>
      <Pressable onPress={()=>go('/account')} style={({pressed})=>[s.avatar,pressed&&s.press]} accessibilityLabel="Open account">{avatar?<Image source={{uri:avatar}} style={s.avatarImage}/>:<Text style={s.avatarText}>{initials(name||'Everest Local')}</Text>}</Pressable>
     </View>
     <View style={s.heroGrid}><View style={s.heroPanel}>
-     <Text style={s.heroEyebrow}>{suburb==='Set location'?'YOUR LOCAL MARKETPLACE':`LIVE AROUND ${suburb.toUpperCase()}`}</Text>
-     <Text style={s.greeting}>{name?hello:'What do you need today?'}</Text><Text style={s.heroCopy}>Discover trusted local businesses, compare real quotes and manage the whole job in one place.</Text>
-     <Pressable onPress={()=>go('/search')} style={({pressed})=>[s.search,pressed&&s.searchPressed]} accessibilityRole="search"><View style={s.searchIcon}><Ionicons name="search" size={20} color={c.text}/></View><Text style={s.searchText}>Search people, services, businesses</Text><Ionicons name="options-outline" size={18} color={c.muted}/></Pressable>
-     <Pressable onPress={()=>go('/request')} style={({pressed})=>[s.primaryIntent,pressed&&s.actionPressed]}><View style={s.primaryIntentIcon}><Ionicons name="flash" size={22} color={c.onBrand}/></View><View style={{flex:1}}><Text style={s.primaryIntentTitle}>Get matched with local businesses</Text><Text style={s.primaryIntentCopy}>Describe the job once. Compare quotes when businesses respond.</Text></View><Ionicons name="arrow-forward" size={20} color={c.onBrand}/></Pressable>
+     <Text style={[s.heroEyebrow,{fontSize:experience.tokens.typography.caption}]}>{pulse?'PULSE · DISCOVER NEARBY':suburb==='Set location'?'YOUR LOCAL MARKETPLACE':`LIVE AROUND ${suburb.toUpperCase()}`}</Text>
+     <Text style={[s.greeting,{fontSize:experience.tokens.typography.hero,lineHeight:experience.tokens.typography.hero*1.18}]}>{classic?'What would you like to do?':name?hello:'What do you need today?'}</Text><Text style={[s.heroCopy,{fontSize:experience.tokens.typography.body,lineHeight:experience.tokens.typography.body*experience.tokens.typography.lineHeight}]}>{classic?'Choose a clearly labelled action below. You can find a local business, request quotes, shop, or ask Everest for help.':'Discover trusted local businesses, compare real quotes and manage the whole job in one place.'}</Text>
+     <Pressable onPress={()=>go('/search')} style={({pressed})=>[s.search,{height:classic?experience.tokens.controls.minHeight+10:58,borderRadius:experience.tokens.shape.medium,borderWidth:experience.tokens.surfaces.borderWidth},pressed&&s.searchPressed]} accessibilityRole="search"><View style={[s.searchIcon,{borderRadius:experience.tokens.shape.small}]}><Ionicons name="search" size={20} color={c.text}/></View><Text style={[s.searchText,{fontSize:experience.tokens.typography.body}]}>{classic?'Search for a service, business, or product':'Search people, services, businesses'}</Text><Ionicons name="options-outline" size={18} color={c.muted}/></Pressable>
+     <Pressable onPress={()=>go('/request')} style={({pressed})=>[s.primaryIntent,{borderRadius:experience.tokens.shape.large,minHeight:classic?98:84},pressed&&s.actionPressed]}><View style={[s.primaryIntentIcon,{borderRadius:experience.tokens.shape.small}]}><Ionicons name="flash" size={22} color={c.onBrand}/></View><View style={{flex:1}}><Text style={[s.primaryIntentTitle,{fontSize:classic?16:14}]}>Get matched with local businesses</Text><Text style={[s.primaryIntentCopy,{fontSize:classic?12:10,lineHeight:classic?18:15}]}>Describe the job once. Compare quotes when businesses respond.</Text></View><Ionicons name="arrow-forward" size={20} color={c.onBrand}/></Pressable>
      <View style={s.trustRow}><Trust icon="shield-checkmark" label="Verified businesses"/><Trust icon="location" label="Local matches"/><Trust icon="lock-closed" label="Secure payments"/></View>
      {context?<Pressable onPress={()=>go(context.route)} style={({pressed})=>[s.context,pressed&&s.press]}><View style={s.contextIcon}><Ionicons name={context.kind==='booking'?'calendar-outline':'document-text-outline'} size={19} color={c.brand}/></View><View style={{flex:1}}><Text style={s.contextLabel}>CONTINUE WHERE YOU LEFT OFF</Text><Text style={s.contextTitle}>{context.title}</Text><Text numberOfLines={1} style={s.contextDetail}>{context.detail}</Text></View><Ionicons name="chevron-forward" size={18} color={c.muted}/></Pressable>:null}
     </View><View style={s.sidePanel}>

@@ -6,6 +6,7 @@ import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { DraggableAskEverest } from '@/components/DraggableAskEverest';
 import type { AccessContext } from '@/lib/access';
 import { ThemeProvider,useAppTheme } from '@/lib/theme';
+import {ExperienceProvider} from '@/lib/experience';
 import {configureEverestQuickActions,quickActionHref,QuickActions,storePendingQuickActionRoute} from '@/lib/quick-actions';
 
 const protectedRoutes = new Set([
@@ -76,6 +77,6 @@ function ThemedRootLayout() {
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
   return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><Stack screenOptions={{headerShown:false,animation:'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></View>;
 }
-export default function RootLayout(){return <ThemeProvider><ThemedRootLayout/></ThemeProvider>}
+export default function RootLayout(){return <ThemeProvider><ExperienceProvider><ThemedRootLayout/></ExperienceProvider></ThemeProvider>}
 
 const styles=StyleSheet.create({overlay:{position:'absolute',top:0,right:0,bottom:0,left:0},errorScreen:{flex:1,backgroundColor:'#f8f7f4',padding:24,justifyContent:'center',alignItems:'center'},eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:2,color:'#777'},errorTitle:{maxWidth:520,marginTop:10,fontSize:25,lineHeight:31,fontWeight:'900',textAlign:'center'},errorCopy:{maxWidth:520,marginTop:10,color:'#777',fontSize:13,lineHeight:20,textAlign:'center'},retryButton:{marginTop:20,paddingVertical:12,paddingHorizontal:16},retry:{fontSize:12,fontWeight:'900',letterSpacing:.8}});

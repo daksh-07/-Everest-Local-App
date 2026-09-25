@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Pressable,StyleSheet,Text,View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/lib/theme';
+import {useExperience} from '@/lib/experience';
 
 type PrimaryRoute='/business-today'|'/business-crm'|'/business-calendar'|'/business-inbox'|'/business-control';
 export type BusinessActiveRoute=
@@ -35,9 +36,9 @@ function primaryFor(active:BusinessActiveRoute):PrimaryRoute{
 }
 
 export function BusinessTabBar({active}:{active:BusinessActiveRoute}){
- const insets=useSafeAreaInsets();const {colors}=useAppTheme();const selectedRoute=primaryFor(active);
- return <View style={[s.shell,{height:64+insets.bottom,paddingBottom:insets.bottom,backgroundColor:colors.navigation,borderTopColor:colors.border}]}>
-  <View style={s.bar}>{items.map(item=>{const selected=item.route===selectedRoute;return <Pressable key={item.route} accessibilityRole="tab" accessibilityState={{selected}} accessibilityLabel={item.label} onPress={()=>{if(!selected)router.replace(item.route)}} style={({pressed})=>[s.item,pressed&&s.pressed]}><Ionicons name={selected?item.activeIcon:item.icon} size={21} color={selected?colors.brand:colors.muted}/><Text style={[s.label,{color:selected?colors.text:colors.muted},selected&&s.active]}>{item.label}</Text></Pressable>})}</View>
+ const insets=useSafeAreaInsets();const {colors}=useAppTheme();const {tokens:t,mode}=useExperience();const selectedRoute=primaryFor(active);
+ return <View style={[s.shell,{height:t.navigation.height+insets.bottom,paddingBottom:insets.bottom,backgroundColor:colors.navigation,borderTopColor:colors.border,borderTopWidth:t.surfaces.borderWidth}]}>
+  <View style={[s.bar,{height:t.navigation.height}]}>{items.map(item=>{const selected=item.route===selectedRoute;return <Pressable key={item.route} accessibilityRole="tab" accessibilityState={{selected}} accessibilityLabel={item.label} onPress={()=>{if(!selected)router.replace(item.route)}} style={({pressed})=>[s.item,{minHeight:t.controls.touchTarget,borderRadius:t.shape.small,backgroundColor:selected&&mode==='PULSE'?colors.accentSoft:'transparent'},pressed&&s.pressed]}><Ionicons name={selected?item.activeIcon:item.icon} size={t.navigation.iconSize} color={selected?colors.brand:colors.muted}/><Text style={[s.label,{fontSize:t.navigation.labelSize,color:selected?colors.text:colors.muted},selected&&s.active]}>{item.label}</Text></Pressable>})}</View>
  </View>;
 }
 const s=StyleSheet.create({shell:{position:'absolute',left:0,right:0,bottom:0,zIndex:50,borderTopWidth:1},bar:{height:64,width:'100%',maxWidth:980,alignSelf:'center',flexDirection:'row',justifyContent:'space-around',alignItems:'center'},item:{minWidth:58,minHeight:56,alignItems:'center',justifyContent:'center',paddingHorizontal:5},pressed:{opacity:.58},label:{fontSize:10,lineHeight:14,fontWeight:'700',marginTop:3},active:{fontWeight:'900'}});
