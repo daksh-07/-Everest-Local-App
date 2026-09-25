@@ -806,3 +806,32 @@ begin
 end $$;
 revoke all on function public.crm_create_calendar_block(uuid,text,timestamptz,timestamptz) from public,anon;
 grant execute on function public.crm_create_calendar_block(uuid,text,timestamptz,timestamptz) to authenticated;
+
+
+create or replace function public.crm_reschedule_booking(
+ p_business_id uuid,p_booking_id uuid,p_scheduled_start timestamptz,p_duration_minutes integer
+) returns boolean language plpgsql security invoker set search_path='' as $$
+declare b public.crm_bookings; finish timestamptz;
+begin
+ if auth.uid() is null or not public.is_business_member(p_business_id) then raise exception 'Not authorized'; end if;
+ if p_duration_minutes<15 or p_duration_minutes>1440 then raise exception 'Invalid duration'; end if;
+ select * into b from public.crm_bookings where id=p_booking_id and business_id=p_business_id for update;
+ if b.id is null then raise exception 'Booking not found'; end if;
+ if b.status in ('COMPLETED','CANCELLED','NO_SHOW') then raise exception 'Closed bookings cannot be rescheduled'; end if;
+ finish:=p_scheduled_start+make_interval(mins=>p_duration_minutes);
+ if exists(
+   select 1 from public.crm_bookings other
+   where other.business_id=p_business_id and other.id<>b.id
+     and other.status not in ('CANCELLED','NO_SHOW')
+     and tstzrange(other.scheduled_start,other.scheduled_end,'[)') && tstzrange(p_scheduled_start,finish,'[)')
+ ) then raise exception 'Booking conflicts with an existing CRM booking'; end if;
+ update public.crm_bookings set scheduled_start=p_scheduled_start,scheduled_end=finish where id=b.id;
+ insert into public.crm_activities(business_id,contact_id,opportunity_id,kind,title,detail,source_record_type,source_record_id,created_by)
+ values(p_business_id,b.contact_id,b.opportunity_id,'BOOKING_RESCHEDULED','Booking rescheduled',
+        to_char(p_scheduled_start,'YYYY-MM-DD HH24:MI'),'CRM_BOOKING',b.id,auth.uid());
+ if b.opportunity_id is not null then update public.crm_opportunities set last_activity_at=now() where id=b.opportunity_id and business_id=p_business_id; end if;
+ update public.business_contacts set last_activity_at=now() where id=b.contact_id and business_id=p_business_id;
+ return true;
+end $$;
+revoke all on function public.crm_reschedule_booking(uuid,uuid,timestamptz,integer) from public,anon;
+grant execute on function public.crm_reschedule_booking(uuid,uuid,timestamptz,integer) to authenticated;
