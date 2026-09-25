@@ -51,7 +51,11 @@ test('post publishing is real and business identity is server checked',()=>{
  assert.match(post,/PUBLISH POST/);
  assert.match(post,/uploadPostMedia/);
  assert.match(post,/Camera/);
- assert.match(post,/Photos \{photos\.length\}\/10/);
+ assert.match(post,/Add photos/);
+ assert.match(post,/Choose photos/);
+ assert.match(post,/Local note/);
+ assert.match(post,/After the job/);
+ assert.match(post,/Show your work/);
  assert.match(migration,/publish_post/);
  assert.match(migration,/is_business_member\(p_business_id\)/);
  assert.match(migration,/user_blocks/);
