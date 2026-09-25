@@ -2,7 +2,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import {ActivityIndicator,Alert,Animated,Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {SafeAreaView,useSafeAreaInsets} from 'react-native-safe-area-context';
 import {conversations,messages,sendMessage} from '@/lib/messaging';
 import {currentUser} from '@/lib/marketplace';
 import {
@@ -16,6 +16,7 @@ import {useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
 import {MOTION,ease,useReducedMotion} from '@/lib/motion';
 import {useVisualViewport} from '@/lib/visual-viewport';
+import {installChatWebRuntimeStyles} from '@/lib/chat-web-runtime';
 
 type MarketConversation={id:string;customer_id:string;business_id:string;created_at:string;counterpart_name?:string;logo_url?:string|null};
 type MarketMessage={id:string;sender_id:string;body:string;created_at:string;read_at?:string|null};
@@ -44,9 +45,18 @@ function dateLabel(value:string){
  return d.toLocaleDateString([],{month:'short',day:'numeric'}).toUpperCase();
 }
 function sameDay(a:string,b:string){return new Date(a).toDateString()===new Date(b).toDateString()}
+function scrollThreadToEndAfterLayout(ref:React.MutableRefObject<ScrollView|null>,animated:boolean){
+ const run=()=>ref.current?.scrollToEnd({animated});
+ if(Platform.OS==='web'&&typeof requestAnimationFrame==='function'){
+  requestAnimationFrame(()=>requestAnimationFrame(run));
+ }else{
+  setTimeout(run,0);
+ }
+}
 
 export default function Messages(){
  const {colors:c}=useAppTheme();
+ const insets=useSafeAreaInsets();
  const params=useLocalSearchParams<{personalId?:string}>();
  const [tab,setTab]=useState<'CHATS'|'REQUESTS'>('CHATS');
  const [query,setQuery]=useState('');
@@ -80,6 +90,11 @@ export default function Messages(){
  const [conversationQuery,setConversationQuery]=useState('');
  const threadRef=useRef<ScrollView|null>(null);
  const initialScrollRef=useRef(true);
+ const keyboardOpen=Platform.OS==='web'&&visualViewport.keyboardInset>80;
+ const composerBottomInset=keyboardOpen?0:insets.bottom;
+ const chatRootStyle=Platform.OS==='web'&&visualViewport.height
+  ? ({height:visualViewport.height,maxHeight:visualViewport.height,minHeight:0,width:'100%',overflow:'hidden',backgroundColor:c.canvas,transform:[{translateY:visualViewport.offsetTop}]} as never)
+  : {flex:1,backgroundColor:c.canvas};
 
  async function loadHome(silent=false){
   if(!silent)setLoading(true);
