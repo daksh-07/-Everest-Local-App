@@ -632,3 +632,11 @@ grant execute on function public.set_product_variant_image(uuid,uuid) to authent
 
 grant select on public.product_variants to anon,authenticated;
 revoke insert,update,delete on public.product_variants from anon,authenticated;
+
+
+-- Product-commerce-specific advisor cleanup.
+create index if not exists cart_items_variant_id_idx on public.cart_items(variant_id) where variant_id is not null;
+create index if not exists order_items_variant_id_idx on public.order_items(variant_id) where variant_id is not null;
+create index if not exists product_images_variant_id_idx on public.product_images(variant_id) where variant_id is not null;
+revoke all on function public.set_my_cart_item(uuid,integer) from public,anon;
+grant execute on function public.set_my_cart_item(uuid,integer) to authenticated;
