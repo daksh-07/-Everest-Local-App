@@ -531,7 +531,7 @@ function MarketThread({refValue,items,userId,colors:c}:{refValue:React.MutableRe
  </ScrollView>;
 }
 
-function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,reducedMotion,bottomInset,onFocus,cancelReply,cancelEdit}:{draft:string;setDraft:(v:string)=>void;busy:boolean;submit:()=>void;colors:ReturnType<typeof useAppTheme>['colors'];reply:PersonalMessage|null;edit:PersonalMessage|null;reducedMotion:boolean;bottomInset:number;onFocus:()=>void;cancelReply:()=>void;cancelEdit:()=>void}){
+export function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,reducedMotion,bottomInset,onFocus,cancelReply,cancelEdit}:{draft:string;setDraft:(v:string)=>void;busy:boolean;submit:()=>void;colors:ReturnType<typeof useAppTheme>['colors'];reply:PersonalMessage|null;edit:PersonalMessage|null;reducedMotion:boolean;bottomInset:number;onFocus:()=>void;cancelReply:()=>void;cancelEdit:()=>void}){
  const [focused,setFocused]=useState(false);
  const focus=useRef(new Animated.Value(0)).current;
  const active=useRef(new Animated.Value(draft.trim()?1:0)).current;
