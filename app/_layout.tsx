@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { DraggableAskEverest } from '@/components/DraggableAskEverest';
 import type { AccessContext } from '@/lib/access';
 import { ThemeProvider,useAppTheme } from '@/lib/theme';
+import {configureEverestQuickActions,quickActionHref,QuickActions,storePendingQuickActionRoute} from '@/lib/quick-actions';
 
 const protectedRoutes = new Set([
   '/account','/activity','/assistant','/request','/requests','/quotes','/bookings','/orders','/cart','/messages','/reviews','/notifications','/settings','/edit-profile','/appearance','/notification-settings','/help',
@@ -29,6 +30,7 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
 function ThemedRootLayout() {
   const pathname=usePathname();const nav=useRouter();
   const theme=useAppTheme();
+  const initialQuickActionHandled=useRef(false);
   const [authInitialized,setAuthInitialized]=useState(false);const [supabaseConfigured,setSupabaseConfigured]=useState(false);const [sessionUserId,setSessionUserId]=useState<string|null>(null);const [access,setAccess]=useState<AccessContext|null>(null);const [startupError,setStartupError]=useState('');const [retryNonce,setRetryNonce]=useState(0);
   useEffect(()=>{let active=true;let unsubscribe:(()=>void)|undefined;
     async function load(){try{
@@ -41,6 +43,20 @@ function ThemedRootLayout() {
       unsubscribe=()=>subscription.unsubscribe();
     }catch(e){if(typeof console!=='undefined')console.error('[Everest Local auth initialization]',e);if(active){setSupabaseConfigured(false);setAuthInitialized(true);setStartupError('AUTH_INIT_FAILED')}}}
     void load();return()=>{active=false;unsubscribe?.()};},[retryNonce]);
+
+  useEffect(()=>{
+    if(Platform.OS==='web')return;
+    void configureEverestQuickActions();
+    const routeAction=async(action:QuickActions.Action|null|undefined)=>{
+      const href=quickActionHref(action);if(!href)return;
+      const protectedTarget=protectedRoutes.has(href)||businessApplicationRoutes.has(href)||businessRestrictedRoutes.has(href)||adminRoutes.has(href)||deliveryRoutes.has(href)||driverApplicationRoutes.has(href);
+      if(protectedTarget&&!sessionUserId){await storePendingQuickActionRoute(href);nav.replace('/auth');return;}
+      nav.push(href as never);
+    };
+    if(!initialQuickActionHandled.current){initialQuickActionHandled.current=true;void routeAction(QuickActions.initial)}
+    const sub=QuickActions.addListener(action=>{void routeAction(action)});
+    return()=>sub.remove();
+  },[nav,sessionUserId]);
 
   useEffect(()=>{if(!authInitialized||!supabaseConfigured||startupError)return;
     const needsAuth=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
@@ -58,7 +74,7 @@ function ThemedRootLayout() {
   },[pathname,authInitialized,supabaseConfigured,sessionUserId,access,startupError,nav]);
 
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
-  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} backgroundColor={theme.colors.canvas}/><Stack screenOptions={{headerShown:false,animation:'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></View>;
+  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><Stack screenOptions={{headerShown:false,animation:'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></View>;
 }
 export default function RootLayout(){return <ThemeProvider><ThemedRootLayout/></ThemeProvider>}
 
