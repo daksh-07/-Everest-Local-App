@@ -28,7 +28,7 @@ export default function Root({ children }: PropsWithChildren) {
           html {
             width: 100%;
             min-height: 100%;
-            height: 100%;
+            min-height: 100dvh;
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
             touch-action: manipulation;
@@ -39,7 +39,7 @@ export default function Root({ children }: PropsWithChildren) {
             width: 100%;
             min-width: 100%;
             min-height: 100%;
-            height: 100%;
+            min-height: 100dvh;
             margin: 0;
             overflow-x: hidden;
             overscroll-behavior-x: none;
@@ -48,26 +48,13 @@ export default function Root({ children }: PropsWithChildren) {
             background: var(--everest-canvas, #f8f7f4);
           }
 
-          /* Installed apps keep a charcoal backdrop beneath the translucent iOS status bar. */
-          @media (display-mode: standalone), (display-mode: fullscreen) {
-            body::before {
-              content: '';
-              position: fixed;
-              top: 0;
-              left: 0;
-              right: 0;
-              height: env(safe-area-inset-top, 0px);
-              background: #151513;
-              pointer-events: none;
-              z-index: 1000;
-            }
-          }
 
           #root {
             width: 100%;
             min-width: 0;
             min-height: 100%;
-            height: 100%;
+            min-height: 100dvh;
+            background: var(--everest-canvas, #f8f7f4);
           }
 
           #everest-chat-shell {
