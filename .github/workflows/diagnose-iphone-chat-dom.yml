@@ -1,0 +1,39 @@
+name: Diagnose iPhone Chat DOM
+
+on:
+  push:
+    branches:
+      - diag/iphone-chat-focus-dom
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:web
+      - name: Install diagnostic WebKit
+        run: |
+          npm install --no-save playwright@1.55.0 serve@14
+          npx playwright install --with-deps webkit
+      - name: Serve exported app
+        run: |
+          npx serve -s dist -l 4173 > /tmp/everest-serve.log 2>&1 &
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/everest-serve.log
+          exit 1
+      - name: Inspect actual focused DOM element
+        run: node scripts/diagnose-chat-focus.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iphone-chat-focus-diagnostic
+          path: focus-probe-webkit.png
