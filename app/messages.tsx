@@ -47,7 +47,7 @@ function sameDay(a:string,b:string){return new Date(a).toDateString()===new Date
 
 export default function Messages(){
  const {colors:c}=useAppTheme();
- const params=useLocalSearchParams<{personalId?:string}>();
+ const params=useLocalSearchParams<{personalId?:string;focusProbe?:string}>();
  const [tab,setTab]=useState<'CHATS'|'REQUESTS'>('CHATS');
  const [query,setQuery]=useState('');
  const [personal,setPersonal]=useState<PersonalConversation[]>([]);
@@ -302,6 +302,12 @@ export default function Messages(){
  },[personal,market,query,userId]);
  const requestRows=useMemo(()=>{const q=query.trim().toLowerCase();return requests.filter(x=>!q||(x.display_name??'').toLowerCase().includes(q)||(x.latest_message??'').toLowerCase().includes(q))},[requests,query]);
  const visiblePersonalThread=useMemo(()=>{const q=conversationQuery.trim().toLowerCase();return q?personalThread.filter(m=>m.body.toLowerCase().includes(q)||m.reply_preview?.toLowerCase().includes(q)):personalThread},[personalThread,conversationQuery]);
+
+ if(params.focusProbe==='1'){
+  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas,justifyContent:'flex-end'}}>
+   <Composer draft={draft} setDraft={setDraft} busy={false} submit={()=>{}} colors={c} reply={null} edit={null} reducedMotion={true} onFocus={()=>{}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
+  </SafeAreaView>;
+ }
 
  if(selectedPersonal){
   const incomingRequest=selectedPersonal.status==='REQUEST'&&selectedPersonal.initiated_by!==userId;
