@@ -14,6 +14,8 @@ const result=await page.evaluate(()=>{
  if(!el)return null;
  const s=getComputedStyle(el);
  const attrs=Object.fromEntries(Array.from(el.attributes).map(a=>[a.name,a.value]));
+ const styleTags=Array.from(document.querySelectorAll('style')).map((node,index)=>({index,text:(node.textContent||'').slice(0,20000),hasComposer:(node.textContent||'').includes('everest-composer-shell')}));
+ const composerShell=document.querySelector('#everest-composer-shell');
  const matched=[];
  for(const sheet of Array.from(document.styleSheets)){
   let rules;
@@ -46,7 +48,12 @@ const result=await page.evaluate(()=>{
    caretColor:s.caretColor,
    backgroundColor:s.backgroundColor,
   },
-  matchedRules:matched.slice(0,100)
+  composerShell:composerShell?{tagName:composerShell.tagName,id:composerShell.id,outerHTML:composerShell.outerHTML.slice(0,1200)}:null,
+  headHasComposerRule:document.head.innerHTML.includes('everest-composer-shell'),
+  composerStyleTags:styleTags.filter(x=>x.hasComposer),
+  activeMatchesFocus:el.matches('#everest-message-composer:focus'),
+  activeMatchesFocusVisible:el.matches('#everest-message-composer:focus-visible'),
+  matchedRules:matched.slice(0,200)
  };
 });
 console.log('EVEREST_FOCUS_DIAGNOSTIC='+JSON.stringify(result,null,2));
