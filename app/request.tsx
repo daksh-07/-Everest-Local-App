@@ -71,7 +71,7 @@ export default function Request(){
      const suburb=(place.district||place.subregion||place.city||'').trim();const city=(place.city||place.subregion||suburb).trim();const state=(place.region||'').trim();
      if(suburb&&city&&state)named={suburb,city,state};
     }
-   }catch{}
+   }catch{/* Web/PWA fallback below handles reverse-geocode failures. */}
    if(!named&&Platform.OS==='web'){named=await reverseGeocodeWebFallback(current.coords.latitude,current.coords.longitude);if(named)geocoder='OSM';}
    if(!named)throw new Error('We found your position but could not name the area. Enter it manually.');
    setLocation({...named,latitude:current.coords.latitude,longitude:current.coords.longitude,accuracy:current.coords.accuracy??undefined,source:'DEVICE',confirmed:false,geocoder});
