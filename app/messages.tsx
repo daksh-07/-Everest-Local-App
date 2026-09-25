@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,Alert,Animated,Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from 'react-native';
+import {ActivityIndicator,Alert,Animated,Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import {supabase} from '@/lib/supabase';
 import {useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
 import {MOTION,ease,useReducedMotion} from '@/lib/motion';
+import {useVisualViewport} from '@/lib/visual-viewport';
 
 type MarketConversation={id:string;customer_id:string;business_id:string;created_at:string;counterpart_name?:string;logo_url?:string|null};
 type MarketMessage={id:string;sender_id:string;body:string;created_at:string;read_at?:string|null};
@@ -24,6 +25,8 @@ type ChatRow=
 
 const REACTIONS:MessageReaction['reaction'][]=['❤️','👍','😂','😮','😢','🔥'];
 const PAGE_SIZE=40;
+type MessageRect={x:number;y:number;width:number;height:number};
+type MessageActionTarget={message:PersonalMessage;rect:MessageRect};
 
 function relativeTime(value:string){
  const date=new Date(value);const now=Date.now();const diff=now-date.getTime();
@@ -61,7 +64,7 @@ export default function Messages(){
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
- const [actionTarget,setActionTarget]=useState<{message:PersonalMessage;x:number;y:number}|null>(null);
+ const [actionTarget,setActionTarget]=useState<MessageActionTarget|null>(null);
  const [deleteTarget,setDeleteTarget]=useState<PersonalMessage|null>(null);
  const [replying,setReplying]=useState<PersonalMessage|null>(null);
  const [editing,setEditing]=useState<PersonalMessage|null>(null);
@@ -70,6 +73,9 @@ export default function Messages(){
  const [rowMenu,setRowMenu]=useState<ChatRow|null>(null);
  const [transitionMessageId,setTransitionMessageId]=useState<string|null>(null);
  const reducedMotion=useReducedMotion();
+ const visualViewport=useVisualViewport();
+ const nearBottomRef=useRef(true);
+ const lastViewportHeightRef=useRef<number|null>(null);
  const tabFade=useRef(new Animated.Value(1)).current;
  const [conversationQuery,setConversationQuery]=useState('');
  const threadRef=useRef<ScrollView|null>(null);
@@ -149,6 +155,21 @@ export default function Messages(){
   tabFade.setValue(.35);
   Animated.timing(tabFade,{toValue:1,duration:MOTION.fast,easing:ease,useNativeDriver:true}).start();
  },[tab,reducedMotion,tabFade]);
+
+ useEffect(()=>{
+  if(Platform.OS==='web')console.info('[Everest messaging] haptic capability:',haptic.capability());
+ },[]);
+ useEffect(()=>{
+  const current=visualViewport.height;
+  if(current==null)return;
+  const previous=lastViewportHeightRef.current;
+  lastViewportHeightRef.current=current;
+  if(previous==null||Math.abs(previous-current)<32)return;
+  if((selectedPersonal||selectedMarket)&&nearBottomRef.current){
+   const timer=setTimeout(()=>threadRef.current?.scrollToEnd({animated:!reducedMotion}),40);
+   return()=>clearTimeout(timer);
+  }
+ },[visualViewport.height,selectedPersonal,selectedMarket,reducedMotion]);
 
  async function submitPersonal(){
   if(!selectedPersonal||!draft.trim()||busy)return;
@@ -286,8 +307,8 @@ export default function Messages(){
   const incomingRequest=selectedPersonal.status==='REQUEST'&&selectedPersonal.initiated_by!==userId;
   const outgoingRequest=selectedPersonal.status==='REQUEST'&&selectedPersonal.initiated_by===userId;
   const canCompose=selectedPersonal.status==='ACTIVE'||outgoingRequest;
-  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
-   <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined} keyboardVerticalOffset={0}>
+  return <View nativeID="everest-chat-shell" style={{flex:1,backgroundColor:c.canvas}}><SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
+   <ChatKeyboardFrame>
     <View style={{minHeight:62,paddingHorizontal:14,paddingVertical:9,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'center',gap:10,backgroundColor:c.canvas}}>
      <Pressable accessibilityLabel="Back to messages" onPress={()=>{setSelectedPersonal(null);setPersonalThread([]);setReplying(null);setEditing(null);void loadHome(true)}} style={{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color={c.text}/></Pressable>
      <Pressable onPress={()=>router.push('/public-user?id='+selectedPersonal.other_user_id)} style={{flex:1,flexDirection:'row',alignItems:'center',gap:10}}>
@@ -304,12 +325,13 @@ export default function Messages(){
       items={visiblePersonalThread}
       userId={userId}
       colors={c}
-      onAction={(message,x,y)=>{void haptic.medium();setActionTarget({message,x,y})}}
+      onAction={(message,rect)=>{void haptic.medium();setActionTarget({message,rect})}}
       selectedId={actionTarget?.message.id??null}
       transitioningId={transitionMessageId}
       reducedMotion={reducedMotion}
       onRetry={retryMessage}
       onReachTop={()=>void loadOlder()}
+      onNearBottomChange={value=>{nearBottomRef.current=value}}
       onInitialContent={()=>{if(initialScrollRef.current){initialScrollRef.current=false;threadRef.current?.scrollToEnd({animated:false})}}}
     />
 
@@ -327,29 +349,30 @@ export default function Messages(){
     {canCompose?<Composer
       draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitPersonal()} colors={c}
       reply={replying} edit={editing} reducedMotion={reducedMotion}
+      onFocus={()=>{if(nearBottomRef.current)setTimeout(()=>threadRef.current?.scrollToEnd({animated:!reducedMotion}),50)}}
       cancelReply={()=>setReplying(null)}
       cancelEdit={()=>{setEditing(null);setDraft('')}}
     />:null}
     {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
-   </KeyboardAvoidingView>
+   </ChatKeyboardFrame>
    <MessageActionMenu target={actionTarget} userId={userId} colors={c} reducedMotion={reducedMotion} onClose={()=>setActionTarget(null)} onReply={beginReply} onEdit={beginEdit} onReact={react} onDelete={openDeleteMenu} onReport={m=>void reportOther(m.id)} onCopyWeb={copyOnWeb}/>
    <DeleteMessageMenu message={deleteTarget} userId={userId} colors={c} busy={busy} onClose={()=>setDeleteTarget(null)} onDeleteMe={deleteForMe} onDeleteEveryone={deleteForEveryone}/>
    <ConversationMenu visible={headerMenu} colors={c} onClose={()=>setHeaderMenu(false)} onProfile={()=>{setHeaderMenu(false);router.push('/public-user?id='+selectedPersonal.other_user_id)}} onSearch={()=>{setHeaderMenu(false);setConversationSearchOpen(true)}} onBlock={()=>void blockOther()} onReport={()=>void reportOther()}/>
-  </SafeAreaView>;
+  </SafeAreaView></View>;
  }
 
- if(selectedMarket)return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
-  <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>
+ if(selectedMarket)return <View nativeID="everest-chat-shell" style={{flex:1,backgroundColor:c.canvas}}><SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
+  <ChatKeyboardFrame>
    <View style={{minHeight:62,paddingHorizontal:14,paddingVertical:9,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'center',gap:10}}>
     <Pressable onPress={()=>{setSelectedMarket(null);setMarketThread([]);void loadHome(true)}} style={{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color={c.text}/></Pressable>
     {selectedMarket.logo_url?<Image source={{uri:selectedMarket.logo_url}} style={{width:40,height:40,borderRadius:13}}/>:<View style={{width:40,height:40,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="business-outline" size={19} color={c.text}/></View>}
     <View style={{flex:1}}><Text style={{fontSize:15,fontWeight:'900',color:c.text}}>{selectedMarket.counterpart_name}</Text><Text style={{fontSize:10,color:c.muted,marginTop:2}}>Business enquiry / booking</Text></View>
    </View>
    <MarketThread refValue={threadRef} items={marketThread} userId={userId} colors={c}/>
-   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} cancelReply={()=>{}} cancelEdit={()=>{}}/>
+   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} onFocus={()=>{if(nearBottomRef.current)setTimeout(()=>threadRef.current?.scrollToEnd({animated:!reducedMotion}),50)}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
    {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
-  </KeyboardAvoidingView>
- </SafeAreaView>;
+  </ChatKeyboardFrame>
+ </SafeAreaView></View>;
 
  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,paddingBottom:60,maxWidth:760,width:'100%',alignSelf:'center'}}>
