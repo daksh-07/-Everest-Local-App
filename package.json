@@ -39,7 +39,8 @@
     "react-native-screens": "~4.16.0",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.21.0",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "expo-quick-actions": "6.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
