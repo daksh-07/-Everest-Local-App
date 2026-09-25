@@ -38,3 +38,7 @@ export async function removeProductImage(image:ProductImage){const path=image.st
 export async function reorderProductImages(images:ProductImage[]){for(let i=0;i<images.length;i++){const {error}=await supabase.from('product_images').update({sort_order:i,is_primary:i===0}).eq('id',images[i].id);if(error)throw new Error(userFacingError(error,'Image order could not be saved.'));}}
 
 export async function publishProduct(productId:string){const {data,error}=await supabase.rpc('set_product_status',{p_product_id:productId,p_status:'ACTIVE'});if(error)throw new Error(userFacingError(error,'Product cannot be published yet.'));return Boolean(data)}
+
+
+export async function setProductInventory(productId:string,quantity:number,lowStockThreshold=5){if(!Number.isInteger(quantity)||quantity<0||!Number.isInteger(lowStockThreshold)||lowStockThreshold<0)throw new Error('Invalid inventory values.');const {data,error}=await supabase.rpc('set_product_inventory',{p_product_id:productId,p_quantity:quantity,p_low_stock_threshold:lowStockThreshold});if(error)throw new Error(userFacingError(error,'Inventory could not be saved.'));return Boolean(data)}
+export async function setVariantImage(variantId:string,imageId:string|null){const {data,error}=await supabase.rpc('set_product_variant_image',{p_variant_id:variantId,p_image_id:imageId});if(error)throw new Error(userFacingError(error,'Variant image could not be saved.'));return Boolean(data)}
