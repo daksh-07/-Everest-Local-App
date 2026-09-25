@@ -10,13 +10,17 @@ import { type ThemeColors,useAppTheme } from '@/lib/theme';
 
 type Priority={kind:'LEAD'|'JOB'|'ORDER';title:string;subtitle:string;route:'/business-leads'|'/business-jobs'|'/business-control'};
 type Snapshot={leads:number;quotes:number;jobsToday:number;unread:number;orders:number;revenue:number|null;completed:number};
+type LeadRequest={description:string|null;suburb:string|null;city:string|null;state:string|null};
+type LeadRow={service_requests:LeadRequest|LeadRequest[]|null};
+type JobRow={scheduled_time:string|null;status:string};
+type OrderRow={order_number:string;status:string};
 
 export default function BusinessToday(){
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);
  const [business,setBusiness]=useState<BusinessWorkspace|null>(null);
  const [snap,setSnap]=useState<Snapshot>({leads:0,quotes:0,jobsToday:0,unread:0,orders:0,revenue:null,completed:0});
  const [priority,setPriority]=useState<Priority|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState('');
- const load=useCallback(async(refresh=false)=>{refresh?setRefreshing(true):setLoading(true);setError('');
+ const load=useCallback(async(refresh=false)=>{if(refresh)setRefreshing(true);else setLoading(true);setError('');
   try{
    const ctx=await getWorkspaceContext();
    if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}
@@ -39,7 +43,7 @@ export default function BusinessToday(){
    const unread=(convR.data??[]).flatMap(row=>(row.messages??[]) as Array<{sender_id:string;read_at:string|null}>).filter(message=>message.sender_id!==user?.id&&!message.read_at).length;
    const payoutRows=payoutR.data??[];const revenue=payoutRows.length?payoutRows.reduce((sum,row)=>sum+Number(row.net_amount||0),0):null;
    setSnap({leads:leadR.count??0,quotes:quoteR.count??0,jobsToday:jobR.count??0,orders:orderR.count??0,unread,revenue,completed:completedR.count??0});
-   const lead=(leadR.data??[])[0] as any;const job=(jobR.data??[])[0] as any;const order=(orderR.data??[])[0] as any;
+   const lead=(leadR.data??[])[0] as LeadRow|undefined;const job=(jobR.data??[])[0] as JobRow|undefined;const order=(orderR.data??[])[0] as OrderRow|undefined;
    if(lead){const req=Array.isArray(lead.service_requests)?lead.service_requests[0]:lead.service_requests;setPriority({kind:'LEAD',title:req?.description||'New customer enquiry',subtitle:[req?.suburb,req?.city].filter(Boolean).join(', ')||'New matched request',route:'/business-leads'});}
    else if(job)setPriority({kind:'JOB',title:'Next booking',subtitle:(job.scheduled_time??'Time pending')+' · '+String(job.status).replaceAll('_',' '),route:'/business-jobs'});
    else if(order)setPriority({kind:'ORDER',title:'Order '+order.order_number,subtitle:String(order.status).replaceAll('_',' '),route:'/business-control'});
