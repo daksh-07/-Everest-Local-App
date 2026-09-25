@@ -2,7 +2,7 @@ import {useEffect,useMemo,useState} from 'react';
 import {ActivityIndicator,Image,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
-import {router} from 'expo-router';
+import {router,useLocalSearchParams} from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import {createPost,type PostType} from '@/lib/social';
 import {uploadPostMedia} from '@/lib/request-post-media';
@@ -40,10 +40,12 @@ export default function CreatePost(){
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [progress,setProgress]=useState('');const [error,setError]=useState('');
 
  useEffect(()=>{let active=true;(async()=>{try{
-  const [{data:{user}},ctx,{data:profile}]=await Promise.all([supabase.auth.getUser(),getWorkspaceContext(),supabase.from('profiles').select('full_name').maybeSingle()]);
+  const [{data:{user}},ctx,{data:profile}]=await Promise.all([supabase.auth.getUser(),getWorkspaceContext(),supabase.from('profiles').select('full_name,suburb,city,state,country').maybeSingle()]);
   if(!active)return;if(!user){router.replace('/auth');return;}
   const list:Identity[]=[{kind:'PERSONAL',id:user.id,name:profile?.full_name||'My profile'},...ctx.businesses.map(b=>({kind:'BUSINESS' as const,id:b.id,name:b.name,business:b}))];
   setIdentities(list);const preferred=ctx.mode==='BUSINESS'&&ctx.active_business_id?list.find(i=>i.kind==='BUSINESS'&&i.id===ctx.active_business_id):list[0];setIdentity(preferred??list[0]);
+  if(!location.trim()&&(profile?.suburb||profile?.city))setLocation([profile?.suburb,profile?.city&&profile.city!==profile.suburb?profile.city:'',profile?.state,profile?.country].filter(Boolean).join(', '));
+  if(params.intent==='question')setType('QUESTION');else if(params.intent==='update')setType('UPDATE');
  }catch(e){setError(e instanceof Error?e.message:'Post composer could not be opened.')}finally{setLoading(false)}})();return()=>{active=false}},[]);
 
  useEffect(()=>{let active=true;(async()=>{if(identity?.kind!=='BUSINESS'){setServices([]);setProducts([]);setServiceId(null);setProductId(null);return;}
