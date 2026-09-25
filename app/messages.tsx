@@ -68,7 +68,9 @@ export default function Messages(){
  const [headerMenu,setHeaderMenu]=useState(false);
  const [conversationSearchOpen,setConversationSearchOpen]=useState(false);
  const [rowMenu,setRowMenu]=useState<ChatRow|null>(null);
+ const [transitionMessageId,setTransitionMessageId]=useState<string|null>(null);
  const reducedMotion=useReducedMotion();
+ const tabFade=useRef(new Animated.Value(1)).current;
  const [conversationQuery,setConversationQuery]=useState('');
  const threadRef=useRef<ScrollView|null>(null);
  const initialScrollRef=useRef(true);
@@ -141,6 +143,12 @@ export default function Messages(){
   const timer=setInterval(()=>void refreshMarketThread(selectedMarket.id),4000);
   return()=>clearInterval(timer);
  },[selectedMarket?.id]);
+
+ useEffect(()=>{
+  if(reducedMotion){tabFade.setValue(1);return}
+  tabFade.setValue(.35);
+  Animated.timing(tabFade,{toValue:1,duration:MOTION.fast,easing:ease,useNativeDriver:true}).start();
+ },[tab,reducedMotion,tabFade]);
 
  async function submitPersonal(){
   if(!selectedPersonal||!draft.trim()||busy)return;
@@ -226,8 +234,13 @@ export default function Messages(){
  }
  async function deleteForMe(message:PersonalMessage){
   setActionTarget(null);setDeleteTarget(null);setBusy(true);
-  try{await deletePersonalMessageForMe(message.id);setPersonalThread(current=>current.filter(m=>m.id!==message.id));void loadHome(true)}
-  catch{setError('Message could not be deleted.')}
+  try{
+   await deletePersonalMessageForMe(message.id);void haptic.warning();
+   setTransitionMessageId(message.id);
+   if(!reducedMotion)await new Promise(resolve=>setTimeout(resolve,MOTION.fast));
+   setPersonalThread(current=>current.filter(m=>m.id!==message.id));
+   setTransitionMessageId(null);void loadHome(true);
+  }catch{setError('Message could not be deleted.')}
   finally{setBusy(false)}
  }
  function openDeleteMenu(message:PersonalMessage){
@@ -238,8 +251,10 @@ export default function Messages(){
   setBusy(true);
   try{
    const result=await deletePersonalMessageForEveryone(message.id);void haptic.warning();
-   setDeleteTarget(null);
+   setDeleteTarget(null);setTransitionMessageId(message.id);
+   if(!reducedMotion)await new Promise(resolve=>setTimeout(resolve,MOTION.fast));
    setPersonalThread(current=>current.map(m=>m.id===message.id?{...m,body:result.placeholder||'You deleted this message',deleted_for_everyone:true,reactions:[]}:m));
+   setTransitionMessageId(null);
    if(selectedPersonal)await refreshPersonalThread(selectedPersonal.id,true);
    void loadHome(true);
   }catch{setError('Message could not be deleted for everyone.')}
@@ -289,7 +304,9 @@ export default function Messages(){
       items={visiblePersonalThread}
       userId={userId}
       colors={c}
-      onAction={(message,x,y)=>setActionTarget({message,x,y})}
+      onAction={(message,x,y)=>{void haptic.medium();setActionTarget({message,x,y})}}
+      transitioningId={transitionMessageId}
+      reducedMotion={reducedMotion}
       onRetry={retryMessage}
       onReachTop={()=>void loadOlder()}
       onInitialContent={()=>{if(initialScrollRef.current){initialScrollRef.current=false;threadRef.current?.scrollToEnd({animated:false})}}}
@@ -308,13 +325,13 @@ export default function Messages(){
 
     {canCompose?<Composer
       draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitPersonal()} colors={c}
-      reply={replying} edit={editing}
+      reply={replying} edit={editing} reducedMotion={reducedMotion}
       cancelReply={()=>setReplying(null)}
       cancelEdit={()=>{setEditing(null);setDraft('')}}
     />:null}
     {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
    </KeyboardAvoidingView>
-   <MessageActionMenu target={actionTarget} userId={userId} colors={c} onClose={()=>setActionTarget(null)} onReply={beginReply} onEdit={beginEdit} onReact={react} onDelete={openDeleteMenu} onReport={m=>void reportOther(m.id)} onCopyWeb={copyOnWeb}/>
+   <MessageActionMenu target={actionTarget} userId={userId} colors={c} reducedMotion={reducedMotion} onClose={()=>setActionTarget(null)} onReply={beginReply} onEdit={beginEdit} onReact={react} onDelete={openDeleteMenu} onReport={m=>void reportOther(m.id)} onCopyWeb={copyOnWeb}/>
    <DeleteMessageMenu message={deleteTarget} userId={userId} colors={c} busy={busy} onClose={()=>setDeleteTarget(null)} onDeleteMe={deleteForMe} onDeleteEveryone={deleteForEveryone}/>
    <ConversationMenu visible={headerMenu} colors={c} onClose={()=>setHeaderMenu(false)} onProfile={()=>{setHeaderMenu(false);router.push('/public-user?id='+selectedPersonal.other_user_id)}} onSearch={()=>{setHeaderMenu(false);setConversationSearchOpen(true)}} onBlock={()=>void blockOther()} onReport={()=>void reportOther()}/>
   </SafeAreaView>;
@@ -328,7 +345,7 @@ export default function Messages(){
     <View style={{flex:1}}><Text style={{fontSize:15,fontWeight:'900',color:c.text}}>{selectedMarket.counterpart_name}</Text><Text style={{fontSize:10,color:c.muted,marginTop:2}}>Business enquiry / booking</Text></View>
    </View>
    <MarketThread refValue={threadRef} items={marketThread} userId={userId} colors={c}/>
-   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} cancelReply={()=>{}} cancelEdit={()=>{}}/>
+   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} cancelReply={()=>{}} cancelEdit={()=>{}}/>
    {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
   </KeyboardAvoidingView>
  </SafeAreaView>;
@@ -337,21 +354,27 @@ export default function Messages(){
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,paddingBottom:60,maxWidth:760,width:'100%',alignSelf:'center'}}>
    <Text style={{fontSize:10,fontWeight:'900',letterSpacing:2,color:c.muted}}>EVEREST LOCAL</Text>
    <Text style={{fontSize:30,fontWeight:'900',color:c.text,marginTop:5}}>Messages</Text>
-   <View style={{marginTop:18,minHeight:48,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.input,flexDirection:'row',alignItems:'center',paddingHorizontal:13,gap:9}}>
-    <Ionicons name="search-outline" size={18} color={c.muted}/>
-    <TextInput value={query} onChangeText={setQuery} placeholder="Search conversations" placeholderTextColor={c.muted} style={{flex:1,minHeight:46,color:c.text,fontSize:15}}/>
-   </View>
+   <MessagesSearch value={query} onChange={setQuery} colors={c} reducedMotion={reducedMotion}/>
    <View style={{flexDirection:'row',gap:8,marginTop:14,marginBottom:14}}>
-    {(['CHATS','REQUESTS'] as const).map(x=><Pressable key={x} onPress={()=>setTab(x)} style={{paddingHorizontal:15,paddingVertical:9,borderRadius:12,backgroundColor:tab===x?c.brand:c.surface,borderWidth:1,borderColor:tab===x?c.brand:c.border}}><Text style={{fontSize:9,fontWeight:'900',color:tab===x?c.onBrand:c.text}}>{x}{x==='REQUESTS'&&requests.length?' '+requests.length:''}</Text></Pressable>)}
+    {(['CHATS','REQUESTS'] as const).map(x=><Pressable key={x} onPress={()=>{void haptic.selection();setTab(x)}} style={({pressed})=>({paddingHorizontal:15,paddingVertical:9,borderRadius:12,backgroundColor:tab===x?c.brand:c.surface,borderWidth:1,borderColor:tab===x?c.brand:c.border,opacity:pressed?.78:1,transform:[{scale:pressed?.97:1}]})}><Text style={{fontSize:9,fontWeight:'900',color:tab===x?c.onBrand:c.text}}>{x}{x==='REQUESTS'&&requests.length?' '+requests.length:''}</Text></Pressable>)}
    </View>
+   <Animated.View style={{opacity:tabFade}}>
    {loading?<ActivityIndicator style={{marginTop:50}} color={c.text}/>:tab==='CHATS'?(
-    chats.length?chats.map(row=><ConversationRow key={row.kind+row.id} row={row} colors={c} onPress={()=>{if(row.kind==='PERSONAL')setSelectedPersonal(row.conversation);else setSelectedMarket(row.conversation)}}/>):<EmptyState title="No messages yet" copy="Your personal and business conversations will appear here." colors={c}/>
-   ):requestRows.length?requestRows.map(item=><Pressable key={item.id} onPress={()=>setSelectedPersonal(item)} style={{paddingVertical:12,flexDirection:'row',alignItems:'center',gap:12,borderBottomWidth:1,borderBottomColor:c.border}}>
+    chats.length?chats.map(row=><ConversationRow key={row.kind+row.id} row={row} colors={c} reducedMotion={reducedMotion} onAvatarPress={()=>{if(row.kind==='PERSONAL')router.push('/public-user?id='+row.conversation.other_user_id)}} onLongPress={()=>{if(row.kind==='PERSONAL'){void haptic.medium();setRowMenu(row)}}} onPress={()=>{if(row.kind==='PERSONAL')setSelectedPersonal(row.conversation);else setSelectedMarket(row.conversation)}}/>):<EmptyState title="No messages yet" copy="Your personal and business conversations will appear here." colors={c}/>
+   ):requestRows.length?requestRows.map(item=><Pressable key={item.id} onPress={()=>setSelectedPersonal(item)} style={({pressed})=>({paddingVertical:12,flexDirection:'row',alignItems:'center',gap:12,borderBottomWidth:1,borderBottomColor:c.border,opacity:pressed?.8:1})}>
     {item.avatar_url?<Image source={{uri:item.avatar_url}} style={{width:48,height:48,borderRadius:24}}/>:<View style={{width:48,height:48,borderRadius:24,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:16,fontWeight:'900',color:c.text}}>{(item.display_name??'E')[0]?.toUpperCase()}</Text></View>}
     <View style={{flex:1,minWidth:0}}><View style={{flexDirection:'row',justifyContent:'space-between',gap:10}}><Text numberOfLines={1} style={{fontSize:14,fontWeight:'900',color:c.text,flex:1}}>{item.display_name??'Everest member'}</Text><Text style={{fontSize:10,color:c.muted}}>{relativeTime(item.latest_message_at??item.updated_at)}</Text></View><Text numberOfLines={1} style={{fontSize:12,color:c.textSecondary,marginTop:4}}>{item.latest_message??'Message request'}</Text><Text style={{fontSize:9,fontWeight:'800',color:c.muted,marginTop:4}}>MESSAGE REQUEST</Text></View>
    </Pressable>):<EmptyState title="No message requests" copy="New personal message requests will appear here." colors={c}/>}
+   </Animated.View>
    {error?<Text style={{fontSize:12,color:c.danger,marginTop:14}}>{error}</Text>:null}
   </ScrollView>
+  <ConversationRowMenu row={rowMenu} colors={c} busy={busy} onClose={()=>setRowMenu(null)}
+   onOpen={row=>{setRowMenu(null);if(row.kind==='PERSONAL')setSelectedPersonal(row.conversation);else setSelectedMarket(row.conversation)}}
+   onProfile={row=>{setRowMenu(null);if(row.kind==='PERSONAL')router.push('/public-user?id='+row.conversation.other_user_id)}}
+   onHide={row=>void hideConversation(row)}
+   onBlock={row=>{if(row.kind==='PERSONAL'){void haptic.warning();void blockUser(row.conversation.other_user_id).then(()=>{setRowMenu(null);void loadHome(true)}).catch(()=>setError('User could not be blocked.'))}}}
+   onReport={row=>{if(row.kind==='PERSONAL'){void reportUser(row.conversation.other_user_id,'OTHER','Reported from conversation menu').then(()=>{setRowMenu(null);Alert.alert('Report sent','Everest Local will review this report.')}).catch(()=>setError('Report could not be sent.'))}}}
+  />
  </SafeAreaView>;
 }
 
