@@ -24,7 +24,8 @@ test('haptics are SDK-compatible and safely wrapped',()=>{
  assert.match(haptics,/ImpactFeedbackStyle\.Light/);
  assert.match(haptics,/ImpactFeedbackStyle\.Medium/);
  assert.match(haptics,/NotificationFeedbackType\.Warning/);
- assert.match(haptics,/typeof navigator\.vibrate==='function'/);\n assert.match(haptics,/return 'unsupported'/);
+ assert.match(haptics,/typeof navigator\.vibrate==='function'/);
+ assert.match(haptics,/return 'unsupported'/);
 });
 
 test('reduced motion is respected by the reusable motion system',()=>{
