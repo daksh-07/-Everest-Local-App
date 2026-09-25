@@ -129,3 +129,10 @@ export async function disconnectDeviceCalendar(connectionId:string){
  const {error}=await supabase.from('customer_calendar_connections').update({status:'REVOKED',sync_enabled:false,revoked_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',connectionId).eq('user_id',userId).eq('provider','APPLE_DEVICE');
  if(error)throw new Error(error.message);
 }
+
+export async function refreshCustomerCalendarsForAssistant(){
+ const connections=await listCustomerCalendarConnections();
+ const freshAfter=Date.now()-5*60*1000;
+ const eligible=connections.filter(connection=>connection.status==='CONNECTED'&&connection.sync_enabled&&connection.allow_ask_everest&&(connection.provider!=='APPLE_DEVICE'||Platform.OS!=='web')&&(!connection.last_synced_at||new Date(connection.last_synced_at).getTime()<freshAfter));
+ await Promise.allSettled(eligible.map(connection=>syncCustomerCalendar(connection)));
+}
