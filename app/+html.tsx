@@ -111,16 +111,16 @@ export default function Root({ children }: PropsWithChildren) {
             touch-action: manipulation;
           }
 
-          [data-everest-composer="true"],
-          [data-everest-composer="true"]:focus,
-          [data-everest-composer="true"]:focus-visible,
-          [data-everest-composer="true"]:focus-within,
-          [data-everest-composer="true"] textarea,
-          [data-everest-composer="true"] textarea:focus,
-          [data-everest-composer="true"] textarea:focus-visible,
-          [data-everest-composer="true"] input,
-          [data-everest-composer="true"] input:focus,
-          [data-everest-composer="true"] input:focus-visible,
+          #everest-composer-shell,
+          #everest-composer-shell:focus,
+          #everest-composer-shell:focus-visible,
+          #everest-composer-shell:focus-within,
+          #everest-composer-shell textarea,
+          #everest-composer-shell textarea:focus,
+          #everest-composer-shell textarea:focus-visible,
+          #everest-composer-shell input,
+          #everest-composer-shell input:focus,
+          #everest-composer-shell input:focus-visible,
           #everest-message-composer,
           #everest-message-composer:focus,
           #everest-message-composer:focus-visible,
@@ -138,8 +138,8 @@ export default function Root({ children }: PropsWithChildren) {
             -webkit-focus-ring-color: transparent !important;
           }
 
-          [data-everest-composer="true"] textarea,
-          [data-everest-composer="true"] input,
+          #everest-composer-shell textarea,
+          #everest-composer-shell input,
           #everest-message-composer {
             border: 0 !important;
             border-color: transparent !important;
@@ -147,23 +147,23 @@ export default function Root({ children }: PropsWithChildren) {
             caret-color: var(--everest-text, #111) !important;
           }
 
-          [data-everest-composer="true"] {
+          #everest-composer-shell {
             transition: border-color 180ms cubic-bezier(.2,.8,.2,1),
                         box-shadow 180ms cubic-bezier(.2,.8,.2,1),
                         transform 180ms cubic-bezier(.2,.8,.2,1);
           }
 
-          [data-everest-composer="true"]:focus-within {
+          #everest-composer-shell:focus-within {
             border-color: #d8c3a5 !important;
             box-shadow: 0 0 0 1px rgba(216,195,165,.14), 0 8px 22px rgba(0,0,0,.12) !important;
           }
 
-          [data-everest-composer="true"] *,
-          [data-everest-composer="true"] *:focus,
-          [data-everest-composer="true"] *:focus-visible,
-          [data-everest-searchbox="true"] *,
-          [data-everest-searchbox="true"] *:focus,
-          [data-everest-searchbox="true"] *:focus-visible {
+          #everest-composer-shell *,
+          #everest-composer-shell *:focus,
+          #everest-composer-shell *:focus-visible,
+          #everest-messages-search-shell *,
+          #everest-messages-search-shell *:focus,
+          #everest-messages-search-shell *:focus-visible {
             outline: 0 !important;
             outline-color: transparent !important;
             box-shadow: none !important;
@@ -172,9 +172,9 @@ export default function Root({ children }: PropsWithChildren) {
             -webkit-tap-highlight-color: transparent !important;
           }
 
-          [data-everest-searchbox="true"] input,
-          [data-everest-searchbox="true"] input:focus,
-          [data-everest-searchbox="true"] input:focus-visible {
+          #everest-messages-search-shell input,
+          #everest-messages-search-shell input:focus,
+          #everest-messages-search-shell input:focus-visible {
             -webkit-appearance: none !important;
             appearance: none !important;
             border: 0 !important;
