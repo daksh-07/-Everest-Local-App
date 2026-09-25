@@ -111,6 +111,16 @@ export default function Root({ children }: PropsWithChildren) {
             touch-action: manipulation;
           }
 
+          #everest-composer-shell,
+          #everest-composer-shell:focus,
+          #everest-composer-shell:focus-visible,
+          #everest-composer-shell:focus-within,
+          #everest-composer-shell textarea,
+          #everest-composer-shell textarea:focus,
+          #everest-composer-shell textarea:focus-visible,
+          #everest-composer-shell input,
+          #everest-composer-shell input:focus,
+          #everest-composer-shell input:focus-visible,
           #everest-message-composer,
           #everest-message-composer:focus,
           #everest-message-composer:focus-visible,
@@ -119,14 +129,64 @@ export default function Root({ children }: PropsWithChildren) {
           textarea#everest-message-composer:focus-visible {
             -webkit-appearance: none !important;
             appearance: none !important;
-            outline: none !important;
+            outline: 0 !important;
             outline-width: 0 !important;
             outline-color: transparent !important;
             box-shadow: none !important;
             -webkit-box-shadow: none !important;
             -webkit-tap-highlight-color: transparent !important;
             -webkit-focus-ring-color: transparent !important;
+          }
+
+          #everest-composer-shell textarea,
+          #everest-composer-shell input,
+          #everest-message-composer {
+            border: 0 !important;
+            border-color: transparent !important;
+            background: transparent !important;
             caret-color: var(--everest-text, #111) !important;
+          }
+
+          #everest-composer-shell {
+            transition: border-color 180ms cubic-bezier(.2,.8,.2,1),
+                        box-shadow 180ms cubic-bezier(.2,.8,.2,1),
+                        transform 180ms cubic-bezier(.2,.8,.2,1);
+          }
+
+          #everest-composer-shell:focus-within {
+            border-color: #d8c3a5 !important;
+            box-shadow: 0 0 0 1px rgba(216,195,165,.14), 0 8px 22px rgba(0,0,0,.12) !important;
+          }
+
+          #everest-composer-shell *,
+          #everest-composer-shell *:focus,
+          #everest-composer-shell *:focus-visible,
+          #everest-messages-search-shell *,
+          #everest-messages-search-shell *:focus,
+          #everest-messages-search-shell *:focus-visible {
+            outline: 0 !important;
+            outline-color: transparent !important;
+            box-shadow: none !important;
+            -webkit-box-shadow: none !important;
+            -webkit-focus-ring-color: transparent !important;
+            -webkit-tap-highlight-color: transparent !important;
+          }
+
+          #everest-messages-search-shell input,
+          #everest-messages-search-shell input:focus,
+          #everest-messages-search-shell input:focus-visible {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            border: 0 !important;
+            background: transparent !important;
+          }
+
+          [data-everest-conversation-row="true"],
+          [data-everest-conversation-row="true"] * {
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+            -webkit-tap-highlight-color: transparent !important;
           }
 
           [data-everest-message-bubble="true"],
