@@ -20,7 +20,8 @@
     "test:home-shell": "node --test tests/edge-home-quick-actions.test.mjs",
     "test:products": "node --test tests/product-marketplace-commerce.test.mjs",
     "test:request-posts": "node --test tests/request-posts-ux.test.mjs",
-    "test:crm": "node --test tests/global-local-crm-p0.test.mjs tests/professional-crm-v2.test.mjs"
+    "test:crm": "node --test tests/global-local-crm-p0.test.mjs tests/professional-crm-v2.test.mjs tests/crm-integrations-automation.test.mjs",
+    "test:integrations": "node --test tests/crm-integrations-automation.test.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

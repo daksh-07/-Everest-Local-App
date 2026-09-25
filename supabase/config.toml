@@ -23,3 +23,11 @@ verify_jwt = false
 
 [functions.external-message-dispatch]
 verify_jwt = false
+
+[functions.crm-integration-oauth]
+# The GET OAuth callback has no Everest JWT. The function manually authenticates POST
+# calls and verifies callback state with a short-lived HMAC before any service-role write.
+verify_jwt = false
+
+[functions.crm-calendar-sync]
+verify_jwt = true
