@@ -9,11 +9,12 @@ const product=fs.readFileSync('app/product.tsx','utf8');
 const editor=fs.readFileSync('app/product-editor.tsx','utf8');
 const cart=fs.readFileSync('app/cart.tsx','utf8');
 const commerce=fs.readFileSync('lib/commerce.ts','utf8');
+const productCommerce=fs.readFileSync('lib/product-commerce.ts','utf8');
 
 test('Shop Local uses dedicated product marketplace',()=>{
  assert.match(home,/route:'\/shop'/);
  assert.match(shop,/Search products/);
- assert.match(shop,/shop_products/);
+ assert.match(productCommerce,/shop_products/);
  assert.match(shop,/\/product\?id=/);
 });
 
@@ -31,7 +32,7 @@ test('variants are exact cart and checkout identities',()=>{
  assert.match(migration,/coalesce\(item\.v_price,item\.sale_price,item\.price\)/);
  assert.match(migration,/Insufficient variant stock/);
  assert.match(commerce,/p_variant_id/);
- assert.match(cart,/product_variants\.title/);
+ assert.match(cart,/product_variants\?\.title|product_variants\.title/);
 });
 
 test('seller wizard is media-first and draft friendly',()=>{
