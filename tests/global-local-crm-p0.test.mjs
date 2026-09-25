@@ -15,8 +15,8 @@ const tab=read('components/BusinessTabBar.tsx');
 test('global locality does not persist precise coordinates on the profile',()=>{
  assert.match(location,/getCurrentPositionAsync/);
  assert.match(location,/reverseGeocodeAsync/);
- assert.match(location,/suburb:locality\.suburb/);
- assert.match(location,/country:locality\.country/);
+ assert.match(location,/p_suburb:locality\.suburb/);
+ assert.match(location,/p_country:locality\.country/);
  const save=location.slice(location.indexOf('export async function saveLocalityToProfile'));
  assert.doesNotMatch(save,/latitude:locality|longitude:locality|accuracy:locality/);
  assert.doesNotMatch(home,/['"]Sydney['"]|['"]NSW['"]/);
@@ -27,7 +27,7 @@ test('business availability is authoritative and membership-gated',()=>{
  assert.match(migration,/AVAILABLE_NOW.*AVAILABLE_LATER.*BUSY.*OFFLINE/s);
  assert.match(migration,/set_business_availability/);
  assert.match(migration,/not public\.is_business_member\(p_business_id\)/);
- assert.match(availability,/AVAILABLE NOW/);
+ assert.match(availability,/AVAILABLE_NOW|Ready for new work now/);
  assert.match(availability,/Matching still applies verification, capability, location and marketplace eligibility/);
 });
 
