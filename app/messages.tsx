@@ -410,7 +410,7 @@ function MessagesSearch({value,onChange,colors:c,reducedMotion}:{value:string;on
  useEffect(()=>{if(reducedMotion){focus.setValue(focused?1:0);return}Animated.timing(focus,{toValue:focused?1:0,duration:MOTION.fast,easing:ease,useNativeDriver:false}).start()},[focused,reducedMotion,focus]);
  const borderColor=focus.interpolate({inputRange:[0,1],outputRange:[c.border,c.brand]});
  const shadowOpacity=focus.interpolate({inputRange:[0,1],outputRange:[0,.12]});
- return <View dataSet={Platform.OS==='web'?{everestSearchbox:'true'}:undefined} style={{marginTop:18}}>
+ return <View nativeID="everest-messages-search-shell" style={{marginTop:18}}>
   <Animated.View style={{minHeight:47,borderRadius:16,borderWidth:1,borderColor,backgroundColor:c.input,flexDirection:'row',alignItems:'center',paddingHorizontal:13,gap:9,shadowColor:'#000',shadowOffset:{width:0,height:5},shadowRadius:14,shadowOpacity}}>
    <Ionicons name="search-outline" size={18} color={focused?c.textSecondary:c.muted}/>
    <TextInput nativeID="everest-messages-search" value={value} onChangeText={onChange} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Search conversations" placeholderTextColor={c.muted} style={{flex:1,minHeight:45,color:c.text,fontSize:16,borderWidth:0}}/>
@@ -491,7 +491,7 @@ function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,reducedMotion,
  const pressTo=(to:number)=>{if(reducedMotion){pressed.setValue(to);return}Animated.spring(pressed,{toValue:to,useNativeDriver:true,...MOTION.spring}).start()};
  return <View style={{backgroundColor:c.canvas,paddingHorizontal:9,paddingTop:5,paddingBottom:Platform.OS==='ios'?5:8}}>
   {reply||edit?<View style={{marginHorizontal:4,marginBottom:5,paddingHorizontal:9,paddingVertical:6,borderRadius:11,backgroundColor:c.soft,flexDirection:'row',alignItems:'center',gap:8}}><View style={{flex:1}}><Text style={{fontSize:8,fontWeight:'900',color:c.muted}}>{edit?'EDITING MESSAGE':'REPLYING'}</Text><Text numberOfLines={1} style={{fontSize:10,color:c.text,marginTop:1}}>{edit?edit.body:reply?.body}</Text></View><Pressable onPress={edit?cancelEdit:cancelReply} style={{width:28,height:28,alignItems:'center',justifyContent:'center'}}><Ionicons name="close" size={17} color={c.muted}/></Pressable></View>:null}
-  <View dataSet={Platform.OS==='web'?{everestComposer:'true'}:undefined}>
+  <View nativeID="everest-composer-shell">
    <Animated.View style={{minHeight:42,maxHeight:98,borderRadius:22,borderWidth:1,borderColor:focus.interpolate({inputRange:[0,1],outputRange:[c.border,c.brand]}),backgroundColor:c.input,flexDirection:'row',alignItems:'flex-end',paddingLeft:12,paddingRight:4,paddingVertical:3,shadowColor:'#000',shadowOffset:{width:0,height:5},shadowRadius:14,shadowOpacity:focus.interpolate({inputRange:[0,1],outputRange:[0,.13]}),transform:[{translateY:focus.interpolate({inputRange:[0,1],outputRange:[0,-1]})}]}}>
     <TextInput nativeID="everest-message-composer" value={draft} onChangeText={setDraft} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Message…" placeholderTextColor={focused?c.textSecondary:c.muted} multiline scrollEnabled maxLength={5000} style={{flex:1,minHeight:34,maxHeight:88,color:c.text,fontSize:16,lineHeight:20,paddingTop:7,paddingBottom:7,paddingHorizontal:0,textAlignVertical:'center',borderWidth:0}}/>
     <Animated.View style={{opacity:active.interpolate({inputRange:[0,1],outputRange:[.42,1]}),transform:[{scale:Animated.multiply(active.interpolate({inputRange:[0,1],outputRange:[.9,1]}),pressed)}]}}>
