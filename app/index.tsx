@@ -49,7 +49,7 @@ export default function Home(){
   setBusinesses(((biz.data??[]) as BusinessPreview[]).sort((a,b)=>Number(b.suburb===p?.suburb)-Number(a.suburb===p?.suburb)));setPosts(feed);setUnread(notifications.count??0);
   if(booking.data){const b=booking.data;setContext({kind:'booking',title:'Upcoming booking',detail:b.scheduled_date?b.scheduled_date+(b.scheduled_time?' · '+String(b.scheduled_time).slice(0,5):''):b.status.replaceAll('_',' '),route:'/bookings'})}
   else if(request.data)setContext({kind:'request',title:'Active request',detail:String(request.data.description||request.data.status),route:'/requests'});
- }catch{}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
+ }catch{if(active){setBusinesses([]);setPosts([])}}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
 
  useEffect(()=>{if(reduced){enter.setValue(1);return}Animated.timing(enter,{toValue:1,duration:MOTION.standard,easing:ease,useNativeDriver:true}).start()},[enter,reduced]);
  const appear={opacity:enter,transform:[{translateY:enter.interpolate({inputRange:[0,1],outputRange:[reduced?0:8,0]})}]};
