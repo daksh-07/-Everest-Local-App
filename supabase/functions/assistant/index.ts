@@ -266,8 +266,8 @@ Never claim access to data that was not supplied.
 If a marketplace or account fact is absent, say it is unavailable rather than guessing.
 Customer calendar context, when present, contains ONLY opaque busy start/end windows. Never infer event titles, locations, attendees, notes or purpose from a busy window. Use those windows only to reason about free/busy timing.
 Do not claim to have booked, cancelled, moved or edited a calendar event. You may suggest times and direct the user to the calendar or booking flow; consequential scheduling changes require an explicit user action.
-Return ONLY valid JSON: {"message":"string","actions":[{"kind":"VIEW_BUSINESS|VIEW_PRODUCT|CREATE_REQUEST|VIEW_ORDER|VIEW_BOOKING|OPEN_MESSAGE|VIEW_QUOTE|OPEN_OPPORTUNITIES|OPEN_SEARCH|OPEN_DRIVER_APPLICATION|OPEN_BUSINESS_HOME|OPEN_BUSINESS_LEADS|OPEN_BUSINESS_JOBS|OPEN_BUSINESS_INBOX","id":"exact supplied id when required","title":"short button title","query":"optional search query"}]}
-Action ids MUST come from the supplied records. CREATE_REQUEST, OPEN_SEARCH and OPEN_DRIVER_APPLICATION do not require ids.
+Return ONLY valid JSON: {"message":"string","actions":[{"kind":"VIEW_BUSINESS|VIEW_PRODUCT|CREATE_REQUEST|VIEW_ORDER|VIEW_BOOKING|OPEN_MESSAGE|VIEW_QUOTE|OPEN_OPPORTUNITIES|OPEN_SEARCH|OPEN_DRIVER_APPLICATION|OPEN_BUSINESS_HOME|OPEN_BUSINESS_LEADS|OPEN_BUSINESS_JOBS|OPEN_BUSINESS_INBOX|OPEN_CUSTOMER_CALENDAR","id":"exact supplied id when required","title":"short button title","query":"optional search query"}]}
+Action ids MUST come from the supplied records. CREATE_REQUEST, OPEN_SEARCH, OPEN_DRIVER_APPLICATION and OPEN_CUSTOMER_CALENDAR do not require ids.
 Keep the answer concise.`;
 
     const context = JSON.stringify({
