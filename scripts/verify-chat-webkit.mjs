@@ -10,13 +10,13 @@ await input.focus();
 await page.waitForTimeout(100);
 
 const result=await page.evaluate(()=>{
- const el=document.activeElement;
- const input=document.querySelector('#everest-message-composer');
- const shell=document.querySelector('#everest-composer-shell');
+ const el=globalThis.document.activeElement;
+ const input=globalThis.document.querySelector('#everest-message-composer');
+ const shell=globalThis.document.querySelector('#everest-composer-shell');
  const focusSurface=shell?.firstElementChild;
  if(!el||!input||!shell||!focusSurface)return null;
- const s=getComputedStyle(el);
- const surface=getComputedStyle(focusSurface);
+ const s=globalThis.getComputedStyle(el);
+ const surface=globalThis.getComputedStyle(focusSurface);
  return {
   activeTag:el.tagName,
   activeId:el.id,
@@ -31,7 +31,7 @@ const result=await page.evaluate(()=>{
   fontSize:s.fontSize,
   caretColor:s.caretColor,
   wrapperBorderColor:surface.borderColor,
-  runtimeStyle:Boolean(document.querySelector('#everest-chat-input-runtime-style')),
+  runtimeStyle:Boolean(globalThis.document.querySelector('#everest-chat-input-runtime-style')),
   focusVisible:el.matches(':focus-visible'),
  };
 });
