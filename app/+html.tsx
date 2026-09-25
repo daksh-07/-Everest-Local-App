@@ -72,16 +72,16 @@ export default function Root({ children }: PropsWithChildren) {
 
           #everest-chat-shell {
             min-height: 0 !important;
-            height: var(--everest-visual-height, 100dvh) !important;
-            max-height: var(--everest-visual-height, 100dvh) !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
             overflow: hidden !important;
-            transform: translateY(var(--everest-visual-top, 0px));
+            transform: none !important;
           }
 
           @supports not (height: 100dvh) {
             #everest-chat-shell {
-              height: var(--everest-visual-height, 100vh) !important;
-              max-height: var(--everest-visual-height, 100vh) !important;
+              height: 100% !important;
+              max-height: 100% !important;
             }
           }
 
