@@ -1,4 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
+import {Platform} from 'react-native';
 import {supabase} from './supabase';
 import {userFacingError} from './errors';
 
@@ -9,7 +10,7 @@ async function assetBody(asset:ImagePicker.ImagePickerAsset){
  const mime=asset.mimeType||'image/jpeg';
  if(!ALLOWED.includes(mime))throw new Error('Use a JPEG, PNG, WebP or HEIC image.');
  const ext=(asset.fileName?.split('.').pop()||mime.split('/').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
- const body=await fetch(asset.uri).then(r=>r.arrayBuffer());
+ const body=Platform.OS==='web'&&asset.file?await asset.file.arrayBuffer():await fetch(asset.uri).then(r=>r.arrayBuffer());
  if(!body.byteLength)throw new Error('Image could not be read.');
  return{mime,ext,body};
 }
