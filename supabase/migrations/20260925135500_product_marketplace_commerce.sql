@@ -298,7 +298,7 @@ begin perform public.set_my_cart_item_v2(p_product_id,null,p_quantity);end $$;
 create or replace function public.shop_products(
  p_query text default null,p_category_id uuid default null,p_min_price numeric default null,p_max_price numeric default null,
  p_pickup boolean default null,p_delivery boolean default null,p_shipping boolean default null,p_in_stock boolean default true,
- p_limit integer default 24,p_offset integer default 0
+ p_limit integer default 24,p_offset integer default 0,p_business_id uuid default null
 ) returns table(
  id uuid,business_id uuid,category_id uuid,name text,short_description text,price numeric,sale_price numeric,status public.product_status,
  pickup_available boolean,delivery_eligible boolean,shipping_available boolean,brand text,created_at timestamptz,
@@ -317,6 +317,7 @@ create or replace function public.shop_products(
     to_tsvector('simple',coalesce(p.name,'')||' '||coalesce(p.description,'')||' '||coalesce(p.brand,'')||' '||array_to_string(p.tags,' '))
     @@ plainto_tsquery('simple',p_query))
   and (p_category_id is null or p.category_id=p_category_id)
+  and (p_business_id is null or p.business_id=p_business_id)
   and (p_min_price is null or coalesce(p.sale_price,p.price)>=p_min_price)
   and (p_max_price is null or coalesce(p.sale_price,p.price)<=p_max_price)
   and (p_pickup is null or p.pickup_available=p_pickup)
@@ -336,7 +337,7 @@ revoke all on function public.upsert_product_variant(uuid,uuid,text,jsonb,numeri
 grant execute on function public.upsert_product_variant(uuid,uuid,text,jsonb,numeric,text,integer,integer,boolean,integer) to authenticated;
 revoke all on function public.set_my_cart_item_v2(uuid,uuid,integer) from public,anon;
 grant execute on function public.set_my_cart_item_v2(uuid,uuid,integer) to authenticated;
-grant execute on function public.shop_products(text,uuid,numeric,numeric,boolean,boolean,boolean,boolean,integer,integer) to anon,authenticated;
+grant execute on function public.shop_products(text,uuid,numeric,numeric,boolean,boolean,boolean,boolean,integer,integer,uuid) to anon,authenticated;
 grant execute on function public.product_listing_quality(uuid) to authenticated;
 
 
