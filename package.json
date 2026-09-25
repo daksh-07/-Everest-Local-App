@@ -21,7 +21,7 @@
     "test:products": "node --test tests/product-marketplace-commerce.test.mjs",
     "test:request-posts": "node --test tests/request-posts-ux.test.mjs",
     "test:crm": "node --test tests/global-local-crm-p0.test.mjs tests/professional-crm-v2.test.mjs tests/crm-integrations-automation.test.mjs",
-    "test:integrations": "node --test tests/crm-integrations-automation.test.mjs"
+    "test:integrations": "node --test tests/crm-integrations-automation.test.mjs tests/customer-calendar-integration.test.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -47,7 +47,8 @@
     "zod": "^3.25.76",
     "expo-quick-actions": "6.0.0",
     "@react-native-community/datetimepicker": "8.4.4",
-    "expo-location": "~19.0.8"
+    "expo-location": "~19.0.8",
+    "expo-calendar": "~15.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
