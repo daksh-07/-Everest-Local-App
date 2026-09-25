@@ -1,3 +1,26 @@
+
+create or replace function public.save_my_locality(
+  p_suburb text default null,
+  p_city text default null,
+  p_state text default null,
+  p_country text default null
+) returns boolean
+language plpgsql security definer set search_path=''
+as $$
+begin
+  if auth.uid() is null then raise exception 'Authentication required'; end if;
+  update public.profiles
+     set suburb=nullif(trim(p_suburb),''),
+         city=nullif(trim(p_city),''),
+         state=nullif(trim(p_state),''),
+         country=nullif(trim(p_country),''),
+         updated_at=now()
+   where id=auth.uid();
+  return found;
+end $$;
+revoke all on function public.save_my_locality(text,text,text,text) from public,anon;
+grant execute on function public.save_my_locality(text,text,text,text) to authenticated;
+
 -- Everest Local P0: real-time availability, verified work provenance and tenant-isolated business CRM.
 -- Additive only. Public marketplace data remains separate from private CRM data.
 
