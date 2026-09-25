@@ -32,7 +32,7 @@ const businessChoices:ComposerChoice[]=[
 ];
 
 export default function CreatePost(){
- const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
+ const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const params=useLocalSearchParams<{intent?:string}>();
  const [identities,setIdentities]=useState<Identity[]>([]);const [identity,setIdentity]=useState<Identity|null>(null);
  const [caption,setCaption]=useState('');const [type,setType]=useState<PostType>('UPDATE');const [visibility,setVisibility]=useState<'PUBLIC'|'FOLLOWERS'>('PUBLIC');const [location,setLocation]=useState('');
  const [photos,setPhotos]=useState<ImagePicker.ImagePickerAsset[]>([]);const [services,setServices]=useState<Listing[]>([]);const [products,setProducts]=useState<Listing[]>([]);const [serviceId,setServiceId]=useState<string|null>(null);const [productId,setProductId]=useState<string|null>(null);
