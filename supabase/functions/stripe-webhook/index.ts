@@ -9,13 +9,14 @@ function mapSubscriptionStatus(status:Stripe.Subscription.Status){
  return mapped==='CANCELED'?'CANCELED':mapped;
 }
 
-async function persistProSubscription(db:ReturnType<typeof createClient>,subscription:Stripe.Subscription,eventId:string,fallbackBusinessId?:string){
+async function persistProSubscription(db:unknown,subscription:Stripe.Subscription,eventId:string,fallbackBusinessId?:string){
  const businessId=String(subscription.metadata?.business_id??fallbackBusinessId??'');
  if(!businessId)throw new Error('Everest Pro subscription is missing business metadata');
  const customerId=typeof subscription.customer==='string'?subscription.customer:subscription.customer?.id??null;
  const priceId=subscription.items?.data?.[0]?.price?.id??null;
  const periodEnd=subscription.current_period_end?new Date(subscription.current_period_end*1000).toISOString():null;
- const {error}=await db.rpc('set_business_subscription_from_stripe',{
+ const rpc=(db as {rpc:(name:string,args:Record<string,unknown>)=>Promise<{error:{message?:string}|null}>}).rpc.bind(db);
+ const {error}=await rpc('set_business_subscription_from_stripe',{
   p_business_id:businessId,
   p_customer_id:customerId,
   p_subscription_id:subscription.id,
