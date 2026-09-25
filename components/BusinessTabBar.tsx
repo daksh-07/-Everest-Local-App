@@ -4,12 +4,12 @@ import { Pressable,StyleSheet,Text,View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/lib/theme';
 
-type Route='/business-today'|'/business-leads'|'/business-jobs'|'/business-inbox'|'/business-control';
+type Route='/business-today'|'/business-leads'|'/business-customers'|'/business-inbox'|'/business-control';
 type IconName=keyof typeof Ionicons.glyphMap;
 const items:ReadonlyArray<{route:Route;label:string;icon:IconName;activeIcon:IconName}>=[
  {route:'/business-today',label:'Today',icon:'today-outline',activeIcon:'today'},
  {route:'/business-leads',label:'Leads',icon:'flash-outline',activeIcon:'flash'},
- {route:'/business-jobs',label:'Jobs',icon:'briefcase-outline',activeIcon:'briefcase'},
+ {route:'/business-customers',label:'Customers',icon:'people-outline',activeIcon:'people'},
  {route:'/business-inbox',label:'Inbox',icon:'chatbubbles-outline',activeIcon:'chatbubbles'},
  {route:'/business-control',label:'Business',icon:'storefront-outline',activeIcon:'storefront'},
 ];
