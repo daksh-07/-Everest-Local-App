@@ -8,7 +8,8 @@
     "scheme": "everestlocal",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.everestlocal.app"
+      "bundleIdentifier": "com.everestlocal.app",
+      "backgroundColor": "#0b0b0b"
     },
     "android": {
       "package": "com.everestlocal.app"
@@ -33,6 +34,7 @@
     "extra": {
       "supabaseUrl": "https://bmwbljefnamvjnmuvkvv.supabase.co",
       "supabaseAnonKey": "sb_publishable_evkp_gHdu3ucFI82P8VLCw_vCjR2M2S"
-    }
+    },
+    "backgroundColor": "#0b0b0b"
   }
 }
