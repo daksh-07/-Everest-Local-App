@@ -7,7 +7,8 @@ import { getWorkspaceContext,type BusinessWorkspace } from '@/lib/workspace';
 import { supabase } from '@/lib/supabase';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
 
-type Lead={id:string;request_id:string;status:string;created_at:string;expires_at:string|null;service_requests:any};
+type LeadRequest={description:string|null;suburb:string|null;city:string|null;state:string|null;preferred_date:string|null;preferred_time:string|null;budget:number|null};
+type Lead={id:string;request_id:string;status:string;created_at:string;expires_at:string|null;service_requests:LeadRequest|LeadRequest[]|null};
 
 export default function BusinessLeads(){
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);
@@ -15,7 +16,7 @@ export default function BusinessLeads(){
  const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState('');
  const [quoteLead,setQuoteLead]=useState<Lead|null>(null);const [price,setPrice]=useState('');const [description,setDescription]=useState('');const [busy,setBusy]=useState(false);const [filter,setFilter]=useState<'NEW'|'RESPONDED'|'ALL'>('NEW');
 
- const load=useCallback(async(refresh=false)=>{refresh?setRefreshing(true):setLoading(true);setError('');
+ const load=useCallback(async(refresh=false)=>{if(refresh)setRefreshing(true);else setLoading(true);setError('');
   try{
    const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
    const current=ctx.businesses.find(item=>item.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
