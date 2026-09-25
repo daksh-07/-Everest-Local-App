@@ -425,13 +425,11 @@ function EmptyState({title,copy,colors:c}:{title:string;copy:string;colors:Retur
 
 function MotionMessage({children,mine,selected,exiting,reducedMotion}:{children:React.ReactNode;mine:boolean;selected:boolean;exiting:boolean;reducedMotion:boolean}){
  const enter=useRef(new Animated.Value(reducedMotion?1:0)).current;
+ const visibility=useRef(new Animated.Value(1)).current;
  const selectedValue=useRef(new Animated.Value(0)).current;
  useEffect(()=>{
   if(reducedMotion){enter.setValue(1);return}
-  Animated.parallel([
-   Animated.timing(enter,{toValue:1,duration:MOTION.standard,easing:ease,useNativeDriver:true}),
-   Animated.spring(enter,{toValue:1,useNativeDriver:true,...MOTION.spring}),
-  ]).start();
+  Animated.timing(enter,{toValue:1,duration:MOTION.standard,easing:ease,useNativeDriver:true}).start();
  },[enter,reducedMotion]);
  useEffect(()=>{
   const target=selected?1:0;
@@ -439,13 +437,13 @@ function MotionMessage({children,mine,selected,exiting,reducedMotion}:{children:
   Animated.spring(selectedValue,{toValue:target,useNativeDriver:true,...MOTION.spring}).start();
  },[selected,reducedMotion,selectedValue]);
  useEffect(()=>{
-  if(!exiting)return;
-  if(reducedMotion){enter.setValue(.15);return}
-  Animated.timing(enter,{toValue:.15,duration:MOTION.fast,easing:ease,useNativeDriver:true}).start();
- },[exiting,reducedMotion,enter]);
+  const target=exiting?.12:1;
+  if(reducedMotion){visibility.setValue(target);return}
+  Animated.timing(visibility,{toValue:target,duration:MOTION.fast,easing:ease,useNativeDriver:true}).start();
+ },[exiting,reducedMotion,visibility]);
  const baseScale=enter.interpolate({inputRange:[0,1],outputRange:[.96,1]});
  const selectedScale=selectedValue.interpolate({inputRange:[0,1],outputRange:[1,1.025]});
- return <Animated.View style={{opacity:enter,transform:[{translateY:enter.interpolate({inputRange:[0,1],outputRange:[mine?7:5,0]})},{scale:Animated.multiply(baseScale,selectedScale)}]}}>{children}</Animated.View>;
+ return <Animated.View style={{opacity:Animated.multiply(enter,visibility),zIndex:selected?2:0,transform:[{translateX:enter.interpolate({inputRange:[0,1],outputRange:[mine?7:-7,0]})},{translateY:enter.interpolate({inputRange:[0,1],outputRange:[4,0]})},{scale:Animated.multiply(baseScale,selectedScale)}]}}>{children}</Animated.View>;
 }
 
 function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,transitioningId,reducedMotion,onRetry,onReachTop,onInitialContent}:{refValue:React.MutableRefObject<ScrollView|null>;items:PersonalMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onAction:(m:PersonalMessage,x:number,y:number)=>void;selectedId:string|null;transitioningId:string|null;reducedMotion:boolean;onRetry:(m:PersonalMessage)=>void;onReachTop:()=>void;onInitialContent:()=>void}){
