@@ -83,7 +83,7 @@ export default function Home(){
 
    if(!businessResult.error){
     const rows=(businessResult.data??[]) as Array<{id:string;name:string;logo_url:string|null;suburb:string|null;city:string|null;state:string|null;verification_status:string}>;
-    const ids=rows.map(x=>x.id);let ratings:Record<string,{sum:number;count:number}>={};
+    const ids=rows.map(x=>x.id);const ratings:Record<string,{sum:number;count:number}>={};
     if(ids.length){
      const reviewResult=await supabase.from('reviews').select('business_id,rating').in('business_id',ids).limit(400);
      if(!reviewResult.error)for(const review of reviewResult.data??[]){const id=String(review.business_id);const entry=ratings[id]??{sum:0,count:0};entry.sum+=Number(review.rating);entry.count+=1;ratings[id]=entry}
@@ -109,7 +109,7 @@ export default function Home(){
     const bm=Object.fromEntries((businessNames.data??[]).map(x=>[x.id,x]));const pm=Object.fromEntries((profiles.data??[]).map(x=>[x.id,x]));
     if(active)setPosts(publicPosts.slice(0,3).map(post=>({ ...post,authorName:post.business_id?bm[post.business_id]?.name??'Everest business':pm[post.author_id]?.display_name??'Community member',businessName:post.business_id?bm[post.business_id]?.name??null:null,logoUrl:post.business_id?bm[post.business_id]?.logo_url??null:pm[post.author_id]?.avatar_url??null })));
    }
-  }catch{}finally{if(active)setLoading(false)}
+  }catch{if(active){setBusinesses([]);setActivity(null);setPosts([])}}finally{if(active)setLoading(false)}
  })();return()=>{active=false}},[]);
 
  function routeIntent(mode?:'ASSISTANT'){
