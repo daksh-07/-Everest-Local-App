@@ -125,7 +125,7 @@ with check(
   )
 );
 drop policy if exists product_media_member_select on storage.objects;
-create policy product_media_member_select on storage.objects for select to authenticated
+create policy product_media_member_select on storage.objects for select to anon,authenticated
 using(
   bucket_id='product-media'
   and exists(
