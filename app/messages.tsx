@@ -484,6 +484,11 @@ function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,tran
  const openAction=(message:PersonalMessage)=>{
   const node=messageRefs.current.get(message.id);
   if(!node)return;
+  if(Platform.OS==='web'){
+   const element=node as unknown as {getBoundingClientRect?:()=>{left:number;top:number;width:number;height:number}};
+   const rect=element.getBoundingClientRect?.();
+   if(rect){onAction(message,{x:rect.left,y:rect.top,width:rect.width,height:rect.height});return}
+  }
   node.measureInWindow((x,y,width,height)=>onAction(message,{x,y,width,height}));
  };
  const onScroll=(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
@@ -526,19 +531,20 @@ function MarketThread({refValue,items,userId,colors:c}:{refValue:React.MutableRe
  </ScrollView>;
 }
 
-function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,reducedMotion,onFocus,cancelReply,cancelEdit}:{draft:string;setDraft:(v:string)=>void;busy:boolean;submit:()=>void;colors:ReturnType<typeof useAppTheme>['colors'];reply:PersonalMessage|null;edit:PersonalMessage|null;reducedMotion:boolean;onFocus:()=>void;cancelReply:()=>void;cancelEdit:()=>void}){
+function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,reducedMotion,bottomInset,onFocus,cancelReply,cancelEdit}:{draft:string;setDraft:(v:string)=>void;busy:boolean;submit:()=>void;colors:ReturnType<typeof useAppTheme>['colors'];reply:PersonalMessage|null;edit:PersonalMessage|null;reducedMotion:boolean;bottomInset:number;onFocus:()=>void;cancelReply:()=>void;cancelEdit:()=>void}){
  const [focused,setFocused]=useState(false);
  const focus=useRef(new Animated.Value(0)).current;
  const active=useRef(new Animated.Value(draft.trim()?1:0)).current;
  const pressed=useRef(new Animated.Value(1)).current;
+ useEffect(()=>installChatWebRuntimeStyles(c.brand,c.text),[c.brand,c.text]);
  useEffect(()=>{const to=focused?1:0;if(reducedMotion){focus.setValue(to);return}Animated.timing(focus,{toValue:to,duration:MOTION.standard,easing:ease,useNativeDriver:false}).start()},[focused,reducedMotion,focus]);
  useEffect(()=>{const to=draft.trim()?1:0;if(reducedMotion){active.setValue(to);return}Animated.spring(active,{toValue:to,useNativeDriver:true,...MOTION.spring}).start()},[draft,reducedMotion,active]);
  const pressTo=(to:number)=>{if(reducedMotion){pressed.setValue(to);return}Animated.spring(pressed,{toValue:to,useNativeDriver:true,...MOTION.spring}).start()};
- return <View style={{backgroundColor:c.canvas,paddingHorizontal:9,paddingTop:5,paddingBottom:Platform.OS==='ios'?5:8}}>
+ return <View style={{backgroundColor:c.canvas,paddingHorizontal:9,paddingTop:5,paddingBottom:Math.max(5,bottomInset+5)}}>
   {reply||edit?<View style={{marginHorizontal:4,marginBottom:5,paddingHorizontal:9,paddingVertical:6,borderRadius:11,backgroundColor:c.soft,flexDirection:'row',alignItems:'center',gap:8}}><View style={{flex:1}}><Text style={{fontSize:8,fontWeight:'900',color:c.muted}}>{edit?'EDITING MESSAGE':'REPLYING'}</Text><Text numberOfLines={1} style={{fontSize:10,color:c.text,marginTop:1}}>{edit?edit.body:reply?.body}</Text></View><Pressable onPress={edit?cancelEdit:cancelReply} style={{width:28,height:28,alignItems:'center',justifyContent:'center'}}><Ionicons name="close" size={17} color={c.muted}/></Pressable></View>:null}
   <View nativeID="everest-composer-shell">
    <Animated.View style={{minHeight:42,maxHeight:98,borderRadius:22,borderWidth:1,borderColor:focus.interpolate({inputRange:[0,1],outputRange:[c.border,c.brand]}),backgroundColor:c.input,flexDirection:'row',alignItems:'flex-end',paddingLeft:12,paddingRight:4,paddingVertical:3,shadowColor:'#000',shadowOffset:{width:0,height:5},shadowRadius:14,shadowOpacity:focus.interpolate({inputRange:[0,1],outputRange:[0,.13]}),transform:[{translateY:focus.interpolate({inputRange:[0,1],outputRange:[0,-1]})}]}}>
-    <TextInput nativeID="everest-message-composer" value={draft} onChangeText={setDraft} onFocus={()=>{setFocused(true);onFocus()}} onBlur={()=>setFocused(false)} placeholder="Message…" placeholderTextColor={focused?c.textSecondary:c.muted} multiline scrollEnabled maxLength={5000} style={{flex:1,minHeight:34,maxHeight:88,color:c.text,fontSize:16,lineHeight:20,paddingTop:7,paddingBottom:7,paddingHorizontal:0,textAlignVertical:'center',borderWidth:0}}/>
+    <TextInput nativeID="everest-message-composer" value={draft} onChangeText={setDraft} onFocus={()=>{setFocused(true);onFocus()}} onBlur={()=>setFocused(false)} placeholder="Message…" placeholderTextColor={focused?c.textSecondary:c.muted} multiline scrollEnabled maxLength={5000} style={[{flex:1,minHeight:34,maxHeight:88,color:c.text,fontSize:16,lineHeight:20,paddingTop:7,paddingBottom:7,paddingHorizontal:0,textAlignVertical:'center',borderWidth:0},Platform.OS==='web'?({outlineStyle:'none',outlineWidth:0,outlineColor:'transparent',boxShadow:'none'} as never):null]}/>
     <Animated.View style={{opacity:active.interpolate({inputRange:[0,1],outputRange:[.42,1]}),transform:[{scale:Animated.multiply(active.interpolate({inputRange:[0,1],outputRange:[.9,1]}),pressed)}]}}>
      <Pressable accessibilityLabel={edit?'Save edited message':'Send message'} disabled={busy||!draft.trim()} onPressIn={()=>pressTo(.92)} onPressOut={()=>pressTo(1)} onPress={()=>{void haptic.light();submit()}} style={{width:34,height:34,borderRadius:17,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:1}}>{busy?<ActivityIndicator size="small" color={c.onBrand}/>:<Ionicons name={edit?'checkmark':'arrow-up'} size={18} color={c.onBrand}/>}</Pressable>
     </Animated.View>
