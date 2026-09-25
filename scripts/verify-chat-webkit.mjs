@@ -33,6 +33,10 @@ const result=await page.evaluate(()=>{
   wrapperBorderColor:surface.borderColor,
   runtimeStyle:Boolean(globalThis.document.querySelector('#everest-chat-input-runtime-style')),
   focusVisible:el.matches(':focus-visible'),
+  vibrationAvailable:typeof globalThis.navigator.vibrate==='function',
+  visualViewportAvailable:Boolean(globalThis.visualViewport),
+  visualViewportHeight:globalThis.visualViewport?.height??null,
+  visualViewportOffsetTop:globalThis.visualViewport?.offsetTop??null,
  };
 });
 console.log('EVEREST_CHAT_WEBKIT='+JSON.stringify(result));
