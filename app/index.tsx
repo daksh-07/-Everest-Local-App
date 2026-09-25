@@ -10,6 +10,7 @@ import {listPublicPosts,type SocialPost} from '@/lib/social';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {ui} from '@/lib/ui';
+import {resolveCustomerLocality,saveLocalityToProfile,type CustomerLocality} from '@/lib/customer-location';
 
 type IconName=keyof typeof Ionicons.glyphMap;
 type BusinessPreview={id:string;name:string;logo_url:string|null;verification_status:string;suburb:string|null;city:string|null;state:string|null};
@@ -30,26 +31,68 @@ function initials(name:string){return name.trim().split(/\s+/).slice(0,2).map(v=
 
 export default function Home(){
  const {colors:c}=useAppTheme();const s=useMemo(()=>styles(c),[c]);const reduced=useReducedMotion();
- const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Sydney');
+ const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Set location');
  const [unread,setUnread]=useState(0);const [businesses,setBusinesses]=useState<BusinessPreview[]>([]);const [posts,setPosts]=useState<SocialPost[]>([]);
- const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);
+ const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);const [locating,setLocating]=useState(false);
  const enter=useRef(new Animated.Value(reduced?1:0)).current;
+
+ async function businessMatches(field:'suburb'|'city'|'state',value:string){
+  if(!value.trim())return[] as BusinessPreview[];
+  const {data}=await supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').ilike(field,value.trim()).limit(8);
+  return (data??[]) as BusinessPreview[];
+ }
+ async function loadNearby(locality:Pick<CustomerLocality,'suburb'|'city'|'state'>){
+  const merged=new Map<string,BusinessPreview>();
+  for(const [field,value] of [['suburb',locality.suburb],['city',locality.city],['state',locality.state]] as const){
+   for(const item of await businessMatches(field,value))merged.set(item.id,item);
+   if(merged.size>=8)break;
+  }
+  if(!merged.size){
+   const {data}=await supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').limit(8);
+   for(const item of (data??[]) as BusinessPreview[])merged.set(item.id,item);
+  }
+  setBusinesses([...merged.values()].slice(0,8));
+
+  const feed=await listPublicPosts({limit:20});
+  const terms=[locality.suburb,locality.city,locality.state].map(v=>v.trim().toLowerCase()).filter(Boolean);
+  const score=(post:SocialPost)=>{const label=(post.location_label??'').toLowerCase();return terms.reduce((n,t,i)=>n+(label.includes(t)?3-i:0),0)};
+  const localFeed=feed.filter(p=>score(p)>0).sort((a,b)=>score(b)-score(a));
+  setPosts((localFeed.length?localFeed:feed).slice(0,4));
+ }
+ async function refreshLocality(requestIfUndetermined=true){
+  if(locating)return;setLocating(true);
+  try{
+   const locality=await resolveCustomerLocality({requestIfUndetermined});
+   if(!locality)return;
+   setSuburb(locality.suburb||locality.city||'Nearby');
+   await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);
+  }finally{setLocating(false);}
+ }
 
  useEffect(()=>{let active=true;void(async()=>{try{
   const {data:{user}}=await supabase.auth.getUser();
   const businessQuery=supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').limit(8);
-  if(!user){const [biz,feed]=await Promise.all([businessQuery,listPublicPosts({limit:4})]);if(active){setBusinesses((biz.data??[]) as BusinessPreview[]);setPosts(feed)}return}
+  if(!user){
+   const [biz,feed]=await Promise.all([businessQuery,listPublicPosts({limit:4})]);
+   if(active){setBusinesses((biz.data??[]) as BusinessPreview[]);setPosts(feed)}
+   if(active)void refreshLocality(true);
+   return;
+  }
   const {getWorkspaceContext}=await import('@/lib/workspace');const workspace=await getWorkspaceContext();if(!active)return;if(workspace.mode==='BUSINESS'&&workspace.active_business_id){router.replace('/business-today');return;}
   const [profile,biz,feed,notifications,booking,request]=await Promise.all([
-   supabase.from('profiles').select('full_name,avatar_url,suburb,city').eq('id',user.id).maybeSingle(),businessQuery,listPublicPosts({limit:4}),
+   supabase.from('profiles').select('full_name,avatar_url,suburb,city,state,country').eq('id',user.id).maybeSingle(),businessQuery,listPublicPosts({limit:4}),
    supabase.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',user.id).is('read_at',null),
    supabase.from('bookings').select('id,status,scheduled_date,scheduled_time').eq('customer_id',user.id).in('status',['REQUESTED','PENDING_PAYMENT','CONFIRMED','UPCOMING']).order('created_at',{ascending:false}).limit(1).maybeSingle(),
    supabase.from('service_requests').select('id,status,description').eq('customer_id',user.id).in('status',['OPEN','MATCHING','QUOTING','BOOKED']).order('created_at',{ascending:false}).limit(1).maybeSingle(),
   ]);
-  if(!active)return;const p=profile.data;setName(p?.full_name??'');setAvatar(p?.avatar_url??null);setSuburb(p?.suburb||p?.city||'Sydney');
-  setBusinesses(((biz.data??[]) as BusinessPreview[]).sort((a,b)=>Number(b.suburb===p?.suburb)-Number(a.suburb===p?.suburb)));setPosts(feed);setUnread(notifications.count??0);
+  if(!active)return;const p=profile.data;setName(p?.full_name??'');setAvatar(p?.avatar_url??null);setSuburb(p?.suburb||p?.city||'Set location');
+  setBusinesses(((biz.data??[]) as BusinessPreview[]).sort((a,b)=>Number(Boolean(p?.suburb)&&a.suburb===p?.suburb)-Number(Boolean(p?.suburb)&&b.suburb===p?.suburb)));setPosts(feed);setUnread(notifications.count??0);
   if(booking.data){const b=booking.data;setContext({kind:'booking',title:'Upcoming booking',detail:b.scheduled_date?b.scheduled_date+(b.scheduled_time?' · '+String(b.scheduled_time).slice(0,5):''):b.status.replaceAll('_',' '),route:'/bookings'})}
   else if(request.data)setContext({kind:'request',title:'Active request',detail:String(request.data.description||request.data.status),route:'/requests'});
+
+  const locality=await resolveCustomerLocality({requestIfUndetermined:true}).catch(()=>null);
+  if(active&&locality){setSuburb(locality.suburb||locality.city||'Nearby');await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);}
+  else if(active&&p?.city){await loadNearby({suburb:p.suburb||p.city,city:p.city,state:p.state||''});}
  }catch{if(active){setBusinesses([]);setPosts([])}}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
 
  useEffect(()=>{if(reduced){enter.setValue(1);return}Animated.timing(enter,{toValue:1,duration:MOTION.standard,easing:ease,useNativeDriver:true}).start()},[enter,reduced]);
@@ -60,7 +103,7 @@ export default function Home(){
  return <View style={s.root}><SafeAreaView edges={['top','left','right']} style={s.safe}>
   <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.page}>
    <Animated.View style={appear}>
-    <View style={s.topbar}><View style={{flex:1}}><Text style={s.brand}>EVEREST LOCAL</Text><View style={s.placeRow}><Ionicons name="location-outline" size={13} color={c.muted}/><Text style={s.place}>{suburb}</Text></View></View>
+    <View style={s.topbar}><View style={{flex:1}}><Text style={s.brand}>EVEREST LOCAL</Text><Pressable onPress={()=>void refreshLocality(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityLabel="Update your location"><Ionicons name={locating?'locate':'location-outline'} size={13} color={c.muted}/><Text style={s.place}>{locating?'Finding you…':suburb}</Text><Ionicons name="chevron-down" size={11} color={c.muted}/></Pressable></View>
      <Pressable onPress={()=>go('/notifications')} style={({pressed})=>[s.iconButton,pressed&&s.press]} accessibilityLabel="Notifications"><Ionicons name="notifications-outline" size={20} color={c.text}/>{unread>0?<View style={s.dot}/>:null}</Pressable>
      <Pressable onPress={()=>go('/account')} style={({pressed})=>[s.avatar,pressed&&s.press]} accessibilityLabel="Open account">{avatar?<Image source={{uri:avatar}} style={s.avatarImage}/>:<Text style={s.avatarText}>{initials(name||'Everest Local')}</Text>}</Pressable>
     </View>
@@ -81,7 +124,7 @@ export default function Home(){
      </View>
     </View>
     <SectionTitle title="Quick actions"/><View style={s.actionGrid}>{actions.map(a=><Pressable key={a.label} onPress={()=>go(a.route)} style={({pressed})=>[s.action,pressed&&s.actionPressed]}><View style={s.actionIcon}><Ionicons name={a.icon} size={21} color={c.brand}/></View><Text style={s.actionTitle}>{a.label}</Text><Text numberOfLines={2} style={s.actionCopy}>{a.subtitle}</Text></Pressable>)}</View>
-    <View style={s.sectionHeader}><SectionTitle title="Near you" compact/><Pressable onPress={()=>go('/search?tab=BUSINESS')}><Text style={s.seeAll}>See all</Text></Pressable></View>
+    <View style={s.sectionHeader}><View><SectionTitle title="Near you" compact/><Text style={s.localityCaption}>{suburb==='Set location'?'Turn on location to personalise Everest':`Around ${suburb}`}</Text></View><Pressable onPress={()=>go('/search?tab=BUSINESS')}><Text style={s.seeAll}>See all</Text></Pressable></View>
     {loading?<BusinessSkeleton colors={c}/>:businesses.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.businessRow}>{businesses.map(b=><Pressable key={b.id} onPress={()=>go('/business-profile?id='+b.id)} style={({pressed})=>[s.businessCard,pressed&&s.cardPressed]}>{b.logo_url?<Image source={{uri:b.logo_url}} style={s.businessImage}/>:<View style={s.businessFallback}><Ionicons name="business-outline" size={24} color={c.brand}/></View>}<View style={s.businessBody}><View style={s.businessTitleRow}><Text numberOfLines={1} style={s.businessName}>{b.name}</Text>{b.verification_status==='VERIFIED'?<Ionicons name="checkmark-circle" size={14} color={c.brand}/>:null}</View><Text numberOfLines={1} style={s.businessMeta}>{[b.suburb,b.city,b.state].filter(Boolean).join(', ')||'Local business'}</Text></View></Pressable>)}</ScrollView>:<Pressable onPress={()=>go('/search?tab=BUSINESS')} style={s.emptyLine}><Text style={s.emptyText}>Explore local businesses on Everest</Text><Ionicons name="arrow-forward" size={17} color={c.muted}/></Pressable>}
     {posts.length?<><View style={s.sectionHeader}><SectionTitle title="From around Everest" compact/><Pressable onPress={()=>go('/social')}><Text style={s.seeAll}>Open discovery</Text></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.postRow}>{posts.map(p=><Pressable key={p.id} onPress={()=>go(p.business_id?'/business-profile?id='+p.business_id:'/social')} style={({pressed})=>[s.postCard,pressed&&s.cardPressed]}><Text style={s.postType}>{p.post_type.replaceAll('_',' ')}</Text><Text numberOfLines={3} style={s.postCopy}>{p.caption||'New activity on Everest'}</Text><Text style={s.postDate}>{new Date(p.created_at).toLocaleDateString()}</Text></Pressable>)}</ScrollView></>:null}
     <View style={s.sectionHeader}><SectionTitle title="Browse categories" compact/><Pressable onPress={()=>go('/search?tab=SERVICE')}><Text style={s.seeAll}>Explore</Text></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.categoryRow}>{categories.map(([label,icon,q])=><Pressable key={label} onPress={()=>go('/search?q='+encodeURIComponent(q)+'&tab=SERVICE')} style={({pressed})=>[s.category,pressed&&s.cardPressed]}><View style={s.categoryIcon}><Ionicons name={icon} size={20} color={c.brand}/></View><Text style={s.categoryText}>{label}</Text></Pressable>)}</ScrollView>
@@ -102,6 +145,6 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  composerInput:{flex:1,minHeight:46,borderRadius:16,backgroundColor:c.elevated,borderWidth:1,borderColor:c.border,paddingHorizontal:14,justifyContent:'center'},composerPlaceholder:{fontSize:12,color:c.textSecondary},
  composerActions:{marginTop:10,minHeight:38,borderTopWidth:1,borderTopColor:c.border,flexDirection:'row',alignItems:'center',paddingTop:9},composerAction:{flex:1,minHeight:34,borderRadius:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6},composerActionText:{fontSize:10,fontWeight:'900',color:c.text},composerDivider:{width:1,height:20,backgroundColor:c.border},
  actionGrid:{flexDirection:'row',flexWrap:'wrap',gap:9},action:{width:'48.5%',minHeight:112,borderRadius:18,backgroundColor:c.surface,padding:13},actionPressed:{transform:[{scale:.975}],backgroundColor:c.soft},actionIcon:{width:38,height:38,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},actionTitle:{fontSize:13,fontWeight:'900',color:c.text,marginTop:9},actionCopy:{fontSize:10,lineHeight:14,color:c.muted,marginTop:3},
- sectionHeader:{marginTop:28,marginBottom:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},seeAll:{fontSize:10,fontWeight:'900',color:c.brand},businessRow:{gap:10,paddingRight:12},businessCard:{width:188,borderRadius:20,overflow:'hidden',backgroundColor:c.surface},businessImage:{width:'100%',height:104},businessFallback:{height:104,alignItems:'center',justifyContent:'center',backgroundColor:c.soft},businessBody:{padding:12},businessTitleRow:{flexDirection:'row',alignItems:'center',gap:5},businessName:{fontSize:13,fontWeight:'900',color:c.text,flex:1},businessMeta:{fontSize:10,color:c.muted,marginTop:4},emptyLine:{minHeight:58,borderRadius:16,backgroundColor:c.surface,paddingHorizontal:14,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},emptyText:{fontSize:12,fontWeight:'800',color:c.text},
+ sectionHeader:{marginTop:28,marginBottom:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},localityCaption:{fontSize:9,color:c.muted,marginTop:3},seeAll:{fontSize:10,fontWeight:'900',color:c.brand},businessRow:{gap:10,paddingRight:12},businessCard:{width:188,borderRadius:20,overflow:'hidden',backgroundColor:c.surface},businessImage:{width:'100%',height:104},businessFallback:{height:104,alignItems:'center',justifyContent:'center',backgroundColor:c.soft},businessBody:{padding:12},businessTitleRow:{flexDirection:'row',alignItems:'center',gap:5},businessName:{fontSize:13,fontWeight:'900',color:c.text,flex:1},businessMeta:{fontSize:10,color:c.muted,marginTop:4},emptyLine:{minHeight:58,borderRadius:16,backgroundColor:c.surface,paddingHorizontal:14,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},emptyText:{fontSize:12,fontWeight:'800',color:c.text},
  postRow:{gap:10,paddingRight:12},postCard:{width:190,minHeight:118,borderRadius:18,backgroundColor:c.surface,padding:14},postType:{fontSize:8,fontWeight:'900',letterSpacing:.9,color:c.brand},postCopy:{fontSize:13,lineHeight:18,fontWeight:'700',color:c.text,marginTop:8},postDate:{fontSize:9,color:c.muted,marginTop:12},categoryRow:{gap:9,paddingRight:12},category:{width:82,alignItems:'center',paddingVertical:5},categoryIcon:{width:54,height:54,borderRadius:18,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},categoryText:{fontSize:10,fontWeight:'800',color:c.text,marginTop:7},press:{opacity:.68,transform:[{scale:.97}]},cardPressed:{opacity:.78,transform:[{scale:.98}]},
 });
