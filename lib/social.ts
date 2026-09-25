@@ -18,6 +18,7 @@ export interface SocialPost {
   status: 'DRAFT' | 'PUBLISHED' | 'HIDDEN' | 'REMOVED';
   created_at: string;
   updated_at: string;
+  post_media?: Array<{id:string;media_type:string;storage_path:string;sort_order:number}>;
 }
 
 export interface PublicProfile {
@@ -144,4 +145,33 @@ export async function updatePostCaption(postId:string,caption:string):Promise<vo
   requireSupabaseConfig();
   const {error}=await supabase.from('posts').update({caption:caption.trim()||null,updated_at:new Date().toISOString()}).eq('id',postId);
   if(error)throw new Error(error.message);
+}
+
+export async function uploadPostMedia(postId:string,uris:string[]):Promise<string[]>{
+  requireSupabaseConfig();
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user)throw new Error('Authentication required.');
+  const paths:string[]=[];
+  for(let i=0;i<uris.length;i++){
+    const uri=uris[i];const response=await fetch(uri);const body=await response.arrayBuffer();
+    const ext=(uri.split('.').pop()?.split('?')[0]||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+    const path=`${user.id}/${postId}/${Date.now()}-${i}.${ext}`;
+    const {error:uploadError}=await supabase.storage.from('post-media').upload(path,body,{contentType:response.headers.get('content-type')||'image/jpeg',upsert:false});
+    if(uploadError)throw new Error(uploadError.message);
+    const {error:rowError}=await supabase.from('post_media').insert({post_id:postId,media_type:'IMAGE',storage_path:path,sort_order:i});
+    if(rowError){await supabase.storage.from('post-media').remove([path]);throw new Error(rowError.message);}
+    paths.push(path);
+  }
+  return paths;
+}
+export async function signedPostMedia(path:string,expiresIn=900):Promise<string>{
+  const {data,error}=await supabase.storage.from('post-media').createSignedUrl(path,expiresIn);
+  if(error)throw new Error(error.message);
+  return data.signedUrl;
+}
+export async function listPostingBusinesses(){
+  const {data:{user}}=await supabase.auth.getUser();if(!user)return[];
+  const {data,error}=await supabase.from('business_members').select('business_id,businesses(id,name,status,verification_status)').eq('user_id',user.id);
+  if(error)throw new Error(error.message);
+  return (data??[]).map(row=>Array.isArray(row.businesses)?row.businesses[0]:row.businesses).filter((b):b is {id:string;name:string;status:string;verification_status:string}=>Boolean(b&&b.status==='ACTIVE'&&b.verification_status==='VERIFIED'));
 }
