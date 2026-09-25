@@ -39,7 +39,7 @@ export default function BusinessControl(){
 
  const verified=business?.verification_status==='VERIFIED';
  const sections=[
-  {label:'PUBLIC PROFILE',rows:[['Services','construct-outline','/services'],['Products','cube-outline','/products'],['Service area','location-outline','/service-areas']]},
+  {label:'PUBLIC PROFILE',rows:[['Create post','add-circle-outline','/create-post'],['Posts','images-outline','/social'],['Services','construct-outline','/services'],['Products','cube-outline','/products'],['Service area','location-outline','/service-areas']]},
   {label:'OPERATIONS',rows:[['Customer orders','bag-handle-outline','/business-orders'],['Jobs','calendar-outline','/business-jobs'],['Leads & quotes','flash-outline','/business-leads']]},
   {label:'TRUST & SETTINGS',rows:[['Verification','shield-checkmark-outline','/business-verification'],['Notifications','notifications-outline','/notification-settings'],['Account settings','settings-outline','/settings']]},
  ] as const;

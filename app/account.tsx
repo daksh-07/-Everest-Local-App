@@ -10,8 +10,8 @@ import { userFacingError } from '@/lib/errors';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
 import { ModeSwitcher } from '@/components/ModeSwitcher';
 
-type AccountRoute='/requests'|'/quotes'|'/bookings'|'/orders'|'/messages'|'/reviews'|'/notifications'|'/settings'|'/saved';
-const links:ReadonlyArray<readonly [string,AccountRoute]>=[['Requests','/requests'],['Quotes','/quotes'],['Bookings','/bookings'],['Orders','/orders'],['Messages','/messages'],['Reviews','/reviews'],['Saved','/saved'],['Notifications','/notifications'],['Settings','/settings']];
+type AccountRoute='/requests'|'/quotes'|'/bookings'|'/orders'|'/messages'|'/reviews'|'/notifications'|'/settings'|'/saved'|'/create-post';
+const links:ReadonlyArray<readonly [string,AccountRoute]>=[['Create Post','/create-post'],['Requests','/requests'],['Quotes','/quotes'],['Bookings','/bookings'],['Orders','/orders'],['Messages','/messages'],['Reviews','/reviews'],['Saved','/saved'],['Notifications','/notifications'],['Settings','/settings']];
 
 export default function Account(){
  const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);

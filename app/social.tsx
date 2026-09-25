@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { listPublicPosts, type SocialPost } from '@/lib/social';
+import { signedPostMedia } from '@/lib/request-post-media';
 import { supabase } from '@/lib/supabase';
 
-type FeedPost = SocialPost & { businesses?: { name: string; slug: string; logo_url: string | null } | null; profile?: { display_name: string | null; avatar_url: string | null } | null };
+type FeedPost = SocialPost & { media?:string[]; businesses?: { name: string; slug: string; logo_url: string | null } | null; profile?: { display_name: string | null; avatar_url: string | null } | null };
 
 export default function Social() {
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -32,7 +33,9 @@ export default function Social() {
       if (profileResult.error) throw profileResult.error;
       businessMap = Object.fromEntries((businessResult.data ?? []).map(item => [item.id, { name: item.name, slug: item.slug, logo_url: item.logo_url }]));
       profileMap = Object.fromEntries((profileResult.data ?? []).map(item => [item.id, { display_name: item.display_name, avatar_url: item.avatar_url }]));
-      const enriched = items.map(item => ({ ...item, businesses: item.business_id ? businessMap[item.business_id] ?? null : null, profile: profileMap[item.author_id] ?? null }));
+      const mediaPairs=await Promise.all(items.map(async item=>[item.id,await signedPostMedia(item.id)] as const));
+      const mediaMap=Object.fromEntries(mediaPairs);
+      const enriched = items.map(item => ({ ...item, media:mediaMap[item.id]??[], businesses: item.business_id ? businessMap[item.business_id] ?? null : null, profile: profileMap[item.author_id] ?? null }));
       setPosts(current => reset ? enriched : [...current, ...enriched]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'We could not load discovery right now.');
@@ -69,15 +72,17 @@ export default function Social() {
       onEndReached={loadNext}
       onEndReachedThreshold={0.5}
       ListHeaderComponent={<>
-        <View style={s.header}><View><Text style={s.eyebrow}>EVEREST LOCAL</Text><Text style={s.title}>Discover</Text></View><Pressable onPress={() => router.push('/search')} style={s.search}><Ionicons name="search" size={19}/></Pressable></View>
-        <Text style={s.subtitle}>Real work, businesses and local experiences from the marketplace.</Text>
+        <View style={s.header}><View><Text style={s.eyebrow}>EVEREST LOCAL</Text><Text style={s.title}>Activity</Text></View><View style={s.headerActions}><Pressable onPress={() => router.push('/create-post')} style={s.create}><Ionicons name="add" size={20} color="#fff"/><Text style={s.createText}>POST</Text></Pressable><Pressable onPress={() => router.push('/search')} style={s.search}><Ionicons name="search" size={19}/></Pressable></View></View>
+        <Text style={s.subtitle}>Local posts, businesses, services and real marketplace activity.</Text>
         {error ? <View style={s.error}><Text style={s.errorText}>{error}</Text><Pressable onPress={() => void load()}><Text style={s.retry}>RETRY</Text></Pressable></View> : null}
       </>}
       ListEmptyComponent={<View style={s.empty}><Ionicons name="sparkles-outline" size={28}/><Text style={s.emptyTitle}>Nothing to discover yet</Text><Text style={s.emptyCopy}>Public business and customer posts will appear here as the community publishes them.</Text></View>}
       ListFooterComponent={loadingMore ? <ActivityIndicator style={{ marginVertical: 20 }} /> : null}
       renderItem={({ item }) => <View style={s.card}>
         <View style={s.cardHeader}><Pressable onPress={() => item.business_id ? router.push('/business-profile?id=' + item.business_id) : router.push('/public-user?id=' + item.author_id)} style={s.avatar}>{(item.businesses?.logo_url||item.profile?.avatar_url)?<Image source={{uri:item.businesses?.logo_url??item.profile?.avatar_url??''}} style={s.avatarImage}/>:<Ionicons name={item.business_id ? 'business-outline' : 'person-outline'} size={18}/>}</Pressable><Pressable onPress={() => item.business_id ? router.push('/business-profile?id=' + item.business_id) : router.push('/public-user?id=' + item.author_id)} style={{flex:1}}><Text style={s.business}>{item.businesses?.name ?? item.profile?.display_name ?? 'Community member'}</Text><Text style={s.meta}>{item.post_type.replaceAll('_',' ')} · {new Date(item.created_at).toLocaleDateString()}</Text></Pressable><Pressable onPress={() => item.business_id ? router.push('/business-profile?id=' + item.business_id) : router.push('/public-user?id=' + item.author_id)}><Text style={s.link}>VIEW</Text></Pressable></View>
+        {item.media?.length ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.mediaRow}>{item.media.map((uri,index)=><Image key={uri} source={{uri}} style={[s.media,item.media!.length===1&&s.mediaSingle]} accessibilityLabel={`Post image ${index+1}`}/>)}</ScrollView> : null}
         {item.caption ? <Text style={s.caption}>{item.caption}</Text> : null}
+        {item.location_label ? <Text style={s.location}>📍 {item.location_label}</Text> : null}
         <View style={s.ctas}>
           {item.service_id ? <Pressable style={s.cta} onPress={() => router.push('/request?serviceId=' + item.service_id)}><Text style={s.ctaText}>GET QUOTE</Text></Pressable> : null}
           {item.product_id ? <Pressable style={s.cta} onPress={() => router.push('/product?id=' + item.product_id)}><Text style={s.ctaText}>VIEW PRODUCT</Text></Pressable> : null}
@@ -89,5 +94,5 @@ export default function Social() {
 }
 
 const s=StyleSheet.create({
-  safe:{flex:1,backgroundColor:'#f8f7f4'},page:{padding:20,paddingBottom:40},header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8},eyebrow:{fontSize:9,fontWeight:'900',letterSpacing:2,color:'#777'},title:{fontSize:30,fontWeight:'900',marginTop:3},search:{width:44,height:44,borderRadius:14,backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc',alignItems:'center',justifyContent:'center'},subtitle:{fontSize:12,lineHeight:18,color:'#666',marginBottom:16},card:{backgroundColor:'#fff',borderRadius:19,borderWidth:1,borderColor:'#e5e2dc',padding:16,marginBottom:12},cardHeader:{flexDirection:'row',alignItems:'center',gap:10},avatar:{width:42,height:42,borderRadius:14,backgroundColor:'#f0eee9',alignItems:'center',justifyContent:'center',overflow:'hidden'},avatarImage:{width:42,height:42},business:{fontSize:14,fontWeight:'800'},meta:{fontSize:9,fontWeight:'700',letterSpacing:.4,color:'#888',marginTop:3,textTransform:'uppercase'},caption:{fontSize:14,lineHeight:21,color:'#333',marginTop:14},link:{fontSize:9,fontWeight:'900'},ctas:{flexDirection:'row',gap:8,marginTop:14,flexWrap:'wrap'},cta:{height:38,paddingHorizontal:13,borderRadius:11,backgroundColor:'#111',alignItems:'center',justifyContent:'center'},ctaText:{color:'#fff',fontSize:9,fontWeight:'900'},secondaryCta:{height:38,paddingHorizontal:13,borderRadius:11,borderWidth:1,borderColor:'#d8d3ca',alignItems:'center',justifyContent:'center'},secondaryText:{fontSize:9,fontWeight:'900'},error:{backgroundColor:'#fff3f0',borderRadius:13,padding:13,marginBottom:12},errorText:{fontSize:11,color:'#8a2d20'},retry:{fontSize:10,fontWeight:'900',marginTop:7},empty:{alignItems:'center',padding:50},emptyTitle:{fontSize:18,fontWeight:'900',marginTop:12},emptyCopy:{fontSize:12,lineHeight:18,color:'#777',textAlign:'center',marginTop:6,maxWidth:320}
+  safe:{flex:1,backgroundColor:'#f8f7f4'},page:{padding:20,paddingBottom:40},header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8},headerActions:{flexDirection:'row',gap:8,alignItems:'center'},create:{height:44,borderRadius:14,backgroundColor:'#111',paddingHorizontal:13,flexDirection:'row',gap:5,alignItems:'center',justifyContent:'center'},createText:{fontSize:9,fontWeight:'900',color:'#fff'},eyebrow:{fontSize:9,fontWeight:'900',letterSpacing:2,color:'#777'},title:{fontSize:30,fontWeight:'900',marginTop:3},search:{width:44,height:44,borderRadius:14,backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc',alignItems:'center',justifyContent:'center'},subtitle:{fontSize:12,lineHeight:18,color:'#666',marginBottom:16},card:{backgroundColor:'#fff',borderRadius:19,borderWidth:1,borderColor:'#e5e2dc',padding:16,marginBottom:12},cardHeader:{flexDirection:'row',alignItems:'center',gap:10},avatar:{width:42,height:42,borderRadius:14,backgroundColor:'#f0eee9',alignItems:'center',justifyContent:'center',overflow:'hidden'},avatarImage:{width:42,height:42},business:{fontSize:14,fontWeight:'800'},meta:{fontSize:9,fontWeight:'700',letterSpacing:.4,color:'#888',marginTop:3,textTransform:'uppercase'},mediaRow:{gap:8,marginTop:14},media:{width:220,height:220,borderRadius:14,backgroundColor:'#eee'},mediaSingle:{width:300},caption:{fontSize:14,lineHeight:21,color:'#333',marginTop:14},location:{fontSize:10,fontWeight:'700',color:'#777',marginTop:9},link:{fontSize:9,fontWeight:'900'},ctas:{flexDirection:'row',gap:8,marginTop:14,flexWrap:'wrap'},cta:{height:38,paddingHorizontal:13,borderRadius:11,backgroundColor:'#111',alignItems:'center',justifyContent:'center'},ctaText:{color:'#fff',fontSize:9,fontWeight:'900'},secondaryCta:{height:38,paddingHorizontal:13,borderRadius:11,borderWidth:1,borderColor:'#d8d3ca',alignItems:'center',justifyContent:'center'},secondaryText:{fontSize:9,fontWeight:'900'},error:{backgroundColor:'#fff3f0',borderRadius:13,padding:13,marginBottom:12},errorText:{fontSize:11,color:'#8a2d20'},retry:{fontSize:10,fontWeight:'900',marginTop:7},empty:{alignItems:'center',padding:50},emptyTitle:{fontSize:18,fontWeight:'900',marginTop:12},emptyCopy:{fontSize:12,lineHeight:18,color:'#777',textAlign:'center',marginTop:6,maxWidth:320}
 });

@@ -14,6 +14,7 @@ export interface SocialPost {
   visibility: 'PUBLIC' | 'FOLLOWERS';
   service_id: string | null;
   product_id: string | null;
+  location_label: string | null;
   status: 'DRAFT' | 'PUBLISHED' | 'HIDDEN' | 'REMOVED';
   created_at: string;
   updated_at: string;
@@ -100,30 +101,20 @@ export async function createPost(input: {
   visibility?: 'PUBLIC' | 'FOLLOWERS';
   serviceId?: string;
   productId?: string;
+  locationLabel?: string;
 }): Promise<string> {
   requireSupabaseConfig();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Authentication required.');
-  const caption = input.caption?.trim() || null;
-  if (!caption && !input.serviceId && !input.productId) {
-    throw new Error('Add a caption, service or product to publish a post.');
-  }
-  const { data, error } = await supabase
-    .from('posts')
-    .insert({
-      author_id: user.id,
-      business_id: input.businessId ?? null,
-      caption,
-      post_type: input.postType ?? 'UPDATE',
-      visibility: input.visibility ?? 'PUBLIC',
-      service_id: input.serviceId ?? null,
-      product_id: input.productId ?? null,
-      status: 'PUBLISHED',
-    })
-    .select('id')
-    .single();
+  const { data, error } = await supabase.rpc('publish_post', {
+    p_business_id: input.businessId ?? null,
+    p_caption: input.caption?.trim() || null,
+    p_post_type: input.postType ?? 'UPDATE',
+    p_visibility: input.visibility ?? 'PUBLIC',
+    p_service_id: input.serviceId ?? null,
+    p_product_id: input.productId ?? null,
+    p_location_label: input.locationLabel?.trim() || null,
+  });
   if (error) throw new Error(error.message);
-  return data.id;
+  return data as string;
 }
 
 export async function listPublicPosts(input: { limit?: number; offset?: number; businessId?: string } = {}): Promise<SocialPost[]> {
@@ -132,7 +123,7 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
   const offset = Math.max(input.offset ?? 0, 0);
   let query = supabase
     .from('posts')
-    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,status,created_at,updated_at')
+    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,created_at,updated_at')
     .eq('status', 'PUBLISHED')
     .eq('visibility', 'PUBLIC')
     .order('created_at', { ascending: false })
@@ -145,6 +136,12 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
 
 export async function deletePost(postId: string): Promise<void> {
   requireSupabaseConfig();
-  const { error } = await supabase.from('posts').delete().eq('id', postId);
+  const { error } = await supabase.from('posts').update({ status: 'REMOVED', updated_at: new Date().toISOString() }).eq('id', postId);
   if (error) throw new Error(error.message);
+}
+
+export async function updatePostCaption(postId:string,caption:string):Promise<void>{
+  requireSupabaseConfig();
+  const {error}=await supabase.from('posts').update({caption:caption.trim()||null,updated_at:new Date().toISOString()}).eq('id',postId);
+  if(error)throw new Error(error.message);
 }

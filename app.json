@@ -25,9 +25,15 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Everest Local uses your photos to verify driver documents and vehicle images.",
-          "cameraPermission": "Everest Local uses your camera to verify driver documents and vehicle images.",
+          "photosPermission": "Everest Local uses photos you choose for service requests, posts, products, profile images and verification.",
+          "cameraPermission": "Everest Local uses the camera only when you choose to capture media for supported features.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Everest Local uses your location only when you choose it to confirm where a local service is needed."
         }
       ]
     ],
