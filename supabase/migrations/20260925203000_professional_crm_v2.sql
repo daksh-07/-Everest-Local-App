@@ -212,7 +212,16 @@ alter table public.crm_opportunities add constraint crm_opportunities_crm_quote_
 alter table public.crm_opportunities drop constraint if exists crm_opportunities_crm_booking_business_fk;
 alter table public.crm_opportunities add constraint crm_opportunities_crm_booking_business_fk foreign key(linked_crm_booking_id,business_id) references public.crm_bookings(id,business_id) on delete set null;
 
-DO $$
+alter table public.crm_pipelines enable row level security;
+alter table public.crm_pipeline_stages enable row level security;
+alter table public.crm_opportunities enable row level security;
+alter table public.crm_tags enable row level security;
+alter table public.crm_contact_tags enable row level security;
+alter table public.crm_quotes enable row level security;
+alter table public.crm_quote_items enable row level security;
+alter table public.crm_bookings enable row level security;
+
+DO $
 DECLARE t text;
 BEGIN
   FOREACH t IN ARRAY ARRAY['crm_pipelines','crm_pipeline_stages','crm_opportunities','crm_tags','crm_contact_tags','crm_quotes','crm_quote_items','crm_bookings']
