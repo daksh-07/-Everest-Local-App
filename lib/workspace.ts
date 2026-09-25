@@ -20,9 +20,9 @@ async function readLocal(key:string){
 }
 async function writeLocal(key:string,value:string|null){
   try{
-    if(Platform.OS==='web'){if(typeof window==='undefined')return;value===null?window.localStorage.removeItem(key):window.localStorage.setItem(key,value);return;}
+    if(Platform.OS==='web'){if(typeof window==='undefined')return;if(value===null)window.localStorage.removeItem(key);else window.localStorage.setItem(key,value);return;}
     if(value===null)await SecureStore.deleteItemAsync(key);else await SecureStore.setItemAsync(key,value);
-  }catch{}
+  }catch{return;}
 }
 
 export async function getWorkspaceContext():Promise<WorkspaceContext>{
