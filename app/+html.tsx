@@ -111,6 +111,16 @@ export default function Root({ children }: PropsWithChildren) {
             touch-action: manipulation;
           }
 
+          [data-everest-composer="true"],
+          [data-everest-composer="true"]:focus,
+          [data-everest-composer="true"]:focus-visible,
+          [data-everest-composer="true"]:focus-within,
+          [data-everest-composer="true"] textarea,
+          [data-everest-composer="true"] textarea:focus,
+          [data-everest-composer="true"] textarea:focus-visible,
+          [data-everest-composer="true"] input,
+          [data-everest-composer="true"] input:focus,
+          [data-everest-composer="true"] input:focus-visible,
           #everest-message-composer,
           #everest-message-composer:focus,
           #everest-message-composer:focus-visible,
@@ -119,14 +129,28 @@ export default function Root({ children }: PropsWithChildren) {
           textarea#everest-message-composer:focus-visible {
             -webkit-appearance: none !important;
             appearance: none !important;
-            outline: none !important;
+            outline: 0 !important;
             outline-width: 0 !important;
             outline-color: transparent !important;
             box-shadow: none !important;
             -webkit-box-shadow: none !important;
             -webkit-tap-highlight-color: transparent !important;
             -webkit-focus-ring-color: transparent !important;
+          }
+
+          [data-everest-composer="true"] textarea,
+          [data-everest-composer="true"] input,
+          #everest-message-composer {
+            border: 0 !important;
+            border-color: transparent !important;
+            background: transparent !important;
             caret-color: var(--everest-text, #111) !important;
+          }
+
+          [data-everest-composer="true"] {
+            transition: border-color 180ms cubic-bezier(.2,.8,.2,1),
+                        box-shadow 180ms cubic-bezier(.2,.8,.2,1),
+                        transform 180ms cubic-bezier(.2,.8,.2,1);
           }
 
           [data-everest-message-bubble="true"],
