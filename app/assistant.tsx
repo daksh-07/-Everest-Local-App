@@ -8,8 +8,8 @@ import { useAppTheme, type ThemeColors } from '@/lib/theme';
 import { getWorkspaceContext,type AppMode } from '@/lib/workspace';
 
 type AssistantAction = { kind: string; id?: string; title: string; href: string };
-const SAFE_ACTION_KINDS = new Set(['VIEW_BUSINESS','VIEW_PRODUCT','CREATE_REQUEST','VIEW_ORDER','VIEW_BOOKING','OPEN_MESSAGE','VIEW_QUOTE','OPEN_OPPORTUNITIES','OPEN_SEARCH','OPEN_DRIVER_APPLICATION','OPEN_BUSINESS_HOME','OPEN_BUSINESS_LEADS','OPEN_BUSINESS_JOBS','OPEN_BUSINESS_INBOX']);
-const SAFE_STATIC_ROUTES = new Set(['/request','/orders','/bookings','/messages','/quotes','/opportunities','/search','/driver-verification','/business-today','/business-leads','/business-jobs','/business-inbox','/business-control']);
+const SAFE_ACTION_KINDS = new Set(['VIEW_BUSINESS','VIEW_PRODUCT','CREATE_REQUEST','VIEW_ORDER','VIEW_BOOKING','OPEN_MESSAGE','VIEW_QUOTE','OPEN_OPPORTUNITIES','OPEN_SEARCH','OPEN_DRIVER_APPLICATION','OPEN_BUSINESS_HOME','OPEN_BUSINESS_LEADS','OPEN_BUSINESS_JOBS','OPEN_BUSINESS_INBOX','OPEN_CUSTOMER_CALENDAR']);
+const SAFE_STATIC_ROUTES = new Set(['/request','/orders','/bookings','/messages','/quotes','/opportunities','/search','/driver-verification','/business-today','/business-leads','/business-jobs','/business-inbox','/business-control','/customer-calendar']);
 function isSafeAssistantHref(href:string){
   if(SAFE_STATIC_ROUTES.has(href))return true;
   const [path,query='']=href.split('?',2);
