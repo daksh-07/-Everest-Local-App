@@ -39,7 +39,7 @@ export async function reorderProductImages(images:ProductImage[]){for(let i=0;i<
 
 export async function setProductInventory(productId:string,quantity:number,lowStockThreshold=5){if(!Number.isInteger(quantity)||quantity<0)throw new Error('Stock must be a whole number.');const {data,error}=await supabase.rpc('set_product_inventory',{p_product_id:productId,p_quantity:quantity,p_low_stock_threshold:lowStockThreshold});if(error)throw new Error(userFacingError(error,'Inventory could not be saved.'));return Boolean(data)}
 
-export async function assignVariantImage(variantId:string,imageId:string|null){const {data,error}=await supabase.rpc('set_product_variant_image',{p_variant_id:variantId,p_image_id:imageId});if(error)throw new Error(userFacingError(error,'Variant image could not be saved.'));return Boolean(data)}
+export async function setVariantImage(variantId:string,imageId:string|null){const {data,error}=await supabase.rpc('set_product_variant_image',{p_variant_id:variantId,p_image_id:imageId});if(error)throw new Error(userFacingError(error,'Variant image could not be saved.'));return Boolean(data)}
 
 export async function deleteVariant(variantId:string){const {error}=await supabase.from('product_variants').delete().eq('id',variantId);if(error)throw new Error(userFacingError(error,'Product option could not be removed.'))}
 
