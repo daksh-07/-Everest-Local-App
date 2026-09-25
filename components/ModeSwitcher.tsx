@@ -1,5 +1,5 @@
 import { useEffect,useMemo,useState } from 'react';
-import { Modal,Pressable,StyleSheet,Text,View } from 'react-native';
+import { Modal,Platform,Pressable,StyleSheet,Text,View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
@@ -12,7 +12,7 @@ export function ModeSwitcher({compact=false}:{compact?:boolean}){
  useEffect(()=>{if(!open)return;void getWorkspaceContext().then(ctx=>{setBusinesses(ctx.businesses);setMode(ctx.mode);setActive(ctx.active_business_id)}).catch(()=>{});},[open]);
  async function choose(nextMode:'CUSTOMER'|'BUSINESS',businessId:string|null){
   if(busy)return;setBusy(true);
-  try{await setWorkspacePreference(nextMode,businessId);if(process.env.EXPO_OS!=='web')await Haptics.selectionAsync();setMode(nextMode);setActive(businessId);setOpen(false);router.replace(nextMode==='BUSINESS'?'/business-today':'/');}finally{setBusy(false)}
+  try{await setWorkspacePreference(nextMode,businessId);if(Platform.OS!=='web')await Haptics.selectionAsync();setMode(nextMode);setActive(businessId);setOpen(false);router.replace(nextMode==='BUSINESS'?'/business-today':'/');}finally{setBusy(false)}
  }
  return <><Pressable accessibilityLabel="Switch mode" onPress={()=>setOpen(true)} style={[s.trigger,compact&&s.compact]}><Ionicons name="swap-horizontal" size={17} color={colors.text}/>{!compact&&<Text style={s.triggerText}>Switch mode</Text>}</Pressable>
  <Modal visible={open} transparent animationType="fade" onRequestClose={()=>setOpen(false)}><Pressable style={s.backdrop} onPress={()=>setOpen(false)}><Pressable style={s.sheet} onPress={()=>{}}><Text style={s.eyebrow}>SWITCH MODE</Text><Text style={s.title}>Choose how you’re using Everest</Text>
