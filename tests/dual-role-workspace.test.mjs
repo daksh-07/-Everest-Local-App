@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { URL } from 'node:url';
 
 const migration=fs.readFileSync(new URL('../supabase/migrations/20260925150000_dual_role_workspace_preferences.sql',import.meta.url),'utf8');
 const workspace=fs.readFileSync(new URL('../lib/workspace.ts',import.meta.url),'utf8');
