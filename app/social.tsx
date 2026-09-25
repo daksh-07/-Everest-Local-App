@@ -6,8 +6,9 @@ import { router } from 'expo-router';
 import { listPublicPosts, type SocialPost } from '@/lib/social';
 import { signedPostMedia } from '@/lib/request-post-media';
 import { supabase } from '@/lib/supabase';
+import {resolveCustomerLocality} from '@/lib/customer-location';
 
-type FeedPost = SocialPost & { media?:string[]; businesses?: { name: string; slug: string; logo_url: string | null } | null; profile?: { display_name: string | null; avatar_url: string | null } | null };
+type FeedPost = SocialPost & { media?:string[]; businesses?: { name: string; slug: string; logo_url: string | null; suburb:string|null; city:string|null; state:string|null } | null; profile?: { display_name: string | null; avatar_url: string | null } | null };
 
 export default function Social() {
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -15,6 +16,7 @@ export default function Social() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
+  const [localityName,setLocalityName]=useState('your area');
 
   const load = useCallback(async (reset = true, offset = 0) => {
     if (reset) setLoading(true);
@@ -23,19 +25,37 @@ export default function Social() {
       const items = await listPublicPosts({ limit: 20, offset });
       const ids = items.map(item => item.business_id).filter((value): value is string => Boolean(value));
       const authorIds = [...new Set(items.map(item => item.author_id).filter(Boolean))];
-      let businessMap: Record<string, { name: string; slug: string; logo_url: string | null }> = {};
+      let businessMap: Record<string, { name: string; slug: string; logo_url: string | null; suburb:string|null; city:string|null; state:string|null }> = {};
       let profileMap: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
       const [businessResult, profileResult] = await Promise.all([
-        ids.length ? supabase.from('businesses').select('id,name,slug,logo_url').in('id', ids) : Promise.resolve({ data: [], error: null }),
+        ids.length ? supabase.from('businesses').select('id,name,slug,logo_url,suburb,city,state').in('id', ids) : Promise.resolve({ data: [], error: null }),
         authorIds.length ? supabase.from('public_profiles').select('id,display_name,avatar_url').in('id', authorIds).eq('visibility','PUBLIC') : Promise.resolve({ data: [], error: null }),
       ]);
       if (businessResult.error) throw businessResult.error;
       if (profileResult.error) throw profileResult.error;
-      businessMap = Object.fromEntries((businessResult.data ?? []).map(item => [item.id, { name: item.name, slug: item.slug, logo_url: item.logo_url }]));
+      businessMap = Object.fromEntries((businessResult.data ?? []).map(item => [item.id, { name: item.name, slug: item.slug, logo_url: item.logo_url, suburb:item.suburb, city:item.city, state:item.state }]));
       profileMap = Object.fromEntries((profileResult.data ?? []).map(item => [item.id, { display_name: item.display_name, avatar_url: item.avatar_url }]));
       const mediaPairs=await Promise.all(items.map(async item=>[item.id,await signedPostMedia(item.id)] as const));
       const mediaMap=Object.fromEntries(mediaPairs);
-      const enriched = items.map(item => ({ ...item, media:mediaMap[item.id]??[], businesses: item.business_id ? businessMap[item.business_id] ?? null : null, profile: profileMap[item.author_id] ?? null }));
+      let enriched = items.map(item => ({ ...item, media:mediaMap[item.id]??[], businesses: item.business_id ? businessMap[item.business_id] ?? null : null, profile: profileMap[item.author_id] ?? null }));
+      if(reset){
+        const locality=await resolveCustomerLocality({requestIfUndetermined:false}).catch(()=>null);
+        let terms:string[]=[];
+        if(locality){
+          setLocalityName(locality.suburb||locality.city||'your area');
+          terms=[locality.suburb,locality.city,locality.state].map(v=>v.trim().toLowerCase()).filter(Boolean);
+        }else{
+          const {data:{user}}=await supabase.auth.getUser();
+          if(user){
+            const {data:p}=await supabase.from('profiles').select('suburb,city,state').eq('id',user.id).maybeSingle();
+            if(p?.suburb||p?.city){setLocalityName(p.suburb||p.city||'your area');terms=[p.suburb,p.city,p.state].filter(Boolean).map(v=>String(v).trim().toLowerCase());}
+          }
+        }
+        if(terms.length){
+          const score=(post:FeedPost)=>{const place=[post.location_label,post.businesses?.suburb,post.businesses?.city,post.businesses?.state].filter(Boolean).join(' ').toLowerCase();return terms.reduce((n,t,i)=>n+(place.includes(t)?3-i:0),0)};
+          enriched=[...enriched].sort((a,b)=>score(b)-score(a));
+        }
+      }
       setPosts(current => reset ? enriched : [...current, ...enriched]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'We could not load discovery right now.');
@@ -73,7 +93,7 @@ export default function Social() {
       onEndReachedThreshold={0.5}
       ListHeaderComponent={<>
         <View style={s.header}><View><Text style={s.eyebrow}>EVEREST LOCAL</Text><Text style={s.title}>Activity</Text></View><View style={s.headerActions}><Pressable onPress={() => router.push('/create-post')} style={s.create}><Ionicons name="add" size={20} color="#fff"/><Text style={s.createText}>POST</Text></Pressable><Pressable onPress={() => router.push('/search')} style={s.search}><Ionicons name="search" size={19}/></Pressable></View></View>
-        <Text style={s.subtitle}>Local posts, businesses, services and real marketplace activity.</Text>
+        <Text style={s.subtitle}>What’s happening around {localityName}: local posts, businesses, services and marketplace activity.</Text>
         {error ? <View style={s.error}><Text style={s.errorText}>{error}</Text><Pressable onPress={() => void load()}><Text style={s.retry}>RETRY</Text></Pressable></View> : null}
       </>}
       ListEmptyComponent={<View style={s.empty}><Ionicons name="sparkles-outline" size={28}/><Text style={s.emptyTitle}>Nothing to discover yet</Text><Text style={s.emptyCopy}>Public business and customer posts will appear here as the community publishes them.</Text></View>}
