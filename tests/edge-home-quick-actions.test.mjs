@@ -33,9 +33,12 @@ test('home uses contextual real-data sections rather than fabricated metrics',()
  assert.doesNotMatch(home,/trending score|fake distance|popular now/i);
 });
 
-test('home exposes the four core product actions and universal search',()=>{
- for(const label of ['Request a Quote','Find Services','Shop Local','Ask Everest'])assert.match(home,new RegExp(label));
+test('home exposes the primary quote action, core discovery shortcuts and universal search',()=>{
+ assert.match(home,/accessibilityLabel="Request a Quote"/);
+ assert.match(home,/Get matched with local businesses/);
+ for(const label of ['Find Services','Shop Local','Ask Everest','Local Feed'])assert.match(home,new RegExp(label));
  assert.match(home,/Search people, services, businesses/);
+ assert.doesNotMatch(home,/label:'Request a Quote'/);
 });
 
 test('bottom navigation respects safe area and provides native haptic selection',()=>{

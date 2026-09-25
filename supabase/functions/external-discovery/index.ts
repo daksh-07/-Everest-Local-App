@@ -17,8 +17,10 @@ Deno.serve(async (request) => {
   const url = Deno.env.get('SUPABASE_URL');
   const anon = Deno.env.get('SUPABASE_ANON_KEY');
   const service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!key || !url || !anon || !service)
-    return new Response(JSON.stringify({ businesses: [], enabled: false }), { headers });
+  if (!key || !url || !anon || !service) {
+    console.error('external-discovery configuration missing', { placesKey: Boolean(key), url: Boolean(url), anon: Boolean(anon), service: Boolean(service) });
+    return new Response(JSON.stringify({ businesses: [], enabled: false, reason: 'configuration_missing' }), { headers });
+  }
 
   try {
     const userClient = createClient(url, anon, {
@@ -58,7 +60,11 @@ Deno.serve(async (request) => {
       body: JSON.stringify({ textQuery: query, pageSize: 5, regionCode: 'AU', languageCode: 'en' }),
       signal: AbortSignal.timeout(4500),
     });
-    if (!upstream.ok) throw new Error('Places unavailable');
+    if (!upstream.ok) {
+      const upstreamText = await upstream.text().catch(()=> '');
+      console.error('Google Places request rejected', { status: upstream.status, body: upstreamText.slice(0,500) });
+      return new Response(JSON.stringify({ businesses: [], enabled: true, unavailable: true, reason: 'places_rejected' }), { headers });
+    }
 
     const data = await upstream.json();
     const candidates = (Array.isArray(data.places) ? data.places : [])
@@ -101,8 +107,9 @@ Deno.serve(async (request) => {
         enquiryFlag?.enabled === true,
       attribution: 'Google Maps',
     }), { headers });
-  } catch {
+  } catch (error) {
+    console.error('external-discovery provider failure', error instanceof Error ? error.message : String(error));
     // Provider failure cannot take down native marketplace search.
-    return new Response(JSON.stringify({ businesses: [], enabled: true, unavailable: true }), { headers });
+    return new Response(JSON.stringify({ businesses: [], enabled: true, unavailable: true, reason: 'provider_failure' }), { headers });
   }
 });
