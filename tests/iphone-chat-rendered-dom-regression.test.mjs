@@ -17,12 +17,11 @@ test('rendered textarea receives its own runtime Safari focus reset',()=>{
  assert.match(runtime,/font-size: 16px !important/);
 });
 
-test('chat root derives usable height directly from visualViewport state',()=>{
+test('chat root does not translate or resize the focused composer during iOS keyboard activation',()=>{
  assert.match(viewport,/window\.visualViewport/);
- assert.match(messages,/height:visualViewport\.height/);
- assert.match(messages,/maxHeight:visualViewport\.height/);
- assert.match(messages,/translateY:visualViewport\.offsetTop/);
  assert.match(messages,/keyboardOpen=Platform\.OS==='web'&&visualViewport\.keyboardInset>80/);
+ assert.doesNotMatch(messages,/height:visualViewport\.height/);
+ assert.doesNotMatch(messages,/translateY:visualViewport\.offsetTop/);
 });
 
 test('near-bottom anchoring happens after layout rather than hard-coded keyboard padding',()=>{
