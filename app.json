@@ -35,6 +35,12 @@
         {
           "locationWhenInUsePermission": "Everest Local uses your location only when you choose it to confirm where a local service is needed."
         }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Everest Local uses your calendar only when you choose to check availability or add confirmed Everest bookings."
+        }
       ]
     ],
     "extra": {
