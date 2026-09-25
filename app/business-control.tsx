@@ -40,7 +40,7 @@ export default function BusinessControl(){
  const verified=business?.verification_status==='VERIFIED';
  const sections=[
   {label:'PUBLIC PROFILE',rows:[['Create post','add-circle-outline','/create-post'],['Posts','images-outline','/social'],['Services','construct-outline','/services'],['Products','cube-outline','/products'],['Service area','location-outline','/service-areas']]},
-  {label:'OPERATIONS',rows:[['Customers & CRM','people-outline','/business-customers'],['Customer orders','bag-handle-outline','/business-orders'],['Jobs & calendar','calendar-outline','/business-jobs'],['Leads & quotes','flash-outline','/business-leads'],['Availability','radio-outline','/business-availability']]},
+  {label:'OPERATIONS',rows:[['CRM workspace','layers-outline','/business-crm'],['Contacts','people-outline','/business-customers'],['Calendar','calendar-outline','/business-calendar'],['Everest marketplace leads','flash-outline','/business-leads'],['Customer orders','bag-handle-outline','/business-orders'],['Availability','radio-outline','/business-availability']]},
   {label:'TRUST & SETTINGS',rows:[['Verification','shield-checkmark-outline','/business-verification'],['Notifications','notifications-outline','/notification-settings'],['Account settings','settings-outline','/settings']]},
  ] as const;
 
