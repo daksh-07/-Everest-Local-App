@@ -52,3 +52,5 @@ const result=await page.evaluate(()=>{
 console.log('EVEREST_FOCUS_DIAGNOSTIC='+JSON.stringify(result,null,2));
 await page.screenshot({path:'focus-probe-webkit.png',fullPage:true});
 await browser.close();
+
+// Diagnostic trigger only; remove before any production merge.
