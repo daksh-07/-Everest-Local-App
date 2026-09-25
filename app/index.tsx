@@ -21,8 +21,10 @@ const categories:ReadonlyArray<readonly[string,IconName,string]>=[
  ['Trades','construct-outline','Trades'],['Garden','leaf-outline','Gardening'],['Events','calendar-outline','Events'],['Professional','briefcase-outline','Professional'],
 ];
 const actions:ReadonlyArray<{label:string;subtitle:string;icon:IconName;route:string}>=[
+ {label:'Request a Quote',subtitle:'Get matched and compare responses',icon:'flash-outline',route:'/request'},
  {label:'Find Services',subtitle:'Browse local professionals',icon:'construct-outline',route:'/search?tab=SERVICE'},
  {label:'Shop Local',subtitle:'Products from local businesses',icon:'bag-handle-outline',route:'/shop'},
+ {label:'Ask Everest',subtitle:'Get help finding the right local option',icon:'sparkles-outline',route:'/assistant'},
  {label:'Local Feed',subtitle:'See what is happening nearby',icon:'people-outline',route:'/social'},
 ];
 
@@ -110,7 +112,7 @@ export default function Home(){
     <View style={s.heroGrid}><View style={s.heroPanel}>
      <Text style={s.heroEyebrow}>{suburb==='Set location'?'YOUR LOCAL MARKETPLACE':`LIVE AROUND ${suburb.toUpperCase()}`}</Text>
      <Text style={s.greeting}>{name?hello:'What do you need today?'}</Text><Text style={s.heroCopy}>Discover trusted local businesses, compare real quotes and manage the whole job in one place.</Text>
-     <Pressable onPress={()=>go('/search')} style={({pressed})=>[s.search,pressed&&s.searchPressed]} accessibilityRole="search"><View style={s.searchIcon}><Ionicons name="search" size={20} color={c.text}/></View><Text style={s.searchText}>What are you looking for?</Text><Ionicons name="options-outline" size={18} color={c.muted}/></Pressable>
+     <Pressable onPress={()=>go('/search')} style={({pressed})=>[s.search,pressed&&s.searchPressed]} accessibilityRole="search"><View style={s.searchIcon}><Ionicons name="search" size={20} color={c.text}/></View><Text style={s.searchText}>Search people, services, businesses</Text><Ionicons name="options-outline" size={18} color={c.muted}/></Pressable>
      <Pressable onPress={()=>go('/request')} style={({pressed})=>[s.primaryIntent,pressed&&s.actionPressed]}><View style={s.primaryIntentIcon}><Ionicons name="flash" size={22} color={c.onBrand}/></View><View style={{flex:1}}><Text style={s.primaryIntentTitle}>Get matched with local businesses</Text><Text style={s.primaryIntentCopy}>Describe the job once. Compare quotes when businesses respond.</Text></View><Ionicons name="arrow-forward" size={20} color={c.onBrand}/></Pressable>
      <View style={s.trustRow}><Trust icon="shield-checkmark" label="Verified businesses"/><Trust icon="location" label="Local matches"/><Trust icon="lock-closed" label="Secure payments"/></View>
      {context?<Pressable onPress={()=>go(context.route)} style={({pressed})=>[s.context,pressed&&s.press]}><View style={s.contextIcon}><Ionicons name={context.kind==='booking'?'calendar-outline':'document-text-outline'} size={19} color={c.brand}/></View><View style={{flex:1}}><Text style={s.contextLabel}>CONTINUE WHERE YOU LEFT OFF</Text><Text style={s.contextTitle}>{context.title}</Text><Text numberOfLines={1} style={s.contextDetail}>{context.detail}</Text></View><Ionicons name="chevron-forward" size={18} color={c.muted}/></Pressable>:null}
