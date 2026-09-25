@@ -42,6 +42,10 @@ export async function configureCustomerCalendar(connectionId:string,patch:Partia
  const userId=await currentUserId();
  const {error}=await supabase.from('customer_calendar_connections').update({...patch,updated_at:new Date().toISOString()}).eq('id',connectionId).eq('user_id',userId);
  if(error)throw new Error(error.message);
+ if(patch.import_busy_time===false){
+  const {error:cleanupError}=await supabase.from('customer_calendar_busy_blocks').delete().eq('connection_id',connectionId).eq('user_id',userId);
+  if(cleanupError)throw new Error(cleanupError.message);
+ }
 }
 
 export async function connectDeviceCalendar(){
