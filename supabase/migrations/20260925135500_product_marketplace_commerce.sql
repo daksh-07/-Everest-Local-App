@@ -644,6 +644,9 @@ grant execute on function public.set_my_cart_item(uuid,integer) to authenticated
 create index if not exists product_variants_image_id_idx on public.product_variants(image_id) where image_id is not null;
 
 drop policy if exists product_variants_business_write on public.product_variants;
+drop policy if exists product_variants_business_insert on public.product_variants;
+drop policy if exists product_variants_business_update on public.product_variants;
+drop policy if exists product_variants_business_delete on public.product_variants;
 create policy product_variants_business_insert on public.product_variants for insert to authenticated
 with check(exists(select 1 from public.products p where p.id=product_id and (public.is_business_member(p.business_id) or public.is_admin())));
 create policy product_variants_business_update on public.product_variants for update to authenticated
@@ -653,6 +656,9 @@ create policy product_variants_business_delete on public.product_variants for de
 using(exists(select 1 from public.products p where p.id=product_id and (public.is_business_member(p.business_id) or public.is_admin())));
 
 drop policy if exists product_images_business_write on public.product_images;
+drop policy if exists product_images_business_insert on public.product_images;
+drop policy if exists product_images_business_update on public.product_images;
+drop policy if exists product_images_business_delete on public.product_images;
 create policy product_images_business_insert on public.product_images for insert to authenticated
 with check(exists(select 1 from public.products p where p.id=product_id and (public.is_business_member(p.business_id) or public.is_admin())));
 create policy product_images_business_update on public.product_images for update to authenticated
