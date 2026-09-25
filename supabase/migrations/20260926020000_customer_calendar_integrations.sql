@@ -21,7 +21,8 @@ create table public.customer_calendar_connections (
   last_synced_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (user_id, provider, provider_account_id)
+  unique (user_id, provider, provider_account_id),
+  unique (id, user_id)
 );
 create index customer_calendar_connections_user_idx
   on public.customer_calendar_connections(user_id, provider, status);
