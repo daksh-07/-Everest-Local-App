@@ -57,15 +57,12 @@ export async function resolveCustomerLocality(options:{requestIfUndetermined?:bo
 }
 
 export async function saveLocalityToProfile(locality:CustomerLocality){
- const {data:{user}}=await supabase.auth.getUser();
- if(!user)return;
- const {error}=await supabase.from('profiles').update({
-  suburb:locality.suburb||null,
-  city:locality.city||null,
-  state:locality.state||null,
-  country:locality.country||null,
-  updated_at:new Date().toISOString(),
- }).eq('id',user.id);
+ const {error}=await supabase.rpc('save_my_locality',{
+  p_suburb:locality.suburb||null,
+  p_city:locality.city||null,
+  p_state:locality.state||null,
+  p_country:locality.country||null,
+ });
  if(error)throw new Error(error.message);
 }
 
