@@ -62,6 +62,8 @@ jobs:
           exit $status
       - name: Edge-to-edge Home and quick actions regressions
         run: npm run test:home-shell
+      - name: Product marketplace regressions
+        run: npm run test:products
       - name: Service dispatch regression tests
         run: npm run test:dispatch && node --test tests/service-aware-dispatch-audit.test.mjs
       - name: Business verification tests

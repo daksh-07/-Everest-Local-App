@@ -21,7 +21,7 @@ const categories:ReadonlyArray<readonly[string,IconName,string]>=[
 const actions:ReadonlyArray<{label:string;subtitle:string;icon:IconName;route:string}>=[
  {label:'Request a Quote',subtitle:'Tell local businesses what you need',icon:'document-text-outline',route:'/request'},
  {label:'Find Services',subtitle:'Browse local professionals',icon:'construct-outline',route:'/search?tab=SERVICE'},
- {label:'Shop Local',subtitle:'Products from local businesses',icon:'bag-handle-outline',route:'/search?tab=PRODUCT'},
+ {label:'Shop Local',subtitle:'Products from local businesses',icon:'bag-handle-outline',route:'/shop'},
  {label:'Ask Everest',subtitle:'Get help across the marketplace',icon:'sparkles-outline',route:'/assistant'},
 ];
 
