@@ -476,3 +476,158 @@ end $$;
 revoke all on function public.set_my_cart_item_v2(uuid,uuid,integer) from public,anon;
 grant execute on function public.set_my_cart_item_v2(uuid,uuid,integer) to authenticated;
 grant execute on function public.create_order_from_cart(text,text,jsonb) to authenticated;
+
+
+-- Tighten public media rows to the same business publication boundary as products.
+drop policy if exists product_images_public_read on public.product_images;
+create policy product_images_public_read on public.product_images for select
+to anon,authenticated
+using(
+  exists(
+    select 1 from public.products p
+    join public.businesses b on b.id=p.business_id
+    where p.id=product_id
+      and (
+        (p.status in ('ACTIVE','OUT_OF_STOCK') and b.status='ACTIVE' and b.verification_status='VERIFIED')
+        or public.is_business_member(p.business_id)
+        or public.is_admin()
+      )
+  )
+);
+
+-- Business-friendly inventory setter for simple (non-variant) listings.
+create or replace function public.set_product_inventory(p_product_id uuid,p_quantity integer,p_low_stock_threshold integer default 5)
+returns boolean language plpgsql security definer set search_path=public as $$
+declare bid uuid;reserved integer;
+begin
+ select p.business_id,i.reserved_quantity into bid,reserved
+ from public.products p join public.inventory i on i.product_id=p.id
+ where p.id=p_product_id for update of i;
+ if bid is null or auth.uid() is null or not public.is_business_member(bid) then raise exception 'Not authorized'; end if;
+ if p_quantity is null or p_quantity<coalesce(reserved,0) then raise exception 'Stock cannot be below reserved quantity'; end if;
+ if p_low_stock_threshold is null or p_low_stock_threshold<0 then raise exception 'Invalid low stock threshold'; end if;
+ update public.inventory set stock_quantity=p_quantity,low_stock_threshold=p_low_stock_threshold,updated_at=now() where product_id=p_product_id;
+ update public.products set
+  status=case
+    when status='ACTIVE' and track_stock and not made_to_order and p_quantity-coalesce(reserved,0)<=0 then 'OUT_OF_STOCK'
+    when status='OUT_OF_STOCK' and (not track_stock or made_to_order or p_quantity-coalesce(reserved,0)>0) then 'ACTIVE'
+    else status end,
+  updated_at=now()
+ where id=p_product_id;
+ return true;
+end $$;
+
+-- Variant media assignment must remain within the same product and business.
+create or replace function public.set_product_variant_image(p_variant_id uuid,p_image_id uuid)
+returns boolean language plpgsql security definer set search_path=public as $$
+declare pid uuid;bid uuid;
+begin
+ select v.product_id,p.business_id into pid,bid from public.product_variants v join public.products p on p.id=v.product_id where v.id=p_variant_id;
+ if pid is null or auth.uid() is null or not public.is_business_member(bid) then raise exception 'Not authorized'; end if;
+ if p_image_id is not null and not exists(select 1 from public.product_images i where i.id=p_image_id and i.product_id=pid) then raise exception 'Image does not belong to this product'; end if;
+ update public.product_variants set image_id=p_image_id,updated_at=now() where id=p_variant_id;
+ return found;
+end $$;
+
+-- Shipping uses the existing order pipeline without inventing a carrier integration.
+create or replace function public.create_order_from_cart(
+  p_idempotency_key text,
+  p_delivery_method text default 'PICKUP',
+  p_delivery_address jsonb default null
+) returns jsonb
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+ uid uuid:=auth.uid();cid uuid;active_oid uuid;active_status public.order_status;active_payment public.payment_status;
+ item record;bid uuid;subtotal numeric:=0;delivery_total numeric:=0;total numeric;oid uuid;onum text;existing_status public.order_status;existing_payment public.payment_status;
+begin
+ if uid is null then raise exception 'Authentication required'; end if;
+ if length(coalesce(p_idempotency_key,''))<12 or length(p_idempotency_key)>128 then raise exception 'Invalid idempotency key'; end if;
+ if p_delivery_method not in ('PICKUP','EVEREST_DELIVERY','SAME_DAY','SHIPPING') then raise exception 'Invalid delivery method'; end if;
+ if p_delivery_method<>'PICKUP' and (p_delivery_address is null or jsonb_typeof(p_delivery_address)<>'object' or length(trim(coalesce(p_delivery_address->>'address_line','')))<5) then raise exception 'A valid delivery address is required'; end if;
+
+ select p.order_id,o.status,o.payment_status into oid,existing_status,existing_payment from public.payments p join public.orders o on o.id=p.order_id where p.idempotency_key=p_idempotency_key and p.customer_id=uid limit 1;
+ if oid is not null then
+  if existing_status='PENDING' and existing_payment='PENDING' then select order_number into onum from public.orders where id=oid;return jsonb_build_object('order_id',oid,'order_number',onum,'reused',true);end if;
+  raise exception 'Checkout attempt is no longer pending; start a new checkout attempt';
+ end if;
+
+ select id,active_checkout_order_id into cid,active_oid from public.carts where customer_id=uid for update;
+ if cid is null then raise exception 'Cart is empty'; end if;
+ if active_oid is not null then
+  select status,payment_status into active_status,active_payment from public.orders where id=active_oid;
+  if active_status='PENDING' and active_payment='PENDING' then select order_number into onum from public.orders where id=active_oid;return jsonb_build_object('order_id',active_oid,'order_number',onum,'reused',true);end if;
+  update public.carts set active_checkout_order_id=null where id=cid;
+ end if;
+
+ create temporary table if not exists _checkout_items(
+   cart_item_id uuid,product_id uuid,variant_id uuid,quantity integer,unit_price numeric,name text,business_id uuid,variant_snapshot jsonb,track_stock boolean,made_to_order boolean
+ ) on commit drop;
+ delete from _checkout_items;
+
+ for item in
+  select ci.id cart_item_id,ci.product_id,ci.variant_id,ci.quantity,p.name,p.price,p.sale_price,p.status,p.business_id,
+   p.delivery_eligible,p.pickup_available,p.shipping_available,p.shipping_fee,p.track_stock,p.made_to_order,
+   b.status business_status,b.verification_status,b.accepts_orders,
+   v.id v_id,v.title v_title,v.option_values v_options,v.price v_price,v.stock_quantity v_stock,v.reserved_quantity v_reserved,v.available v_available
+  from public.cart_items ci
+  join public.products p on p.id=ci.product_id
+  join public.businesses b on b.id=p.business_id
+  left join public.product_variants v on v.id=ci.variant_id and v.product_id=p.id
+  where ci.cart_id=cid
+ loop
+  if item.status<>'ACTIVE' or item.business_status<>'ACTIVE' or item.verification_status<>'VERIFIED' or not item.accepts_orders then raise exception 'A product is no longer available for purchase'; end if;
+  if p_delivery_method='PICKUP' and not item.pickup_available then raise exception 'A product in the cart is not available for pickup'; end if;
+  if p_delivery_method in ('EVEREST_DELIVERY','SAME_DAY') and not item.delivery_eligible then raise exception 'A product in the cart is not eligible for local delivery'; end if;
+  if p_delivery_method='SHIPPING' and not item.shipping_available then raise exception 'A product in the cart is not available for shipping'; end if;
+  if bid is null then bid:=item.business_id;elsif bid<>item.business_id then raise exception 'Checkout currently supports one business per order';end if;
+
+  if p_delivery_method='SHIPPING' then delivery_total:=greatest(delivery_total,coalesce(item.shipping_fee,0)); end if;
+
+  if item.variant_id is not null then
+   if item.v_id is null or not item.v_available then raise exception 'A selected product option is unavailable';end if;
+   if item.track_stock and not item.made_to_order then
+    perform 1 from public.product_variants v where v.id=item.variant_id and v.product_id=item.product_id and v.available and v.stock_quantity-v.reserved_quantity>=item.quantity for update;
+    if not found then raise exception 'Insufficient variant stock';end if;
+   end if;
+   item.unit_price:=coalesce(item.v_price,item.sale_price,item.price);
+   insert into _checkout_items values(item.cart_item_id,item.product_id,item.variant_id,item.quantity,item.unit_price,item.name,item.business_id,jsonb_build_object('id',item.variant_id,'title',item.v_title,'options',item.v_options),item.track_stock,item.made_to_order);
+  else
+   if exists(select 1 from public.product_variants where product_id=item.product_id) then raise exception 'A product option must be selected';end if;
+   if item.track_stock and not item.made_to_order then
+    perform 1 from public.inventory i where i.product_id=item.product_id and i.stock_quantity-i.reserved_quantity>=item.quantity for update;
+    if not found then raise exception 'Insufficient stock';end if;
+   end if;
+   item.unit_price:=coalesce(item.sale_price,item.price);
+   insert into _checkout_items values(item.cart_item_id,item.product_id,null,item.quantity,item.unit_price,item.name,item.business_id,null,item.track_stock,item.made_to_order);
+  end if;
+  subtotal:=subtotal+(item.unit_price*item.quantity);
+ end loop;
+ if not exists(select 1 from _checkout_items) then raise exception 'Cart is empty';end if;
+
+ subtotal:=round(subtotal,2);delivery_total:=round(delivery_total,2);total:=round(subtotal+delivery_total,2);onum:='EL-'||upper(substr(encode(gen_random_bytes(6),'hex'),1,10));
+ insert into public.orders(order_number,customer_id,business_id,status,payment_status,subtotal,delivery_fee,marketplace_fee,tax,total,delivery_method,delivery_address)
+ values(onum,uid,bid,'PENDING','PENDING',subtotal,delivery_total,0,0,total,p_delivery_method,p_delivery_address) returning id into oid;
+ update public.carts set active_checkout_order_id=oid,updated_at=now() where id=cid;
+
+ for item in select * from _checkout_items loop
+  if item.track_stock and not item.made_to_order then
+   if item.variant_id is not null then update public.product_variants set reserved_quantity=reserved_quantity+item.quantity,updated_at=now() where id=item.variant_id;
+   else update public.inventory set reserved_quantity=reserved_quantity+item.quantity,updated_at=now() where product_id=item.product_id;end if;
+  end if;
+  insert into public.order_items(order_id,product_id,variant_id,variant_snapshot,product_name,unit_price,quantity,line_total,source_cart_item_id)
+  values(oid,item.product_id,item.variant_id,item.variant_snapshot,item.name,item.unit_price,item.quantity,round(item.unit_price*item.quantity,2),item.cart_item_id);
+ end loop;
+ insert into public.payments(customer_id,order_id,amount,currency,status,idempotency_key) values(uid,oid,total,'aud','PENDING',p_idempotency_key);
+ return jsonb_build_object('order_id',oid,'order_number',onum,'subtotal',subtotal,'delivery_fee',delivery_total,'total',total,'reused',false);
+end $$;
+
+revoke all on function public.set_product_inventory(uuid,integer,integer) from public,anon;
+grant execute on function public.set_product_inventory(uuid,integer,integer) to authenticated;
+revoke all on function public.set_product_variant_image(uuid,uuid) from public,anon;
+grant execute on function public.set_product_variant_image(uuid,uuid) to authenticated;
+
+grant select on public.product_variants to anon,authenticated;
+revoke insert,update,delete on public.product_variants from anon,authenticated;
