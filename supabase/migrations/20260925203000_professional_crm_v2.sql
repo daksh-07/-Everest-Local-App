@@ -769,3 +769,40 @@ begin
 end $$;
 revoke all on function public.crm_log_communication(uuid,uuid,uuid,text,text,text) from public,anon;
 grant execute on function public.crm_log_communication(uuid,uuid,uuid,text,text,text) to authenticated;
+
+
+-- Calendar-owned blocked time is private CRM data and tenant-isolated.
+create table if not exists public.crm_calendar_blocks (
+ id uuid primary key default gen_random_uuid(),
+ business_id uuid not null references public.businesses(id) on delete cascade,
+ title text not null default 'Blocked time' check (length(trim(title)) between 1 and 120),
+ starts_at timestamptz not null,
+ ends_at timestamptz not null,
+ created_by uuid references public.profiles(id) on delete set null,
+ created_at timestamptz not null default now(),
+ updated_at timestamptz not null default now(),
+ check (ends_at>starts_at)
+);
+create index if not exists crm_calendar_blocks_time_idx on public.crm_calendar_blocks(business_id,starts_at,ends_at);
+alter table public.crm_calendar_blocks enable row level security;
+revoke all on public.crm_calendar_blocks from anon,authenticated;
+grant select,insert,update,delete on public.crm_calendar_blocks to authenticated;
+drop policy if exists crm_calendar_blocks_member_all on public.crm_calendar_blocks;
+create policy crm_calendar_blocks_member_all on public.crm_calendar_blocks for all to authenticated
+using (public.is_business_member(business_id)) with check (public.is_business_member(business_id));
+drop trigger if exists crm_calendar_blocks_touch on public.crm_calendar_blocks;
+create trigger crm_calendar_blocks_touch before update on public.crm_calendar_blocks for each row execute function public.crm_touch_updated_at();
+
+create or replace function public.crm_create_calendar_block(
+ p_business_id uuid,p_title text,p_starts_at timestamptz,p_ends_at timestamptz
+) returns uuid language plpgsql security invoker set search_path='' as $$
+declare bid uuid;
+begin
+ if auth.uid() is null or not public.is_business_member(p_business_id) then raise exception 'Not authorized'; end if;
+ if p_ends_at<=p_starts_at then raise exception 'Invalid blocked time'; end if;
+ insert into public.crm_calendar_blocks(business_id,title,starts_at,ends_at,created_by)
+ values(p_business_id,coalesce(nullif(trim(p_title),''),'Blocked time'),p_starts_at,p_ends_at,auth.uid()) returning id into bid;
+ return bid;
+end $$;
+revoke all on function public.crm_create_calendar_block(uuid,text,timestamptz,timestamptz) from public,anon;
+grant execute on function public.crm_create_calendar_block(uuid,text,timestamptz,timestamptz) to authenticated;
