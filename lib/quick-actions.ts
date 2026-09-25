@@ -4,7 +4,7 @@ import * as QuickActions from 'expo-quick-actions';
 
 export const PENDING_QUICK_ACTION_KEY='everest-pending-quick-action-route';
 
-export const EVEREST_QUICK_ACTIONS=[
+export const EVEREST_QUICK_ACTIONS:QuickActions.Action[]=[
  {id:'request-quote',title:'Request Quote',icon:'symbol:doc.text',params:{href:'/request'}},
  {id:'messages',title:'Messages',icon:'symbol:message',params:{href:'/messages'}},
  {id:'search',title:'Search',icon:'symbol:magnifyingglass',params:{href:'/search'}},
