@@ -12,6 +12,7 @@ import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {ui} from '@/lib/ui';
 import {resolveCustomerLocality,saveLocalityToProfile,type CustomerLocality} from '@/lib/customer-location';
 
+
 type IconName=keyof typeof Ionicons.glyphMap;
 type BusinessPreview={id:string;name:string;logo_url:string|null;verification_status:string;suburb:string|null;city:string|null;state:string|null};
 type ContextCard={kind:'booking'|'request';title:string;detail:string;route:'/bookings'|'/requests'};
