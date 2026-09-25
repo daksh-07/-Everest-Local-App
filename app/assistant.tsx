@@ -496,7 +496,7 @@ const createStyles = (c: ThemeColors) =>
       textAlign: 'center',
       fontSize: 32,
       lineHeight: 38,
-      fontWeight: '850',
+      fontWeight: '800',
       letterSpacing: -1.1,
     },
     heroCopy: {
@@ -559,7 +559,7 @@ const createStyles = (c: ThemeColors) =>
       color: c.text,
       fontSize: 13,
       lineHeight: 18,
-      fontWeight: '750',
+      fontWeight: '700',
     },
     diagonalArrow: { position: 'absolute', top: 16, right: 16, transform: [{ rotate: '45deg' }] },
 
@@ -606,7 +606,7 @@ const createStyles = (c: ThemeColors) =>
       borderWidth: 1,
       borderColor: c.border,
     },
-    thinkingText: { color: c.textSecondary, fontSize: 12, fontWeight: '650' },
+    thinkingText: { color: c.textSecondary, fontSize: 12, fontWeight: '600' },
 
     actionList: { marginTop: 14, gap: 8 },
     actionButton: {
@@ -642,7 +642,7 @@ const createStyles = (c: ThemeColors) =>
     errorBody: { flex: 1 },
     errorTitle: { color: c.text, fontSize: 12.5, fontWeight: '800' },
     errorText: { color: c.textSecondary, fontSize: 11.5, lineHeight: 17, marginTop: 3 },
-    errorLink: { color: c.brand, fontSize: 11, fontWeight: '850', marginTop: 9 },
+    errorLink: { color: c.brand, fontSize: 11, fontWeight: '800', marginTop: 9 },
 
     composerShell: {
       paddingHorizontal: 14,
