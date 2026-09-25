@@ -11,7 +11,7 @@ function hexToRgba(hex:string,alpha:number){
  return `rgba(${r},${g},${b},${alpha})`;
 }
 
-export function installChatInputWebStyles(brand:string,text:string){
+export function installChatWebRuntimeStyles(brand:string,text:string){
  if(Platform.OS!=='web'||typeof document==='undefined')return()=>{};
  let style=document.getElementById(STYLE_ID) as HTMLStyleElement|null;
  const created=!style;
@@ -47,6 +47,18 @@ export function installChatInputWebStyles(brand:string,text:string){
 #everest-composer-shell:focus-within {
   outline: none !important;
   box-shadow: none !important;
+}
+[data-everest-message-bubble="true"],
+[data-everest-message-bubble="true"] *,
+#everest-message-action-overlay,
+#everest-message-action-overlay * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+[data-everest-message-bubble="true"] {
+  touch-action: manipulation !important;
 }
 `;
  return()=>{
