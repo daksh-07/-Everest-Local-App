@@ -19,7 +19,7 @@ Deno.serve(async req=>{
  try{
   let input:CheckoutRequest={};
   try{input=await req.json() as CheckoutRequest;}catch{input={};}
-  const deliveryMethod=input.delivery_method==='EVEREST_DELIVERY'||input.delivery_method==='SAME_DAY'?input.delivery_method:'PICKUP';
+  const deliveryMethod=input.delivery_method==='EVEREST_DELIVERY'||input.delivery_method==='SAME_DAY'||input.delivery_method==='SHIPPING'?input.delivery_method:'PICKUP';
   const deliveryAddress=deliveryMethod==='PICKUP'?null:input.delivery_address;
   if(deliveryAddress!==null&&typeof deliveryAddress!=='object')return json({error:'Invalid delivery address'},400);
   const {data:rawOrder,error}=await userClient.rpc('create_order_from_cart',{p_idempotency_key:idem,p_delivery_method:deliveryMethod,p_delivery_address:deliveryAddress});
@@ -34,13 +34,13 @@ Deno.serve(async req=>{
     const existingSession=await stripe.checkout.sessions.retrieve(existingPayment.provider_checkout_session_id);
     return json({orderId,orderNumber:order.order_number,total:order.total,checkoutUrl:existingSession.url,reused:true});
   }
-  const {data:rawItems,error:itemError}=await admin.from('order_items').select('product_name,unit_price,quantity').eq('order_id',orderId);
+  const [{data:rawItems,error:itemError},{data:orderTotals,error:orderTotalsError}]=await Promise.all([admin.from('order_items').select('product_name,unit_price,quantity').eq('order_id',orderId),admin.from('orders').select('delivery_fee,total').eq('id',orderId).single()]);if(orderTotalsError)throw orderTotalsError;
   if(itemError)throw itemError;
-  const items=(rawItems??[]) as CheckoutItem[];if(!items.length)throw new Error('Order contains no items');
+  const items=(rawItems??[]) as CheckoutItem[];if(!items.length)throw new Error('Order contains no items');const stripeTotal=items.reduce((sum,i)=>sum+Number(i.unit_price)*i.quantity,0)+Number(orderTotals.delivery_fee||0);if(Math.abs(stripeTotal-Number(orderTotals.total))>0.009)throw new Error('Order total mismatch');
   const stripe=new Stripe(stripeKey,{apiVersion:'2025-07-30.basil'});
   const session=await stripe.checkout.sessions.create({
     mode:'payment',
-    line_items:items.map(i=>({price_data:{currency:'aud',product_data:{name:i.product_name},unit_amount:Math.round(Number(i.unit_price)*100)},quantity:i.quantity})),
+    line_items:[...items.map(i=>({price_data:{currency:'aud',product_data:{name:i.product_name},unit_amount:Math.round(Number(i.unit_price)*100)},quantity:i.quantity})),...(Number(orderTotals.delivery_fee)>0?[{price_data:{currency:'aud',product_data:{name:deliveryMethod==='SHIPPING'?'Shipping':'Delivery'},unit_amount:Math.round(Number(orderTotals.delivery_fee)*100)},quantity:1}]:[])],
     metadata:{order_id:orderId,customer_id:user.id},
     payment_intent_data:{metadata:{order_id:orderId,customer_id:user.id}},
     success_url:`everestlocal://order/success?order_id=${encodeURIComponent(orderId)}`,
