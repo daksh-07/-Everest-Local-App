@@ -289,3 +289,20 @@ export async function setBusinessAvailability(businessId:string,status:BusinessA
  const {error}=await supabase.rpc('set_business_availability',{p_business_id:businessId,p_status:status,p_available_from:availableFrom??null,p_available_until:availableUntil??null});
  if(error)throw new Error(error.message);
 }
+
+
+export type CrmCalendarBlock={id:string;business_id:string;title:string;starts_at:string;ends_at:string;created_at:string;updated_at:string};
+
+export async function listCrmCalendarBlocks(businessId:string,options?:{from?:string;to?:string}){
+ let query=supabase.from('crm_calendar_blocks').select('*').eq('business_id',businessId).order('starts_at');
+ if(options?.from)query=query.gte('starts_at',options.from);
+ if(options?.to)query=query.lt('starts_at',options.to);
+ const {data,error}=await query;if(error)throw new Error(error.message);return (data??[]) as CrmCalendarBlock[];
+}
+export async function createCrmCalendarBlock(businessId:string,title:string,startsAt:string,endsAt:string){
+ const {data,error}=await supabase.rpc('crm_create_calendar_block',{p_business_id:businessId,p_title:title,p_starts_at:startsAt,p_ends_at:endsAt});
+ if(error)throw new Error(error.message);return String(data);
+}
+export async function deleteCrmCalendarBlock(businessId:string,id:string){
+ const {error}=await supabase.from('crm_calendar_blocks').delete().eq('business_id',businessId).eq('id',id);if(error)throw new Error(error.message);
+}
