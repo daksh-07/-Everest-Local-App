@@ -30,7 +30,7 @@ test('keyboard resizing preserves bottom context only when user is near latest m
  assert.match(messages,/nearBottomRef/);
  assert.match(messages,/contentSize\.height-\(contentOffset\.y\+layoutMeasurement\.height\)<120/);
  assert.match(messages,/Math\.abs\(previous-current\)<32/);
- assert.match(messages,/scrollToEnd\(\{animated:!reducedMotion\}\)/);
+ assert.match(messages,/scrollThreadToEndAfterLayout\(threadRef,!reducedMotion\)/);
 });
 
 test('long press measures the selected bubble and uses root modal spotlight geometry',()=>{
@@ -38,14 +38,16 @@ test('long press measures the selected bubble and uses root modal spotlight geom
  assert.match(messages,/type MessageRect=/);
  assert.match(messages,/nativeID="everest-message-action-overlay"/);
  assert.match(messages,/bubbleTop/);
- assert.match(messages,/reactionAbove/);
+ assert.match(messages,/const groupHeight=reactionHeight/);
  assert.match(messages,/safeBottom/);
  assert.match(messages,/opacity:selected\?\.08/);
 });
 
-test('reaction and action surfaces are placed on opposite sides of the spotlight bubble',()=>{
- assert.match(messages,/reactionTop=reactionAbove\?bubbleTop-reactionHeight-gap:bubbleTop\+bubbleHeight\+gap/);
- assert.match(messages,/actionTop=reactionAbove\?bubbleTop\+bubbleHeight\+gap:bubbleTop-actionHeight-gap/);
+test('reaction bubble timestamp and actions occupy one ordered non-overlapping spotlight stack',()=>{
+ assert.match(messages,/const reactionTop=groupTop/);
+ assert.match(messages,/const bubbleTop=groupTop\+\(reactionHeight\?reactionHeight\+gap:0\)/);
+ assert.match(messages,/const timestampTop=bubbleTop\+bubbleHeight/);
+ assert.match(messages,/const actionTop=timestampTop\+timestampHeight\+gap/);
 });
 
 test('message surfaces still suppress Safari text selection only within scoped regions',()=>{
