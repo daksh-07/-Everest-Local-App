@@ -17,7 +17,8 @@
     "test:business-verification": "node --experimental-strip-types --test tests/business-verification.test.mjs",
     "test:dispatch": "node --test tests/service-aware-dispatch.test.mjs",
     "test:external": "node --test tests/external-flow.test.mjs",
-    "test:home-shell": "node --test tests/edge-home-quick-actions.test.mjs"
+    "test:home-shell": "node --test tests/edge-home-quick-actions.test.mjs",
+    "test:products": "node --test tests/product-marketplace-commerce.test.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
