@@ -1,0 +1,37 @@
+name: Validate iOS Native Configuration
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app.json'
+      - 'eas.json'
+      - 'app/_layout.tsx'
+      - 'app/auth.tsx'
+      - 'lib/quick-actions.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/validate-ios-native.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ios-config:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - name: Resolve Expo app config
+        run: npx expo config --type public
+      - name: Generate iOS native project
+        run: npx expo prebuild --platform ios --no-install --clean
+      - name: Verify Everest bundle and quick action module
+        run: |
+          test -d ios
+          grep -R "com.everestlocal.app" ios >/dev/null
+          test -d node_modules/expo-quick-actions
+          node -e "const p=require('./node_modules/expo-quick-actions/package.json'); if(p.version!=='6.0.0') process.exit(1)"
