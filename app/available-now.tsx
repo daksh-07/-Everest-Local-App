@@ -12,7 +12,7 @@ export default function AvailableNow(){
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);const [items,setItems]=useState<Business[]>([]);const [place,setPlace]=useState('your area');const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState('');
  const load=useCallback(async(refresh=false)=>{if(refresh)setRefreshing(true);else setLoading(true);setError('');
   try{
-   let locality=await resolveCustomerLocality({requestIfUndetermined:false}).catch(()=>null);
+   const locality=await resolveCustomerLocality({requestIfUndetermined:false}).catch(()=>null);
    let suburb=locality?.suburb??'',city=locality?.city??'',state=locality?.state??'';
    if(!suburb&&!city){const {data:{user}}=await supabase.auth.getUser();if(user){const {data:p}=await supabase.from('profiles').select('suburb,city,state').eq('id',user.id).maybeSingle();suburb=p?.suburb??'';city=p?.city??'';state=p?.state??'';}}
    setPlace(suburb||city||'your area');
