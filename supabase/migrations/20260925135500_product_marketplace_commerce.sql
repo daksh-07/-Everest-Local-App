@@ -424,7 +424,7 @@ begin
  for item in
   select ci.id cart_item_id,ci.product_id,ci.variant_id,ci.quantity,p.name,p.price,p.sale_price,p.status,p.business_id,p.delivery_eligible,p.pickup_available,p.shipping_available,p.track_stock,p.made_to_order,
    b.status business_status,b.verification_status,b.accepts_orders,
-   v.id v_id,v.title v_title,v.option_values v_options,v.price v_price,v.stock_quantity v_stock,v.reserved_quantity v_reserved,v.available v_available
+   v.id v_id,v.title v_title,v.option_values v_options,v.price v_price,v.stock_quantity v_stock,v.reserved_quantity v_reserved,v.available v_available,null::numeric as unit_price
   from public.cart_items ci
   join public.products p on p.id=ci.product_id
   join public.businesses b on b.id=p.business_id
@@ -572,7 +572,7 @@ begin
   select ci.id cart_item_id,ci.product_id,ci.variant_id,ci.quantity,p.name,p.price,p.sale_price,p.status,p.business_id,
    p.delivery_eligible,p.pickup_available,p.shipping_available,p.shipping_fee,p.track_stock,p.made_to_order,
    b.status business_status,b.verification_status,b.accepts_orders,
-   v.id v_id,v.title v_title,v.option_values v_options,v.price v_price,v.stock_quantity v_stock,v.reserved_quantity v_reserved,v.available v_available
+   v.id v_id,v.title v_title,v.option_values v_options,v.price v_price,v.stock_quantity v_stock,v.reserved_quantity v_reserved,v.available v_available,null::numeric as unit_price
   from public.cart_items ci
   join public.products p on p.id=ci.product_id
   join public.businesses b on b.id=p.business_id
