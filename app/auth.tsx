@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { AuthRolePicker } from '@/components/AuthRolePicker';
+import {consumePendingQuickActionRoute} from '@/lib/quick-actions';
 
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   return (
@@ -198,6 +199,8 @@ function PrimaryButton({
 }
 
 async function routeAfterAuth(selectedIntent: AuthIntent) {
+  const pending=await consumePendingQuickActionRoute();
+  if(pending){router.replace(pending as never);return}
   const { resolvePostAuthRoute } = await import('@/lib/access');
   router.replace(await resolvePostAuthRoute(selectedIntent) as never);
 }
