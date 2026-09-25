@@ -60,6 +60,8 @@ jobs:
           npm run test:security 2>&1 | tee security.log
           status=${PIPESTATUS[0]}
           exit $status
+      - name: Edge-to-edge Home and quick actions regressions
+        run: npm run test:home-shell
       - name: Service dispatch regression tests
         run: npm run test:dispatch && node --test tests/service-aware-dispatch-audit.test.mjs
       - name: Business verification tests
