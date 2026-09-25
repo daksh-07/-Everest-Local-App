@@ -92,9 +92,7 @@ export default function Messages(){
  const initialScrollRef=useRef(true);
  const keyboardOpen=Platform.OS==='web'&&visualViewport.keyboardInset>80;
  const composerBottomInset=keyboardOpen?0:insets.bottom;
- const chatRootStyle=Platform.OS==='web'&&visualViewport.height
-  ? ({height:visualViewport.height,maxHeight:visualViewport.height,minHeight:0,width:'100%',overflow:'hidden',backgroundColor:c.canvas,transform:[{translateY:visualViewport.offsetTop}]} as never)
-  : {flex:1,backgroundColor:c.canvas};
+ const chatRootStyle={flex:1,minHeight:0,width:'100%',overflow:'hidden',backgroundColor:c.canvas} as const;
 
  async function loadHome(silent=false){
   if(!silent)setLoading(true);
@@ -496,7 +494,7 @@ function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,tran
   if(contentOffset.y<36)onReachTop();
   onNearBottomChange(contentSize.height-(contentOffset.y+layoutMeasurement.height)<120);
  };
- return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1,minHeight:0}} keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS==='ios'?'interactive':'on-drag'} maintainVisibleContentPosition={{minIndexForVisible:0}} onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={onInitialContent} contentContainerStyle={{paddingHorizontal:12,paddingTop:8,paddingBottom:8}}>
+ return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1,minHeight:0}} keyboardShouldPersistTaps="always" keyboardDismissMode="none" maintainVisibleContentPosition={{minIndexForVisible:0}} onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={onInitialContent} contentContainerStyle={{paddingHorizontal:12,paddingTop:8,paddingBottom:8}}>
   {items.map((m,index)=>{
    const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;
    const showDate=!prev||!sameDay(prev.created_at,m.created_at);
