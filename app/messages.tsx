@@ -305,6 +305,7 @@ export default function Messages(){
       userId={userId}
       colors={c}
       onAction={(message,x,y)=>{void haptic.medium();setActionTarget({message,x,y})}}
+      selectedId={actionTarget?.message.id??null}
       transitioningId={transitionMessageId}
       reducedMotion={reducedMotion}
       onRetry={retryMessage}
@@ -447,7 +448,7 @@ function MotionMessage({children,mine,selected,exiting,reducedMotion}:{children:
  return <Animated.View style={{opacity:enter,transform:[{translateY:enter.interpolate({inputRange:[0,1],outputRange:[mine?7:5,0]})},{scale:Animated.multiply(baseScale,selectedScale)}]}}>{children}</Animated.View>;
 }
 
-function PersonalThread({refValue,items,userId,colors:c,onAction,transitioningId,reducedMotion,onRetry,onReachTop,onInitialContent}:{refValue:React.MutableRefObject<ScrollView|null>;items:PersonalMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onAction:(m:PersonalMessage,x:number,y:number)=>void;transitioningId:string|null;reducedMotion:boolean;onRetry:(m:PersonalMessage)=>void;onReachTop:()=>void;onInitialContent:()=>void}){
+function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,transitioningId,reducedMotion,onRetry,onReachTop,onInitialContent}:{refValue:React.MutableRefObject<ScrollView|null>;items:PersonalMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onAction:(m:PersonalMessage,x:number,y:number)=>void;selectedId:string|null;transitioningId:string|null;reducedMotion:boolean;onRetry:(m:PersonalMessage)=>void;onReachTop:()=>void;onInitialContent:()=>void}){
  const noSelect=Platform.OS==='web'?({userSelect:'none',WebkitUserSelect:'none',WebkitTouchCallout:'none',touchAction:'manipulation'} as never):undefined;
  return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1}} keyboardShouldPersistTaps="handled" maintainVisibleContentPosition={{minIndexForVisible:0}} onScroll={e=>{if(e.nativeEvent.contentOffset.y<36)onReachTop()}} scrollEventThrottle={250} onContentSizeChange={onInitialContent} contentContainerStyle={{paddingHorizontal:12,paddingTop:8,paddingBottom:8}}>
   {items.map((m,index)=>{
@@ -458,7 +459,7 @@ function PersonalThread({refValue,items,userId,colors:c,onAction,transitioningId
    const webProps=Platform.OS==='web'?{dataSet:{everestMessageBubble:'true'},onContextMenu:(event:{preventDefault?:()=>void;clientX?:number;clientY?:number})=>{event.preventDefault?.();onAction(m,event.clientX??160,event.clientY??300)}}:{};
    const radiusStyle=mine?{borderTopRightRadius:groupedPrev?8:18,borderBottomRightRadius:groupedNext?8:5}:{borderTopLeftRadius:groupedPrev?8:18,borderBottomLeftRadius:groupedNext?8:5};
    const meta=mine?(m.sending?'Sending':m.failed?'Failed · tap to retry':m.read_at?'Seen':'Sent'):'';
-   return <MotionMessage key={m.id} mine={mine} selected={false} exiting={transitioningId===m.id} reducedMotion={reducedMotion}>
+   return <MotionMessage key={m.id} mine={mine} selected={selectedId===m.id} exiting={transitioningId===m.id} reducedMotion={reducedMotion}>
     {showDate?<View style={{alignItems:'center',marginVertical:10}}><Text selectable={false} style={[{fontSize:9,fontWeight:'900',letterSpacing:.8,color:c.muted},noSelect]}>{dateLabel(m.created_at)}</Text></View>:null}
     <View style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}>
      <Pressable {...webProps} onLongPress={event=>onAction(m,event.nativeEvent.pageX??160,event.nativeEvent.pageY??300)} delayLongPress={285} onPress={()=>{if(m.failed)onRetry(m)}} style={({pressed})=>[{maxWidth:'76%',opacity:pressed?.9:1,transform:[{scale:pressed?.992:1}]},noSelect]}>
@@ -523,7 +524,7 @@ function MessageActionMenu({target,userId,colors:c,reducedMotion,onClose,onReply
  ].filter(Boolean) as Array<{key:string;icon:React.ComponentProps<typeof Ionicons>['name'];label:string;fn:()=>void}>;
  return <Modal transparent visible animationType="none" onRequestClose={onClose}>
   <Pressable onPress={onClose} style={{flex:1}}>
-   <Animated.View pointerEvents="none" style={{position:'absolute',inset:0,backgroundColor:'#000',opacity:open.interpolate({inputRange:[0,1],outputRange:[0,.18]})}}/>
+   <Animated.View pointerEvents="none" style={{position:'absolute',top:0,right:0,bottom:0,left:0,backgroundColor:'#000',opacity:open.interpolate({inputRange:[0,1],outputRange:[0,.18]})}}/>
    <Animated.View style={{position:'absolute',left,top,width:cardWidth,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[8,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[.96,1]})}]}}>
     {!message.deleted_for_everyone?<View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',backgroundColor:c.elevated,borderRadius:24,borderWidth:1,borderColor:c.border,paddingHorizontal:7,paddingVertical:6,shadowColor:'#000',shadowOpacity:.2,shadowRadius:14,shadowOffset:{width:0,height:8}}}>{REACTIONS.map(r=><Pressable key={r} accessibilityLabel={'React '+r} onPress={()=>{void haptic.light();onReact(message,r)}} style={({pressed})=>({width:38,height:38,borderRadius:19,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',transform:[{scale:pressed?1.13:1}],opacity:pressed?.84:1})}><Text selectable={false} style={{fontSize:19}}>{r}</Text></Pressable>)}</View>:null}
     <View style={{marginTop:6,alignSelf:mine?'flex-end':'flex-start',flexDirection:'row',backgroundColor:c.elevated,borderRadius:16,borderWidth:1,borderColor:c.border,padding:4,shadowColor:'#000',shadowOpacity:.16,shadowRadius:12,shadowOffset:{width:0,height:6}}}>
