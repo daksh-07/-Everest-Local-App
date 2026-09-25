@@ -569,3 +569,203 @@ drop trigger if exists bookings_crm_sync on public.bookings;
 create trigger bookings_crm_sync after insert or update of status,price,scheduled_date,scheduled_time on public.bookings for each row execute function private.crm_sync_marketplace_booking();
 
 revoke all on public.crm_pipelines,public.crm_pipeline_stages,public.crm_opportunities,public.crm_tags,public.crm_contact_tags,public.crm_quotes,public.crm_quote_items,public.crm_bookings from anon;
+
+
+-- Business-member RPCs used by the CRM client. Calculated totals and tenant relationships
+-- are enforced server-side instead of trusting client-provided business identifiers or totals.
+create or replace function public.crm_create_contact(
+ p_business_id uuid,p_display_name text,p_phone text default null,p_email text default null,p_company text default null,
+ p_source text default 'MANUAL',p_source_detail text default null,p_suburb text default null,p_city text default null,
+ p_state text default null,p_country text default null,p_notes text default null
+) returns uuid language plpgsql security invoker set search_path='' as $$
+declare cid uuid;
+begin
+ if auth.uid() is null or not public.is_business_member(p_business_id) then raise exception 'Not authorized'; end if;
+ if length(trim(coalesce(p_display_name,'')))<1 then raise exception 'Contact name is required'; end if;
+ if p_source not in ('EVEREST','GOOGLE','FACEBOOK','INSTAGRAM','WEBSITE','REFERRAL','PHONE','WALK_IN','EMAIL','MANUAL','IMPORT','OTHER') then raise exception 'Invalid source'; end if;
+ insert into public.business_contacts(
+   business_id,display_name,phone,email,company,source,source_detail,suburb,city,state,country,notes,lifecycle_stage,created_by,last_activity_at
+ ) values(
+   p_business_id,trim(p_display_name),nullif(trim(p_phone),''),nullif(lower(trim(p_email)),''),nullif(trim(p_company),''),
+   p_source,nullif(trim(p_source_detail),''),nullif(trim(p_suburb),''),nullif(trim(p_city),''),nullif(trim(p_state),''),
+   nullif(trim(p_country),''),nullif(trim(p_notes),''),'LEAD',auth.uid(),now()
+ ) returning id into cid;
+ insert into public.crm_activities(business_id,contact_id,kind,title,detail,created_by)
+ values(p_business_id,cid,'CONTACT_CREATED','Contact created','Source: '||replace(p_source,'_',' '),auth.uid());
+ return cid;
+end $$;
+revoke all on function public.crm_create_contact(uuid,text,text,text,text,text,text,text,text,text,text,text) from public,anon;
+grant execute on function public.crm_create_contact(uuid,text,text,text,text,text,text,text,text,text,text,text) to authenticated;
+
+create or replace function public.crm_create_task(
+ p_business_id uuid,p_contact_id uuid,p_opportunity_id uuid,p_title text,p_type text,p_due_at timestamptz,
+ p_priority text default 'NORMAL',p_notes text default null
+) returns uuid language plpgsql security invoker set search_path='' as $$
+declare tid uuid; oid_contact uuid;
+begin
+ if auth.uid() is null or not public.is_business_member(p_business_id) then raise exception 'Not authorized'; end if;
+ if length(trim(coalesce(p_title,'')))<1 then raise exception 'Task title is required'; end if;
+ if p_type not in ('CALL','EMAIL','MESSAGE','FOLLOW_UP','APPOINTMENT','GENERAL') then raise exception 'Invalid task type'; end if;
+ if p_priority not in ('LOW','NORMAL','HIGH') then raise exception 'Invalid priority'; end if;
+ if p_contact_id is not null and not exists(select 1 from public.business_contacts c where c.id=p_contact_id and c.business_id=p_business_id and c.archived_at is null) then raise exception 'Contact not available'; end if;
+ if p_opportunity_id is not null then
+   select contact_id into oid_contact from public.crm_opportunities where id=p_opportunity_id and business_id=p_business_id;
+   if oid_contact is null then raise exception 'Deal not available'; end if;
+   if p_contact_id is not null and oid_contact<>p_contact_id then raise exception 'Task contact does not match deal'; end if;
+ end if;
+ insert into public.crm_tasks(business_id,contact_id,opportunity_id,task,task_type,due_at,priority,notes,owner_id,created_by)
+ values(p_business_id,coalesce(p_contact_id,oid_contact),p_opportunity_id,trim(p_title),p_type,p_due_at,p_priority,nullif(trim(p_notes),''),auth.uid(),auth.uid())
+ returning id into tid;
+ if coalesce(p_contact_id,oid_contact) is not null then
+   insert into public.crm_activities(business_id,contact_id,opportunity_id,kind,title,detail,source_record_type,source_record_id,created_by)
+   values(p_business_id,coalesce(p_contact_id,oid_contact),p_opportunity_id,'TASK_CREATED','Task created',trim(p_title),'CRM_TASK',tid,auth.uid());
+   update public.business_contacts set last_activity_at=now(),next_follow_up_at=
+     case when next_follow_up_at is null or p_due_at<next_follow_up_at then p_due_at else next_follow_up_at end
+   where id=coalesce(p_contact_id,oid_contact) and business_id=p_business_id;
+ end if;
+ return tid;
+end $$;
+revoke all on function public.crm_create_task(uuid,uuid,uuid,text,text,timestamptz,text,text) from public,anon;
+grant execute on function public.crm_create_task(uuid,uuid,uuid,text,text,timestamptz,text,text) to authenticated;
+
+create or replace function public.crm_create_quote(
+ p_business_id uuid,p_contact_id uuid,p_opportunity_id uuid,p_title text,p_items jsonb,
+ p_discount_amount numeric default 0,p_tax_amount numeric default 0,p_deposit_amount numeric default 0,
+ p_notes text default null,p_terms text default null,p_expires_at timestamptz default null
+) returns uuid language plpgsql security invoker set search_path='' as $$
+declare qid uuid; item jsonb; item_desc text; qty numeric; unit numeric; item_discount numeric; gross numeric; calc_subtotal numeric:=0; calc_total numeric;
+begin
+ if auth.uid() is null or not public.is_business_member(p_business_id) then raise exception 'Not authorized'; end if;
+ if not exists(select 1 from public.business_contacts c where c.id=p_contact_id and c.business_id=p_business_id and c.archived_at is null) then raise exception 'Contact not available'; end if;
+ if p_opportunity_id is not null and not exists(select 1 from public.crm_opportunities o where o.id=p_opportunity_id and o.business_id=p_business_id and o.contact_id=p_contact_id) then raise exception 'Deal does not belong to this contact'; end if;
+ if jsonb_typeof(coalesce(p_items,'[]'::jsonb))<>'array' or jsonb_array_length(coalesce(p_items,'[]'::jsonb))=0 then raise exception 'Add at least one line item'; end if;
+ if coalesce(p_discount_amount,0)<0 or coalesce(p_tax_amount,0)<0 or coalesce(p_deposit_amount,0)<0 then raise exception 'Invalid pricing'; end if;
+ for item in select value from jsonb_array_elements(p_items)
+ loop
+   item_desc:=trim(coalesce(item->>'description',''));
+   qty:=coalesce(nullif(item->>'quantity','')::numeric,1);
+   unit:=coalesce(nullif(item->>'unit_price','')::numeric,0);
+   item_discount:=coalesce(nullif(item->>'discount_amount','')::numeric,0);
+   if length(item_desc)<1 or qty<=0 or unit<0 or item_discount<0 then raise exception 'Invalid line item'; end if;
+   gross:=qty*unit;
+   if item_discount>gross then raise exception 'Line item discount exceeds line total'; end if;
+   calc_subtotal:=calc_subtotal+gross-item_discount;
+ end loop;
+ if p_discount_amount>calc_subtotal then raise exception 'Discount exceeds subtotal'; end if;
+ calc_total:=calc_subtotal-p_discount_amount+p_tax_amount;
+ if p_deposit_amount>calc_total then raise exception 'Deposit exceeds total'; end if;
+ insert into public.crm_quotes(
+   business_id,contact_id,opportunity_id,title,discount_amount,tax_amount,subtotal,total,deposit_amount,notes,terms,expires_at,created_by
+ ) values(
+   p_business_id,p_contact_id,p_opportunity_id,nullif(trim(p_title),''),p_discount_amount,p_tax_amount,calc_subtotal,calc_total,p_deposit_amount,
+   nullif(trim(p_notes),''),nullif(trim(p_terms),''),p_expires_at,auth.uid()
+ ) returning id into qid;
+ insert into public.crm_quote_items(business_id,quote_id,description,quantity,unit_price,discount_amount,position)
+ select p_business_id,qid,trim(value->>'description'),
+        coalesce(nullif(value->>'quantity','')::numeric,1),
+        coalesce(nullif(value->>'unit_price','')::numeric,0),
+        coalesce(nullif(value->>'discount_amount','')::numeric,0),
+        (ordinality-1)::integer
+ from jsonb_array_elements(p_items) with ordinality;
+ insert into public.crm_activities(business_id,contact_id,opportunity_id,kind,title,detail,source_record_type,source_record_id,created_by)
+ values(p_business_id,p_contact_id,p_opportunity_id,'QUOTE_CREATED','Quote created','$'||calc_total::text,'CRM_QUOTE',qid,auth.uid());
+ if p_opportunity_id is not null then update public.crm_opportunities set linked_crm_quote_id=qid,last_activity_at=now() where id=p_opportunity_id and business_id=p_business_id; end if;
+ update public.business_contacts set last_activity_at=now() where id=p_contact_id and business_id=p_business_id;
+ return qid;
+end $$;
+revoke all on function public.crm_create_quote(uuid,uuid,uuid,text,jsonb,numeric,numeric,numeric,text,text,timestamptz) from public,anon;
+grant execute on function public.crm_create_quote(uuid,uuid,uuid,text,jsonb,numeric,numeric,numeric,text,text,timestamptz) to authenticated;
+
+create or replace function public.crm_set_quote_status(p_business_id uuid,p_quote_id uuid,p_status text)
+returns boolean language plpgsql security invoker set search_path='' as $$
+declare q public.crm_quotes; now_at timestamptz:=now();
+begin
+ if auth.uid() is null or not public.is_business_member(p_business_id) then raise exception 'Not authorized'; end if;
+ if p_status not in ('DRAFT','SENT','VIEWED','ACCEPTED','DECLINED','EXPIRED','CANCELLED') then raise exception 'Invalid quote status'; end if;
+ select * into q from public.crm_quotes where id=p_quote_id and business_id=p_business_id for update;
+ if q.id is null then raise exception 'Quote not found'; end if;
+ update public.crm_quotes set status=p_status,
+   sent_at=case when p_status='SENT' then coalesce(sent_at,now_at) else sent_at end,
+   viewed_at=case when p_status='VIEWED' then coalesce(viewed_at,now_at) else viewed_at end,
+   accepted_at=case when p_status='ACCEPTED' then coalesce(accepted_at,now_at) else accepted_at end,
+   declined_at=case when p_status='DECLINED' then coalesce(declined_at,now_at) else declined_at end
+ where id=q.id;
+ insert into public.crm_activities(business_id,contact_id,opportunity_id,kind,title,detail,source_record_type,source_record_id,created_by)
+ values(p_business_id,q.contact_id,q.opportunity_id,'QUOTE_'||p_status,'Quote '||lower(p_status),coalesce(q.title,'CRM quote'),'CRM_QUOTE',q.id,auth.uid());
+ if q.opportunity_id is not null and p_status in ('SENT','VIEWED') then
+   update public.crm_opportunities o set stage_id=s.id,last_activity_at=now_at
+   from public.crm_pipeline_stages s where o.id=q.opportunity_id and o.business_id=p_business_id and s.pipeline_id=o.pipeline_id and s.stage_key='QUOTE_SENT';
+ end if;
+ return true;
+end $$;
+revoke all on function public.crm_set_quote_status(uuid,uuid,text) from public,anon;
+grant execute on function public.crm_set_quote_status(uuid,uuid,text) to authenticated;
+
+create or replace function public.crm_create_booking(
+ p_business_id uuid,p_contact_id uuid,p_opportunity_id uuid,p_quote_id uuid,p_service_label text,
+ p_scheduled_start timestamptz,p_duration_minutes integer default 60,p_location_label text default null,
+ p_price numeric default null,p_status text default 'CONFIRMED',p_notes text default null
+) returns uuid language plpgsql security invoker set search_path='' as $$
+declare bid uuid; finish timestamptz;
+begin
+ if auth.uid() is null or not public.is_business_member(p_business_id) then raise exception 'Not authorized'; end if;
+ if not exists(select 1 from public.business_contacts c where c.id=p_contact_id and c.business_id=p_business_id and c.archived_at is null) then raise exception 'Contact not available'; end if;
+ if p_opportunity_id is not null and not exists(select 1 from public.crm_opportunities o where o.id=p_opportunity_id and o.business_id=p_business_id and o.contact_id=p_contact_id) then raise exception 'Deal does not belong to this contact'; end if;
+ if p_quote_id is not null and not exists(select 1 from public.crm_quotes q where q.id=p_quote_id and q.business_id=p_business_id and q.contact_id=p_contact_id) then raise exception 'Quote does not belong to this contact'; end if;
+ if length(trim(coalesce(p_service_label,'')))<1 then raise exception 'Service is required'; end if;
+ if p_duration_minutes<15 or p_duration_minutes>1440 then raise exception 'Invalid duration'; end if;
+ if p_price is not null and p_price<0 then raise exception 'Invalid price'; end if;
+ if p_status not in ('TENTATIVE','CONFIRMED') then raise exception 'New bookings must be tentative or confirmed'; end if;
+ finish:=p_scheduled_start+make_interval(mins=>p_duration_minutes);
+ if exists(select 1 from public.crm_bookings b where b.business_id=p_business_id and b.status not in ('CANCELLED','NO_SHOW') and tstzrange(b.scheduled_start,b.scheduled_end,'[)') && tstzrange(p_scheduled_start,finish,'[)')) then raise exception 'Booking conflicts with an existing CRM booking'; end if;
+ insert into public.crm_bookings(business_id,contact_id,opportunity_id,quote_id,service_label,scheduled_start,scheduled_end,location_label,price,status,notes,created_by)
+ values(p_business_id,p_contact_id,p_opportunity_id,p_quote_id,trim(p_service_label),p_scheduled_start,finish,nullif(trim(p_location_label),''),p_price,p_status,nullif(trim(p_notes),''),auth.uid())
+ returning id into bid;
+ insert into public.crm_activities(business_id,contact_id,opportunity_id,kind,title,detail,source_record_type,source_record_id,created_by)
+ values(p_business_id,p_contact_id,p_opportunity_id,'BOOKING_CREATED','Booking created',trim(p_service_label),'CRM_BOOKING',bid,auth.uid());
+ if p_opportunity_id is not null then update public.crm_opportunities set linked_crm_booking_id=bid,last_activity_at=now() where id=p_opportunity_id and business_id=p_business_id; end if;
+ update public.business_contacts set last_activity_at=now() where id=p_contact_id and business_id=p_business_id;
+ return bid;
+end $$;
+revoke all on function public.crm_create_booking(uuid,uuid,uuid,uuid,text,timestamptz,integer,text,numeric,text,text) from public,anon;
+grant execute on function public.crm_create_booking(uuid,uuid,uuid,uuid,text,timestamptz,integer,text,numeric,text,text) to authenticated;
+
+create or replace function public.crm_set_booking_status(p_business_id uuid,p_booking_id uuid,p_status text)
+returns boolean language plpgsql security invoker set search_path='' as $$
+declare b public.crm_bookings;
+begin
+ if auth.uid() is null or not public.is_business_member(p_business_id) then raise exception 'Not authorized'; end if;
+ if p_status not in ('TENTATIVE','CONFIRMED','IN_PROGRESS','COMPLETED','CANCELLED','NO_SHOW') then raise exception 'Invalid booking status'; end if;
+ select * into b from public.crm_bookings where id=p_booking_id and business_id=p_business_id for update;
+ if b.id is null then raise exception 'Booking not found'; end if;
+ update public.crm_bookings set status=p_status,
+   completed_at=case when p_status='COMPLETED' then coalesce(completed_at,now()) else completed_at end,
+   cancelled_at=case when p_status='CANCELLED' then coalesce(cancelled_at,now()) else cancelled_at end
+ where id=b.id;
+ insert into public.crm_activities(business_id,contact_id,opportunity_id,kind,title,detail,source_record_type,source_record_id,created_by)
+ values(p_business_id,b.contact_id,b.opportunity_id,'BOOKING_'||p_status,'Booking '||lower(replace(p_status,'_',' ')),b.service_label,'CRM_BOOKING',b.id,auth.uid());
+ if p_status='COMPLETED' then update public.business_contacts set lifecycle_stage='CUSTOMER',last_activity_at=now() where id=b.contact_id and business_id=p_business_id; end if;
+ return true;
+end $$;
+revoke all on function public.crm_set_booking_status(uuid,uuid,text) from public,anon;
+grant execute on function public.crm_set_booking_status(uuid,uuid,text) to authenticated;
+
+create or replace function public.crm_log_communication(
+ p_business_id uuid,p_contact_id uuid,p_opportunity_id uuid,p_channel text,p_direction text,p_summary text
+) returns uuid language plpgsql security invoker set search_path='' as $$
+declare aid uuid;
+begin
+ if auth.uid() is null or not public.is_business_member(p_business_id) then raise exception 'Not authorized'; end if;
+ if p_channel not in ('CALL','SMS','EMAIL','INSTAGRAM_DM','FACEBOOK_MESSAGE','OTHER') then raise exception 'Invalid communication channel'; end if;
+ if p_direction not in ('INBOUND','OUTBOUND') then raise exception 'Invalid direction'; end if;
+ if not exists(select 1 from public.business_contacts c where c.id=p_contact_id and c.business_id=p_business_id) then raise exception 'Contact not available'; end if;
+ if p_opportunity_id is not null and not exists(select 1 from public.crm_opportunities o where o.id=p_opportunity_id and o.business_id=p_business_id and o.contact_id=p_contact_id) then raise exception 'Deal does not belong to this contact'; end if;
+ insert into public.crm_activities(business_id,contact_id,opportunity_id,kind,title,detail,channel,metadata,created_by)
+ values(p_business_id,p_contact_id,p_opportunity_id,'COMMUNICATION_LOGGED',replace(p_channel,'_',' ')||' logged',nullif(trim(p_summary),''),p_channel,jsonb_build_object('direction',p_direction),auth.uid())
+ returning id into aid;
+ update public.business_contacts set last_activity_at=now(),last_contact_at=now() where id=p_contact_id and business_id=p_business_id;
+ if p_opportunity_id is not null then update public.crm_opportunities set last_activity_at=now() where id=p_opportunity_id and business_id=p_business_id; end if;
+ return aid;
+end $$;
+revoke all on function public.crm_log_communication(uuid,uuid,uuid,text,text,text) from public,anon;
+grant execute on function public.crm_log_communication(uuid,uuid,uuid,text,text,text) to authenticated;
