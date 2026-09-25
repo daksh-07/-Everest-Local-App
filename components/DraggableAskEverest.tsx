@@ -4,8 +4,8 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/lib/theme';
 
-const BUTTON_WIDTH = 128;
-const BUTTON_HEIGHT = 44;
+const BUTTON_WIDTH = 50;
+const BUTTON_HEIGHT = 50;
 const EDGE = 14;
 const TOP_GUARD = 72;
 const BOTTOM_GUARD = 112;
@@ -130,8 +130,7 @@ export function DraggableAskEverest({ pathname }: { pathname: string }) {
       accessibilityRole="button"
       accessibilityLabel="Ask Everest. Drag to move, or drag to the remove target to hide."
     >
-      <Ionicons name="sparkles" size={13} color={theme.isDark?theme.colors.onBrand:'#fff'} />
-      <Text style={[styles.askButtonText,theme.isDark&&{color:theme.colors.onBrand}]}>Ask Everest</Text>
+      <Ionicons name="sparkles" size={20} color={theme.isDark?theme.colors.onBrand:'#fff'} />
       {shredding && <View pointerEvents="none" style={StyleSheet.absoluteFill}>
         {[0,1,2,3,4,5].map((i) => <Animated.View key={i} style={[
           styles.shredStrip,
@@ -148,12 +147,11 @@ export function DraggableAskEverest({ pathname }: { pathname: string }) {
 
 const styles = StyleSheet.create({
   askButton:{
-    position:'absolute',left:0,top:0,width:BUTTON_WIDTH,height:BUTTON_HEIGHT,borderRadius:22,
-    backgroundColor:'#111',paddingHorizontal:14,flexDirection:'row',gap:7,alignItems:'center',justifyContent:'center',
+    position:'absolute',left:0,top:0,width:BUTTON_WIDTH,height:BUTTON_HEIGHT,borderRadius:25,
+    backgroundColor:'#111',alignItems:'center',justifyContent:'center',
     shadowColor:'#000',shadowOpacity:.14,shadowRadius:10,shadowOffset:{width:0,height:4},elevation:8,zIndex:90,
   },
   askDragging:{shadowOpacity:.22,shadowRadius:16,elevation:12},
-  askButtonText:{color:'#fff',fontSize:11,fontWeight:'900'},
   trashZone:{position:'absolute',left:'50%',bottom:78,marginLeft:-62,width:124,alignItems:'center',zIndex:89},
   trashZoneActive:{transform:[{scale:1.03}]},
   trashCircle:{width:58,height:58,borderRadius:29,backgroundColor:'rgba(255,255,255,.96)',borderWidth:1,borderColor:'#d7d3cc',alignItems:'center',justifyContent:'center'},
