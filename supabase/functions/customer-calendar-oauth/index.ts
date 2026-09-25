@@ -75,7 +75,7 @@ Deno.serve(async req=>{
   const state=await signedState({userId:user.id,nonce:crypto.randomUUID(),exp:Date.now()+10*60*1000},stateSecret);
   const params=new URLSearchParams({
    client_id:clientId,redirect_uri:callback,response_type:'code',
-   scope:['openid','email','https://www.googleapis.com/auth/calendar.events','https://www.googleapis.com/auth/calendar.freebusy'].join(' '),
+   scope:['openid','email','https://www.googleapis.com/auth/calendar.events.owned','https://www.googleapis.com/auth/calendar.freebusy'].join(' '),
    state,access_type:'offline',prompt:'consent',include_granted_scopes:'true'
   });
   return json({authorizationUrl:'https://accounts.google.com/o/oauth2/v2/auth?'+params});
