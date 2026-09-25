@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import test from 'node:test';
+import {URL} from 'node:url';
 
 const migration=readFileSync(new URL('../supabase/migrations/20260925220500_customer_experience_job_portal.sql',import.meta.url),'utf8');
 const customerPortal=readFileSync(new URL('../app/booking.tsx',import.meta.url),'utf8');
