@@ -16,13 +16,15 @@ const calendar=read('app/business-calendar.tsx');
 const today=read('app/business-today.tsx');
 const tabs=read('components/BusinessTabBar.tsx');
 
-const tables=['crm_pipelines','crm_pipeline_stages','crm_opportunities','crm_tags','crm_contact_tags','crm_quotes','crm_quote_items','crm_bookings','crm_calendar_blocks'];
+const loopTables=['crm_pipelines','crm_pipeline_stages','crm_opportunities','crm_tags','crm_contact_tags','crm_quotes','crm_quote_items','crm_bookings'];
 test('professional CRM tables are tenant isolated and anon is revoked',()=>{
- for(const table of tables){
-  assert.match(migration,new RegExp('alter table public\\.'+table+' enable row level security'));
-  assert.match(migration,new RegExp('create policy '+table+'_member_all[\\s\\S]*public\\.is_business_member\\(business_id\\)'));
-  assert.match(migration,new RegExp('revoke all on public\\.'+table+' from anon'));
- }
+ for(const table of loopTables)assert.match(migration,new RegExp("'"+table+"'"));
+ assert.match(migration,/alter table public\.%I enable row level security/);
+ assert.match(migration,/revoke all on public\.%I from anon/);
+ assert.match(migration,/create policy %I on public\.%I for all to authenticated using \(public\.is_business_member\(business_id\)\)/);
+ assert.match(migration,/alter table public\.crm_calendar_blocks enable row level security/);
+ assert.match(migration,/create policy crm_calendar_blocks_member_all[\s\S]*public\.is_business_member\(business_id\)/);
+ assert.match(migration,/revoke all on public\.crm_calendar_blocks from anon,authenticated/);
  assert.doesNotMatch(migration,/create policy crm_[\s\S]{0,200}using \(true\)/i);
 });
 
@@ -37,7 +39,7 @@ test('contact, opportunity, quote and booking relationships enforce the same bus
 });
 
 test('all exposed mutation RPCs require membership and internal marketplace sync is non-exposed',()=>{
- for(const fn of ['crm_create_contact','crm_create_opportunity','crm_move_opportunity','crm_create_task','crm_create_quote','crm_set_quote_status','crm_create_booking','crm_set_booking_status','crm_merge_contacts','crm_archive_contact','crm_create_calendar_block']){
+ for(const fn of ['crm_create_contact','crm_create_opportunity','crm_move_opportunity','crm_create_task','crm_create_quote','crm_set_quote_status','crm_create_booking','crm_set_booking_status','crm_merge_contacts','crm_archive_contact','crm_create_calendar_block','crm_reschedule_booking']){
   const start=migration.indexOf('function public.'+fn);assert.ok(start>=0,fn+' missing');const slice=migration.slice(start,start+6000);assert.match(slice,/auth\.uid\(\) is null or not public\.is_business_member\(p_business_id\)/,fn+' must authorize membership');
  }
  assert.match(migration,/create schema if not exists private/);assert.match(migration,/revoke all on schema private from public, anon, authenticated/);
