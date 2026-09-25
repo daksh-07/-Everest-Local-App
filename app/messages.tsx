@@ -564,22 +564,25 @@ function MessageActionMenu({target,userId,colors:c,reducedMotion,onClose,onReply
  const visualTop=Platform.OS==='web'?viewport.offsetTop:0;
  const visualHeight=Platform.OS==='web'?(viewport.height??windowSize.height):windowSize.height;
  const safeTop=visualTop+72;
- const safeBottom=visualTop+visualHeight-14;
- const reactionHeight=50;
+ const safeBottom=visualTop+visualHeight-18;
+ const availableHeight=Math.max(220,safeBottom-safeTop);
+ const reactionHeight=message.deleted_for_everyone?0:50;
+ const timestampHeight=15;
  const actionHeight=52;
  const gap=8;
- const bubbleWidth=Math.min(target.rect.width,windowSize.width-24);
- const bubbleHeight=Math.max(40,target.rect.height);
- const bubbleLeft=Math.max(12,Math.min(target.rect.x,windowSize.width-bubbleWidth-12));
- const availableAbove=target.rect.y-safeTop;
- const availableBelow=safeBottom-(target.rect.y+bubbleHeight);
- const reactionAbove=availableAbove>=reactionHeight+gap||availableBelow<reactionHeight+actionHeight+gap*2;
- const minBubbleY=reactionAbove?safeTop+reactionHeight+gap:safeTop+actionHeight+gap;
- const maxBubbleY=reactionAbove?safeBottom-actionHeight-gap-bubbleHeight:safeBottom-reactionHeight-gap-bubbleHeight;
- const bubbleTop=Math.max(minBubbleY,Math.min(target.rect.y,Math.max(minBubbleY,maxBubbleY)));
- const reactionTop=reactionAbove?bubbleTop-reactionHeight-gap:bubbleTop+bubbleHeight+gap;
- const actionTop=reactionAbove?bubbleTop+bubbleHeight+gap:bubbleTop-actionHeight-gap;
+ const reserved=reactionHeight+(reactionHeight?gap:0)+timestampHeight+gap+actionHeight+gap;
+ const maxBubbleHeight=Math.max(72,availableHeight-reserved);
+ const bubbleHeight=Math.min(Math.max(40,target.rect.height),maxBubbleHeight);
+ const bubbleWidth=Math.min(Math.max(44,target.rect.width),windowSize.width-24);
  const cardWidth=Math.min(316,windowSize.width-24);
+ const groupHeight=reactionHeight+(reactionHeight?gap:0)+bubbleHeight+timestampHeight+gap+actionHeight;
+ const idealGroupTop=target.rect.y-(reactionHeight?reactionHeight+gap:0);
+ const groupTop=Math.max(safeTop,Math.min(idealGroupTop,safeBottom-groupHeight));
+ const reactionTop=groupTop;
+ const bubbleTop=groupTop+(reactionHeight?reactionHeight+gap:0);
+ const timestampTop=bubbleTop+bubbleHeight;
+ const actionTop=timestampTop+timestampHeight+gap;
+ const bubbleLeft=Math.max(12,Math.min(target.rect.x,windowSize.width-bubbleWidth-12));
  const cardLeft=Math.max(12,Math.min(target.rect.x+(target.rect.width-cardWidth)/2,windowSize.width-cardWidth-12));
  const compactActions=[
   !message.deleted_for_everyone?{key:'reply',icon:'arrow-undo-outline' as const,label:'Reply',fn:()=>onReply(message)}:null,
@@ -590,20 +593,24 @@ function MessageActionMenu({target,userId,colors:c,reducedMotion,onClose,onReply
  ].filter(Boolean) as Array<{key:string;icon:React.ComponentProps<typeof Ionicons>['name'];label:string;fn:()=>void}>;
  return <Modal transparent visible animationType="none" onRequestClose={onClose}>
   <Pressable nativeID="everest-message-action-overlay" onPress={onClose} style={{flex:1}}>
-   <Animated.View pointerEvents="none" style={{position:'absolute',top:0,right:0,bottom:0,left:0,backgroundColor:'#000',opacity:open.interpolate({inputRange:[0,1],outputRange:[0,.46]})}}/>
-   <Animated.View pointerEvents="none" style={{position:'absolute',left:bubbleLeft,top:bubbleTop,width:bubbleWidth,opacity:open,transform:[{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.98,1.03]})}],shadowColor:'#000',shadowOpacity:.28,shadowRadius:18,shadowOffset:{width:0,height:10}}}>
-    <View style={{backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:1,borderColor:c.border,borderRadius:18,paddingHorizontal:10,paddingVertical:7}}>
-     {message.reply_to_message_id?<View style={{borderLeftWidth:2,borderLeftColor:mine?c.onBrand:c.brand,paddingLeft:7,marginBottom:5,opacity:.76}}><Text selectable={false} numberOfLines={2} style={{fontSize:10,lineHeight:13,color:mine?c.onBrand:c.textSecondary}}>{message.reply_preview??'Message unavailable'}</Text></View>:null}
-     <Text selectable={false} style={{fontSize:15,lineHeight:20,color:mine?c.onBrand:c.text,fontStyle:message.deleted_for_everyone?'italic':'normal'}}>{message.body}</Text>
-     {message.edited_at&&!message.deleted_for_everyone?<Text selectable={false} style={{fontSize:8,color:mine?c.onBrand:c.muted,opacity:.68,marginTop:2}}>edited</Text>:null}
-    </View>
-    <Text selectable={false} style={{fontSize:8,color:c.muted,marginTop:4,textAlign:mine?'right':'left'}}>{timeOnly(message.created_at)}</Text>
-   </Animated.View>
-   {!message.deleted_for_everyone?<Animated.View style={{position:'absolute',left:cardLeft,top:reactionTop,width:cardWidth,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[reactionAbove?6:-6,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.97,1]})}]}}>
-    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',backgroundColor:c.elevated,borderRadius:24,borderWidth:1,borderColor:c.border,paddingHorizontal:7,paddingVertical:5,shadowColor:'#000',shadowOpacity:.22,shadowRadius:16,shadowOffset:{width:0,height:8}}}>{REACTIONS.map(r=><Pressable key={r} accessibilityLabel={'React '+r} onPress={()=>{void haptic.light();onReact(message,r)}} style={({pressed})=>({width:38,height:38,borderRadius:19,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',transform:[{scale:pressed?1.13:1}],opacity:pressed?.84:1})}><Text selectable={false} style={{fontSize:19}}>{r}</Text></Pressable>)}</View>
+   <Animated.View pointerEvents="none" style={{position:'absolute',top:0,right:0,bottom:0,left:0,backgroundColor:'#000',opacity:open.interpolate({inputRange:[0,1],outputRange:[0,.48]})}}/>
+   {!message.deleted_for_everyone?<Animated.View style={{position:'absolute',left:cardLeft,top:reactionTop,width:cardWidth,height:reactionHeight,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[5,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.97,1]})}]}}>
+    <View style={{height:reactionHeight,flexDirection:'row',justifyContent:'space-between',alignItems:'center',backgroundColor:c.elevated,borderRadius:24,borderWidth:1,borderColor:c.border,paddingHorizontal:7,paddingVertical:5,shadowColor:'#000',shadowOpacity:.22,shadowRadius:16,shadowOffset:{width:0,height:8}}}>{REACTIONS.map(r=><Pressable key={r} accessibilityLabel={'React '+r} onPress={()=>{void haptic.light();onReact(message,r)}} style={({pressed})=>({width:38,height:38,borderRadius:19,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',transform:[{scale:pressed?1.13:1}],opacity:pressed?.84:1})}><Text selectable={false} style={{fontSize:19}}>{r}</Text></Pressable>)}</View>
    </Animated.View>:null}
-   <Animated.View style={{position:'absolute',left:cardLeft,top:actionTop,width:cardWidth,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[reactionAbove?-5:5,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.98,1]})}]}}>
-    <View style={{alignSelf:mine?'flex-end':'flex-start',flexDirection:'row',backgroundColor:c.elevated,borderRadius:16,borderWidth:1,borderColor:c.border,padding:4,shadowColor:'#000',shadowOpacity:.18,shadowRadius:12,shadowOffset:{width:0,height:6}}}>
+   <Animated.View pointerEvents="none" style={{position:'absolute',left:bubbleLeft,top:bubbleTop,width:bubbleWidth,height:bubbleHeight,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[target.rect.y-bubbleTop,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.98,1.03]})}],shadowColor:'#000',shadowOpacity:.3,shadowRadius:18,shadowOffset:{width:0,height:10}}}>
+    <View style={{maxHeight:bubbleHeight,backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:1,borderColor:c.border,borderRadius:18,overflow:'hidden'}}>
+     <ScrollView scrollEnabled={target.rect.height>maxBubbleHeight} showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:10,paddingVertical:7}}>
+      {message.reply_to_message_id?<View style={{borderLeftWidth:2,borderLeftColor:mine?c.onBrand:c.brand,paddingLeft:7,marginBottom:5,opacity:.76}}><Text selectable={false} numberOfLines={2} style={{fontSize:10,lineHeight:13,color:mine?c.onBrand:c.textSecondary}}>{message.reply_preview??'Message unavailable'}</Text></View>:null}
+      <Text selectable={false} style={{fontSize:15,lineHeight:20,color:mine?c.onBrand:c.text,fontStyle:message.deleted_for_everyone?'italic':'normal'}}>{message.body}</Text>
+      {message.edited_at&&!message.deleted_for_everyone?<Text selectable={false} style={{fontSize:8,color:mine?c.onBrand:c.muted,opacity:.68,marginTop:2}}>edited</Text>:null}
+     </ScrollView>
+    </View>
+   </Animated.View>
+   <Animated.View pointerEvents="none" style={{position:'absolute',left:bubbleLeft,top:timestampTop,width:bubbleWidth,height:timestampHeight,opacity:open,justifyContent:'center'}}>
+    <Text selectable={false} style={{fontSize:8,color:c.muted,textAlign:mine?'right':'left'}}>{timeOnly(message.created_at)}</Text>
+   </Animated.View>
+   <Animated.View style={{position:'absolute',left:cardLeft,top:actionTop,width:cardWidth,height:actionHeight,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[-4,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.98,1]})}]}}>
+    <View style={{height:actionHeight,alignSelf:mine?'flex-end':'flex-start',flexDirection:'row',backgroundColor:c.elevated,borderRadius:16,borderWidth:1,borderColor:c.border,padding:4,shadowColor:'#000',shadowOpacity:.18,shadowRadius:12,shadowOffset:{width:0,height:6}}}>
      {compactActions.map(action=><Pressable key={action.key} accessibilityLabel={action.label} onPress={()=>{void haptic.selection();action.fn()}} style={({pressed})=>({minWidth:48,height:44,paddingHorizontal:8,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.96:1}]})}><Ionicons name={action.icon} size={18} color={action.key==='report'?c.danger:c.text}/><Text selectable={false} style={{fontSize:8,fontWeight:'800',color:action.key==='report'?c.danger:c.muted,marginTop:2}}>{action.label}</Text></Pressable>)}
     </View>
    </Animated.View>
