@@ -6,10 +6,11 @@ import { router } from 'expo-router';
 import { supabase, supabaseConfigured } from '@/lib/supabase';
 import { useAppTheme, type ThemeColors } from '@/lib/theme';
 import { getWorkspaceContext,type AppMode } from '@/lib/workspace';
+import {refreshCustomerCalendarsForAssistant} from '@/lib/customer-calendar';
 
 type AssistantAction = { kind: string; id?: string; title: string; href: string };
-const SAFE_ACTION_KINDS = new Set(['VIEW_BUSINESS','VIEW_PRODUCT','CREATE_REQUEST','VIEW_ORDER','VIEW_BOOKING','OPEN_MESSAGE','VIEW_QUOTE','OPEN_OPPORTUNITIES','OPEN_SEARCH','OPEN_DRIVER_APPLICATION','OPEN_BUSINESS_HOME','OPEN_BUSINESS_LEADS','OPEN_BUSINESS_JOBS','OPEN_BUSINESS_INBOX']);
-const SAFE_STATIC_ROUTES = new Set(['/request','/orders','/bookings','/messages','/quotes','/opportunities','/search','/driver-verification','/business-today','/business-leads','/business-jobs','/business-inbox','/business-control']);
+const SAFE_ACTION_KINDS = new Set(['VIEW_BUSINESS','VIEW_PRODUCT','CREATE_REQUEST','VIEW_ORDER','VIEW_BOOKING','OPEN_MESSAGE','VIEW_QUOTE','OPEN_OPPORTUNITIES','OPEN_SEARCH','OPEN_DRIVER_APPLICATION','OPEN_BUSINESS_HOME','OPEN_BUSINESS_LEADS','OPEN_BUSINESS_JOBS','OPEN_BUSINESS_INBOX','OPEN_CUSTOMER_CALENDAR']);
+const SAFE_STATIC_ROUTES = new Set(['/request','/orders','/bookings','/messages','/quotes','/opportunities','/search','/driver-verification','/business-today','/business-leads','/business-jobs','/business-inbox','/business-control','/customer-calendar']);
 function isSafeAssistantHref(href:string){
   if(SAFE_STATIC_ROUTES.has(href))return true;
   const [path,query='']=href.split('?',2);
@@ -47,6 +48,7 @@ export default function Assistant() {
     setInput(''); setAnswer(''); setActions([]); setError(''); setBusy(true);
     try {
       if(!supabaseConfigured) throw new Error('assistant unavailable');
+      if(mode==='CUSTOMER'&&/calendar|schedule|availability|available|busy|free|when can|when am i/i.test(message)) await refreshCustomerCalendarsForAssistant();
       const {data,error:fnError}=await supabase.functions.invoke('assistant',{body:{message,mode,active_business_id:mode==='BUSINESS'?activeBusinessId:null}});
       if(fnError) throw fnError;
       setAnswer(typeof data?.message==='string' ? data.message.slice(0,5000) : 'Everest could not find an answer right now.');
