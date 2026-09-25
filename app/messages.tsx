@@ -360,7 +360,7 @@ export default function Messages(){
     {canCompose?<Composer
       draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitPersonal()} colors={c}
       reply={replying} edit={editing} reducedMotion={reducedMotion} bottomInset={composerBottomInset}
-      onFocus={()=>{if(nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}}
+      onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}}
       cancelReply={()=>setReplying(null)}
       cancelEdit={()=>{setEditing(null);setDraft('')}}
     />:null}
@@ -380,7 +380,7 @@ export default function Messages(){
     <View style={{flex:1}}><Text style={{fontSize:15,fontWeight:'900',color:c.text}}>{selectedMarket.counterpart_name}</Text><Text style={{fontSize:10,color:c.muted,marginTop:2}}>Business enquiry / booking</Text></View>
    </View>
    <MarketThread refValue={threadRef} items={marketThread} userId={userId} colors={c}/>
-   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} bottomInset={composerBottomInset} onFocus={()=>{if(nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
+   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} bottomInset={composerBottomInset} onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
    {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
   </ChatKeyboardFrame>
  </SafeAreaView></View>;
@@ -526,7 +526,7 @@ function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,tran
 }
 
 function MarketThread({refValue,items,userId,colors:c}:{refValue:React.MutableRefObject<ScrollView|null>;items:MarketMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors']}){
- return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1}} onContentSizeChange={()=>refValue.current?.scrollToEnd({animated:false})} contentContainerStyle={{paddingHorizontal:12,paddingVertical:8}}>
+ return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1}} keyboardDismissMode="none" keyboardShouldPersistTaps="always" onContentSizeChange={()=>refValue.current?.scrollToEnd({animated:false})} contentContainerStyle={{paddingHorizontal:12,paddingVertical:8}}>
   {items.map((m,index)=>{const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;const groupedPrev=Boolean(prev&&prev.sender_id===m.sender_id&&sameDay(prev.created_at,m.created_at));const groupedNext=Boolean(next&&next.sender_id===m.sender_id&&sameDay(next.created_at,m.created_at));return <View key={m.id} style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}><View style={{maxWidth:'76%',backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:1,borderColor:c.border,borderRadius:18,borderTopRightRadius:mine&&groupedPrev?8:18,borderTopLeftRadius:!mine&&groupedPrev?8:18,borderBottomRightRadius:mine&&!groupedNext?5:18,borderBottomLeftRadius:!mine&&!groupedNext?5:18,paddingHorizontal:10,paddingVertical:7}}><Text style={{fontSize:15,lineHeight:20,color:mine?c.onBrand:c.text}}>{m.body}</Text></View>{!groupedNext?<Text style={{fontSize:8,color:c.muted,marginTop:3,marginHorizontal:4}}>{timeOnly(m.created_at)}</Text>:null}</View>})}
  </ScrollView>;
 }
@@ -536,15 +536,16 @@ export function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,reduced
  const focus=useRef(new Animated.Value(0)).current;
  const active=useRef(new Animated.Value(draft.trim()?1:0)).current;
  const pressed=useRef(new Animated.Value(1)).current;
+ const inputRef=useRef<TextInput|null>(null);
  useEffect(()=>installChatWebRuntimeStyles(c.brand,c.text),[c.brand,c.text]);
  useEffect(()=>{const to=focused?1:0;if(reducedMotion){focus.setValue(to);return}Animated.timing(focus,{toValue:to,duration:MOTION.standard,easing:ease,useNativeDriver:false}).start()},[focused,reducedMotion,focus]);
  useEffect(()=>{const to=draft.trim()?1:0;if(reducedMotion){active.setValue(to);return}Animated.spring(active,{toValue:to,useNativeDriver:true,...MOTION.spring}).start()},[draft,reducedMotion,active]);
  const pressTo=(to:number)=>{if(reducedMotion){pressed.setValue(to);return}Animated.spring(pressed,{toValue:to,useNativeDriver:true,...MOTION.spring}).start()};
  return <View style={{backgroundColor:c.canvas,paddingHorizontal:9,paddingTop:5,paddingBottom:Math.max(5,bottomInset+5)}}>
   {reply||edit?<View style={{marginHorizontal:4,marginBottom:5,paddingHorizontal:9,paddingVertical:6,borderRadius:11,backgroundColor:c.soft,flexDirection:'row',alignItems:'center',gap:8}}><View style={{flex:1}}><Text style={{fontSize:8,fontWeight:'900',color:c.muted}}>{edit?'EDITING MESSAGE':'REPLYING'}</Text><Text numberOfLines={1} style={{fontSize:10,color:c.text,marginTop:1}}>{edit?edit.body:reply?.body}</Text></View><Pressable onPress={edit?cancelEdit:cancelReply} style={{width:28,height:28,alignItems:'center',justifyContent:'center'}}><Ionicons name="close" size={17} color={c.muted}/></Pressable></View>:null}
-  <View nativeID="everest-composer-shell">
+  <View nativeID="everest-composer-shell" style={{position:'relative',zIndex:20}} onTouchStart={()=>inputRef.current?.focus()}>
    <Animated.View style={{minHeight:42,maxHeight:98,borderRadius:22,borderWidth:1,borderColor:focus.interpolate({inputRange:[0,1],outputRange:[c.border,c.brand]}),backgroundColor:c.input,flexDirection:'row',alignItems:'flex-end',paddingLeft:12,paddingRight:4,paddingVertical:3,shadowColor:'#000',shadowOffset:{width:0,height:5},shadowRadius:14,shadowOpacity:focus.interpolate({inputRange:[0,1],outputRange:[0,.13]}),transform:[{translateY:focus.interpolate({inputRange:[0,1],outputRange:[0,-1]})}]}}>
-    <TextInput nativeID="everest-message-composer" value={draft} onChangeText={setDraft} onFocus={()=>{setFocused(true);onFocus()}} onBlur={()=>setFocused(false)} placeholder="Message…" placeholderTextColor={focused?c.textSecondary:c.muted} multiline scrollEnabled maxLength={5000} style={[{flex:1,minHeight:34,maxHeight:88,color:c.text,fontSize:16,lineHeight:20,paddingTop:7,paddingBottom:7,paddingHorizontal:0,textAlignVertical:'center',borderWidth:0},Platform.OS==='web'?({outlineStyle:'none',outlineWidth:0,outlineColor:'transparent',boxShadow:'none'} as never):null]}/>
+    <TextInput ref={inputRef} nativeID="everest-message-composer" value={draft} onChangeText={setDraft} onFocus={()=>{setFocused(true);onFocus()}} onBlur={()=>setFocused(false)} placeholder="Message…" placeholderTextColor={focused?c.textSecondary:c.muted} multiline scrollEnabled showSoftInputOnFocus maxLength={5000} style={[{flex:1,minHeight:34,maxHeight:88,color:c.text,fontSize:16,lineHeight:20,paddingTop:7,paddingBottom:7,paddingHorizontal:0,textAlignVertical:'center',borderWidth:0},Platform.OS==='web'?({outlineStyle:'none',outlineWidth:0,outlineColor:'transparent',boxShadow:'none'} as never):null]}/>
     <Animated.View style={{opacity:active.interpolate({inputRange:[0,1],outputRange:[.42,1]}),transform:[{scale:Animated.multiply(active.interpolate({inputRange:[0,1],outputRange:[.9,1]}),pressed)}]}}>
      <Pressable accessibilityLabel={edit?'Save edited message':'Send message'} disabled={busy||!draft.trim()} onPressIn={()=>pressTo(.92)} onPressOut={()=>pressTo(1)} onPress={()=>{void haptic.light();submit()}} style={{width:34,height:34,borderRadius:17,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:1}}>{busy?<ActivityIndicator size="small" color={c.onBrand}/>:<Ionicons name={edit?'checkmark':'arrow-up'} size={18} color={c.onBrand}/>}</Pressable>
     </Animated.View>
