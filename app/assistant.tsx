@@ -1,14 +1,15 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { supabase, supabaseConfigured } from '@/lib/supabase';
 import { useAppTheme, type ThemeColors } from '@/lib/theme';
+import { getWorkspaceContext,type AppMode } from '@/lib/workspace';
 
 type AssistantAction = { kind: string; id?: string; title: string; href: string };
-const SAFE_ACTION_KINDS = new Set(['VIEW_BUSINESS','VIEW_PRODUCT','CREATE_REQUEST','VIEW_ORDER','VIEW_BOOKING','OPEN_MESSAGE','VIEW_QUOTE','OPEN_OPPORTUNITIES','OPEN_SEARCH','OPEN_DRIVER_APPLICATION']);
-const SAFE_STATIC_ROUTES = new Set(['/request','/orders','/bookings','/messages','/quotes','/opportunities','/search','/driver-verification']);
+const SAFE_ACTION_KINDS = new Set(['VIEW_BUSINESS','VIEW_PRODUCT','CREATE_REQUEST','VIEW_ORDER','VIEW_BOOKING','OPEN_MESSAGE','VIEW_QUOTE','OPEN_OPPORTUNITIES','OPEN_SEARCH','OPEN_DRIVER_APPLICATION','OPEN_BUSINESS_HOME','OPEN_BUSINESS_LEADS','OPEN_BUSINESS_JOBS','OPEN_BUSINESS_INBOX']);
+const SAFE_STATIC_ROUTES = new Set(['/request','/orders','/bookings','/messages','/quotes','/opportunities','/search','/driver-verification','/business-today','/business-leads','/business-jobs','/business-inbox','/business-control']);
 function isSafeAssistantHref(href:string){
   if(SAFE_STATIC_ROUTES.has(href))return true;
   const [path,query='']=href.split('?',2);
@@ -35,6 +36,9 @@ export default function Assistant() {
   const [busy,setBusy]=useState(false);
   const busyRef=useRef(false);
   const [error,setError]=useState('');
+  const [mode,setMode]=useState<AppMode>('CUSTOMER');
+  const [activeBusinessId,setActiveBusinessId]=useState<string|null>(null);
+  useEffect(()=>{void getWorkspaceContext().then(ctx=>{setMode(ctx.mode);setActiveBusinessId(ctx.active_business_id)}).catch(()=>{});},[]);
 
   async function ask(text=input) {
     const message=text.trim().slice(0,2000);
@@ -43,7 +47,7 @@ export default function Assistant() {
     setInput(''); setAnswer(''); setActions([]); setError(''); setBusy(true);
     try {
       if(!supabaseConfigured) throw new Error('assistant unavailable');
-      const {data,error:fnError}=await supabase.functions.invoke('assistant',{body:{message}});
+      const {data,error:fnError}=await supabase.functions.invoke('assistant',{body:{message,mode,active_business_id:mode==='BUSINESS'?activeBusinessId:null}});
       if(fnError) throw fnError;
       setAnswer(typeof data?.message==='string' ? data.message.slice(0,5000) : 'Everest could not find an answer right now.');
       setActions(Array.isArray(data?.actions) ? data.actions.filter(isSafeAssistantAction).slice(0,6) : []);
@@ -54,10 +58,10 @@ export default function Assistant() {
   }
 
   return <SafeAreaView style={s.safe}><View style={s.page}>
-    <View style={s.top}><Pressable onPress={()=>router.back()} accessibilityLabel="Go back"><Ionicons name="arrow-back" size={23} color={colors.text}/></Pressable><Text style={s.topTitle}>Ask Everest</Text><View style={{width:23}}/></View>
+    <View style={s.top}><Pressable onPress={()=>router.back()} accessibilityLabel="Go back"><Ionicons name="arrow-back" size={23} color={colors.text}/></Pressable><Text style={s.topTitle}>{mode==='BUSINESS'?'Ask Everest · Business':'Ask Everest'}</Text><View style={{width:23}}/></View>
     <ScrollView contentContainerStyle={{paddingBottom:100}} keyboardShouldPersistTaps="handled">
-      <View style={s.hero}><View style={s.icon}><Ionicons name="sparkles" size={23} color={colors.brand}/></View><Text style={s.title}>What do you need?</Text><Text style={s.copy}>Ask about Everest Local, your own orders and bookings, or general knowledge. Private data and internal secrets stay protected.</Text></View>
-      <View style={s.examples}>{['I need a car detailer this weekend','Who is Elon Musk?','I want to buy detailing products','Where is my order?'].map(x=><Pressable disabled={busy} onPress={()=>void ask(x)} style={[s.chip,busy&&{opacity:.55}]} key={x}><Text style={s.chipText}>{x}</Text><Ionicons name="arrow-forward" size={15} color={colors.text}/></Pressable>)}</View>
+      <View style={s.hero}><View style={s.icon}><Ionicons name="sparkles" size={23} color={colors.brand}/></View><Text style={s.title}>{mode==='BUSINESS'?'Run your business faster':'What do you need?'}</Text><Text style={s.copy}>{mode==='BUSINESS'?'Ask about this business’s leads, jobs, conversations and real Everest activity.':'Ask about Everest Local, your own orders and bookings, or general knowledge. Private data and internal secrets stay protected.'}</Text></View>
+      <View style={s.examples}>{(mode==='BUSINESS'?['What jobs do I have today?','Show my unanswered leads','How many bookings this week?','Open my business inbox']:['I need a car detailer this weekend','Who is Elon Musk?','I want to buy detailing products','Where is my order?']).map(x=><Pressable disabled={busy} onPress={()=>void ask(x)} style={[s.chip,busy&&{opacity:.55}]} key={x}><Text style={s.chipText}>{x}</Text><Ionicons name="arrow-forward" size={15} color={colors.text}/></Pressable>)}</View>
       {busy&&<ActivityIndicator style={{marginTop:24}} color={colors.brand}/>}
       {!!error&&<View style={s.errorBox}><Text style={s.error}>{error}</Text><Pressable onPress={()=>router.push('/search')}><Text style={s.errorLink}>EXPLORE MARKETPLACE</Text></Pressable></View>}
       {!!answer&&<View style={s.answer}><Text style={s.answerLabel}>EVEREST</Text><Text style={s.answerText}>{answer}</Text></View>}
