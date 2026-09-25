@@ -172,17 +172,13 @@ export default function Messages(){
  },[tab,reducedMotion,tabFade]);
 
  useEffect(()=>{
-  if(Platform.OS==='web')console.info('[Everest messaging] haptic capability:',haptic.capability());
- },[]);
- useEffect(()=>{
   const current=visualViewport.height;
   if(current==null)return;
   const previous=lastViewportHeightRef.current;
   lastViewportHeightRef.current=current;
   if(previous==null||Math.abs(previous-current)<32)return;
   if((selectedPersonal||selectedMarket)&&nearBottomRef.current){
-   const timer=setTimeout(()=>threadRef.current?.scrollToEnd({animated:!reducedMotion}),40);
-   return()=>clearTimeout(timer);
+   scrollThreadToEndAfterLayout(threadRef,!reducedMotion);
   }
  },[visualViewport.height,selectedPersonal,selectedMarket,reducedMotion]);
 
@@ -198,7 +194,7 @@ export default function Messages(){
    reply_preview:reply?.deleted_for_everyone?'Message deleted':reply?.body??null,reactions:[],sending:true
   };
   setDraft('');setReplying(null);setError('');setPersonalThread(current=>[...current,optimistic]);
-  setTimeout(()=>threadRef.current?.scrollToEnd({animated:true}),30);
+  scrollThreadToEndAfterLayout(threadRef,true);
   try{
    const result=await sendPersonalMessageDetailed(selectedPersonal.other_user_id,body,reply?.id??null);
    setPersonalThread(current=>current.map(m=>m.id===tempId?{...optimistic,id:result.message_id,conversation_id:result.conversation_id,created_at:result.created_at,sending:false}:m));
@@ -239,7 +235,7 @@ export default function Messages(){
  async function submitMarket(){
   if(!selectedMarket||!draft.trim()||busy)return;
   const body=draft.trim();setDraft('');setBusy(true);
-  try{await sendMessage(selectedMarket.id,body);await refreshMarketThread(selectedMarket.id);setTimeout(()=>threadRef.current?.scrollToEnd({animated:true}),30)}
+  try{await sendMessage(selectedMarket.id,body);await refreshMarketThread(selectedMarket.id);scrollThreadToEndAfterLayout(threadRef,true)}
   catch{setDraft(body);setError('Couldn’t send message. Try again.')}
   finally{setBusy(false)}
  }
@@ -322,7 +318,7 @@ export default function Messages(){
   const incomingRequest=selectedPersonal.status==='REQUEST'&&selectedPersonal.initiated_by!==userId;
   const outgoingRequest=selectedPersonal.status==='REQUEST'&&selectedPersonal.initiated_by===userId;
   const canCompose=selectedPersonal.status==='ACTIVE'||outgoingRequest;
-  return <View nativeID="everest-chat-shell" style={{flex:1,backgroundColor:c.canvas}}><SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
+  return <View nativeID="everest-chat-shell" style={chatRootStyle}><SafeAreaView edges={['top','left','right']} style={{flex:1,minHeight:0,backgroundColor:c.canvas}}>
    <ChatKeyboardFrame>
     <View style={{minHeight:62,paddingHorizontal:14,paddingVertical:9,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'center',gap:10,backgroundColor:c.canvas}}>
      <Pressable accessibilityLabel="Back to messages" onPress={()=>{setSelectedPersonal(null);setPersonalThread([]);setReplying(null);setEditing(null);void loadHome(true)}} style={{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color={c.text}/></Pressable>
@@ -363,8 +359,8 @@ export default function Messages(){
 
     {canCompose?<Composer
       draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitPersonal()} colors={c}
-      reply={replying} edit={editing} reducedMotion={reducedMotion}
-      onFocus={()=>{if(nearBottomRef.current)setTimeout(()=>threadRef.current?.scrollToEnd({animated:!reducedMotion}),50)}}
+      reply={replying} edit={editing} reducedMotion={reducedMotion} bottomInset={composerBottomInset}
+      onFocus={()=>{if(nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}}
       cancelReply={()=>setReplying(null)}
       cancelEdit={()=>{setEditing(null);setDraft('')}}
     />:null}
@@ -376,7 +372,7 @@ export default function Messages(){
   </SafeAreaView></View>;
  }
 
- if(selectedMarket)return <View nativeID="everest-chat-shell" style={{flex:1,backgroundColor:c.canvas}}><SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
+ if(selectedMarket)return <View nativeID="everest-chat-shell" style={chatRootStyle}><SafeAreaView edges={['top','left','right']} style={{flex:1,minHeight:0,backgroundColor:c.canvas}}>
   <ChatKeyboardFrame>
    <View style={{minHeight:62,paddingHorizontal:14,paddingVertical:9,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'center',gap:10}}>
     <Pressable onPress={()=>{setSelectedMarket(null);setMarketThread([]);void loadHome(true)}} style={{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color={c.text}/></Pressable>
@@ -384,7 +380,7 @@ export default function Messages(){
     <View style={{flex:1}}><Text style={{fontSize:15,fontWeight:'900',color:c.text}}>{selectedMarket.counterpart_name}</Text><Text style={{fontSize:10,color:c.muted,marginTop:2}}>Business enquiry / booking</Text></View>
    </View>
    <MarketThread refValue={threadRef} items={marketThread} userId={userId} colors={c}/>
-   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} onFocus={()=>{if(nearBottomRef.current)setTimeout(()=>threadRef.current?.scrollToEnd({animated:!reducedMotion}),50)}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
+   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} bottomInset={composerBottomInset} onFocus={()=>{if(nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
    {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
   </ChatKeyboardFrame>
  </SafeAreaView></View>;
