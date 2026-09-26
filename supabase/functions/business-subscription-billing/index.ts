@@ -50,8 +50,7 @@ Deno.serve(async req=>{
   const {data:membership,error:membershipError}=await userClient.from('business_members').select('business_id').eq('business_id',businessId).eq('user_id',user.id).maybeSingle();
   if(membershipError||!membership)return json({error:'Business access unavailable.'},403);
 
-  let {data:subRow,error:subError}=await admin.from('business_subscriptions').select('stripe_customer_id,stripe_subscription_id,status').eq('business_id',businessId).maybeSingle();
-  if(subError)return json({error:'Subscription account could not be loaded.'},500);
+  const {data:subRow}=await admin.from('business_subscriptions').select('stripe_customer_id,stripe_subscription_id,status').eq('business_id',businessId).maybeSingle();
 
   if(action==='PORTAL'){
    if(!subRow?.stripe_customer_id)return json({error:'No Stripe subscription account exists yet.'},400);
@@ -87,14 +86,6 @@ Deno.serve(async req=>{
    });
    customerId=typeof customer.id==='string'?customer.id:'';
    if(!customerId)return json({error:'Stripe customer could not be created.'},502);
-   const {error}=await admin.from('business_subscriptions').upsert({
-    business_id:businessId,
-    stripe_customer_id:customerId,
-    status:subRow?.status??'INACTIVE',
-    updated_at:new Date().toISOString(),
-   },{onConflict:'business_id'});
-   if(error)return json({error:'Subscription account could not be prepared.'},500);
-   subRow={...(subRow??{}),stripe_customer_id:customerId} as typeof subRow;
   }
 
   const session=await stripePost('/v1/checkout/sessions',stripeKey,{
@@ -116,7 +107,8 @@ Deno.serve(async req=>{
   if(!checkoutUrl)return json({error:'Stripe Checkout URL was not returned.'},502);
   return json({url:checkoutUrl});
  }catch(error){
-  console.error('business_subscription_billing_failed',{message:error instanceof Error?error.message:'unknown'});
+  const message=error instanceof Error?error.message:'unknown';
+  console.error('business_subscription_billing_failed: '+message);
   return json({error:'Subscription checkout could not be started.'},500);
  }
 });
