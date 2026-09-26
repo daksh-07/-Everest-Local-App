@@ -96,7 +96,7 @@ Deno.serve(async req=>{
  try{
   const object=event.data.object as Stripe.Checkout.Session|Stripe.PaymentIntent|Stripe.Subscription;
   const metadata=(object.metadata??{}) as StripeMetadata;
-  let handledKind=metadata.payment_kind??'';
+  let handledKind='';
 
   // Invoice objects do not reliably copy subscription metadata. Resolve the
   // subscription first and route by its server-owned metadata.
