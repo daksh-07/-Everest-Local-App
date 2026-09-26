@@ -64,6 +64,8 @@ jobs:
         run: npm run test:launch
       - name: Contact import boundaries
         run: npm run test:contact-import
+      - name: Launch release gate
+        run: npm run test:release
       - name: Edge-to-edge Home and quick actions regressions
         run: npm run test:home-shell
       - name: Product marketplace regressions
