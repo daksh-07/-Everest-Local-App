@@ -22,7 +22,7 @@ type PackageCheckout={
  customer_package_id:string;package_id:string;business_id:string;customer_id:string;name?:string;price:number;currency:string;credits:number;checkout_session_id:string|null;
 };
 
-function recurring(unit:string,count:number):Stripe.Price.Recurring{
+function recurring(unit:string,count:number):{interval:'day'|'week'|'month'|'year';interval_count:number}{
  const interval=unit.toLowerCase() as 'day'|'week'|'month'|'year';
  const maximum=interval==='day'?365:interval==='week'?52:interval==='month'?12:3;
  if(!['day','week','month','year'].includes(interval)||!Number.isInteger(count)||count<1||count>maximum)throw new Error('Unsupported recurring interval');
