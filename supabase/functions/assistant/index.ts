@@ -11,6 +11,18 @@ type Action = { kind: ActionKind; id?: string; title: string; href: string };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 const text = (value: unknown, max = 5000) => typeof value === 'string' ? value.slice(0, max) : '';
 
+async function hasActiveEverestPro(client: ReturnType<typeof createClient>, userId: string, businessId: string | null) {
+  let query = client
+    .from('business_members')
+    .select('business_id,business_subscriptions!inner(status,current_period_end)')
+    .eq('user_id', userId)
+    .in('business_subscriptions.status', ['ACTIVE', 'TRIALING']);
+  if (businessId) query = query.eq('business_id', businessId);
+  const { data, error } = await query.limit(1);
+  if (error) throw error;
+  return Boolean(data?.length);
+}
+
 function action(kind: ActionKind, id: string | undefined, title: string, query = ''): Action {
   const q = encodeURIComponent(query || title);
   const href =
@@ -68,10 +80,14 @@ Deno.serve(async (req) => {
     const requestedBusinessId = typeof body?.active_business_id === 'string' ? body.active_business_id : null;
     if (!message) return json({ error: 'Tell Everest what you need.' }, 400);
 
+    // Marketplace navigation is free. Provider-backed AI reasoning is a Pro
+    // entitlement and is checked here, not in the client UI.
+    const proActive = await hasActiveEverestPro(client, authData.user.id, requestedBusinessId);
+
     if (!isMarketplaceOrAccountQuery(message)) {
-      if (!aiUrl || !aiKey || !model) {
+      if (!proActive || !aiUrl || !aiKey || !model) {
         return json({
-          message: 'I can answer general questions once Ask Everest\'s AI provider is connected. Marketplace features are still available below.',
+          message: !proActive ? 'Ask Everest AI is included with Everest Pro. Marketplace search and account help remain available here.' : 'I can answer general questions once Ask Everest\'s AI provider is connected. Marketplace features are still available below.',
           actions: [action('OPEN_SEARCH', undefined, 'Explore the marketplace', message)],
           ai_available: false,
         });
@@ -248,9 +264,9 @@ Return ONLY valid JSON: {"message":"string","actions":[]}`;
     ].filter(Boolean);
     if (/driver|delivery driver|licence|license|vehicle registration|rego|driver application/i.test(message) && driverApplication) fallbackLines.push('Your driver application status is ' + driverApplication.status.replaceAll('_',' ') + '.');
 
-    if (!aiUrl || !aiKey || !model) {
+    if (!proActive || !aiUrl || !aiKey || !model) {
       return json({
-        message: `${fallbackLines.join(' ')} Use the buttons below to continue with real marketplace records. Ask Everest's AI provider still needs to be connected for natural-language reasoning.`,
+        message: `${fallbackLines.join(' ')} Use the buttons below to continue with real marketplace records.${!proActive ? ' Ask Everest AI reasoning is included with Everest Pro.' : " Ask Everest's AI provider still needs to be connected for natural-language reasoning."}`,
         actions: fallbackActions.slice(0,6),
         ai_available: false,
       });
