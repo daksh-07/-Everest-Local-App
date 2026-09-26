@@ -5,6 +5,7 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 const enc=new TextEncoder();
 const b64u=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
 const fromB64u=(value:string)=>Uint8Array.from(atob(value.replaceAll('-','+').replaceAll('_','/')+'='.repeat((4-value.length%4)%4)),c=>c.charCodeAt(0));
+function cleanSecret(value:string){const v=value.trim();return (v.startsWith('"')&&v.endsWith('"'))||(v.startsWith("'")&&v.endsWith("'"))?v.slice(1,-1).trim():v;}
 
 type Provider='GOOGLE_CALENDAR'|'MICROSOFT_CALENDAR'|'GMAIL';
 type BusinessState={businessId:string;userId:string;provider:Provider;nonce:string;exp:number};
@@ -55,8 +56,8 @@ function config(provider:Provider,callback:string){
  };
  const calendar=provider==='GOOGLE_CALENDAR';
  return{
-  clientId:Deno.env.get('GOOGLE_CLIENT_ID')??'',
-  clientSecret:Deno.env.get('GOOGLE_CLIENT_SECRET')??'',
+  clientId:cleanSecret(Deno.env.get('GOOGLE_CLIENT_ID')??''),
+  clientSecret:cleanSecret(Deno.env.get('GOOGLE_CLIENT_SECRET')??''),
   authorize:'https://accounts.google.com/o/oauth2/v2/auth',
   token:'https://oauth2.googleapis.com/token',
   scopes:calendar?['openid','email','https://www.googleapis.com/auth/calendar.events','https://www.googleapis.com/auth/calendar.freebusy']:['openid','email','https://www.googleapis.com/auth/gmail.send','https://www.googleapis.com/auth/gmail.readonly'],
@@ -86,8 +87,8 @@ Deno.serve(async req=>{
   if(!state||!code)return json({error:'Invalid or expired OAuth callback.'},400);
 
   if('kind' in state){
-   const clientId=Deno.env.get('GOOGLE_CLIENT_ID')??'';
-   const clientSecret=Deno.env.get('GOOGLE_CLIENT_SECRET')??'';
+   const clientId=cleanSecret(Deno.env.get('GOOGLE_CLIENT_ID')??'');
+   const clientSecret=cleanSecret(Deno.env.get('GOOGLE_CLIENT_SECRET')??'');
    if(!clientId||!clientSecret)return json({error:'Google Calendar OAuth credentials are not configured.'},503);
 
    const {data:userData,error:userError}=await admin.auth.admin.getUserById(state.userId);
