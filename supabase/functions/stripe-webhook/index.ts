@@ -9,7 +9,7 @@ function mapSubscriptionStatus(status:Stripe.Subscription.Status){
  return mapped==='CANCELED'?'CANCELED':mapped;
 }
 
-async function persistProSubscription(db:unknown,subscription:Stripe.Subscription,eventId:string,fallbackBusinessId?:string){
+async function persistProSubscription(db:unknown,subscription:Stripe.Subscription,eventId:string,eventCreated:number,fallbackBusinessId?:string){
  const businessId=String(subscription.metadata?.business_id??fallbackBusinessId??'');
  if(!businessId)throw new Error('Everest Pro subscription is missing business metadata');
  const customerId=typeof subscription.customer==='string'?subscription.customer:subscription.customer?.id??null;
@@ -25,6 +25,7 @@ async function persistProSubscription(db:unknown,subscription:Stripe.Subscriptio
   p_current_period_end:periodEnd,
   p_cancel_at_period_end:Boolean(subscription.cancel_at_period_end),
   p_event_id:eventId,
+  p_event_created_at:new Date(eventCreated*1000).toISOString(),
  });
  if(error)throw error;
  return businessId;
@@ -60,7 +61,7 @@ Deno.serve(async req=>{
     subscription=event.data.object as Stripe.Subscription;
     businessId=String(subscription.metadata?.business_id??businessId??'');
    }
-   if(subscription)businessId=await persistProSubscription(db,subscription,event.id,businessId);
+   if(subscription)businessId=await persistProSubscription(db,subscription,event.id,event.created,businessId);
    const {error:auditError}=await db.from('audit_logs').insert({action:'stripe:'+event.id,entity_type:'stripe_event',entity_id:null,metadata:{type:event.type,payment_kind:'everest_pro',business_id:businessId??null}});
    if(auditError)throw auditError;
    const {error:finishError}=await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:true});
