@@ -170,11 +170,13 @@ export interface PostComment {
 export async function getPostEngagement(postIds:string[]):Promise<Record<string,PostEngagement>>{
   if(!postIds.length)return {};
   requireSupabaseConfig();
-  const [{data:{user}},likes,comments,saves]=await Promise.all([
-    supabase.auth.getUser(),
+  const {data:{user}}=await supabase.auth.getUser();
+  const [likes,comments,saves]=await Promise.all([
     supabase.from('post_reactions').select('post_id,user_id').in('post_id',postIds),
     supabase.from('post_comments').select('post_id').in('post_id',postIds).eq('status','VISIBLE'),
-    supabase.auth.getUser().then(({data:{user}})=>user?supabase.from('saved_posts').select('post_id').eq('user_id',user.id).in('post_id',postIds):Promise.resolve({data:[],error:null}))
+    user
+      ? supabase.from('saved_posts').select('post_id').eq('user_id',user.id).in('post_id',postIds)
+      : Promise.resolve({data:[] as Array<{post_id:string}>,error:null})
   ]);
   if(likes.error)throw new Error(likes.error.message);
   if(comments.error)throw new Error(comments.error.message);
