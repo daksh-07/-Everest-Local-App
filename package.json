@@ -23,7 +23,7 @@
     "test:crm": "node --test tests/global-local-crm-p0.test.mjs tests/professional-crm-v2.test.mjs tests/crm-integrations-automation.test.mjs",
     "test:integrations": "node --test tests/crm-integrations-automation.test.mjs tests/customer-calendar-integration.test.mjs",
     "test:experience": "node --test tests/adaptive-experience-modes.test.mjs",
-    "test:launch": "node --test tests/launch-payment-entitlement-hardening.test.mjs",
+    "test:launch": "node --test tests/launch-payment-entitlement-hardening.test.mjs tests/marketplace-fee-engine.test.mjs",
     "test:contact-import": "node --test tests/contact-import.test.mjs",
     "test:retention": "node --test tests/retention-p0.test.mjs",
     "test:growth": "node --test tests/business-growth-engine-p0.test.mjs",

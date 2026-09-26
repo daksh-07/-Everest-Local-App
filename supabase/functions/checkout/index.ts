@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@18.5.0?target=deno';
 
 type OrderResult={order_id:string;order_number:string;total:number;reused:boolean};
+type OrderFeeSnapshot={marketplace_fee:number;provider_net:number;fee_policy_version:string;subtotal:number};
 type CheckoutItem={product_name:string;unit_price:number;quantity:number};
 type CheckoutRequest={delivery_method?:unknown;delivery_address?:unknown};
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key'};
@@ -34,22 +35,23 @@ Deno.serve(async req=>{
     const existingSession=await stripe.checkout.sessions.retrieve(existingPayment.provider_checkout_session_id);
     return json({orderId,orderNumber:order.order_number,total:order.total,checkoutUrl:existingSession.url,reused:true});
   }
-  const [{data:rawItems,error:itemError},{data:orderTotals,error:orderTotalsError}]=await Promise.all([admin.from('order_items').select('product_name,unit_price,quantity').eq('order_id',orderId),admin.from('orders').select('delivery_fee,total').eq('id',orderId).single()]);if(orderTotalsError)throw orderTotalsError;
+  const [{data:rawItems,error:itemError},{data:orderTotals,error:orderTotalsError}]=await Promise.all([admin.from('order_items').select('product_name,unit_price,quantity').eq('order_id',orderId),admin.from('orders').select('subtotal,delivery_fee,total,marketplace_fee,provider_net,fee_policy_version').eq('id',orderId).single()]);if(orderTotalsError)throw orderTotalsError;
   if(itemError)throw itemError;
+  const fee=orderTotals as OrderFeeSnapshot&{delivery_fee:number;total:number};
   const items=(rawItems??[]) as CheckoutItem[];if(!items.length)throw new Error('Order contains no items');const stripeTotal=items.reduce((sum,i)=>sum+Number(i.unit_price)*i.quantity,0)+Number(orderTotals.delivery_fee||0);if(Math.abs(stripeTotal-Number(orderTotals.total))>0.009)throw new Error('Order total mismatch');
   const stripe=new Stripe(stripeKey,{apiVersion:'2025-07-30.basil'});
   const session=await stripe.checkout.sessions.create({
     mode:'payment',
     line_items:[...items.map(i=>({price_data:{currency:'aud',product_data:{name:i.product_name},unit_amount:Math.round(Number(i.unit_price)*100)},quantity:i.quantity})),...(Number(orderTotals.delivery_fee)>0?[{price_data:{currency:'aud',product_data:{name:deliveryMethod==='SHIPPING'?'Shipping':'Delivery'},unit_amount:Math.round(Number(orderTotals.delivery_fee)*100)},quantity:1}]:[])],
-    metadata:{order_id:orderId,customer_id:user.id},
-    payment_intent_data:{metadata:{order_id:orderId,customer_id:user.id}},
+    metadata:{order_id:orderId,customer_id:user.id,payment_kind:'product_order',everest_fee:String(fee.marketplace_fee),provider_net:String(fee.provider_net),fee_policy_version:fee.fee_policy_version},
+    payment_intent_data:{metadata:{order_id:orderId,customer_id:user.id,payment_kind:'product_order',everest_fee:String(fee.marketplace_fee),provider_net:String(fee.provider_net),fee_policy_version:fee.fee_policy_version}},
     success_url:`everestlocal://order/success?order_id=${encodeURIComponent(orderId)}`,
     cancel_url:`everestlocal://order/cancelled?order_id=${encodeURIComponent(orderId)}`,
   },{idempotencyKey:idem});
   stripeSessionCreated=true;
   const {error:paymentError}=await admin.from('payments').update({provider_payment_id:typeof session.payment_intent==='string'?session.payment_intent:null,provider_checkout_session_id:session.id,updated_at:new Date().toISOString()}).eq('order_id',orderId).eq('idempotency_key',idem).eq('status','PENDING');
   if(paymentError)throw paymentError;
-  return json({orderId,orderNumber:order.order_number,total:order.total,checkoutUrl:session.url,reused:order.reused});
+  return json({orderId,orderNumber:order.order_number,total:order.total,marketplaceFee:fee.marketplace_fee,providerNet:fee.provider_net,checkoutUrl:session.url,reused:order.reused});
  }catch(error){
   if(orderId&&!stripeSessionCreated)await userClient.rpc('release_my_order_reservations',{p_order_id:orderId});
   console.error('checkout_failed',{message:error instanceof Error?error.message:'unknown',orderId:orderId??null,stripeSessionCreated});

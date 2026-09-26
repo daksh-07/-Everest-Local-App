@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@18.5.0?target=deno';
 
 type ServicePaymentResult={payment_id:string;booking_id:string;amount:number;currency:string;provider_checkout_session_id:string|null;reused:boolean};
+type ServiceFeeSnapshot={marketplace_fee:number;provider_net:number;fee_policy_version:string};
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key'};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
 
@@ -24,6 +25,9 @@ Deno.serve(async req=>{
   const payment=raw as ServicePaymentResult;
   paymentId=payment.payment_id;
   if(!paymentId||payment.booking_id!==bookingId||!Number.isFinite(Number(payment.amount))||Number(payment.amount)<=0)throw new Error('Invalid service payment response');
+  const {data:feeRow,error:feeError}=await admin.from('service_payments').select('marketplace_fee,provider_net,fee_policy_version').eq('id',paymentId).single();
+  if(feeError)throw feeError;
+  const fee=feeRow as ServiceFeeSnapshot;
   const stripe=new Stripe(stripeKey,{apiVersion:'2025-07-30.basil'});
   if(payment.provider_checkout_session_id){
    const existing=await stripe.checkout.sessions.retrieve(payment.provider_checkout_session_id);
@@ -34,14 +38,14 @@ Deno.serve(async req=>{
   const session=await stripe.checkout.sessions.create({
    mode:'payment',
    line_items:[{price_data:{currency:payment.currency,product_data:{name:'Everest Local service booking deposit'},unit_amount:Math.round(Number(payment.amount)*100)},quantity:1}],
-   metadata:{payment_kind:'service',service_payment_id:paymentId,booking_id:bookingId,customer_id:user.id},
-   payment_intent_data:{metadata:{payment_kind:'service',service_payment_id:paymentId,booking_id:bookingId,customer_id:user.id}},
+   metadata:{payment_kind:'service',service_payment_id:paymentId,booking_id:bookingId,customer_id:user.id,everest_fee:String(fee.marketplace_fee),provider_net:String(fee.provider_net),fee_policy_version:fee.fee_policy_version},
+   payment_intent_data:{metadata:{payment_kind:'service',service_payment_id:paymentId,booking_id:bookingId,customer_id:user.id,everest_fee:String(fee.marketplace_fee),provider_net:String(fee.provider_net),fee_policy_version:fee.fee_policy_version}},
    success_url:`everestlocal://booking/success?booking_id=${encodeURIComponent(bookingId)}`,
    cancel_url:`everestlocal://booking/cancelled?booking_id=${encodeURIComponent(bookingId)}`,
   },{idempotencyKey:paymentId});
   const {error:updateError}=await admin.from('service_payments').update({provider_payment_id:typeof session.payment_intent==='string'?session.payment_intent:null,provider_checkout_session_id:session.id,updated_at:new Date().toISOString()}).eq('id',paymentId).eq('status','PENDING');
   if(updateError)throw updateError;
-  return json({paymentId,bookingId,total:payment.amount,checkoutUrl:session.url,reused:payment.reused});
+  return json({paymentId,bookingId,total:payment.amount,marketplaceFee:fee.marketplace_fee,providerNet:fee.provider_net,checkoutUrl:session.url,reused:payment.reused});
  }catch(error){
   console.error('service_checkout_failed',{message:error instanceof Error?error.message:'unknown',bookingId,paymentId:paymentId??null});
   return json({error:'Service checkout could not be created. No payment was confirmed.'},500);
