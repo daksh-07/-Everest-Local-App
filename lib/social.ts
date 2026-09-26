@@ -135,10 +135,42 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
   return (data ?? []) as SocialPost[];
 }
 
-export async function deletePost(postId: string): Promise<void> {
+export async function listMyPosts(): Promise<SocialPost[]> {
   requireSupabaseConfig();
-  const { error } = await supabase.from('posts').update({ status: 'REMOVED', updated_at: new Date().toISOString() }).eq('id', postId);
-  if (error) throw new Error(error.message);
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user)throw new Error('Sign in to manage your posts.');
+  const {data,error}=await supabase
+    .from('posts')
+    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at')
+    .eq('author_id',user.id)
+    .in('status',['PUBLISHED','HIDDEN'])
+    .order('created_at',{ascending:false})
+    .limit(100);
+  if(error)throw new Error(error.message);
+  return (data??[]) as SocialPost[];
+}
+
+async function setOwnPostStatus(postId:string,status:'PUBLISHED'|'HIDDEN'|'REMOVED'):Promise<void>{
+  requireSupabaseConfig();
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user)throw new Error('Sign in to manage your posts.');
+  const {error}=await supabase.from('posts')
+    .update({status,updated_at:new Date().toISOString()})
+    .eq('id',postId)
+    .eq('author_id',user.id);
+  if(error)throw new Error(error.message);
+}
+
+export async function archivePost(postId:string):Promise<void>{
+  return setOwnPostStatus(postId,'HIDDEN');
+}
+
+export async function restorePost(postId:string):Promise<void>{
+  return setOwnPostStatus(postId,'PUBLISHED');
+}
+
+export async function deletePost(postId: string): Promise<void> {
+  return setOwnPostStatus(postId,'REMOVED');
 }
 
 export async function updatePostCaption(postId:string,caption:string):Promise<void>{
