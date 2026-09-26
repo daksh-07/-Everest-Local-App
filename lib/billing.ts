@@ -7,13 +7,14 @@ export type BusinessSubscription={
  stripe_subscription_id:string|null;
  stripe_price_id:string|null;
  status:'INACTIVE'|'TRIALING'|'ACTIVE'|'PAST_DUE'|'UNPAID'|'CANCELED'|'INCOMPLETE'|'INCOMPLETE_EXPIRED'|'PAUSED';
+ billing_provider:'STRIPE'|'APPLE';
  current_period_end:string|null;
  cancel_at_period_end:boolean;
  updated_at:string;
 };
 
 export async function getBusinessSubscription(businessId:string){
- const {data,error}=await supabase.from('business_subscriptions').select('business_id,stripe_customer_id,stripe_subscription_id,stripe_price_id,status,current_period_end,cancel_at_period_end,updated_at').eq('business_id',businessId).maybeSingle();
+ const {data,error}=await supabase.from('business_subscriptions').select('business_id,stripe_customer_id,stripe_subscription_id,stripe_price_id,status,billing_provider,current_period_end,cancel_at_period_end,updated_at').eq('business_id',businessId).maybeSingle();
  if(error)throw new Error(error.message);
  return data as BusinessSubscription|null;
 }
