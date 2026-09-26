@@ -89,6 +89,16 @@ export async function findPossibleDuplicates(businessId:string,email?:string,pho
  if(error)throw new Error(error.message);return (data??[]) as Array<{id:string;display_name:string;email:string|null;phone:string|null;reason:string}>;
 }
 
+export type CrmImportRow={name:string;phone?:string;email?:string;company?:string;suburb?:string;city?:string;state?:string;country?:string;notes?:string};
+export type CrmImportResult={imported:number;duplicates:number;skipped:number};
+
+export async function importCrmContacts(businessId:string,rows:CrmImportRow[],sourceDetail:string){
+ const safe=rows.slice(0,1000).map(row=>({name:row.name.trim(),phone:clean(row.phone),email:clean(row.email),company:clean(row.company),suburb:clean(row.suburb),city:clean(row.city),state:clean(row.state),country:clean(row.country),notes:clean(row.notes)})).filter(row=>row.name);
+ if(!safe.length)throw new Error('Choose at least one contact with a name.');
+ const {data,error}=await supabase.rpc('crm_import_contacts',{p_business_id:businessId,p_rows:safe,p_source_detail:sourceDetail});
+ if(error)throw new Error(error.message);return data as CrmImportResult;
+}
+
 export async function archiveCrmContact(businessId:string,contactId:string){
  const {data,error}=await supabase.rpc('crm_archive_contact',{p_business_id:businessId,p_contact_id:contactId});
  if(error)throw new Error(error.message);return data===true;
