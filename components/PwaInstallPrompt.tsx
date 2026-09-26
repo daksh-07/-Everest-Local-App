@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import {usePathname} from 'expo-router';
 import { useAppTheme } from '@/lib/theme';
 
 export function PwaInstallPrompt() {
   const {colors}=useAppTheme();
+  const pathname=usePathname();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function PwaInstallPrompt() {
     setVisible(true);
   }, []);
 
-  if (!visible) return null;
+  if (!visible || pathname === '/request') return null;
 
   const dismiss = () => {
     try {

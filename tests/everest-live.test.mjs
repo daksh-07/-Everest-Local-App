@@ -9,7 +9,7 @@ const request=fs.readFileSync('app/request.tsx','utf8');
 const alert=fs.readFileSync('components/BusinessOpportunityAlert.tsx','utf8');
 
 test('ASAP customer request starts one backend-authoritative Live search',()=>{
- assert.match(request,/startEverestLive\(id,arrivalWindow\)/);
+ assert.match(request,/startEverestLive\(id,\s*arrivalWindow\)/);
  assert.match(migration,/create or replace function public\.start_everest_live/);
  assert.match(migration,/where id=p_request_id and customer_id=auth\.uid\(\) for update/);
  assert.match(migration,/unique \(request_id,business_id\)|on conflict\(request_id,business_id\) do nothing/);

@@ -14,7 +14,7 @@ const TRASH_SIZE = 68;
 export function DraggableAskEverest({ pathname }: { pathname: string }) {
   const theme=useAppTheme();
   const { width, height } = useWindowDimensions();
-  const hiddenRoute = ['/assistant', '/auth', '/messages', '/cart'].includes(pathname);
+  const hiddenRoute = ['/assistant', '/auth', '/messages', '/cart', '/request'].includes(pathname);
   const [dismissed, setDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [overTrash, setOverTrash] = useState(false);

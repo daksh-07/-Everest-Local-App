@@ -60,7 +60,7 @@ export function EverestLiveMiniPlayer(){
     return()=>{clearInterval(timer);app.remove();void supabase.removeChannel(channel)};
   },[load]);
 
-  if(!request||pathname==='/everest-live')return null;
+  if(!request||pathname==='/everest-live'||pathname==='/request')return null;
 
   const status=state?.live_status??request.live_status;
   const responses=state?.quote_count??0;
