@@ -12,6 +12,7 @@ import {supabase} from '@/lib/supabase';
 import {userFacingError} from '@/lib/errors';
 import type {DeliveryMode} from '@/lib/taxonomy';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {startEverestLive,type LiveArrivalWindow} from '@/lib/everest-live';
 
 type LocationValue={suburb:string;city:string;state:string;latitude?:number;longitude?:number;accuracy?:number;source:LocationSource;confirmed:boolean;geocoder?:'DEVICE'|'OSM'};
 type BudgetChoice='NONE'|'UNDER_100'|'100_250'|'250_500'|'500_PLUS'|'CUSTOM';
@@ -35,12 +36,13 @@ async function reverseGeocodeWebFallback(latitude:number,longitude:number){
 }
 
 export default function Request(){
- const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const params=useLocalSearchParams<{serviceId?:string;mode?:string}>();
+ const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const params=useLocalSearchParams<{serviceId?:string;mode?:string;live?:string}>();
+ const live=params.live==='1'||params.live==='true';
  const serviceId=typeof params.serviceId==='string'?params.serviceId:'';const [step,setStep]=useState(1);const [description,setDescription]=useState('');
  const [mode,setMode]=useState<DeliveryMode>((params.mode==='REMOTE'||params.mode==='BOTH'||params.mode==='LOCAL')?params.mode:'LOCAL');
  const [serviceName,setServiceName]=useState('');const [serviceMode,setServiceMode]=useState<DeliveryMode|null>(null);const [serviceLoading,setServiceLoading]=useState(Boolean(serviceId));const [serviceValid,setServiceValid]=useState(!serviceId);
  const [location,setLocation]=useState<LocationValue>({suburb:'',city:'',state:'',source:'MANUAL',confirmed:false});const [locating,setLocating]=useState(false);
- const [date,setDate]=useState<Date|null>(null);const [timing,setTiming]=useState<RequestTimingMode>('FLEXIBLE');const [windowKey,setWindowKey]=useState<'MORNING'|'AFTERNOON'|'EVENING'|null>(null);const [exactTime,setExactTime]=useState<Date|null>(null);
+ const [date,setDate]=useState<Date|null>(live?new Date():null);const [timing,setTiming]=useState<RequestTimingMode>(live?'ASAP':'FLEXIBLE');const [arrivalWindow,setArrivalWindow]=useState<LiveArrivalWindow>('ASAP');const [windowKey,setWindowKey]=useState<'MORNING'|'AFTERNOON'|'EVENING'|null>(null);const [exactTime,setExactTime]=useState<Date|null>(null);
  const [budgetChoice,setBudgetChoice]=useState<BudgetChoice>('NONE');const [customBudget,setCustomBudget]=useState('');const [photos,setPhotos]=useState<ImagePicker.ImagePickerAsset[]>([]);const [uploadProgress,setUploadProgress]=useState('');
  const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [success,setSuccess]=useState<{id:string;status:string;opportunities:number}|null>(null);const submitRef=useRef(false);
  const effectiveMode=serviceMode==='BOTH'?mode:(serviceMode??mode);
@@ -100,6 +102,7 @@ export default function Request(){
     preferredDate:date?localDate(date):undefined,preferredTime:timing==='EXACT_TIME'&&exactTime?timeValue(exactTime):undefined,timingMode:timing,
     timeWindowStart:win?.[0],timeWindowEnd:win?.[1],...budgetValues()});
    if(photos.length){setUploadProgress(`Uploading 0/${photos.length}`);await uploadRequestMedia(id,photos,(done,total)=>setUploadProgress(`Uploading ${done}/${total}`));}
+   if(live){await startEverestLive(id,arrivalWindow);router.replace(`/everest-live?requestId=${id}`);return;}
    const [requestResult,oppResult]=await Promise.all([supabase.from('service_requests').select('status').eq('id',id).single(),supabase.from('opportunities').select('id',{count:'exact',head:true}).eq('request_id',id)]);
    setSuccess({id,status:String(requestResult.data?.status??'OPEN'),opportunities:oppResult.count??0});
   }catch(e){setError(userFacingError(e,'We could not post your request. Please retry.'));}
@@ -109,7 +112,7 @@ export default function Request(){
  if(success)return <SafeAreaView style={s.safe}><View style={s.success}><View style={s.successIcon}><Ionicons name="sparkles" size={28} color={colors.brand}/></View><Text style={s.title}>We’re finding the best businesses near you.</Text><Text style={s.copy}>{success.opportunities>0?`${success.opportunities} eligible business${success.opportunities===1?'':'es'} are in the first response wave.`:'Your request is posted. Everest is checking eligible businesses and service coverage.'}</Text><View style={s.progressCard}><ProgressRow done label="Request posted"/><ProgressRow done={success.status==='QUOTING'} label="Matching eligible businesses"/><ProgressRow done={false} label="Waiting for responses"/></View><Pressable onPress={()=>router.replace('/activity')} style={s.primary}><Text style={s.primaryText}>VIEW ACTIVITY</Text></Pressable></View></SafeAreaView>;
 
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">
-  <View style={s.top}><Pressable disabled={busy} onPress={()=>step>1?setStep(v=>v-1):router.back()}><Ionicons name="chevron-back" size={26} color={colors.text}/></Pressable><Text style={s.topTitle}>Post a request</Text><Text style={s.step}>{step}/3</Text></View><View style={s.bar}><View style={[s.barFill,{width:`${step/3*100}%`}]}/></View>
+  <View style={s.top}><Pressable disabled={busy} onPress={()=>step>1?setStep(v=>v-1):router.back()}><Ionicons name="chevron-back" size={26} color={colors.text}/></Pressable><Text style={s.topTitle}>{live?'Everest Live':'Post a request'}</Text><Text style={s.step}>{step}/3</Text></View><View style={s.bar}><View style={[s.barFill,{width:`${step/3*100}%`}]}/></View>
   {serviceLoading?<ActivityIndicator color={colors.brand} style={{marginTop:18}}/>:serviceName?<View style={s.selected}><Text style={s.eyebrow}>SELECTED SERVICE</Text><Text style={s.selectedName}>{serviceName}</Text></View>:null}
 
   {step===1?<><Text style={s.title}>What do you need?</Text><Text style={s.copy}>Describe the result you want. Everest will handle the matching.</Text><TextInput value={description} onChangeText={setDescription} placeholder="Example: Full interior + exterior car detail this Saturday" placeholderTextColor={colors.muted} multiline maxLength={5000} style={[s.input,s.area]}/>
@@ -120,15 +123,15 @@ export default function Request(){
    </View>:<View style={s.remote}><Ionicons name="globe-outline" size={20} color={colors.brand}/><Text style={s.meta}>Remote request — no GPS or local address is required.</Text></View>}
   </>:null}
 
-  {step===2?<><Text style={s.title}>When works for you?</Text><Text style={s.copy}>This is a preference until a business confirms its quote.</Text><View style={s.quickRow}><Chip active={date?localDate(date)===localDate(new Date()):false} text="Today" onPress={()=>chooseDate('TODAY')} colors={colors}/><Chip active={false} text="Tomorrow" onPress={()=>chooseDate('TOMORROW')} colors={colors}/><Chip active={false} text="This weekend" onPress={()=>chooseDate('WEEKEND')} colors={colors}/></View><DateTimeField mode="date" value={date} onChange={setDate} minimumDate={new Date()} label="Pick a date"/>
-   <Text style={s.heading}>Time</Text><View style={s.optionGrid}>{[
+  {step===2?<><Text style={s.title}>{live?'How soon do you need it?':'When works for you?'}</Text><Text style={s.copy}>{live?'This is your requested arrival window, not a guaranteed arrival time. Businesses confirm timing in their response.':'This is a preference until a business confirms its quote.'}</Text>{live?<View style={s.optionGrid}>{([['ASAP','ASAP','First available'],['WITHIN_30_MINUTES','Within 30 minutes','Requested window'],['WITHIN_1_HOUR','Within 1 hour','Requested window'],['TODAY','Today','Any time today']] as const).map(([key,title,sub])=><Pressable key={key} onPress={()=>{setArrivalWindow(key);setTiming('ASAP');setDate(new Date())}} style={[s.option,arrivalWindow===key&&s.optionActive]}><Text style={s.optionTitle}>{title}</Text><Text style={s.meta}>{sub}</Text></Pressable>)}</View>:<><View style={s.quickRow}><Chip active={date?localDate(date)===localDate(new Date()):false} text="Today" onPress={()=>chooseDate('TODAY')} colors={colors}/><Chip active={false} text="Tomorrow" onPress={()=>chooseDate('TOMORROW')} colors={colors}/><Chip active={false} text="This weekend" onPress={()=>chooseDate('WEEKEND')} colors={colors}/></View><DateTimeField mode="date" value={date} onChange={setDate} minimumDate={new Date()} label="Pick a date"/></>}
+   {!live?<><Text style={s.heading}>Time</Text><View style={s.optionGrid}>{[
     ['ASAP','As soon as possible','First available'],
     ['FLEXIBLE','Anytime','Flexible'],
     ['MORNING','Morning','8 AM – 12 PM'],
     ['AFTERNOON','Afternoon','12 PM – 5 PM'],
     ['EVENING','Evening','5 PM – 9 PM'],
     ['EXACT_TIME','Specific time','Choose a time'],
-   ].map(([key,title,sub])=><Pressable key={key} onPress={()=>chooseTiming(key as 'ASAP'|'FLEXIBLE'|'MORNING'|'AFTERNOON'|'EVENING'|'EXACT_TIME')} style={[s.option,(timing===key||windowKey===key)&&s.optionActive]}><Text style={s.optionTitle}>{title}</Text><Text style={s.meta}>{sub}</Text></Pressable>)}</View>{timing==='EXACT_TIME'?<DateTimeField mode="time" value={exactTime} onChange={setExactTime} label="Choose specific time"/>:null}
+   ].map(([key,title,sub])=><Pressable key={key} onPress={()=>chooseTiming(key as 'ASAP'|'FLEXIBLE'|'MORNING'|'AFTERNOON'|'EVENING'|'EXACT_TIME')} style={[s.option,(timing===key||windowKey===key)&&s.optionActive]}><Text style={s.optionTitle}>{title}</Text><Text style={s.meta}>{sub}</Text></Pressable>)}</View>{timing==='EXACT_TIME'?<DateTimeField mode="time" value={exactTime} onChange={setExactTime} label="Choose specific time"/>:null}</>:null}
    <Text style={s.heading}>Budget <Text style={s.optional}>(optional)</Text></Text><View style={s.chips}>{[['NONE','No budget yet'],['UNDER_100','Under $100'],['100_250','$100–250'],['250_500','$250–500'],['500_PLUS','$500+'],['CUSTOM','Custom']].map(([key,label])=><Chip key={key} active={budgetChoice===key} text={label} onPress={()=>setBudgetChoice(key as BudgetChoice)} colors={colors}/>)}</View>{budgetChoice==='CUSTOM'?<TextInput value={customBudget} onChangeText={setCustomBudget} placeholder="Custom budget AUD" placeholderTextColor={colors.muted} keyboardType="decimal-pad" style={s.input}/>:null}
    <View style={s.section}><Text style={s.heading}>Add photos <Text style={s.optional}>(optional)</Text></Text><Text style={s.meta}>Photos help businesses understand the job before quoting.</Text><Pressable onPress={()=>void choosePhotos()} style={s.outline}><Ionicons name="images-outline" size={17} color={colors.text}/><Text style={s.outlineText}>ADD PHOTOS {photos.length?(`(${photos.length}/10)`):''}</Text></Pressable>{photos.length?<ScrollView horizontal contentContainerStyle={s.photoRow}>{photos.map((p,i)=><View key={p.assetId??p.uri} style={s.photoWrap}><Image source={{uri:p.uri}} style={s.photo}/><Pressable onPress={()=>setPhotos(items=>items.filter((_,index)=>index!==i))} style={s.remove}><Ionicons name="close" size={14} color="#fff"/></Pressable></View>)}</ScrollView>:null}</View>
   </>:null}
@@ -136,13 +139,13 @@ export default function Request(){
   {step===3?<><Text style={s.title}>Ready to post?</Text><Text style={s.copy}>Tap any row to edit it before Everest starts matching.</Text>
    <Review label={serviceName||'SERVICE'} value={description} onPress={()=>setStep(1)} colors={colors}/>
    <Review label="WHERE" value={effectiveMode==='REMOTE'?'Remote / online':`${location.suburb}, ${location.city}, ${location.state}`} onPress={()=>setStep(1)} colors={colors}/>
-   <Review label="WHEN" value={date?`${date.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'})} · ${timing==='TIME_WINDOW'?(windowKey?.toLowerCase()??'Flexible'):timing==='EXACT_TIME'&&exactTime?exactTime.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):timing==='ASAP'?'As soon as possible':'Flexible'}`:'Flexible date · '+(timing==='ASAP'?'ASAP':timing==='FLEXIBLE'?'Anytime':windowKey?.toLowerCase()??'Flexible')} onPress={()=>setStep(2)} colors={colors}/>
+   <Review label="WHEN" value={live?arrivalWindow.replaceAll('_',' ').toLowerCase():date?`${date.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'})} · ${timing==='TIME_WINDOW'?(windowKey?.toLowerCase()??'Flexible'):timing==='EXACT_TIME'&&exactTime?exactTime.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):timing==='ASAP'?'As soon as possible':'Flexible'}`:'Flexible date · '+(timing==='ASAP'?'ASAP':timing==='FLEXIBLE'?'Anytime':windowKey?.toLowerCase()??'Flexible')} onPress={()=>setStep(2)} colors={colors}/>
    <Review label="BUDGET" value={budgetChoice==='NONE'?'Not specified':budgetChoice==='CUSTOM'?(`$${customBudget} AUD`):budgetChoice.replace('_','–').replace('UNDER-100','Under $100').replace('100–250','$100–250').replace('250–500','$250–500').replace('500–PLUS','$500+')} onPress={()=>setStep(2)} colors={colors}/>
    {photos.length?<Review label="PHOTOS" value={`${photos.length} attached`} onPress={()=>setStep(2)} colors={colors}/>:null}
   </>:null}
 
   {error?<Text style={s.error}>{error}</Text>:null}{uploadProgress?<Text style={s.meta}>{uploadProgress}</Text>:null}
-  <View style={s.footer}>{step<3?<Pressable disabled={busy||serviceLoading} onPress={next} style={[s.primary,{flex:1},(busy||serviceLoading)&&s.disabled]}><Text style={s.primaryText}>CONTINUE</Text></Pressable>:<Pressable disabled={busy} onPress={()=>void submit()} style={[s.primary,{flex:1},busy&&s.disabled]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<Text style={s.primaryText}>POST REQUEST</Text>}</Pressable>}</View>
+  <View style={s.footer}>{step<3?<Pressable disabled={busy||serviceLoading} onPress={next} style={[s.primary,{flex:1},(busy||serviceLoading)&&s.disabled]}><Text style={s.primaryText}>CONTINUE</Text></Pressable>:<Pressable disabled={busy} onPress={()=>void submit()} style={[s.primary,{flex:1},busy&&s.disabled]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<Text style={s.primaryText}>{live?'START LIVE SEARCH':'POST REQUEST'}</Text>}</Pressable>}</View>
  </ScrollView></SafeAreaView>;
 }
 function Chip({active,text,onPress,colors}:{active:boolean;text:string;onPress:()=>void;colors:ThemeColors}){return <Pressable onPress={onPress} style={{minHeight:40,paddingHorizontal:13,borderRadius:20,borderWidth:1,borderColor:active?colors.brand:colors.border,backgroundColor:active?colors.soft:colors.surface,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:10,fontWeight:'900',color:colors.text}}>{text}</Text></Pressable>}
