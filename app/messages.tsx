@@ -19,7 +19,7 @@ import {useVisualViewport} from '@/lib/visual-viewport';
 import {installChatWebRuntimeStyles} from '@/lib/chat-web-runtime';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
 
-type MarketConversation={id:string;customer_id:string;business_id:string;created_at:string;context_type?:'GENERAL'|'PRODUCT'|'SERVICE';product_id?:string|null;service_id?:string|null;context_title?:string|null;counterpart_name?:string;logo_url?:string|null};
+type MarketConversation={id:string;customer_id:string;business_id:string;request_id?:string|null;booking_id?:string|null;quote_id?:string|null;created_at:string;context_type?:'GENERAL'|'PRODUCT'|'SERVICE';product_id?:string|null;service_id?:string|null;context_title?:string|null;counterpart_name?:string;logo_url?:string|null};
 type MarketMessage={id:string;sender_id:string;body:string;created_at:string;read_at?:string|null;is_automated?:boolean;automation_source?:'FAQ'|'EVEREST_AI'|null};
 type ChatRow=
  | {kind:'PERSONAL';id:string;name:string;avatar:string|null;preview:string;at:string;unread:number;pending:boolean;conversation:PersonalConversation}
@@ -383,6 +383,7 @@ export default function Messages(){
     {selectedMarket.logo_url?<Image source={{uri:selectedMarket.logo_url}} style={{width:40,height:40,borderRadius:13}}/>:<View style={{width:40,height:40,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="business-outline" size={19} color={c.text}/></View>}
     <View style={{flex:1}}><Text style={{fontSize:15,fontWeight:'900',color:c.text}}>{selectedMarket.counterpart_name}</Text><Text style={{fontSize:10,color:c.muted,marginTop:2}}>{selectedMarket.context_type==='PRODUCT'?'Product · '+(selectedMarket.context_title??'Enquiry'):selectedMarket.context_type==='SERVICE'?'Service · '+(selectedMarket.context_title??'Enquiry'):'Business enquiry / booking'}</Text></View>
    </View>
+   {(selectedMarket.booking_id||selectedMarket.request_id||selectedMarket.context_type==='SERVICE')?<View style={{marginHorizontal:12,marginTop:8,paddingHorizontal:12,paddingVertical:9,borderRadius:12,backgroundColor:c.soft,borderWidth:1,borderColor:c.border,flexDirection:'row',gap:8,alignItems:'center'}}><Ionicons name="shield-checkmark-outline" size={17} color={c.brand}/><Text style={{flex:1,fontSize:10,lineHeight:15,color:c.text}}><Text style={{fontWeight:'900'}}>Keep service payments in Everest.</Text> Payments made outside Everest are not counted toward the booking balance or marketplace protection.</Text></View>:null}
    <MarketThread refValue={threadRef} items={marketThread} userId={userId} colors={c}/>
    <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} bottomInset={composerBottomInset} onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
    {error?<Text style={{fontSize:11,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
