@@ -13,6 +13,7 @@ create table if not exists public.business_membership_plans (
   currency text not null default 'aud' check (currency='aud'),
   billing_interval_unit text not null check (billing_interval_unit in ('DAY','WEEK','MONTH','YEAR')),
   billing_interval_count integer not null default 1 check (billing_interval_count between 1 and 365),
+  check ((billing_interval_unit='DAY' and billing_interval_count<=365) or (billing_interval_unit='WEEK' and billing_interval_count<=52) or (billing_interval_unit='MONTH' and billing_interval_count<=12) or (billing_interval_unit='YEAR' and billing_interval_count<=3)),
   included_credits integer not null default 0 check (included_credits between 0 and 10000),
   included_services jsonb not null default '[]'::jsonb check (jsonb_typeof(included_services)='array'),
   service_frequency jsonb not null default '{}'::jsonb check (jsonb_typeof(service_frequency)='object'),
@@ -36,6 +37,7 @@ create table if not exists public.customer_memberships (
   currency text not null default 'aud' check (currency='aud'),
   billing_interval_unit text not null check (billing_interval_unit in ('DAY','WEEK','MONTH','YEAR')),
   billing_interval_count integer not null check (billing_interval_count between 1 and 365),
+  check ((billing_interval_unit='DAY' and billing_interval_count<=365) or (billing_interval_unit='WEEK' and billing_interval_count<=52) or (billing_interval_unit='MONTH' and billing_interval_count<=12) or (billing_interval_unit='YEAR' and billing_interval_count<=3)),
   included_credits_per_period integer not null default 0 check (included_credits_per_period between 0 and 10000),
   included_services jsonb not null default '[]'::jsonb check (jsonb_typeof(included_services)='array'),
   service_frequency jsonb not null default '{}'::jsonb check (jsonb_typeof(service_frequency)='object'),
@@ -207,7 +209,7 @@ begin
   if length(trim(coalesce(p_name,''))) not between 1 and 120 then raise exception 'Plan name is required'; end if;
   if p_visibility not in ('PUBLIC','PRIVATE','INVITE_ONLY') then raise exception 'Invalid plan visibility'; end if;
   if p_price is null or p_price<=0 then raise exception 'Plan price must be greater than zero'; end if;
-  if p_interval_unit not in ('DAY','WEEK','MONTH','YEAR') or p_interval_count not between 1 and 365 then raise exception 'Invalid billing interval'; end if;
+  if p_interval_unit not in ('DAY','WEEK','MONTH','YEAR') or p_interval_count not between 1 and 365 or (p_interval_unit='WEEK' and p_interval_count>52) or (p_interval_unit='MONTH' and p_interval_count>12) or (p_interval_unit='YEAR' and p_interval_count>3) then raise exception 'Invalid billing interval'; end if;
   if coalesce(p_included_credits,0) not between 0 and 10000 then raise exception 'Invalid included credits'; end if;
   if jsonb_typeof(coalesce(p_included_services,'[]'::jsonb))<>'array' or jsonb_typeof(coalesce(p_service_frequency,'{}'::jsonb))<>'object' or jsonb_typeof(coalesce(p_benefits,'{}'::jsonb))<>'object' then raise exception 'Invalid plan configuration'; end if;
   insert into public.business_membership_plans(business_id,name,description,visibility,price,billing_interval_unit,billing_interval_count,included_credits,included_services,service_frequency,benefits,created_by)
@@ -271,7 +273,7 @@ begin
     title_v:=p.name;description_v:=p.description;price_v:=p.price;unit_v:=p.billing_interval_unit;count_v:=p.billing_interval_count;credits_v:=p.included_credits;services_v:=p.included_services;frequency_v:=p.service_frequency;benefits_v:=p.benefits;
   else
     title_v:=trim(coalesce(p_custom_title,''));description_v:=nullif(trim(coalesce(p_custom_description,'')),'');price_v:=p_custom_price;unit_v:=p_interval_unit;count_v:=p_interval_count;credits_v:=coalesce(p_included_credits,0);services_v:=coalesce(p_included_services,'[]'::jsonb);frequency_v:=coalesce(p_service_frequency,'{}'::jsonb);benefits_v:=coalesce(p_benefits,'{}'::jsonb);
-    if length(title_v) not between 1 and 120 or price_v is null or price_v<=0 or unit_v not in ('DAY','WEEK','MONTH','YEAR') or count_v not between 1 and 365 then raise exception 'Invalid custom membership'; end if;
+    if length(title_v) not between 1 and 120 or price_v is null or price_v<=0 or unit_v not in ('DAY','WEEK','MONTH','YEAR') or count_v not between 1 and 365 or (unit_v='WEEK' and count_v>52) or (unit_v='MONTH' and count_v>12) or (unit_v='YEAR' and count_v>3) then raise exception 'Invalid custom membership'; end if;
   end if;
 
   insert into public.customer_memberships(business_id,plan_id,contact_id,customer_id,title,description,price,billing_interval_unit,billing_interval_count,included_credits_per_period,included_services,service_frequency,benefits,start_date,status,created_by)
