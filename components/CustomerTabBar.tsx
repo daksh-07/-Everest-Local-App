@@ -9,10 +9,10 @@ import {haptic} from '@/lib/haptics';
 import {useExperience} from '@/lib/experience';
 
 type IconName=keyof typeof Ionicons.glyphMap;
-type Destination='/'|'/search'|'/activity'|'/messages'|'/account';
+type Destination='/'|'/social'|'/activity'|'/messages'|'/account';
 const items:ReadonlyArray<{route:Destination;label:string;icon:IconName;activeIcon:IconName}>=[
  {route:'/',label:'Home',icon:'home-outline',activeIcon:'home'},
- {route:'/search',label:'Explore',icon:'search-outline',activeIcon:'search'},
+ {route:'/social',label:'Explore',icon:'compass-outline',activeIcon:'compass'},
  {route:'/activity',label:'My Everest',icon:'pulse-outline',activeIcon:'pulse'},
  {route:'/messages',label:'Messages',icon:'chatbubble-outline',activeIcon:'chatbubble'},
  {route:'/account',label:'Account',icon:'person-outline',activeIcon:'person'},
