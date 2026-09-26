@@ -4,7 +4,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router} from 'expo-router';
 import {
-  addPostComment,getPostEngagement,listPostComments,listPublicPosts,setPostCommentsEnabled,
+  addPostComment,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,setPostCommentsEnabled,
   togglePostLike,toggleSavedPost,type PostComment,type PostEngagement,type SocialPost
 } from '@/lib/social';
 import {signedPostMedia} from '@/lib/request-post-media';
@@ -87,6 +87,14 @@ export default function Social(){
   try{const row=await addPostComment(commentPost.id,commentText);setComments(v=>[...v,row]);setCommentText('');updateEngagement(commentPost.id,e=>({...e,commentCount:e.commentCount+1}));}
   catch(e){setError(e instanceof Error?e.message:'Could not add comment.')}finally{setCommentsBusy(false)}
  }
+ async function hideComment(commentId:string){
+  if(!commentPost)return;
+  try{
+   await hidePostComment(commentId);
+   setComments(v=>v.filter(x=>x.id!==commentId));
+   updateEngagement(commentPost.id,e=>({...e,commentCount:Math.max(0,e.commentCount-1)}));
+  }catch(e){setError(e instanceof Error?e.message:'Could not hide comment.')}
+ }
  async function toggleComments(post:FeedPost){
   await setPostCommentsEnabled(post.id,!post.comments_enabled);
   setPosts(v=>v.map(x=>x.id===post.id?{...x,comments_enabled:!x.comments_enabled}:x));setMenuPost(null);
@@ -151,7 +159,7 @@ export default function Social(){
    <Pressable style={s.scrim} onPress={()=>setCommentPost(null)}/>
    <View style={s.sheet}>
     <View style={s.sheetHandle}/><View style={s.sheetHeader}><Text style={s.sheetTitle}>Comments</Text><Pressable onPress={()=>setCommentPost(null)}><Ionicons name="close" size={24} color={colors.text}/></Pressable></View>
-    {commentsBusy&&!comments.length?<ActivityIndicator style={{margin:30}}/>:<FlatList data={comments} keyExtractor={x=>x.id} style={{maxHeight:430}} contentContainerStyle={{paddingBottom:12}} ListEmptyComponent={<Text style={s.noComments}>Be the first to comment.</Text>} renderItem={({item})=><View style={s.comment}><View style={s.commentAvatar}><Ionicons name="person-outline" size={15} color={colors.muted}/></View><View style={{flex:1}}><Text style={s.commentName}>{item.profile?.display_name??'Everest member'}</Text><Text style={s.commentBody}>{item.body}</Text></View></View>}/>}
+    {commentsBusy&&!comments.length?<ActivityIndicator style={{margin:30}}/>:<FlatList data={comments} keyExtractor={x=>x.id} style={{maxHeight:430}} contentContainerStyle={{paddingBottom:12}} ListEmptyComponent={<Text style={s.noComments}>Be the first to comment.</Text>} renderItem={({item})=><View style={s.comment}><View style={s.commentAvatar}><Ionicons name="person-outline" size={15} color={colors.muted}/></View><View style={{flex:1}}><Text style={s.commentName}>{item.profile?.display_name??'Everest member'}</Text><Text style={s.commentBody}>{item.body}</Text></View>{(item.author_id===userId||commentPost?.author_id===userId)?<Pressable accessibilityLabel="Hide comment" onPress={()=>void hideComment(item.id)} style={s.commentControl}><Ionicons name="ellipsis-horizontal" size={18} color={colors.muted}/></Pressable>:null}</View>}/>}
     {commentPost?.comments_enabled?<View style={s.composer}><TextInput value={commentText} onChangeText={setCommentText} placeholder="Add a comment…" placeholderTextColor={colors.muted} style={s.input} multiline/><Pressable onPress={()=>void sendComment()} disabled={!commentText.trim()||commentsBusy}><Text style={[s.send,(!commentText.trim()||commentsBusy)&&{opacity:.35}]}>Post</Text></Pressable></View>:<Text style={s.noComments}>Comments are turned off for this post.</Text>}
    </View>
   </Modal>
@@ -171,6 +179,6 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  verified:{marginHorizontal:13,marginTop:9,flexDirection:'row',alignItems:'center',gap:5},verifiedText:{fontSize:11,fontWeight:'900',color:c.brand},commerceRow:{flexDirection:'row',gap:8,paddingHorizontal:13,paddingTop:11},commerce:{borderRadius:18,backgroundColor:c.brand,paddingHorizontal:13,paddingVertical:9},commerceText:{fontSize:11,fontWeight:'900',color:c.onBrand},
  empty:{padding:70,alignItems:'center'},emptyTitle:{fontSize:19,fontWeight:'900',color:c.text,marginTop:12},emptyCopy:{fontSize:13,lineHeight:19,color:c.muted,textAlign:'center',marginTop:5},
  scrim:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,.45)'},sheet:{position:'absolute',left:0,right:0,bottom:0,maxHeight:'75%',backgroundColor:c.surface,borderTopLeftRadius:24,borderTopRightRadius:24,paddingBottom:24},sheetHandle:{width:40,height:4,borderRadius:2,backgroundColor:c.border,alignSelf:'center',marginTop:9},sheetHeader:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:16,borderBottomWidth:1,borderColor:c.border},sheetTitle:{fontSize:18,fontWeight:'900',color:c.text},noComments:{padding:24,textAlign:'center',color:c.muted},
- comment:{flexDirection:'row',gap:10,paddingHorizontal:16,paddingVertical:10},commentAvatar:{width:32,height:32,borderRadius:16,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},commentName:{fontSize:12,fontWeight:'900',color:c.text},commentBody:{fontSize:13,lineHeight:18,color:c.text,marginTop:2},
+ comment:{flexDirection:'row',gap:10,paddingHorizontal:16,paddingVertical:10},commentControl:{width:36,height:36,alignItems:'center',justifyContent:'center'},commentAvatar:{width:32,height:32,borderRadius:16,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},commentName:{fontSize:12,fontWeight:'900',color:c.text},commentBody:{fontSize:13,lineHeight:18,color:c.text,marginTop:2},
  composer:{marginHorizontal:12,marginTop:6,borderWidth:1,borderColor:c.border,borderRadius:20,minHeight:48,paddingLeft:13,paddingRight:10,flexDirection:'row',alignItems:'center',gap:8},input:{flex:1,maxHeight:90,color:c.text,fontSize:14,paddingVertical:10},send:{fontSize:13,fontWeight:'900',color:c.brand}
 });
