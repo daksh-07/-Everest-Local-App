@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+const sql=fs.readFileSync('supabase/migrations/20260926230000_business_growth_engine_p1.sql','utf8');const ui=fs.readFileSync('app/business-growth-p1.tsx','utf8');
+test('growth P1 tables use RLS and narrow RPC writes',()=>{for(const t of ['business_offers','business_campaigns','business_loyalty_programs','customer_loyalty_balances','loyalty_ledger','business_waitlist','business_referral_programs','referrals'])assert.match(sql,new RegExp('alter table public\\.'+t+' enable row level security'));assert.match(sql,/revoke all on function public\.create_business_offer/);assert.match(sql,/public\.is_business_member/);});
+test('offers are explicit draft then publish',()=>{assert.match(sql,/status text not null default 'DRAFT'/);assert.match(ui,/CREATE DRAFT OFFER/);assert.match(ui,/PUBLISH/);});
+test('campaign defaults avoid unsolicited external messaging',()=>{assert.match(sql,/channel text not null default 'IN_APP'/);assert.match(ui,/consent-aware channels/);});
+test('growth metrics use real CRM and booking records',()=>{assert.match(sql,/inactive_contacts/);assert.match(sql,/quotes_to_recover/);assert.match(sql,/repeat_customers/);assert.match(sql,/revenue_30d/);});
