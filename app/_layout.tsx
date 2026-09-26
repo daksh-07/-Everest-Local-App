@@ -4,6 +4,7 @@ import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { DraggableAskEverest } from '@/components/DraggableAskEverest';
+import { BusinessOpportunityAlert } from '@/components/BusinessOpportunityAlert';
 import type { AccessContext } from '@/lib/access';
 import { ThemeProvider,useAppTheme } from '@/lib/theme';
 import {ExperienceProvider} from '@/lib/experience';
@@ -75,7 +76,7 @@ function ThemedRootLayout() {
   },[pathname,authInitialized,supabaseConfigured,sessionUserId,access,startupError,nav]);
 
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
-  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><Stack screenOptions={{headerShown:false,animation:'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></View>;
+  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><Stack screenOptions={{headerShown:false,animation:'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<BusinessOpportunityAlert/><DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></View>;
 }
 export default function RootLayout(){return <ThemeProvider><ExperienceProvider><ThemedRootLayout/></ExperienceProvider></ThemeProvider>}
 
