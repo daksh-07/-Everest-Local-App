@@ -44,7 +44,7 @@ export default function Request(){
  const [location,setLocation]=useState<LocationValue>({suburb:'',city:'',state:'',source:'MANUAL',confirmed:false});const [locating,setLocating]=useState(false);
  const [date,setDate]=useState<Date|null>(live?new Date():null);const [timing,setTiming]=useState<RequestTimingMode>(live?'ASAP':'FLEXIBLE');const [arrivalWindow,setArrivalWindow]=useState<LiveArrivalWindow>('ASAP');const [windowKey,setWindowKey]=useState<'MORNING'|'AFTERNOON'|'EVENING'|null>(null);const [exactTime,setExactTime]=useState<Date|null>(null);
  const [budgetChoice,setBudgetChoice]=useState<BudgetChoice>('NONE');const [customBudget,setCustomBudget]=useState('');const [photos,setPhotos]=useState<ImagePicker.ImagePickerAsset[]>([]);const [uploadProgress,setUploadProgress]=useState('');
- const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [success,setSuccess]=useState<{id:string;status:string;opportunities:number}|null>(null);const submitRef=useRef(false);
+ const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [success,setSuccess]=useState<{id:string;status:string;opportunities:number}|null>(null);const [pendingLiveRequestId,setPendingLiveRequestId]=useState<string|null>(null);const submitRef=useRef(false);
  const effectiveMode=serviceMode==='BOTH'?mode:(serviceMode??mode);
 
  useEffect(()=>{let active=true;(async()=>{
@@ -94,6 +94,12 @@ export default function Request(){
  function next(){if(validate(step))setStep(v=>Math.min(3,v+1));}
  async function submit(){if(submitRef.current||busy||!validate(2))return;submitRef.current=true;setBusy(true);setError('');
   try{
+   if(live&&pendingLiveRequestId){
+    try{
+     await startEverestLive(pendingLiveRequestId,arrivalWindow);
+     const id=pendingLiveRequestId;setPendingLiveRequestId(null);router.replace(`/everest-live?requestId=${id}`);return;
+    }catch(e){setError(userFacingError(e,'Your request is already posted, but Everest Live could not start. Please retry.'));return;}
+   }
    const win=windowKey?timingWindows[windowKey]:undefined;
    const id=await createServiceRequest({serviceId:serviceId||undefined,description:description.trim(),deliveryMode:effectiveMode,
     suburb:effectiveMode==='LOCAL'?location.suburb:undefined,city:effectiveMode==='LOCAL'?location.city:undefined,state:effectiveMode==='LOCAL'?location.state:undefined,
@@ -102,7 +108,10 @@ export default function Request(){
     preferredDate:date?localDate(date):undefined,preferredTime:timing==='EXACT_TIME'&&exactTime?timeValue(exactTime):undefined,timingMode:timing,
     timeWindowStart:win?.[0],timeWindowEnd:win?.[1],...budgetValues()});
    if(photos.length){setUploadProgress(`Uploading 0/${photos.length}`);await uploadRequestMedia(id,photos,(done,total)=>setUploadProgress(`Uploading ${done}/${total}`));}
-   if(live){await startEverestLive(id,arrivalWindow);router.replace(`/everest-live?requestId=${id}`);return;}
+   if(live){
+    try{await startEverestLive(id,arrivalWindow);router.replace(`/everest-live?requestId=${id}`);return;}
+    catch(e){setPendingLiveRequestId(id);setError(userFacingError(e,'Your request is posted, but Everest Live could not start. Tap Retry Live Search.'));return;}
+   }
    const [requestResult,oppResult]=await Promise.all([supabase.from('service_requests').select('status').eq('id',id).single(),supabase.from('opportunities').select('id',{count:'exact',head:true}).eq('request_id',id)]);
    setSuccess({id,status:String(requestResult.data?.status??'OPEN'),opportunities:oppResult.count??0});
   }catch(e){setError(userFacingError(e,'We could not post your request. Please retry.'));}
@@ -145,7 +154,7 @@ export default function Request(){
   </>:null}
 
   {error?<Text style={s.error}>{error}</Text>:null}{uploadProgress?<Text style={s.meta}>{uploadProgress}</Text>:null}
-  <View style={s.footer}>{step<3?<Pressable disabled={busy||serviceLoading} onPress={next} style={[s.primary,{flex:1},(busy||serviceLoading)&&s.disabled]}><Text style={s.primaryText}>CONTINUE</Text></Pressable>:<Pressable disabled={busy} onPress={()=>void submit()} style={[s.primary,{flex:1},busy&&s.disabled]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<Text style={s.primaryText}>{live?'START LIVE SEARCH':'POST REQUEST'}</Text>}</Pressable>}</View>
+  <View style={s.footer}>{step<3?<Pressable disabled={busy||serviceLoading} onPress={next} style={[s.primary,{flex:1},(busy||serviceLoading)&&s.disabled]}><Text style={s.primaryText}>CONTINUE</Text></Pressable>:<Pressable disabled={busy} onPress={()=>void submit()} style={[s.primary,{flex:1},busy&&s.disabled]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<Text style={s.primaryText}>{live?(pendingLiveRequestId?'RETRY LIVE SEARCH':'START LIVE SEARCH'):'POST REQUEST'}</Text>}</Pressable>}</View>
  </ScrollView></SafeAreaView>;
 }
 function Chip({active,text,onPress,colors}:{active:boolean;text:string;onPress:()=>void;colors:ThemeColors}){return <Pressable onPress={onPress} style={{minHeight:40,paddingHorizontal:13,borderRadius:20,borderWidth:1,borderColor:active?colors.brand:colors.border,backgroundColor:active?colors.soft:colors.surface,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:10,fontWeight:'900',color:colors.text}}>{text}</Text></Pressable>}
