@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import {URL} from 'node:url';
 
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
-const migration=read('supabase/migrations/20260926230000_marketplace_fee_engine.sql');
+const migration=read('supabase/migrations/20260926231500_marketplace_fee_engine.sql');
 const serviceCheckout=read('supabase/functions/service-checkout/index.ts');
 const productCheckout=read('supabase/functions/checkout/index.ts');
 
