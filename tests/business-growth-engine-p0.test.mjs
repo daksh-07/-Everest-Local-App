@@ -64,3 +64,14 @@ test('custom customer plans snapshot server-authoritative terms',()=>{
  assert.match(businessGrowth,/Custom plan/);
  assert.match(growth,/inviteCustomerToMembership/);
 });
+
+test('public plans are self-service without bypassing explicit consent',()=>{
+ const profile=fs.readFileSync('app/business-profile.tsx','utf8');
+ assert.match(migration,/create or replace function public\.create_public_membership_enrollment/);
+ assert.match(migration,/p0\.visibility='PUBLIC'/);
+ assert.match(migration,/status in \('INVITED','INCOMPLETE','TRIALING','ACTIVE','PAST_DUE','PAUSED','CANCEL_AT_PERIOD_END'\)/);
+ assert.match(growth,/createPublicMembershipEnrollment/);
+ assert.match(profile,/JOIN & REVIEW BILLING/);
+ assert.match(profile,/approveMembership\(membershipId\)/);
+ assert.match(profile,/BUY PACKAGE/);
+});
