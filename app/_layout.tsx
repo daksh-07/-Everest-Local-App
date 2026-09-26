@@ -5,13 +5,14 @@ import { StatusBar } from 'expo-status-bar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { DraggableAskEverest } from '@/components/DraggableAskEverest';
 import { BusinessOpportunityAlert } from '@/components/BusinessOpportunityAlert';
+import { EverestLiveMiniPlayer } from '@/components/EverestLiveMiniPlayer';
 import type { AccessContext } from '@/lib/access';
 import { ThemeProvider,useAppTheme } from '@/lib/theme';
 import {ExperienceProvider} from '@/lib/experience';
 import {configureEverestQuickActions,quickActionHref,QuickActions,storePendingQuickActionRoute} from '@/lib/quick-actions';
 
 const protectedRoutes = new Set([
-  '/account','/activity','/memberships','/assistant','/request','/requests','/quotes','/bookings','/booking','/orders','/cart','/messages','/reviews','/notifications','/settings','/edit-profile','/appearance','/notification-settings','/help',
+  '/account','/activity','/memberships','/assistant','/request','/everest-live','/requests','/quotes','/bookings','/booking','/orders','/cart','/messages','/reviews','/notifications','/settings','/edit-profile','/appearance','/notification-settings','/help',
 ]);
 const businessApplicationRoutes = new Set(['/business','/business-onboarding','/business-dashboard','/business-verification','/business-today','/business-control']);
 const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities','/business-leads','/business-jobs','/business-job','/business-inbox','/business-crm','/business-calendar','/business-integrations','/business-calendar-integrations','/business-automations','/business-growth']);
@@ -76,7 +77,7 @@ function ThemedRootLayout() {
   },[pathname,authInitialized,supabaseConfigured,sessionUserId,access,startupError,nav]);
 
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
-  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><Stack screenOptions={{headerShown:false,animation:'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<BusinessOpportunityAlert/><DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></View>;
+  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><Stack screenOptions={{headerShown:false,animation:'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}/>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="box-none" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}<BusinessOpportunityAlert/><EverestLiveMiniPlayer/><DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></View>;
 }
 export default function RootLayout(){return <ThemeProvider><ExperienceProvider><ThemedRootLayout/></ExperienceProvider></ThemeProvider>}
 
