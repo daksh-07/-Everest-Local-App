@@ -24,6 +24,17 @@ create unique index if not exists conversations_service_inquiry_unique
 create index if not exists conversations_business_context_idx
   on public.conversations(business_id,context_type,created_at desc);
 
+
+alter table public.messages
+  add column if not exists is_automated boolean not null default false,
+  add column if not exists automation_source text;
+
+do $ begin
+  alter table public.messages
+    add constraint messages_automation_source_check
+    check (automation_source is null or automation_source in ('FAQ','EVEREST_AI'));
+exception when duplicate_object then null; end $;
+
 create or replace function public.get_or_create_business_inquiry(
   p_business_id uuid,
   p_context_type text,
@@ -196,3 +207,80 @@ end;
 $$;
 revoke all on function public.set_business_dm_ai(uuid,boolean,text) from public,anon;
 grant execute on function public.set_business_dm_ai(uuid,boolean,text) to authenticated;
+
+
+-- Free deterministic auto-answers run in the database so they remain reliable even if
+-- an AI provider is unavailable. Matching is intentionally conservative to avoid
+-- answering unrelated customer messages.
+create or replace function public.reply_to_business_dm_faq()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+  v_conversation public.conversations%rowtype;
+  v_question text;
+  v_answer text;
+  v_owner uuid;
+  v_faq_enabled boolean := true;
+begin
+  if new.is_automated or new.sender_id is null then return new; end if;
+
+  select c.* into v_conversation
+  from public.conversations c
+  where c.id=new.conversation_id;
+
+  if v_conversation.id is null
+     or v_conversation.customer_id<>new.sender_id
+     or v_conversation.context_type not in ('PRODUCT','SERVICE') then
+    return new;
+  end if;
+
+  select coalesce(s.faq_enabled,true) into v_faq_enabled
+  from public.business_dm_settings s
+  where s.business_id=v_conversation.business_id;
+  if found and not v_faq_enabled then return new; end if;
+
+  v_question := trim(regexp_replace(lower(new.body),'[^a-z0-9 ]+',' ','g'));
+  v_question := regexp_replace(v_question,'\s+',' ','g');
+  if length(v_question)<3 then return new; end if;
+
+  select f.answer into v_answer
+  from public.business_dm_faq f
+  where f.business_id=v_conversation.business_id
+    and f.active=true
+    and f.context_type in ('ALL',v_conversation.context_type)
+    and (
+      trim(regexp_replace(lower(f.question),'[^a-z0-9 ]+',' ','g'))=v_question
+      or (
+        length(v_question)>=8
+        and position(trim(regexp_replace(lower(f.question),'[^a-z0-9 ]+',' ','g')) in v_question)>0
+      )
+    )
+  order by
+    case when trim(regexp_replace(lower(f.question),'[^a-z0-9 ]+',' ','g'))=v_question then 0 else 1 end,
+    f.sort_order,
+    f.created_at
+  limit 1;
+
+  if v_answer is null then return new; end if;
+
+  select b.owner_id into v_owner
+  from public.businesses b
+  where b.id=v_conversation.business_id;
+  if v_owner is null then return new; end if;
+
+  insert into public.messages(conversation_id,sender_id,body,is_automated,automation_source)
+  values(new.conversation_id,v_owner,v_answer,true,'FAQ');
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_reply_to_business_dm_faq on public.messages;
+create trigger trg_reply_to_business_dm_faq
+after insert on public.messages
+for each row execute function public.reply_to_business_dm_faq();
+
+revoke all on function public.reply_to_business_dm_faq() from public,anon,authenticated;
