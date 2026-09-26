@@ -60,6 +60,10 @@ jobs:
           npm run test:security 2>&1 | tee security.log
           status=${PIPESTATUS[0]}
           exit $status
+      - name: Launch payment and entitlement hardening
+        run: npm run test:launch
+      - name: Contact import boundaries
+        run: npm run test:contact-import
       - name: Edge-to-edge Home and quick actions regressions
         run: npm run test:home-shell
       - name: Product marketplace regressions
