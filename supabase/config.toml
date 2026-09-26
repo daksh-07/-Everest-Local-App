@@ -15,6 +15,9 @@ verify_jwt = true
 [functions.stripe-webhook]
 verify_jwt = false
 
+[functions.membership-billing]
+verify_jwt = true
+
 [functions.external-discovery]
 verify_jwt = true
 
