@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import {ActivityIndicator,Pressable,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {deepLinkToSubscriptions,finishTransaction,getAvailablePurchases,useIAP} from 'expo-iap';
+import {deepLinkToSubscriptions,finishTransaction,getAvailablePurchases,useIAP,type Purchase} from 'expo-iap';
 import {APPLE_PRO_PRODUCT_ID,verifyApplePurchase} from '@/lib/apple-billing';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 
@@ -34,7 +34,7 @@ export function AppleSubscriptionControls({businessId,active,provider,onActivate
  const product=subscriptions.find(item=>item.id===APPLE_PRO_PRODUCT_ID);
  const displayPrice=product?.displayPrice??'App Store price';
 
- async function validateAndFinish(purchase:{transactionId?:string|null;productId?:string}){
+ async function validateAndFinish(purchase:Purchase){
   try{
    const transactionId=String(purchase.transactionId??'');
    if(!transactionId)throw new Error('Apple transaction ID was not returned.');
