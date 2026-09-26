@@ -34,3 +34,10 @@ verify_jwt = false
 
 [functions.crm-calendar-sync]
 verify_jwt = true
+
+
+[functions.apple-subscription-verify]
+verify_jwt = true
+
+[functions.apple-subscription-webhook]
+verify_jwt = false
