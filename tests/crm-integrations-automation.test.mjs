@@ -25,7 +25,7 @@ test('OAuth uses authenticated membership for initiation and signed expiring cal
  assert.match(oauth,/userClient\.auth\.getUser\(\)/);
  assert.match(oauth,/\.from\('business_members'\).*\.eq\('business_id',businessId\).*\.eq\('user_id',user\.id\)/s);
  assert.match(oauth,/HMAC/);
- assert.match(oauth,/state\.exp>Date\.now\(\)/);
+ assert.match(oauth,/state\.exp<=Date\.now\(\)/);
  assert.match(oauth,/Business access is no longer available/);
  assert.doesNotMatch(oauth,/console\.log\(.*token/i);
 });
@@ -61,7 +61,8 @@ test('webhook foundation requires HTTPS, secret references, delivery attempts an
 
 test('integrations hub never presents unavailable AI or missing OAuth configuration as connected',()=>{
  for(const provider of ['GOOGLE_CALENDAR','MICROSOFT_CALENDAR','GMAIL','OPENAI'])assert.match(hub,new RegExp(provider));
- assert.match(hub,/SET UP SERVER/);
+ assert.match(hub,/available:false/);
+ assert.match(hub,/!item\.available/);
  assert.match(client,/Provider OAuth credentials are not configured|This integration is not configured/);
- assert.match(hub,/OAuth tokens stay on the server/);
+ assert.match(hub,/getBusinessSubscription/);
 });
