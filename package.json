@@ -27,7 +27,8 @@
     "test:contact-import": "node --test tests/contact-import.test.mjs",
     "test:retention": "node --test tests/retention-p0.test.mjs",
     "test:growth": "node --test tests/business-growth-engine-p0.test.mjs",
-    "test:opportunity-alerts": "node --test tests/instant-opportunity-alerts.test.mjs"
+    "test:opportunity-alerts": "node --test tests/instant-opportunity-alerts.test.mjs",
+    "test:release": "node --test tests/launch-legal-surfaces.test.mjs tests/launch-payment-entitlement-hardening.test.mjs tests/external-release-gate.test.mjs tests/growth-execution-p2.test.mjs tests/instant-opportunity-alerts.test.mjs tests/retention-p0.test.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
