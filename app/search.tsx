@@ -128,7 +128,7 @@ function HistoryRow({
             <Ionicons name="trash-outline" size={17} color={c.danger}/>
           </Pressable>
         ):(
-          <Ionicons name="arrow-up-back-outline" size={17} color={c.muted} style={{transform:[{rotate:'90deg'}]}}/>
+          <Ionicons name="arrow-back-outline" size={17} color={c.muted} style={{transform:[{rotate:'90deg'}]}}/>
         )}
       </View>
     </View>
