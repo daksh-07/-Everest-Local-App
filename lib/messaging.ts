@@ -63,7 +63,7 @@ export async function messages(conversationId: string) {
   requireSupabaseConfig();
   const id = conversationId.trim();
   if (!id) throw new Error('Conversation reference is required.');
-  const { data, error } = await supabase.from('messages').select('id,sender_id,body,read_at,created_at').eq('conversation_id', id).order('created_at', { ascending: true });
+  const { data, error } = await supabase.from('messages').select('id,sender_id,body,read_at,created_at,is_automated,automation_source').eq('conversation_id', id).order('created_at', { ascending: true });
   if (error) throw new Error(safeError(error, 'Unable to load this conversation.'));
   return data ?? [];
 }
@@ -76,6 +76,8 @@ export async function sendMessage(conversationId: string, body: string) {
   if (!text || text.length > 5000) throw new Error('Message must be between 1 and 5000 characters');
   const { data, error } = await supabase.from('messages').insert({ conversation_id: conversationId, sender_id: user.id, body: text }).select('id').single();
   if (error) throw new Error(safeError(error, 'Message could not be sent.'));
+  // Product/service AI automation is best-effort and must never block a customer's message.
+  void supabase.functions.invoke('business-dm-auto-reply',{body:{messageId:data.id}}).catch(()=>undefined);
   return data.id;
 }
 
