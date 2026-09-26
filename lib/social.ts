@@ -249,3 +249,40 @@ export async function setPostCommentsEnabled(postId:string,enabled:boolean):Prom
   const {error}=await supabase.from('posts').update({comments_enabled:enabled,updated_at:new Date().toISOString()}).eq('id',postId);
   if(error)throw new Error(error.message);
 }
+
+
+export interface CommentEngagement {
+  likeCount:number;
+  likedByMe:boolean;
+}
+
+export async function getCommentEngagement(commentIds:string[]):Promise<Record<string,CommentEngagement>>{
+  if(!commentIds.length)return {};
+  requireSupabaseConfig();
+  const {data:{user}}=await supabase.auth.getUser();
+  const {data,error}=await supabase.from('post_comment_reactions').select('comment_id,user_id').in('comment_id',commentIds);
+  if(error)throw new Error(error.message);
+  const result:Record<string,CommentEngagement>={};
+  for(const id of commentIds)result[id]={likeCount:0,likedByMe:false};
+  for(const row of data??[]){
+    const item=result[row.comment_id];
+    if(item){
+      item.likeCount++;
+      if(user&&row.user_id===user.id)item.likedByMe=true;
+    }
+  }
+  return result;
+}
+
+export async function toggleCommentLike(commentId:string,currentlyLiked:boolean):Promise<void>{
+  requireSupabaseConfig();
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user)throw new Error('Sign in to like comments.');
+  if(currentlyLiked){
+    const {error}=await supabase.from('post_comment_reactions').delete().eq('comment_id',commentId).eq('user_id',user.id);
+    if(error)throw new Error(error.message);
+  }else{
+    const {error}=await supabase.from('post_comment_reactions').upsert({comment_id:commentId,user_id:user.id,reaction:'LIKE'},{onConflict:'comment_id,user_id'});
+    if(error)throw new Error(error.message);
+  }
+}
