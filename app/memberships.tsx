@@ -16,7 +16,7 @@ export default function MembershipWallet(){
  const [memberships,setMemberships]=useState<CustomerMembership[]>([]);const [packages,setPackages]=useState<CustomerPackage[]>([]);const [credits,setCredits]=useState(new Map<string,number>());const [businesses,setBusinesses]=useState<BusinessNameMap>(new Map());
  const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [busy,setBusy]=useState('');const [error,setError]=useState('');
 
- const load=useCallback(async(refresh=false)=>{refresh?setRefreshing(true):setLoading(true);setError('');try{
+ const load=useCallback(async(refresh=false)=>{if(refresh)setRefreshing(true);else setLoading(true);setError('');try{
   const [m,p]=await Promise.all([listMyMemberships(),listMyPackages()]);setMemberships(m);setPackages(p);setCredits(await getMembershipCredits(m.map(x=>x.id)));
   const ids=[...new Set([...m.map(x=>x.business_id),...p.map(x=>x.business_id)])];
   if(ids.length){const {data,error:e}=await supabase.from('businesses').select('id,name').in('id',ids);if(e)throw e;setBusinesses(new Map((data??[]).map(row=>[String(row.id),String(row.name)])))}else setBusinesses(new Map());
