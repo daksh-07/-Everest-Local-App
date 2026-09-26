@@ -73,6 +73,7 @@ Deno.serve(async req=>{
  const action=String(body.action??'');
  if(action==='BEGIN'){
   if(!clientId||!clientSecret||!callback)return json({error:'Google Calendar OAuth credentials are not configured.'},503);
+  console.log('[customer-calendar-oauth] google client diagnostic',{prefix:clientId.slice(0,20),suffix:clientId.slice(-28),length:clientId.length,looksValid:clientId.endsWith('.apps.googleusercontent.com'),callback});
   const state=await signedState({kind:'CUSTOMER_CALENDAR',userId:user.id,nonce:crypto.randomUUID(),exp:Date.now()+10*60*1000},stateSecret);
   const params=new URLSearchParams({
    client_id:clientId,redirect_uri:callback,response_type:'code',
