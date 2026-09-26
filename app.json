@@ -9,7 +9,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.everestlocal.app",
-      "backgroundColor": "#0b0b0b"
+      "backgroundColor": "#0b0b0b",
+      "infoPlist": {}
     },
     "android": {
       "package": "com.everestlocal.app"
@@ -41,7 +42,8 @@
         {
           "calendarPermission": "Everest Local uses your calendar only when you choose to check availability or add confirmed Everest bookings."
         }
-      ]
+      ],
+      "expo-iap"
     ],
     "extra": {
       "supabaseUrl": "https://bmwbljefnamvjnmuvkvv.supabase.co",
