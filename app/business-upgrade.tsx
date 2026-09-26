@@ -34,6 +34,7 @@ export default function BusinessUpgrade(){
  useEffect(()=>{if(params.subscription==='success')void load()},[params.subscription,load]);
 
  const active=hasEverestPro(subscription);
+ const appleIapEnabled=Platform.OS==='ios'&&process.env.EXPO_PUBLIC_ENABLE_APPLE_IAP==='true';
 
  async function billing(){
   if(!businessId)return;
@@ -56,7 +57,7 @@ export default function BusinessUpgrade(){
     <View style={st.crown}><Ionicons name="diamond" size={27} color={colors.onBrand}/></View>
     <Text style={st.eyebrow}>PREMIUM BUSINESS TOOLS</Text>
     <Text style={st.title}>{active?'Everest Pro is active':'Unlock '+feature}</Text>
-    <Text style={st.copy}>{active?'Your business has access to Everest Pro features while the subscription remains active.':Platform.OS==='ios'?'Subscribe securely through your Apple Account. Everest Pro renews automatically until cancelled.':'Gmail and Everest AI require an active Everest Pro subscription. Billing is recurring, not a one-time purchase.'}</Text>
+    <Text style={st.copy}>{active?'Your business has access to Everest Pro features while the subscription remains active.':appleIapEnabled?'Subscribe securely through your Apple Account. Everest Pro renews automatically until cancelled.':'Gmail and Everest AI require an active Everest Pro subscription. Billing is recurring, not a one-time purchase.'}</Text>
     {active?<View style={st.activeBadge}><Ionicons name="checkmark-circle" size={14} color={colors.brand}/><Text style={st.activeText}>ACTIVE SUBSCRIPTION</Text></View>:null}
    </View>
 
@@ -69,7 +70,7 @@ export default function BusinessUpgrade(){
    {loading?<ActivityIndicator color={colors.brand} style={{marginTop:22}}/>:<>
     {subscription?.cancel_at_period_end&&subscription.current_period_end?<View style={st.notice}><Ionicons name="time-outline" size={18} color={colors.brand}/><Text style={st.noticeText}>Cancellation is scheduled. Pro access remains available until {new Date(subscription.current_period_end).toLocaleDateString()}.</Text></View>:null}
     {params.subscription==='cancelled'?<View style={st.notice}><Ionicons name="information-circle-outline" size={18} color={colors.brand}/><Text style={st.noticeText}>Checkout was cancelled. No subscription change was made.</Text></View>:null}
-    {Platform.OS==='ios'?
+    {appleIapEnabled?
      <AppleSubscriptionControls businessId={businessId} active={active} provider={subscription?.billing_provider??'STRIPE'} onActivated={()=>void load()}/>
      :
      <Pressable disabled={working} onPress={()=>void billing()} style={[st.primary,working&&{opacity:.65}]}>
