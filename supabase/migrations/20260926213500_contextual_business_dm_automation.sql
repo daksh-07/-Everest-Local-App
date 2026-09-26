@@ -29,12 +29,6 @@ alter table public.messages
   add column if not exists is_automated boolean not null default false,
   add column if not exists automation_source text;
 
-do $ begin
-  alter table public.messages
-    add constraint messages_automation_source_check
-    check (automation_source is null or automation_source in ('FAQ','EVEREST_AI'));
-exception when duplicate_object then null; end $;
-
 create or replace function public.get_or_create_business_inquiry(
   p_business_id uuid,
   p_context_type text,
