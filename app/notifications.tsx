@@ -7,8 +7,8 @@ import { type ThemeColors,useAppTheme } from '@/lib/theme';
 import { getWorkspaceContext,setWorkspacePreference } from '@/lib/workspace';
 
 type Notification={id:string;title:string;body:string;read_at:string|null;created_at:string;kind:string;data:Record<string,unknown>|null};
-type NotificationRoute='/activity'|'/requests'|'/quotes'|'/bookings'|'/messages'|'/orders'|'/reviews';
-const allowedRoutes=new Set<NotificationRoute>(['/activity','/requests','/quotes','/bookings','/messages','/orders','/reviews']);
+type NotificationRoute='/activity'|'/requests'|'/quotes'|'/bookings'|'/messages'|'/orders'|'/reviews'|'/opportunities';
+const allowedRoutes=new Set<NotificationRoute>(['/activity','/requests','/quotes','/bookings','/messages','/orders','/reviews','/opportunities']);
 function destination(item:Notification):NotificationRoute{const data=item.data??{};if(typeof data.route==='string'&&allowedRoutes.has(data.route as NotificationRoute))return data.route as NotificationRoute;if(item.kind.includes('quote'))return '/quotes';if(item.kind.includes('booking'))return '/bookings';if(item.kind.includes('message'))return '/messages';if(item.kind.includes('order')||item.kind.includes('delivery')||item.kind.includes('payment'))return '/orders';if(item.kind.includes('review'))return '/reviews';if(item.kind.includes('request'))return '/requests';return '/activity';}
 export default function Notifications(){
  const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
