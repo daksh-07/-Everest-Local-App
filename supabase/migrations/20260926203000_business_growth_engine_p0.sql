@@ -288,6 +288,37 @@ end $$;
 revoke all on function public.create_customer_membership_invitation(uuid,uuid,uuid,text,text,numeric,text,integer,integer,jsonb,jsonb,jsonb,date) from public,anon;
 grant execute on function public.create_customer_membership_invitation(uuid,uuid,uuid,text,text,numeric,text,integer,integer,jsonb,jsonb,jsonb,date) to authenticated;
 
+create or replace function public.create_public_membership_enrollment(p_plan_id uuid)
+returns uuid language plpgsql security definer set search_path='' as $
+declare p public.business_membership_plans; existing_id uuid; rid uuid;
+begin
+  if auth.uid() is null then raise exception 'Authentication required'; end if;
+  select p0.* into p
+  from public.business_membership_plans p0
+  join public.businesses b on b.id=p0.business_id
+  where p0.id=p_plan_id and p0.active and p0.visibility='PUBLIC'
+    and b.status='ACTIVE' and b.verification_status='VERIFIED';
+  if p.id is null then raise exception 'Membership plan is not available'; end if;
+
+  select id into existing_id
+  from public.customer_memberships
+  where customer_id=auth.uid() and plan_id=p.id
+    and status in ('INVITED','INCOMPLETE','TRIALING','ACTIVE','PAST_DUE','PAUSED','CANCEL_AT_PERIOD_END')
+  order by created_at desc limit 1;
+  if existing_id is not null then return existing_id; end if;
+
+  insert into public.customer_memberships(
+    business_id,plan_id,customer_id,title,description,price,currency,billing_interval_unit,billing_interval_count,
+    included_credits_per_period,included_services,service_frequency,benefits,start_date,status
+  ) values(
+    p.business_id,p.id,auth.uid(),p.name,p.description,p.price,p.currency,p.billing_interval_unit,p.billing_interval_count,
+    p.included_credits,p.included_services,p.service_frequency,p.benefits,current_date,'INVITED'
+  ) returning id into rid;
+  return rid;
+end $;
+revoke all on function public.create_public_membership_enrollment(uuid) from public,anon;
+grant execute on function public.create_public_membership_enrollment(uuid) to authenticated;
+
 create or replace function public.prepare_membership_checkout(p_membership_id uuid,p_idempotency_key text)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare m public.customer_memberships; b public.businesses;
