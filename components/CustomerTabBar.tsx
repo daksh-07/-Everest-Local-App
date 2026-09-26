@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Animated,Platform,Pressable,StyleSheet,Text,View } from 'react-native';
+import { Animated,Pressable,StyleSheet,Text,View } from 'react-native';
 import { useEffect,useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ui } from '@/lib/ui';
