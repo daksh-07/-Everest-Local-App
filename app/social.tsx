@@ -1,10 +1,10 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,FlatList,Image,Modal,Pressable,RefreshControl,Share,StyleSheet,Text,TextInput,View,useWindowDimensions} from 'react-native';
+import {ActivityIndicator,Alert,FlatList,Image,Modal,Pressable,RefreshControl,Share,StyleSheet,Text,TextInput,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useLocalSearchParams} from 'expo-router';
 import {
-  addPostComment,getCommentEngagement,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,setPostCommentsEnabled,
+  addPostComment,archivePost,deletePost,getCommentEngagement,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,setPostCommentsEnabled,
   toggleCommentLike,togglePostLike,toggleSavedPost,type CommentEngagement,type PostComment,type PostEngagement,type SocialPost
 } from '@/lib/social';
 import {signedPostMedia} from '@/lib/request-post-media';
@@ -30,7 +30,7 @@ export default function Social(){
  const [error,setError]=useState('');const [locality,setLocality]=useState('Near you');const [userId,setUserId]=useState<string|null>(null);
  const [commentPost,setCommentPost]=useState<FeedPost|null>(null);const [comments,setComments]=useState<PostComment[]>([]);const [commentText,setCommentText]=useState('');
  const [commentLikes,setCommentLikes]=useState<Record<string,CommentEngagement>>({});const [replyTo,setReplyTo]=useState<PostComment|null>(null);
- const [commentsBusy,setCommentsBusy]=useState(false);const [menuPost,setMenuPost]=useState<string|null>(null);const deepLinkOpened=useRef(false);
+ const [commentsBusy,setCommentsBusy]=useState(false);const [menuPost,setMenuPost]=useState<string|null>(null);const [postBusy,setPostBusy]=useState<string|null>(null);const deepLinkOpened=useRef(false);
 
  const load=useCallback(async()=>{
   setError('');
@@ -123,6 +123,20 @@ export default function Social(){
   await setPostCommentsEnabled(post.id,!post.comments_enabled);
   setPosts(v=>v.map(x=>x.id===post.id?{...x,comments_enabled:!x.comments_enabled}:x));setMenuPost(null);
  }
+ function confirmArchive(post:FeedPost){
+  setMenuPost(null);
+  Alert.alert('Archive post?','It will disappear from Explore and your public profile. You can restore it anytime from My Posts.',[
+   {text:'Cancel',style:'cancel'},
+   {text:'Archive',onPress:async()=>{setPostBusy(post.id);try{await archivePost(post.id);setPosts(v=>v.filter(x=>x.id!==post.id));void haptic.success()}catch(e){setError(e instanceof Error?e.message:'Could not archive post.')}finally{setPostBusy(null)}}}
+  ]);
+ }
+ function confirmDelete(post:FeedPost){
+  setMenuPost(null);
+  Alert.alert('Delete post?','This removes the post from Everest Local. This action cannot be undone.',[
+   {text:'Cancel',style:'cancel'},
+   {text:'Delete',style:'destructive',onPress:async()=>{setPostBusy(post.id);try{await deletePost(post.id);setPosts(v=>v.filter(x=>x.id!==post.id));void haptic.success()}catch(e){setError(e instanceof Error?e.message:'Could not delete post.')}finally{setPostBusy(null)}}}
+  ]);
+ }
  const mediaWidth=Math.min(width-24,720);
 
  if(loading&&!posts.length)return <SafeAreaView style={s.safe}><ActivityIndicator style={{marginTop:100}}/></SafeAreaView>;
@@ -153,8 +167,11 @@ export default function Social(){
      <Pressable onPress={()=>setMenuPost(menuPost===item.id?null:item.id)} style={s.more}><Ionicons name="ellipsis-horizontal" size={21} color={colors.text}/></Pressable>
     </View>
     {menuPost===item.id?<View style={s.menu}>
-      {item.author_id===userId?<Pressable onPress={()=>void toggleComments(item)} style={s.menuItem}><Ionicons name={item.comments_enabled?'chatbubble-outline':'chatbubble-ellipses-outline'} size={17} color={colors.text}/><Text style={s.menuText}>{item.comments_enabled?'Turn comments off':'Turn comments on'}</Text></Pressable>:null}
+      {item.author_id===userId?<Pressable onPress={()=>{setMenuPost(null);router.push('/my-posts')}} style={s.menuItem}><Ionicons name="grid-outline" size={17} color={colors.text}/><Text style={s.menuText}>Manage my posts</Text></Pressable>:null}
+      {item.author_id===userId?<Pressable disabled={postBusy===item.id} onPress={()=>void toggleComments(item)} style={s.menuItem}><Ionicons name={item.comments_enabled?'chatbubble-outline':'chatbubble-ellipses-outline'} size={17} color={colors.text}/><Text style={s.menuText}>{item.comments_enabled?'Turn comments off':'Turn comments on'}</Text></Pressable>:null}
+      {item.author_id===userId?<Pressable disabled={postBusy===item.id} onPress={()=>confirmArchive(item)} style={s.menuItem}><Ionicons name="archive-outline" size={17} color={colors.text}/><Text style={s.menuText}>Archive post</Text></Pressable>:null}
       <Pressable onPress={()=>void share(item)} style={s.menuItem}><Ionicons name="share-outline" size={17} color={colors.text}/><Text style={s.menuText}>Share post</Text></Pressable>
+      {item.author_id===userId?<Pressable disabled={postBusy===item.id} onPress={()=>confirmDelete(item)} style={s.menuItem}><Ionicons name="trash-outline" size={17} color={colors.danger}/><Text style={[s.menuText,{color:colors.danger}]}>Delete post</Text></Pressable>:null}
     </View>:null}
     {item.media?.length?<View style={s.mediaWrap}>{item.media.slice(0,1).map(uri=><Image key={uri} source={{uri}} resizeMode="cover" style={[s.media,{width:mediaWidth,height:Math.min(mediaWidth*1.05,650)}]}/>)}
       {item.media.length>1?<View style={s.mediaCount}><Text style={s.mediaCountText}>1/{item.media.length}</Text></View>:null}
