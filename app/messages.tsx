@@ -310,7 +310,7 @@ export default function Messages(){
 
  const chats=useMemo<ChatRow[]>(()=>{
   const people:ChatRow[]=personal.map(item=>({kind:'PERSONAL',id:item.id,name:item.display_name??'Everest member',avatar:item.avatar_url,preview:item.latest_message??'No messages yet',at:item.latest_message_at??item.updated_at,unread:item.unread_count,pending:item.status==='REQUEST'&&item.initiated_by===userId,conversation:item}));
-  const businesses:ChatRow[]=market.map(item=>({kind:'MARKET',id:item.id,name:item.counterpart_name??'Business conversation',avatar:item.logo_url??null,preview:item.context_type==='PRODUCT'?'Product · '+(item.context_title??'Enquiry'):item.context_type==='SERVICE'?'Service · '+(item.context_title??'Enquiry'):'Business enquiry / booking chat',at:item.created_at,unread:0,pending:false,conversation:item}));
+  const businesses:Extract<ChatRow,{kind:'MARKET'}>[]=market.map(item=>({kind:'MARKET',id:item.id,name:item.counterpart_name??'Business conversation',avatar:item.logo_url??null,preview:item.context_type==='PRODUCT'?'Product · '+(item.context_title??'Enquiry'):item.context_type==='SERVICE'?'Service · '+(item.context_title??'Enquiry'):'Business enquiry / booking chat',at:item.created_at,unread:0,pending:false,conversation:item}));
   const q=query.trim().toLowerCase();
   return [...people,...businesses.filter(x=>marketFilter==='ALL'||x.conversation.context_type===marketFilter)].filter(x=>!q||x.name.toLowerCase().includes(q)||x.preview.toLowerCase().includes(q)).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
  },[personal,market,query,userId,marketFilter]);
