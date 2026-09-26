@@ -289,7 +289,7 @@ revoke all on function public.create_customer_membership_invitation(uuid,uuid,uu
 grant execute on function public.create_customer_membership_invitation(uuid,uuid,uuid,text,text,numeric,text,integer,integer,jsonb,jsonb,jsonb,date) to authenticated;
 
 create or replace function public.create_public_membership_enrollment(p_plan_id uuid)
-returns uuid language plpgsql security definer set search_path='' as $
+returns uuid language plpgsql security definer set search_path='' as $$
 declare p public.business_membership_plans; existing_id uuid; rid uuid;
 begin
   if auth.uid() is null then raise exception 'Authentication required'; end if;
@@ -315,7 +315,7 @@ begin
     p.included_credits,p.included_services,p.service_frequency,p.benefits,current_date,'INVITED'
   ) returning id into rid;
   return rid;
-end $;
+end $$;
 revoke all on function public.create_public_membership_enrollment(uuid) from public,anon;
 grant execute on function public.create_public_membership_enrollment(uuid) to authenticated;
 
