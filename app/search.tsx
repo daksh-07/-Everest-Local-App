@@ -6,6 +6,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {universalSearch,type UniversalKind,type UniversalResult} from '@/lib/universal-search';
 import {supabase} from '@/lib/supabase';
 import {useAppTheme} from '@/lib/theme';
+import {saveSearch} from '@/lib/retention';
 
 type Tab='TOP'|'PERSON'|'BUSINESS'|'SERVICE'|'POST'|'VIDEO'|'PRODUCT'|'JOB';
 type JobResult={id:string;description:string;suburb:string|null;city:string|null;state:string|null;status:string;budget:number|null;preferred_date:string|null};
@@ -21,6 +22,7 @@ export default function Search(){
  const [jobs,setJobs]=useState<JobResult[]>([]);
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState('');
+ const [savingSearch,setSavingSearch]=useState(false);
  const version=useRef(0);
 
  useEffect(()=>{
@@ -88,6 +90,11 @@ export default function Search(){
    router.push(business?'/business-profile?id='+business:author?'/public-user?id='+author:'/social');
   }
  }
+ async function saveCurrentSearch(){
+  const text=q.trim();if(!text||savingSearch)return;setSavingSearch(true);setError('');
+  try{await saveSearch({name:text.slice(0,120),query:text,vertical:tab==='BUSINESS'?'BUSINESS':tab==='SERVICE'?'SERVICE':tab==='PRODUCT'?'PRODUCT':'ALL'});router.push('/saved-searches');}
+  catch(e){setError(e instanceof Error?e.message:'Could not save this search.');}finally{setSavingSearch(false);}
+ }
 
  const icon=(k:UniversalResult['kind'])=>k==='PERSON'?'person-outline':k==='BUSINESS'?'business-outline':k==='SERVICE'?'construct-outline':k==='PRODUCT'?'cube-outline':k==='VIDEO'?'videocam-outline':'document-text-outline';
 
@@ -107,6 +114,7 @@ export default function Search(){
     {tabs.map(x=><Pressable key={x} onPress={()=>setTab(x)} style={{paddingHorizontal:13,paddingVertical:9,borderRadius:12,borderWidth:1,borderColor:tab===x?c.brand:c.border,backgroundColor:tab===x?c.brand:c.surface}}><Text style={{fontSize:9,fontWeight:'900',color:tab===x?c.onBrand:c.text}}>{labels[x]}</Text></Pressable>)}
    </ScrollView>
 
+   {q.trim()?<Pressable disabled={savingSearch} onPress={()=>void saveCurrentSearch()} style={{height:42,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7,marginBottom:5}}><Ionicons name="bookmark-outline" size={16} color={c.text}/><Text style={{fontSize:9,fontWeight:'900',color:c.text}}>{savingSearch?'SAVING…':'SAVE THIS SEARCH'}</Text></Pressable>:null}
    {!q.trim()?<View style={{paddingVertical:46,alignItems:'center'}}><Ionicons name="search-outline" size={28} color={c.muted}/><Text style={{fontSize:16,fontWeight:'900',color:c.text,marginTop:12}}>Search Everest Local</Text><Text style={{fontSize:12,lineHeight:18,color:c.muted,marginTop:7,textAlign:'center',maxWidth:420}}>Enter a name, username, business, service, post, product or job. People only appear when their searchable profile matches your query.</Text></View>:loading?<ActivityIndicator style={{marginTop:40}} color={c.text}/>:error?<Text style={{fontSize:12,color:c.danger,marginTop:20}}>{error}</Text>:tab==='JOB'?(
     jobs.length?jobs.map(job=><Pressable key={job.id} onPress={()=>router.push('/requests')} style={{flexDirection:'row',alignItems:'center',gap:12,padding:14,borderRadius:17,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginBottom:9}}>
      <View style={{width:44,height:44,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="briefcase-outline" size={20} color={c.text}/></View>
