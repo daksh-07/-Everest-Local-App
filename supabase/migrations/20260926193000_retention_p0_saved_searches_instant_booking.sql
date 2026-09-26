@@ -220,7 +220,7 @@ returns table(starts_at timestamptz,ends_at timestamptz) language sql security d
     from config c cross join lateral generate_series(date_trunc('hour',greatest(p_from,now())),'now'::timestamptz+make_interval(days=>least(greatest(p_days,1),c.maximum_booking_days)),interval '30 minutes') slot
     where slot>=now()+make_interval(mins=>c.minimum_advance_minutes)
       and (c.same_day_enabled or (slot at time zone c.timezone)::date>(now() at time zone c.timezone)::date)
-      and exists(select 1 from jsonb_array_elements(coalesce(c.weekly_hours->to_char(slot at time zone c.timezone,'ID'),'[]'::jsonb)) w where (slot at time zone c.timezone)::time >= (w->>'start')::time and (slot+make_interval(mins=>c.duration_minutes+c.buffer_minutes) at time zone c.timezone)::time <= (w->>'end')::time)
+      and exists(select 1 from jsonb_array_elements(coalesce(c.weekly_hours->to_char(slot at time zone c.timezone,'ID'),'[]'::jsonb)) w where (slot at time zone c.timezone)::time >= (w->>'start')::time and ((slot+make_interval(mins=>c.duration_minutes+c.buffer_minutes)) at time zone c.timezone)::time <= (w->>'end')::time)
   )
   select c.starts_at,c.ends_at from candidates c
   where not exists(select 1 from public.crm_calendar_blocks x where x.business_id=c.business_id and tstzrange(x.starts_at,x.ends_at,'[)') && tstzrange(c.starts_at,c.ends_at,'[)'))
