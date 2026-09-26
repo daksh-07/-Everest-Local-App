@@ -37,8 +37,8 @@ export default function Home(){
  const {colors:c}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const s=useMemo(()=>styles(c,desktop),[c,desktop]);const osReducedMotion=useReducedMotion();const reduced=osReducedMotion||experience.mode==='CLASSIC';
  const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Set location');
  const [unread,setUnread]=useState(0);const [businesses,setBusinesses]=useState<BusinessPreview[]>([]);const [posts,setPosts]=useState<SocialPost[]>([]);
- const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);const [locating,setLocating]=useState(false);
- const enter=useRef(new Animated.Value(reduced?1:0)).current;
+ const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);const [locating,setLocating]=useState(false);const [navHidden,setNavHidden]=useState(false);
+ const enter=useRef(new Animated.Value(reduced?1:0)).current;const lastScrollY=useRef(0);
 
  async function businessMatches(field:'suburb'|'city'|'state',value:string){
   if(!value.trim())return[] as BusinessPreview[];
@@ -106,7 +106,7 @@ export default function Home(){
  const classic=experience.mode==='CLASSIC';const pulse=experience.mode==='PULSE';
 
  return <View style={s.root}><SafeAreaView edges={['top','left','right']} style={s.safe}>
-  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[s.page,{paddingHorizontal:desktop?28:experience.tokens.spacing.screen}]}>
+  <ScrollView showsVerticalScrollIndicator={false} scrollEventThrottle={16} onScroll={e=>{const y=Math.max(0,e.nativeEvent.contentOffset.y);const delta=y-lastScrollY.current;if(y<24)setNavHidden(false);else if(delta>8)setNavHidden(true);else if(delta<-6)setNavHidden(false);lastScrollY.current=y}} contentContainerStyle={[s.page,{paddingHorizontal:desktop?28:experience.tokens.spacing.screen}]}>
    <Animated.View style={appear}>
     <View style={s.topbar}><View style={{flex:1}}><Text style={s.brand}>EVEREST LOCAL</Text><Pressable onPress={()=>void refreshLocality(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityLabel="Update your location"><Ionicons name={locating?'locate':'location-outline'} size={13} color={c.muted}/><Text style={s.place}>{locating?'Finding you…':suburb}</Text><Ionicons name="chevron-down" size={11} color={c.muted}/></Pressable></View>
      <Pressable onPress={()=>go('/notifications')} style={({pressed})=>[s.iconButton,pressed&&s.press]} accessibilityLabel="Notifications"><Ionicons name="notifications-outline" size={20} color={c.text}/>{unread>0?<View style={s.dot}/>:null}</Pressable>
@@ -141,7 +141,7 @@ export default function Home(){
     {posts.length?<><View style={s.sectionHeader}><SectionTitle title="From around Everest" compact/><Pressable onPress={()=>go('/social')}><Text style={s.seeAll}>Open discovery</Text></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.postRow}>{posts.map(p=><Pressable key={p.id} onPress={()=>go(p.business_id?'/business-profile?id='+p.business_id:'/social')} style={({pressed})=>[s.postCard,pressed&&s.cardPressed]}><Text style={s.postType}>{p.post_type.replaceAll('_',' ')}</Text><Text numberOfLines={3} style={s.postCopy}>{p.caption||'New activity on Everest'}</Text><Text style={s.postDate}>{new Date(p.created_at).toLocaleDateString()}</Text></Pressable>)}</ScrollView></>:null}
     <View style={s.sectionHeader}><SectionTitle title="Browse categories" compact/><Pressable onPress={()=>go('/search?tab=SERVICE')}><Text style={s.seeAll}>Explore</Text></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.categoryRow}>{categories.map(([label,icon,q])=><Pressable key={label} onPress={()=>go('/search?q='+encodeURIComponent(q)+'&tab=SERVICE')} style={({pressed})=>[s.category,pressed&&s.cardPressed]}><View style={s.categoryIcon}><Ionicons name={icon} size={20} color={c.brand}/></View><Text style={s.categoryText}>{label}</Text></Pressable>)}</ScrollView>
    </Animated.View><View style={{height:118}}/>
-  </ScrollView><CustomerTabBar active="/"/>
+  </ScrollView><CustomerTabBar active="/" hidden={navHidden}/>
  </SafeAreaView></View>;
 }
 
