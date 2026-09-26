@@ -1,11 +1,11 @@
-import {useCallback,useEffect,useMemo,useState} from 'react';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ActivityIndicator,FlatList,Image,Modal,Pressable,RefreshControl,Share,StyleSheet,Text,TextInput,View,useWindowDimensions} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {router} from 'expo-router';
+import {router,useLocalSearchParams} from 'expo-router';
 import {
-  addPostComment,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,setPostCommentsEnabled,
-  togglePostLike,toggleSavedPost,type PostComment,type PostEngagement,type SocialPost
+  addPostComment,getCommentEngagement,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,setPostCommentsEnabled,
+  toggleCommentLike,togglePostLike,toggleSavedPost,type CommentEngagement,type PostComment,type PostEngagement,type SocialPost
 } from '@/lib/social';
 import {signedPostMedia} from '@/lib/request-post-media';
 import {supabase} from '@/lib/supabase';
@@ -25,11 +25,12 @@ type FeedPost=SocialPost&{
 const emptyEngagement:PostEngagement={likeCount:0,commentCount:0,likedByMe:false,savedByMe:false};
 
 export default function Social(){
- const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {width}=useWindowDimensions();
+ const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {width}=useWindowDimensions();const params=useLocalSearchParams<{postId?:string;commentId?:string}>();
  const [posts,setPosts]=useState<FeedPost[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);
  const [error,setError]=useState('');const [locality,setLocality]=useState('Near you');const [userId,setUserId]=useState<string|null>(null);
  const [commentPost,setCommentPost]=useState<FeedPost|null>(null);const [comments,setComments]=useState<PostComment[]>([]);const [commentText,setCommentText]=useState('');
- const [commentsBusy,setCommentsBusy]=useState(false);const [menuPost,setMenuPost]=useState<string|null>(null);
+ const [commentLikes,setCommentLikes]=useState<Record<string,CommentEngagement>>({});const [replyTo,setReplyTo]=useState<PostComment|null>(null);
+ const [commentsBusy,setCommentsBusy]=useState(false);const [menuPost,setMenuPost]=useState<string|null>(null);const deepLinkOpened=useRef(false);
 
  const load=useCallback(async()=>{
   setError('');
@@ -62,6 +63,7 @@ export default function Social(){
  },[]);
 
  useEffect(()=>{void load()},[load]);
+ useEffect(()=>{if(deepLinkOpened.current||!params.postId||!posts.length)return;const target=posts.find(p=>p.id===params.postId);if(!target)return;deepLinkOpened.current=true;void openComments(target)},[params.postId,posts]);
 
  const updateEngagement=(id:string,fn:(e:PostEngagement)=>PostEngagement)=>setPosts(current=>current.map(p=>p.id===id?{...p,engagement:fn(p.engagement)}:p));
 
@@ -79,13 +81,20 @@ export default function Social(){
   await Share.share({message:[post.caption||'See this post on Everest Local',post.location_label?('📍 '+post.location_label):''].filter(Boolean).join('\n')});
  }
  async function openComments(post:FeedPost){
-  setCommentPost(post);setCommentsBusy(true);setComments([]);setCommentText('');
-  try{setComments(await listPostComments(post.id))}finally{setCommentsBusy(false)}
+  setCommentPost(post);setCommentsBusy(true);setComments([]);setCommentLikes({});setCommentText('');setReplyTo(null);
+  try{
+   const rows=await listPostComments(post.id);
+   setComments(rows);
+   setCommentLikes(await getCommentEngagement(rows.map(x=>x.id)));
+  }finally{setCommentsBusy(false)}
  }
  async function sendComment(){
   if(!commentPost||!commentText.trim())return;setCommentsBusy(true);
-  try{const row=await addPostComment(commentPost.id,commentText);setComments(v=>[...v,row]);setCommentText('');updateEngagement(commentPost.id,e=>({...e,commentCount:e.commentCount+1}));}
-  catch(e){setError(e instanceof Error?e.message:'Could not add comment.')}finally{setCommentsBusy(false)}
+  try{
+   const row=await addPostComment(commentPost.id,commentText,replyTo?.id??null);
+   setComments(v=>[...v,row]);setCommentLikes(v=>({...v,[row.id]:{likeCount:0,likedByMe:false}}));
+   setCommentText('');setReplyTo(null);updateEngagement(commentPost.id,e=>({...e,commentCount:e.commentCount+1}));void haptic.success();
+  }catch(e){setError(e instanceof Error?e.message:'Could not add comment.')}finally{setCommentsBusy(false)}
  }
  async function hideComment(commentId:string){
   if(!commentPost)return;
@@ -94,6 +103,21 @@ export default function Social(){
    setComments(v=>v.filter(x=>x.id!==commentId));
    updateEngagement(commentPost.id,e=>({...e,commentCount:Math.max(0,e.commentCount-1)}));
   }catch(e){setError(e instanceof Error?e.message:'Could not hide comment.')}
+ }
+ async function likeComment(commentId:string){
+  const before=commentLikes[commentId]??{likeCount:0,likedByMe:false};
+  setCommentLikes(current=>({...current,[commentId]:{likedByMe:!before.likedByMe,likeCount:Math.max(0,before.likeCount+(before.likedByMe?-1:1))}}));
+  void haptic.selection();
+  try{await toggleCommentLike(commentId,before.likedByMe)}
+  catch{setCommentLikes(current=>({...current,[commentId]:before}))}
+ }
+ function commentTime(value:string){
+  const diff=Date.now()-new Date(value).getTime();
+  if(diff<60_000)return 'now';
+  if(diff<3_600_000)return Math.max(1,Math.floor(diff/60_000))+'m';
+  if(diff<86_400_000)return Math.max(1,Math.floor(diff/3_600_000))+'h';
+  if(diff<7*86_400_000)return Math.max(1,Math.floor(diff/86_400_000))+'d';
+  return new Date(value).toLocaleDateString(undefined,{month:'short',day:'numeric'});
  }
  async function toggleComments(post:FeedPost){
   await setPostCommentsEnabled(post.id,!post.comments_enabled);
@@ -158,9 +182,40 @@ export default function Social(){
   <Modal visible={Boolean(commentPost)} transparent animationType="slide" onRequestClose={()=>setCommentPost(null)}>
    <Pressable style={s.scrim} onPress={()=>setCommentPost(null)}/>
    <View style={s.sheet}>
-    <View style={s.sheetHandle}/><View style={s.sheetHeader}><Text style={s.sheetTitle}>Comments</Text><Pressable onPress={()=>setCommentPost(null)}><Ionicons name="close" size={24} color={colors.text}/></Pressable></View>
-    {commentsBusy&&!comments.length?<ActivityIndicator style={{margin:30}}/>:<FlatList data={comments} keyExtractor={x=>x.id} style={{maxHeight:430}} contentContainerStyle={{paddingBottom:12}} ListEmptyComponent={<Text style={s.noComments}>Be the first to comment.</Text>} renderItem={({item})=><View style={s.comment}><View style={s.commentAvatar}><Ionicons name="person-outline" size={15} color={colors.muted}/></View><View style={{flex:1}}><Text style={s.commentName}>{item.profile?.display_name??'Everest member'}</Text><Text style={s.commentBody}>{item.body}</Text></View>{(item.author_id===userId||commentPost?.author_id===userId)?<Pressable accessibilityLabel="Hide comment" onPress={()=>void hideComment(item.id)} style={s.commentControl}><Ionicons name="ellipsis-horizontal" size={18} color={colors.muted}/></Pressable>:null}</View>}/>}
-    {commentPost?.comments_enabled?<View style={s.composer}><TextInput value={commentText} onChangeText={setCommentText} placeholder="Add a comment…" placeholderTextColor={colors.muted} style={s.input} multiline/><Pressable onPress={()=>void sendComment()} disabled={!commentText.trim()||commentsBusy}><Text style={[s.send,(!commentText.trim()||commentsBusy)&&{opacity:.35}]}>Post</Text></Pressable></View>:<Text style={s.noComments}>Comments are turned off for this post.</Text>}
+    <View style={s.sheetHandle}/>
+    <View style={s.sheetHeader}>
+     <View><Text style={s.sheetTitle}>Comments</Text><Text style={s.sheetSubtitle}>{comments.length?comments.length+' in the conversation':'Start the conversation'}</Text></View>
+     <Pressable onPress={()=>setCommentPost(null)} style={s.closeButton}><Ionicons name="close" size={21} color={colors.text}/></Pressable>
+    </View>
+    {commentsBusy&&!comments.length?<ActivityIndicator style={{margin:30}}/>:<FlatList
+     data={comments}
+     keyExtractor={x=>x.id}
+     style={{maxHeight:440}}
+     contentContainerStyle={{paddingBottom:14}}
+     ListEmptyComponent={<View style={s.emptyComments}><View style={s.emptyCommentIcon}><Ionicons name="chatbubbles-outline" size={24} color={colors.brand}/></View><Text style={s.emptyCommentTitle}>No comments yet</Text><Text style={s.noComments}>Drop the first thought, question or reaction.</Text></View>}
+     renderItem={({item})=>{const e=commentLikes[item.id]??{likeCount:0,likedByMe:false};const isOp=item.author_id===commentPost?.author_id;return <View style={[s.comment,item.parent_id&&s.replyComment]}>
+      {item.profile?.avatar_url?<Image source={{uri:item.profile.avatar_url}} style={s.commentAvatarImage}/>:<View style={s.commentAvatar}><Text style={s.commentAvatarText}>{(item.profile?.display_name??'E')[0]?.toUpperCase()}</Text></View>}
+      <View style={{flex:1,minWidth:0}}>
+       <View style={s.commentMetaRow}><Text numberOfLines={1} style={s.commentName}>{item.profile?.display_name??'Everest member'}</Text>{isOp?<View style={s.opBadge}><Text style={s.opBadgeText}>OP</Text></View>:null}<Text style={s.commentTime}>{commentTime(item.created_at)}</Text></View>
+       <Text style={s.commentBody}>{item.body}</Text>
+       <View style={s.commentActions}>
+        <Pressable onPress={()=>{setReplyTo(item);void haptic.selection()}}><Text style={s.commentActionText}>Reply</Text></Pressable>
+        {e.likeCount>0?<Text style={s.commentLikeCount}>{e.likeCount} {e.likeCount===1?'like':'likes'}</Text>:null}
+       </View>
+      </View>
+      <Pressable accessibilityLabel={e.likedByMe?'Unlike comment':'Like comment'} onPress={()=>void likeComment(item.id)} style={s.commentHeart}><Ionicons name={e.likedByMe?'heart':'heart-outline'} size={18} color={e.likedByMe?colors.danger:colors.muted}/></Pressable>
+      {(item.author_id===userId||commentPost?.author_id===userId)?<Pressable accessibilityLabel="Comment options" onPress={()=>void hideComment(item.id)} style={s.commentControl}><Ionicons name="ellipsis-horizontal" size={17} color={colors.muted}/></Pressable>:null}
+     </View>}}
+    />}
+    {commentPost?.comments_enabled?<View style={s.composerArea}>
+     {replyTo?<View style={s.replyBanner}><Ionicons name="return-down-forward" size={15} color={colors.brand}/><Text numberOfLines={1} style={s.replyBannerText}>Replying to {replyTo.profile?.display_name??'Everest member'}</Text><Pressable onPress={()=>setReplyTo(null)}><Ionicons name="close-circle" size={18} color={colors.muted}/></Pressable></View>:null}
+     <View style={s.quickEmojiRow}>{['❤️','😂','🔥','🙌'].map(emoji=><Pressable key={emoji} onPress={()=>setCommentText(v=>v+emoji)} style={s.quickEmoji}><Text style={s.quickEmojiText}>{emoji}</Text></Pressable>)}</View>
+     <View style={s.composer}>
+      <View style={s.composerAvatar}><Ionicons name="person" size={14} color={colors.brand}/></View>
+      <TextInput value={commentText} onChangeText={setCommentText} placeholder={replyTo?'Write a reply…':'Add a comment…'} placeholderTextColor={colors.muted} style={s.input} multiline/>
+      <Pressable onPress={()=>void sendComment()} disabled={!commentText.trim()||commentsBusy} style={[s.sendButton,(!commentText.trim()||commentsBusy)&&{opacity:.35}]}><Ionicons name="arrow-up" size={18} color={colors.onBrand}/></Pressable>
+     </View>
+    </View>:<Text style={s.noComments}>Comments are turned off for this post.</Text>}
    </View>
   </Modal>
  </SafeAreaView>
@@ -178,7 +233,7 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  actions:{paddingHorizontal:10,paddingTop:9,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},leftActions:{flexDirection:'row',alignItems:'center'},action:{width:42,height:40,alignItems:'center',justifyContent:'center'},count:{paddingHorizontal:13,fontSize:13,fontWeight:'900',color:c.text},caption:{paddingHorizontal:13,paddingTop:7,fontSize:14,lineHeight:20,color:c.text},viewComments:{paddingHorizontal:13,paddingTop:8,fontSize:13,color:c.muted,fontWeight:'700'},commentsOff:{paddingHorizontal:13,paddingTop:7,fontSize:12,color:c.muted},
  verified:{marginHorizontal:13,marginTop:9,flexDirection:'row',alignItems:'center',gap:5},verifiedText:{fontSize:11,fontWeight:'900',color:c.brand},commerceRow:{flexDirection:'row',gap:8,paddingHorizontal:13,paddingTop:11},commerce:{borderRadius:18,backgroundColor:c.brand,paddingHorizontal:13,paddingVertical:9},commerceText:{fontSize:11,fontWeight:'900',color:c.onBrand},
  empty:{padding:70,alignItems:'center'},emptyTitle:{fontSize:19,fontWeight:'900',color:c.text,marginTop:12},emptyCopy:{fontSize:13,lineHeight:19,color:c.muted,textAlign:'center',marginTop:5},
- scrim:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,.45)'},sheet:{position:'absolute',left:0,right:0,bottom:0,maxHeight:'75%',backgroundColor:c.surface,borderTopLeftRadius:24,borderTopRightRadius:24,paddingBottom:24},sheetHandle:{width:40,height:4,borderRadius:2,backgroundColor:c.border,alignSelf:'center',marginTop:9},sheetHeader:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:16,borderBottomWidth:1,borderColor:c.border},sheetTitle:{fontSize:18,fontWeight:'900',color:c.text},noComments:{padding:24,textAlign:'center',color:c.muted},
- comment:{flexDirection:'row',gap:10,paddingHorizontal:16,paddingVertical:10},commentControl:{width:36,height:36,alignItems:'center',justifyContent:'center'},commentAvatar:{width:32,height:32,borderRadius:16,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},commentName:{fontSize:12,fontWeight:'900',color:c.text},commentBody:{fontSize:13,lineHeight:18,color:c.text,marginTop:2},
- composer:{marginHorizontal:12,marginTop:6,borderWidth:1,borderColor:c.border,borderRadius:20,minHeight:48,paddingLeft:13,paddingRight:10,flexDirection:'row',alignItems:'center',gap:8},input:{flex:1,maxHeight:90,color:c.text,fontSize:14,paddingVertical:10},send:{fontSize:13,fontWeight:'900',color:c.brand}
+ scrim:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,.5)'},sheet:{position:'absolute',left:0,right:0,bottom:0,maxHeight:'82%',backgroundColor:c.surface,borderTopLeftRadius:28,borderTopRightRadius:28,paddingBottom:20,shadowColor:'#000',shadowOpacity:.18,shadowRadius:24,shadowOffset:{width:0,height:-8},elevation:24},sheetHandle:{width:42,height:5,borderRadius:3,backgroundColor:c.border,alignSelf:'center',marginTop:9},sheetHeader:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:18,paddingTop:12,paddingBottom:14,borderBottomWidth:1,borderColor:c.border},sheetTitle:{fontSize:20,fontWeight:'900',color:c.text},sheetSubtitle:{fontSize:10,color:c.muted,marginTop:2},closeButton:{width:38,height:38,borderRadius:19,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},noComments:{paddingHorizontal:24,textAlign:'center',color:c.muted,fontSize:12,lineHeight:18},emptyComments:{paddingVertical:38,alignItems:'center'},emptyCommentIcon:{width:52,height:52,borderRadius:26,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},emptyCommentTitle:{fontSize:16,fontWeight:'900',color:c.text,marginTop:12,marginBottom:4},
+ comment:{flexDirection:'row',gap:10,paddingHorizontal:16,paddingVertical:12,alignItems:'flex-start'},replyComment:{marginLeft:36,borderLeftWidth:2,borderLeftColor:c.soft,paddingLeft:12},commentControl:{width:28,height:32,alignItems:'center',justifyContent:'center'},commentHeart:{width:30,height:34,alignItems:'center',justifyContent:'center'},commentAvatar:{width:36,height:36,borderRadius:18,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},commentAvatarImage:{width:36,height:36,borderRadius:18,backgroundColor:c.soft},commentAvatarText:{fontSize:13,fontWeight:'900',color:c.text},commentMetaRow:{flexDirection:'row',alignItems:'center',gap:6},commentName:{maxWidth:'62%',fontSize:12,fontWeight:'900',color:c.text},commentTime:{fontSize:9,color:c.muted},opBadge:{borderRadius:7,backgroundColor:c.soft,paddingHorizontal:6,paddingVertical:2},opBadgeText:{fontSize:7,fontWeight:'900',color:c.brand},commentBody:{fontSize:13,lineHeight:19,color:c.text,marginTop:3},commentActions:{flexDirection:'row',alignItems:'center',gap:12,marginTop:6},commentActionText:{fontSize:10,fontWeight:'900',color:c.muted},commentLikeCount:{fontSize:9,fontWeight:'800',color:c.muted},
+ composerArea:{borderTopWidth:1,borderTopColor:c.border,paddingTop:8},replyBanner:{marginHorizontal:14,marginBottom:7,minHeight:32,borderRadius:12,backgroundColor:c.soft,paddingHorizontal:10,flexDirection:'row',alignItems:'center',gap:7},replyBannerText:{flex:1,fontSize:10,fontWeight:'800',color:c.text},quickEmojiRow:{flexDirection:'row',gap:7,paddingHorizontal:14,paddingBottom:7},quickEmoji:{width:34,height:30,borderRadius:15,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},quickEmojiText:{fontSize:16},composer:{marginHorizontal:12,borderWidth:1,borderColor:c.border,borderRadius:24,minHeight:50,paddingLeft:8,paddingRight:6,flexDirection:'row',alignItems:'center',gap:8,backgroundColor:c.canvas},composerAvatar:{width:30,height:30,borderRadius:15,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},input:{flex:1,maxHeight:90,color:c.text,fontSize:14,paddingVertical:10},sendButton:{width:36,height:36,borderRadius:18,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}
 });
