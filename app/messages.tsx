@@ -17,6 +17,7 @@ import {haptic} from '@/lib/haptics';
 import {MOTION,ease,useReducedMotion} from '@/lib/motion';
 import {useVisualViewport} from '@/lib/visual-viewport';
 import {installChatWebRuntimeStyles} from '@/lib/chat-web-runtime';
+import {CustomerTabBar} from '@/components/CustomerTabBar';
 
 type MarketConversation={id:string;customer_id:string;business_id:string;created_at:string;context_type?:'GENERAL'|'PRODUCT'|'SERVICE';product_id?:string|null;service_id?:string|null;context_title?:string|null;counterpart_name?:string;logo_url?:string|null};
 type MarketMessage={id:string;sender_id:string;body:string;created_at:string;read_at?:string|null;is_automated?:boolean;automation_source?:'FAQ'|'EVEREST_AI'|null};
@@ -389,7 +390,7 @@ export default function Messages(){
  </SafeAreaView></View>;
 
  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
-  <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,paddingBottom:60,maxWidth:760,width:'100%',alignSelf:'center'}}>
+  <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,paddingBottom:140,maxWidth:760,width:'100%',alignSelf:'center'}}>
    <Text style={{fontSize:10,fontWeight:'900',letterSpacing:2,color:c.muted}}>EVEREST LOCAL</Text>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12}}><Text style={{fontSize:30,fontWeight:'900',color:c.text,marginTop:5}}>Messages</Text>{isBusinessUser?<Pressable onPress={()=>router.push('/business-dm-automation')} style={{width:42,height:42,borderRadius:14,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'}} accessibilityLabel="DM automation settings"><Ionicons name="sparkles-outline" size={19} color={c.brand}/></Pressable>:null}</View>
    <MessagesSearch value={query} onChange={setQuery} colors={c} reducedMotion={reducedMotion}/>
@@ -407,6 +408,7 @@ export default function Messages(){
    </Animated.View>
    {error?<Text style={{fontSize:12,color:c.danger,marginTop:14}}>{error}</Text>:null}
   </ScrollView>
+  <CustomerTabBar active="/messages"/>
   <ConversationRowMenu row={rowMenu} colors={c} busy={busy} onClose={()=>setRowMenu(null)}
    onOpen={row=>{setRowMenu(null);if(row.kind==='PERSONAL')setSelectedPersonal(row.conversation);else setSelectedMarket(row.conversation)}}
    onProfile={row=>{setRowMenu(null);if(row.kind==='PERSONAL')router.push('/public-user?id='+row.conversation.other_user_id)}}
