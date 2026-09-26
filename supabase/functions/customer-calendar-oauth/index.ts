@@ -5,6 +5,7 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 const enc=new TextEncoder();
 const b64u=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
 const fromB64u=(value:string)=>Uint8Array.from(atob(value.replaceAll('-','+').replaceAll('_','/')+'='.repeat((4-value.length%4)%4)),c=>c.charCodeAt(0));
+function cleanSecret(value:string){const v=value.trim();return (v.startsWith('"')&&v.endsWith('"'))||(v.startsWith("'")&&v.endsWith("'"))?v.slice(1,-1).trim():v;}
 type State={kind:'CUSTOMER_CALENDAR';userId:string;nonce:string;exp:number};
 
 async function hmac(value:string,secret:string){const key=await crypto.subtle.importKey('raw',enc.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);return b64u(new Uint8Array(await crypto.subtle.sign('HMAC',key,enc.encode(value))))}
@@ -21,8 +22,8 @@ Deno.serve(async req=>{
  const stateSecret=Deno.env.get('INTEGRATION_OAUTH_STATE_SECRET')??'';
  const tokenSecret=Deno.env.get('INTEGRATION_TOKEN_ENCRYPTION_KEY')??'';
  const appUrl=Deno.env.get('APP_PUBLIC_URL')??'https://everest-local-app.vercel.app';
- const clientId=Deno.env.get('GOOGLE_CLIENT_ID')??'';
- const clientSecret=Deno.env.get('GOOGLE_CLIENT_SECRET')??'';
+ const clientId=cleanSecret(Deno.env.get('GOOGLE_CLIENT_ID')??'');
+ const clientSecret=cleanSecret(Deno.env.get('GOOGLE_CLIENT_SECRET')??'');
  const callback=Deno.env.get('CRM_INTEGRATION_CALLBACK_URL')??(url?url+'/functions/v1/crm-integration-oauth':'');
  if(!url||!publishable||!secretKey||!stateSecret||!tokenSecret)return json({error:'Calendar integration service is not configured.'},503);
  const admin=createClient(url,secretKey,{auth:{persistSession:false}});
