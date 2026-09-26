@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useMemo,useState} from 'react';
+import {useCallback,useEffect,useMemo,useState,type ReactNode} from 'react';
 import {ActivityIndicator,Alert,Pressable,RefreshControl,ScrollView,StyleSheet,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
@@ -53,7 +53,7 @@ export default function MembershipWallet(){
  </ScrollView><CustomerTabBar active="/activity"/></View></SafeAreaView>;
 }
 
-function Section({title,hint,colors,children}:{title:string;hint:string;colors:ThemeColors;children:React.ReactNode}){const s=useMemo(()=>styles(colors),[colors]);return <View style={s.section}><Text style={s.sectionTitle}>{title}</Text><Text style={s.sectionHint}>{hint}</Text><View style={{gap:9,marginTop:11}}>{children}</View></View>}
+function Section({title,hint,colors,children}:{title:string;hint:string;colors:ThemeColors;children:ReactNode}){const s=useMemo(()=>styles(colors),[colors]);return <View style={s.section}><Text style={s.sectionTitle}>{title}</Text><Text style={s.sectionHint}>{hint}</Text><View style={{gap:9,marginTop:11}}>{children}</View></View>}
 function Empty({text,colors}:{text:string;colors:ThemeColors}){return <View style={[styles(colors).empty]}><Text style={styles(colors).emptyText}>{text}</Text></View>}
 function Detail({label,value,colors}:{label:string;value:string;colors:ThemeColors}){const s=styles(colors);return <View style={{flex:1,minWidth:100}}><Text style={s.detailLabel}>{label}</Text><Text style={s.detailValue}>{value}</Text></View>}
 function Status({value,colors}:{value:string;colors:ThemeColors}){const s=styles(colors);return <View style={s.status}><Text style={s.statusText}>{value.replaceAll('_',' ')}</Text></View>}
