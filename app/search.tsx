@@ -402,6 +402,12 @@ export default function Search(){
           </View>
         ):null}
 
+        {q.trim()&&tab==='PERSON'?(
+          <Text style={{fontSize:10,lineHeight:15,color:c.muted,marginTop:10,marginBottom:8}}>
+            People only appear when their searchable profile matches your query.
+          </Text>
+        ):null}
+
         {!q.trim()?(
           <View>
             <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:12,marginBottom:10}}>
