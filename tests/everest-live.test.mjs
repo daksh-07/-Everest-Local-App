@@ -1,4 +1,4 @@
-// Everest Live production-path regression coverage.
+// Everest Live production-path regression coverage (CI).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
