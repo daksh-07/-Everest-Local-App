@@ -298,7 +298,7 @@ export default function Search(){
     );
   }
 
-  function useHistory(item:SearchHistoryEntry){
+  function openHistoryEntry(item:SearchHistoryEntry){
     const nextTab=tabs.includes(item.tab as Tab)?item.tab as Tab:'TOP';
     setTab(nextTab);
     setQ(item.query);
@@ -424,7 +424,7 @@ export default function Search(){
                 key={item.id}
                 item={item}
                 editing={manageHistory}
-                onOpen={()=>useHistory(item)}
+                onOpen={()=>openHistoryEntry(item)}
                 onDelete={()=>void removeHistoryItem(item.id)}
                 colors={c}
               />
