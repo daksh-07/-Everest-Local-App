@@ -162,10 +162,7 @@ export default function Search(){
       setError('');
       setItems([]);
       setJobs([]);
-      if(!text){
-        setLoading(false);
-        return;
-      }
+      if(!text){setLoading(false);return}
       setLoading(true);
       if(tab==='JOB')void loadJobs(text,current);
       else void universalSearch(text,tab as UniversalKind,30,0)
