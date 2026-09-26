@@ -27,10 +27,38 @@ export async function saveVariant(input:{productId:string;variantId?:string;titl
 
 export async function setVariantCartItem(productId:string,variantId:string|null,quantity:number){const {error}=await supabase.rpc('set_my_cart_item_v2',{p_product_id:productId,p_variant_id:variantId,p_quantity:quantity});if(error)throw new Error(userFacingError(error,'Unable to update your cart. Check availability and try again.'))}
 
+function normalizeProductImageMime(asset:ImagePicker.ImagePickerAsset){
+ const raw=(asset.mimeType||asset.file?.type||'').toLowerCase();
+ if(raw==='image/jpg')return 'image/jpeg';
+ if(['image/jpeg','image/png','image/webp','image/heic','image/heif'].includes(raw))return raw;
+ const source=(asset.fileName||asset.uri||'').toLowerCase().split(/[?#]/)[0];
+ if(/\.jpe?g$/.test(source))return 'image/jpeg';
+ if(/\.png$/.test(source))return 'image/png';
+ if(/\.webp$/.test(source))return 'image/webp';
+ if(/\.heic$/.test(source))return 'image/heic';
+ if(/\.heif$/.test(source))return 'image/heif';
+ return 'image/jpeg';
+}
+
+async function productImageArrayBuffer(asset:ImagePicker.ImagePickerAsset){
+ if(Platform.OS==='web'&&asset.file){
+  const direct=await asset.file.arrayBuffer();
+  if(direct.byteLength)return direct;
+ }
+ const response=await fetch(asset.uri);
+ if(!response.ok)throw new Error('The selected photo could not be opened. Please choose it again.');
+ const blob=await response.blob();
+ const buffer=await blob.arrayBuffer();
+ if(!buffer.byteLength)throw new Error('The selected photo is empty or could not be read.');
+ return buffer;
+}
+
 export async function uploadProductImage(input:{businessId:string;productId:string;asset:ImagePicker.ImagePickerAsset;sortOrder:number;primary:boolean}){
- const a=input.asset;if(a.fileSize===0)throw new Error('This image is empty or corrupt.');if(a.fileSize&&a.fileSize>12*1024*1024)throw new Error('Image must be smaller than 12 MB.');const mime=a.mimeType||a.file?.type||'image/jpeg';if(!['image/jpeg','image/png','image/webp','image/heic','image/heif'].includes(mime))throw new Error('Use a JPEG, PNG, WebP or HEIC image.');
- const ext=(a.fileName?.split('.').pop()||mime.split('/').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';const path=`${input.businessId}/${input.productId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;const body=Platform.OS==='web'&&a.file?await a.file.arrayBuffer():await fetch(a.uri).then(r=>r.arrayBuffer());if(!body.byteLength)throw new Error('Image could not be read.');
- const {error:uploadError}=await supabase.storage.from('product-media').upload(path,body,{contentType:mime,upsert:false});if(uploadError)throw new Error(userFacingError(uploadError,'Image upload failed.'));
+ const a=input.asset;if(a.fileSize===0)throw new Error('This image is empty or corrupt.');if(a.fileSize&&a.fileSize>12*1024*1024)throw new Error('Image must be smaller than 12 MB.');
+ const mime=normalizeProductImageMime(a);if(!['image/jpeg','image/png','image/webp','image/heic','image/heif'].includes(mime))throw new Error('Use a JPEG, PNG, WebP or HEIC image.');
+ const ext=mime==='image/jpeg'?'jpg':mime.split('/')[1];const path=`${input.businessId}/${input.productId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+ const body=await productImageArrayBuffer(a);if(body.byteLength>12*1024*1024)throw new Error('Image must be smaller than 12 MB.');
+ const {error:uploadError}=await supabase.storage.from('product-media').upload(path,body,{contentType:mime,cacheControl:'3600',upsert:false});if(uploadError)throw new Error(userFacingError(uploadError,'Image upload failed.'));
  const {data,error}=await supabase.from('product_images').insert({product_id:input.productId,url:path,storage_path:path,sort_order:input.sortOrder,is_primary:input.primary,mime_type:mime,width:a.width??null,height:a.height??null}).select('id,product_id,url,storage_path,sort_order,is_primary,variant_id').single();if(error){await supabase.storage.from('product-media').remove([path]);throw new Error(userFacingError(error,'Image could not be attached to the product.'))}return data as ProductImage;
 }
 

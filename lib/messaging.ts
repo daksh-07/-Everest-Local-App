@@ -24,7 +24,7 @@ export async function conversations() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
   const [{ data: customerConversations, error: customerError }, { data: memberships, error: membershipError }] = await Promise.all([
-    supabase.from('conversations').select('id,customer_id,business_id,request_id,booking_id,quote_id,created_at').eq('customer_id', user.id).order('created_at', { ascending: false }),
+    supabase.from('conversations').select('id,customer_id,business_id,request_id,booking_id,quote_id,context_type,product_id,service_id,context_title,created_at').eq('customer_id', user.id).order('created_at', { ascending: false }),
     supabase.from('business_members').select('business_id').eq('user_id', user.id),
   ]);
   if (customerError) throw new Error(safeError(customerError, 'Unable to load your conversations.'));
@@ -32,7 +32,7 @@ export async function conversations() {
   const businessIds = (memberships ?? []).map(item => item.business_id);
   let businessConversations: NonNullable<typeof customerConversations> = [];
   if (businessIds.length) {
-    const { data, error } = await supabase.from('conversations').select('id,customer_id,business_id,request_id,booking_id,quote_id,created_at').in('business_id', businessIds).order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('conversations').select('id,customer_id,business_id,request_id,booking_id,quote_id,context_type,product_id,service_id,context_title,created_at').in('business_id', businessIds).order('created_at', { ascending: false });
     if (error) throw new Error(safeError(error, 'Unable to load your business conversations.'));
     businessConversations = data ?? [];
   }
@@ -45,7 +45,7 @@ export async function conversation(conversationId: string) {
   requireSupabaseConfig();
   const id = conversationId.trim();
   if (!id) throw new Error('Conversation reference is required.');
-  const { data, error } = await supabase.from('conversations').select('id,customer_id,business_id,request_id,booking_id,quote_id,created_at').eq('id', id).single();
+  const { data, error } = await supabase.from('conversations').select('id,customer_id,business_id,request_id,booking_id,quote_id,context_type,product_id,service_id,context_title,created_at').eq('id', id).single();
   if (error) throw new Error(safeError(error, 'Unable to load this conversation.'));
   return data;
 }
@@ -63,7 +63,7 @@ export async function messages(conversationId: string) {
   requireSupabaseConfig();
   const id = conversationId.trim();
   if (!id) throw new Error('Conversation reference is required.');
-  const { data, error } = await supabase.from('messages').select('id,sender_id,body,read_at,created_at').eq('conversation_id', id).order('created_at', { ascending: true });
+  const { data, error } = await supabase.from('messages').select('id,sender_id,body,read_at,created_at,is_automated,automation_source').eq('conversation_id', id).order('created_at', { ascending: true });
   if (error) throw new Error(safeError(error, 'Unable to load this conversation.'));
   return data ?? [];
 }
@@ -76,6 +76,8 @@ export async function sendMessage(conversationId: string, body: string) {
   if (!text || text.length > 5000) throw new Error('Message must be between 1 and 5000 characters');
   const { data, error } = await supabase.from('messages').insert({ conversation_id: conversationId, sender_id: user.id, body: text }).select('id').single();
   if (error) throw new Error(safeError(error, 'Message could not be sent.'));
+  // Product/service AI automation is best-effort and must never block a customer's message.
+  void supabase.functions.invoke('business-dm-auto-reply',{body:{messageId:data.id}}).catch(()=>undefined);
   return data.id;
 }
 
@@ -84,4 +86,17 @@ export async function markMessageRead(messageId: string) {
   const { data, error } = await supabase.rpc('mark_message_read', { p_message_id: messageId });
   if (error) throw new Error(safeError(error, 'Message could not be marked as read.'));
   return Boolean(data);
+}
+
+
+export async function getOrCreateBusinessInquiry(input:{businessId:string;contextType:'PRODUCT'|'SERVICE';contextId:string}){
+ requireSupabaseConfig();
+ const {data,error}=await supabase.rpc('get_or_create_business_inquiry',{
+  p_business_id:input.businessId,
+  p_context_type:input.contextType,
+  p_context_id:input.contextId,
+ });
+ if(error)throw new Error(safeError(error,'Unable to open this business enquiry.'));
+ if(typeof data!=='string')throw new Error('Conversation creation returned an invalid reference.');
+ return data;
 }
