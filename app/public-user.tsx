@@ -1,4 +1,4 @@
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -57,6 +57,7 @@ export default function PublicUser(){
   const [message,setMessage]=useState('');
   const [error,setError]=useState('');
   const [menuOpen,setMenuOpen]=useState(false);
+  const messageInputRef=useRef<TextInput|null>(null);
 
   async function load(){
     if(!userId)return;
@@ -365,10 +366,9 @@ export default function PublicUser(){
 
                     {canMessage?(
                       <Pressable
-                        onPress={()=>{
-                          const target=p.connection_state==='CONNECTED'?'#quick-message':'#quick-message';
-                          void target;
-                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Message this user"
+                        onPress={()=>messageInputRef.current?.focus()}
                         style={({pressed})=>({
                           width:52,
                           minHeight:48,
@@ -411,6 +411,7 @@ export default function PublicUser(){
 
                     <View style={{borderRadius:16,backgroundColor:c.input,borderWidth:1,borderColor:c.border,overflow:'hidden'}}>
                       <TextInput
+                        ref={messageInputRef}
                         value={message}
                         onChangeText={setMessage}
                         placeholder="Write something…"
