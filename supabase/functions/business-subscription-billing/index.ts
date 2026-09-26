@@ -12,7 +12,9 @@ Deno.serve(async req=>{
  const publishable=Deno.env.get('SUPABASE_ANON_KEY')??Deno.env.get('SUPABASE_PUBLISHABLE_KEY')??'';
  const service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??Deno.env.get('SUPABASE_SECRET_KEY')??'';
  const stripeKey=Deno.env.get('STRIPE_SECRET_KEY')??'';
- const priceId=Deno.env.get('STRIPE_EVEREST_PRO_PRICE_ID')??'price_1UJmJzH0LskUiPoKPNbgFbPV';
+ // A price is deployment configuration, never source code.  This prevents a
+ // test/old price from being charged after a production deployment.
+ const priceId=Deno.env.get('STRIPE_EVEREST_PRO_PRICE_ID')??'';
  const appUrl=(Deno.env.get('APP_PUBLIC_URL')??'https://everest-local-app.vercel.app').replace(/\/$/,'');
  if(!url||!publishable||!service||!stripeKey)return json({error:'Subscription billing is not configured.'},503);
 
