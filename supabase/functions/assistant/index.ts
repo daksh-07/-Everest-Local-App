@@ -70,15 +70,18 @@ Deno.serve(async (req) => {
 
     // Marketplace navigation is free. Provider-backed AI reasoning is a Pro
     // entitlement and is checked here, not in the client UI.
-    let proQuery = client
-      .from('business_members')
-      .select('business_id,business_subscriptions!inner(status,current_period_end)')
-      .eq('user_id', authData.user.id)
-      .in('business_subscriptions.status', ['ACTIVE', 'TRIALING']);
-    if (requestedBusinessId) proQuery = proQuery.eq('business_id', requestedBusinessId);
-    const { data: proRows, error: proError } = await proQuery.limit(1);
-    if (proError) throw proError;
-    const proActive = Boolean(proRows?.length);
+    async function hasActiveEverestPro(userId:string,businessId:string|null){
+      let query=client
+        .from('business_members')
+        .select('business_id,business_subscriptions!inner(status,current_period_end)')
+        .eq('user_id',userId)
+        .in('business_subscriptions.status',['ACTIVE','TRIALING']);
+      if(businessId)query=query.eq('business_id',businessId);
+      const {data,error}=await query.limit(1);
+      if(error)throw error;
+      return Boolean(data?.length);
+    }
+    const proActive=await hasActiveEverestPro(authData.user.id,requestedBusinessId);
 
     if (!isMarketplaceOrAccountQuery(message)) {
       if (!proActive || !aiUrl || !aiKey || !model) {
