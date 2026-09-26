@@ -72,10 +72,10 @@ function HistoryRow({
   const [offset,setOffset]=useState(0);
   const pan=useMemo(()=>PanResponder.create({
     onMoveShouldSetPanResponder:(_,gesture)=>Math.abs(gesture.dx)>10&&Math.abs(gesture.dx)>Math.abs(gesture.dy),
-    onPanResponderMove:(_,gesture)=>setOffset(Math.max(0,Math.min(96,gesture.dx))),
+    onPanResponderMove:(_,gesture)=>setOffset(Math.min(0,Math.max(-96,gesture.dx))),
     onPanResponderRelease:(_,gesture)=>{
-      if(gesture.dx>72){
-        setOffset(96);
+      if(gesture.dx<-72){
+        setOffset(-96);
         onDelete();
       }else{
         setOffset(0);
@@ -86,7 +86,7 @@ function HistoryRow({
 
   return (
     <View style={{marginBottom:8,overflow:'hidden',borderRadius:16}}>
-      <View style={{position:'absolute',inset:0,backgroundColor:c.danger,alignItems:'flex-start',justifyContent:'center',paddingLeft:18}}>
+      <View style={{position:'absolute',inset:0,backgroundColor:c.danger,alignItems:'flex-end',justifyContent:'center',paddingRight:18}}>
         <Ionicons name="trash-outline" size={19} color={c.onBrand}/>
       </View>
       <View
@@ -410,7 +410,7 @@ export default function Search(){
             <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:12,marginBottom:10}}>
               <View>
                 <Text style={{fontSize:17,fontWeight:'900',color:c.text}}>Recent searches</Text>
-                <Text style={{fontSize:11,color:c.muted,marginTop:2}}>Up to 15 searches · swipe right to remove</Text>
+                <Text style={{fontSize:11,color:c.muted,marginTop:2}}>Up to 15 searches · swipe left to remove</Text>
               </View>
               {history.length?(
                 <Pressable onPress={()=>setManageHistory(value=>!value)} hitSlop={8}>
