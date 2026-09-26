@@ -18,7 +18,7 @@ import {MOTION,ease,useReducedMotion} from '@/lib/motion';
 import {useVisualViewport} from '@/lib/visual-viewport';
 import {installChatWebRuntimeStyles} from '@/lib/chat-web-runtime';
 
-type MarketConversation={id:string;customer_id:string;business_id:string;created_at:string;counterpart_name?:string;logo_url?:string|null};
+type MarketConversation={id:string;customer_id:string;business_id:string;created_at:string;context_type?:'GENERAL'|'PRODUCT'|'SERVICE';product_id?:string|null;service_id?:string|null;context_title?:string|null;counterpart_name?:string;logo_url?:string|null};
 type MarketMessage={id:string;sender_id:string;body:string;created_at:string;read_at?:string|null};
 type ChatRow=
  | {kind:'PERSONAL';id:string;name:string;avatar:string|null;preview:string;at:string;unread:number;pending:boolean;conversation:PersonalConversation}
@@ -57,8 +57,10 @@ function scrollThreadToEndAfterLayout(ref:React.MutableRefObject<ScrollView|null
 export default function Messages(){
  const {colors:c}=useAppTheme();
  const insets=useSafeAreaInsets();
- const params=useLocalSearchParams<{personalId?:string}>();
+ const params=useLocalSearchParams<{personalId?:string;marketId?:string}>();
  const [tab,setTab]=useState<'CHATS'|'REQUESTS'>('CHATS');
+ const [marketFilter,setMarketFilter]=useState<'ALL'|'PRODUCT'|'SERVICE'>('ALL');
+ const [isBusinessUser,setIsBusinessUser]=useState(false);
  const [query,setQuery]=useState('');
  const [personal,setPersonal]=useState<PersonalConversation[]>([]);
  const [requests,setRequests]=useState<PersonalConversation[]>([]);
@@ -99,6 +101,7 @@ export default function Messages(){
   if(!silent)setError('');
   try{
    const user=await currentUser();setUserId(user?.id??'');
+   if(user?.id){const membership=await supabase.from('business_members').select('business_id').eq('user_id',user.id).limit(1);setIsBusinessUser((membership.data?.length??0)>0)}else setIsBusinessUser(false);
    const [p,r,m]=await Promise.all([listPersonalConversations(false),listPersonalConversations(true),conversations()]);
    setPersonal(p);setRequests(r);
    const rows=m as MarketConversation[];
@@ -116,6 +119,8 @@ export default function Messages(){
     const found=[...p,...r].find(x=>x.id===requested);
     if(found){setSelectedPersonal(found);setTab(found.status==='REQUEST'&&found.initiated_by!==user?.id?'REQUESTS':'CHATS')}
    }
+   const requestedMarket=typeof params.marketId==='string'?params.marketId:'';
+   if(requestedMarket&&!selectedMarket){const found=rows.find(x=>x.id===requestedMarket);if(found)setSelectedMarket({...found,counterpart_name:names[found.business_id]?.name??'Business conversation',logo_url:names[found.business_id]?.logo_url??null})}
   }catch{if(!silent)setError('Messages could not be loaded.')}
   finally{if(!silent)setLoading(false)}
  }
@@ -305,10 +310,10 @@ export default function Messages(){
 
  const chats=useMemo<ChatRow[]>(()=>{
   const people:ChatRow[]=personal.map(item=>({kind:'PERSONAL',id:item.id,name:item.display_name??'Everest member',avatar:item.avatar_url,preview:item.latest_message??'No messages yet',at:item.latest_message_at??item.updated_at,unread:item.unread_count,pending:item.status==='REQUEST'&&item.initiated_by===userId,conversation:item}));
-  const businesses:ChatRow[]=market.map(item=>({kind:'MARKET',id:item.id,name:item.counterpart_name??'Business conversation',avatar:item.logo_url??null,preview:'Business enquiry / booking chat',at:item.created_at,unread:0,pending:false,conversation:item}));
+  const businesses:ChatRow[]=market.map(item=>({kind:'MARKET',id:item.id,name:item.counterpart_name??'Business conversation',avatar:item.logo_url??null,preview:item.context_type==='PRODUCT'?'Product · '+(item.context_title??'Enquiry'):item.context_type==='SERVICE'?'Service · '+(item.context_title??'Enquiry'):'Business enquiry / booking chat',at:item.created_at,unread:0,pending:false,conversation:item}));
   const q=query.trim().toLowerCase();
-  return [...people,...businesses].filter(x=>!q||x.name.toLowerCase().includes(q)||x.preview.toLowerCase().includes(q)).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
- },[personal,market,query,userId]);
+  return [...people,...businesses.filter(x=>marketFilter==='ALL'||x.conversation.context_type===marketFilter)].filter(x=>!q||x.name.toLowerCase().includes(q)||x.preview.toLowerCase().includes(q)).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
+ },[personal,market,query,userId,marketFilter]);
  const requestRows=useMemo(()=>{const q=query.trim().toLowerCase();return requests.filter(x=>!q||(x.display_name??'').toLowerCase().includes(q)||(x.latest_message??'').toLowerCase().includes(q))},[requests,query]);
  const visiblePersonalThread=useMemo(()=>{const q=conversationQuery.trim().toLowerCase();return q?personalThread.filter(m=>m.body.toLowerCase().includes(q)||m.reply_preview?.toLowerCase().includes(q)):personalThread},[personalThread,conversationQuery]);
 
@@ -375,7 +380,7 @@ export default function Messages(){
    <View style={{minHeight:62,paddingHorizontal:14,paddingVertical:9,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'center',gap:10}}>
     <Pressable onPress={()=>{setSelectedMarket(null);setMarketThread([]);void loadHome(true)}} style={{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color={c.text}/></Pressable>
     {selectedMarket.logo_url?<Image source={{uri:selectedMarket.logo_url}} style={{width:40,height:40,borderRadius:13}}/>:<View style={{width:40,height:40,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="business-outline" size={19} color={c.text}/></View>}
-    <View style={{flex:1}}><Text style={{fontSize:15,fontWeight:'900',color:c.text}}>{selectedMarket.counterpart_name}</Text><Text style={{fontSize:10,color:c.muted,marginTop:2}}>Business enquiry / booking</Text></View>
+    <View style={{flex:1}}><Text style={{fontSize:15,fontWeight:'900',color:c.text}}>{selectedMarket.counterpart_name}</Text><Text style={{fontSize:10,color:c.muted,marginTop:2}}>{selectedMarket.context_type==='PRODUCT'?'Product · '+(selectedMarket.context_title??'Enquiry'):selectedMarket.context_type==='SERVICE'?'Service · '+(selectedMarket.context_title??'Enquiry'):'Business enquiry / booking'}</Text></View>
    </View>
    <MarketThread refValue={threadRef} items={marketThread} userId={userId} colors={c}/>
    <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} bottomInset={composerBottomInset} onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
@@ -386,11 +391,12 @@ export default function Messages(){
  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,paddingBottom:60,maxWidth:760,width:'100%',alignSelf:'center'}}>
    <Text style={{fontSize:10,fontWeight:'900',letterSpacing:2,color:c.muted}}>EVEREST LOCAL</Text>
-   <Text style={{fontSize:30,fontWeight:'900',color:c.text,marginTop:5}}>Messages</Text>
+   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12}}><Text style={{fontSize:30,fontWeight:'900',color:c.text,marginTop:5}}>Messages</Text>{isBusinessUser?<Pressable onPress={()=>router.push('/business-dm-automation')} style={{width:42,height:42,borderRadius:14,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'}} accessibilityLabel="DM automation settings"><Ionicons name="sparkles-outline" size={19} color={c.brand}/></Pressable>:null}</View>
    <MessagesSearch value={query} onChange={setQuery} colors={c} reducedMotion={reducedMotion}/>
    <View style={{flexDirection:'row',gap:8,marginTop:14,marginBottom:14}}>
     {(['CHATS','REQUESTS'] as const).map(x=><Pressable key={x} onPress={()=>{void haptic.selection();setTab(x)}} style={({pressed})=>({paddingHorizontal:15,paddingVertical:9,borderRadius:12,backgroundColor:tab===x?c.brand:c.surface,borderWidth:1,borderColor:tab===x?c.brand:c.border,opacity:pressed?.78:1,transform:[{scale:pressed?.97:1}]})}><Text style={{fontSize:9,fontWeight:'900',color:tab===x?c.onBrand:c.text}}>{x}{x==='REQUESTS'&&requests.length?' '+requests.length:''}</Text></Pressable>)}
    </View>
+   {tab==='CHATS'&&market.some(x=>x.context_type==='PRODUCT'||x.context_type==='SERVICE')?<View style={{flexDirection:'row',gap:7,marginBottom:10,flexWrap:'wrap'}}>{(['ALL',...(market.some(x=>x.context_type==='PRODUCT')?['PRODUCT']:[]),...(market.some(x=>x.context_type==='SERVICE')?['SERVICE']:[])] as Array<'ALL'|'PRODUCT'|'SERVICE'>).map(x=><Pressable key={x} onPress={()=>setMarketFilter(x)} style={{paddingHorizontal:11,paddingVertical:7,borderRadius:10,backgroundColor:marketFilter===x?c.soft:'transparent',borderWidth:1,borderColor:marketFilter===x?c.brand:c.border}}><Text style={{fontSize:8,fontWeight:'900',color:c.text}}>{x==='ALL'?'ALL':x==='PRODUCT'?'PRODUCTS':'SERVICES'}</Text></Pressable>)}</View>:null}
    <Animated.View style={{opacity:tabFade}}>
    {loading?<ActivityIndicator style={{marginTop:50}} color={c.text}/>:tab==='CHATS'?(
     chats.length?chats.map(row=><ConversationRow key={row.kind+row.id} row={row} colors={c} reducedMotion={reducedMotion} onAvatarPress={()=>{if(row.kind==='PERSONAL')router.push('/public-user?id='+row.conversation.other_user_id)}} onLongPress={()=>{if(row.kind==='PERSONAL'){void haptic.medium();setRowMenu(row)}}} onPress={()=>{if(row.kind==='PERSONAL')setSelectedPersonal(row.conversation);else setSelectedMarket(row.conversation)}}/>):<EmptyState title="No messages yet" copy="Your personal and business conversations will appear here." colors={c}/>
