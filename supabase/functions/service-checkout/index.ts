@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@18.5.0?target=deno';
 
-type ServicePaymentResult={payment_id:string;booking_id:string;amount:number;currency:string;provider_checkout_session_id:string|null;reused:boolean};
+type ServicePaymentResult={payment_id:string;booking_id:string;amount:number;currency:string;payment_kind?:'DEPOSIT'|'BALANCE';provider_checkout_session_id:string|null;reused:boolean};
 type ServiceFeeSnapshot={marketplace_fee:number;provider_net:number;fee_policy_version:string};
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key'};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
@@ -37,9 +37,9 @@ Deno.serve(async req=>{
   // key also makes concurrent callers converge on one Stripe Checkout Session.
   const session=await stripe.checkout.sessions.create({
    mode:'payment',
-   line_items:[{price_data:{currency:payment.currency,product_data:{name:'Everest Local service booking deposit'},unit_amount:Math.round(Number(payment.amount)*100)},quantity:1}],
-   metadata:{payment_kind:'service',service_payment_id:paymentId,booking_id:bookingId,customer_id:user.id,everest_fee:String(fee.marketplace_fee),provider_net:String(fee.provider_net),fee_policy_version:fee.fee_policy_version},
-   payment_intent_data:{metadata:{payment_kind:'service',service_payment_id:paymentId,booking_id:bookingId,customer_id:user.id,everest_fee:String(fee.marketplace_fee),provider_net:String(fee.provider_net),fee_policy_version:fee.fee_policy_version}},
+   line_items:[{price_data:{currency:payment.currency,product_data:{name:payment.payment_kind==='BALANCE'?'Everest Local service booking balance':'Everest Local service booking deposit'},unit_amount:Math.round(Number(payment.amount)*100)},quantity:1}],
+   metadata:{payment_kind:'service',service_payment_stage:payment.payment_kind??'DEPOSIT',service_payment_id:paymentId,booking_id:bookingId,customer_id:user.id,everest_fee:String(fee.marketplace_fee),provider_net:String(fee.provider_net),fee_policy_version:fee.fee_policy_version},
+   payment_intent_data:{metadata:{payment_kind:'service',service_payment_stage:payment.payment_kind??'DEPOSIT',service_payment_id:paymentId,booking_id:bookingId,customer_id:user.id,everest_fee:String(fee.marketplace_fee),provider_net:String(fee.provider_net),fee_policy_version:fee.fee_policy_version}},
    success_url:`everestlocal://booking/success?booking_id=${encodeURIComponent(bookingId)}`,
    cancel_url:`everestlocal://booking/cancelled?booking_id=${encodeURIComponent(bookingId)}`,
   },{idempotencyKey:paymentId});
