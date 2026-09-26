@@ -16,6 +16,7 @@ export interface SocialPost {
   product_id: string | null;
   location_label: string | null;
   status: 'DRAFT' | 'PUBLISHED' | 'HIDDEN' | 'REMOVED';
+  comments_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -123,7 +124,7 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
   const offset = Math.max(input.offset ?? 0, 0);
   let query = supabase
     .from('posts')
-    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,created_at,updated_at')
+    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at')
     .eq('status', 'PUBLISHED')
     .eq('visibility', 'PUBLIC')
     .order('created_at', { ascending: false })
@@ -143,5 +144,106 @@ export async function deletePost(postId: string): Promise<void> {
 export async function updatePostCaption(postId:string,caption:string):Promise<void>{
   requireSupabaseConfig();
   const {error}=await supabase.from('posts').update({caption:caption.trim()||null,updated_at:new Date().toISOString()}).eq('id',postId);
+  if(error)throw new Error(error.message);
+}
+
+
+export interface PostEngagement {
+  likeCount:number;
+  commentCount:number;
+  likedByMe:boolean;
+  savedByMe:boolean;
+}
+
+export interface PostComment {
+  id:string;
+  post_id:string;
+  author_id:string;
+  body:string;
+  parent_id:string|null;
+  status:'VISIBLE'|'HIDDEN'|'REMOVED';
+  created_at:string;
+  updated_at:string;
+  profile?:{display_name:string|null;avatar_url:string|null}|null;
+}
+
+export async function getPostEngagement(postIds:string[]):Promise<Record<string,PostEngagement>>{
+  if(!postIds.length)return {};
+  requireSupabaseConfig();
+  const [{data:{user}},likes,comments,saves]=await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from('post_reactions').select('post_id,user_id').in('post_id',postIds),
+    supabase.from('post_comments').select('post_id').in('post_id',postIds).eq('status','VISIBLE'),
+    supabase.auth.getUser().then(({data:{user}})=>user?supabase.from('saved_posts').select('post_id').eq('user_id',user.id).in('post_id',postIds):Promise.resolve({data:[],error:null}))
+  ]);
+  if(likes.error)throw new Error(likes.error.message);
+  if(comments.error)throw new Error(comments.error.message);
+  if(saves.error)throw new Error(saves.error.message);
+  const result:Record<string,PostEngagement>={};
+  for(const id of postIds)result[id]={likeCount:0,commentCount:0,likedByMe:false,savedByMe:false};
+  for(const row of likes.data??[]){const e=result[row.post_id];if(e){e.likeCount++;if(user&&row.user_id===user.id)e.likedByMe=true;}}
+  for(const row of comments.data??[]){const e=result[row.post_id];if(e)e.commentCount++;}
+  for(const row of saves.data??[]){const e=result[row.post_id];if(e)e.savedByMe=true;}
+  return result;
+}
+
+export async function togglePostLike(postId:string,currentlyLiked:boolean):Promise<void>{
+  requireSupabaseConfig();
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user)throw new Error('Sign in to like posts.');
+  if(currentlyLiked){
+    const {error}=await supabase.from('post_reactions').delete().eq('post_id',postId).eq('user_id',user.id);
+    if(error)throw new Error(error.message);
+  }else{
+    const {error}=await supabase.from('post_reactions').upsert({post_id:postId,user_id:user.id,reaction:'LIKE'},{onConflict:'post_id,user_id'});
+    if(error)throw new Error(error.message);
+  }
+}
+
+export async function toggleSavedPost(postId:string,currentlySaved:boolean):Promise<void>{
+  requireSupabaseConfig();
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user)throw new Error('Sign in to save posts.');
+  if(currentlySaved){
+    const {error}=await supabase.from('saved_posts').delete().eq('post_id',postId).eq('user_id',user.id);
+    if(error)throw new Error(error.message);
+  }else{
+    const {error}=await supabase.from('saved_posts').upsert({post_id:postId,user_id:user.id},{onConflict:'user_id,post_id'});
+    if(error)throw new Error(error.message);
+  }
+}
+
+export async function listPostComments(postId:string):Promise<PostComment[]>{
+  requireSupabaseConfig();
+  const {data,error}=await supabase.from('post_comments').select('id,post_id,author_id,body,parent_id,status,created_at,updated_at').eq('post_id',postId).eq('status','VISIBLE').order('created_at',{ascending:true}).limit(100);
+  if(error)throw new Error(error.message);
+  const rows=(data??[]) as PostComment[];
+  const ids=[...new Set(rows.map(r=>r.author_id))];
+  if(!ids.length)return rows;
+  const profiles=await supabase.from('public_profiles').select('id,display_name,avatar_url').in('id',ids);
+  const map=Object.fromEntries((profiles.data??[]).map(p=>[p.id,p]));
+  return rows.map(r=>({...r,profile:map[r.author_id]??null}));
+}
+
+export async function addPostComment(postId:string,body:string,parentId?:string|null):Promise<PostComment>{
+  requireSupabaseConfig();
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user)throw new Error('Sign in to comment.');
+  const clean=body.trim();
+  if(!clean)throw new Error('Write a comment first.');
+  const {data,error}=await supabase.from('post_comments').insert({post_id:postId,author_id:user.id,body:clean,parent_id:parentId??null}).select('id,post_id,author_id,body,parent_id,status,created_at,updated_at').single();
+  if(error)throw new Error(error.message);
+  return data as PostComment;
+}
+
+export async function hidePostComment(commentId:string):Promise<void>{
+  requireSupabaseConfig();
+  const {error}=await supabase.from('post_comments').update({status:'HIDDEN',updated_at:new Date().toISOString()}).eq('id',commentId);
+  if(error)throw new Error(error.message);
+}
+
+export async function setPostCommentsEnabled(postId:string,enabled:boolean):Promise<void>{
+  requireSupabaseConfig();
+  const {error}=await supabase.from('posts').update({comments_enabled:enabled,updated_at:new Date().toISOString()}).eq('id',postId);
   if(error)throw new Error(error.message);
 }
