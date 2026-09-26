@@ -299,6 +299,11 @@ export async function setBusinessAvailability(businessId:string,status:BusinessA
  const {error}=await supabase.rpc('set_business_availability',{p_business_id:businessId,p_status:status,p_available_from:availableFrom??null,p_available_until:availableUntil??null});
  if(error)throw new Error(error.message);
 }
+export async function setBusinessBookingSettings(input:{businessId:string;weeklyHours:Record<string,Array<{start:string;end:string}>>;capacity:number;instantBookingEnabled:boolean}){
+ const {error}=await supabase.rpc('set_business_booking_settings',{p_business_id:input.businessId,p_timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Australia/Sydney',p_weekly_hours:input.weeklyHours,p_buffer_minutes:15,p_capacity:input.capacity,p_minimum_advance_minutes:60,p_maximum_booking_days:60,p_same_day_enabled:true,p_instant_booking_enabled:input.instantBookingEnabled});
+ if(error)throw new Error(error.message);
+}
+export async function setServiceBookingSettings(serviceId:string,instantBookingEnabled:boolean,recurringEnabled=false){const {error}=await supabase.rpc('set_service_booking_settings',{p_service_id:serviceId,p_instant_booking_enabled:instantBookingEnabled,p_recurring_enabled:recurringEnabled});if(error)throw new Error(error.message);}
 
 
 export type CrmCalendarBlock={id:string;business_id:string;title:string;starts_at:string;ends_at:string;created_at:string;updated_at:string};
