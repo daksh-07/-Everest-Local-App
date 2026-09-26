@@ -27,6 +27,18 @@ export type GrowthMetrics={
 
 const idem=(prefix:string)=>`${prefix}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
 
+export async function listPublicMembershipPlans(businessId:string){
+ const {data,error}=await supabase.from('business_membership_plans').select('*').eq('business_id',businessId).eq('active',true).eq('visibility','PUBLIC').order('created_at',{ascending:false});
+ if(error)throw new Error(error.message);return (data??[]) as MembershipPlan[];
+}
+export async function listPublicPackages(businessId:string){
+ const {data,error}=await supabase.from('business_packages').select('*').eq('business_id',businessId).eq('active',true).eq('visibility','PUBLIC').order('created_at',{ascending:false});
+ if(error)throw new Error(error.message);return (data??[]) as BusinessPackage[];
+}
+export async function createPublicMembershipEnrollment(planId:string){
+ const {data,error}=await supabase.rpc('create_public_membership_enrollment',{p_plan_id:planId});if(error)throw new Error(error.message);return String(data);
+}
+
 export async function listBusinessMembershipPlans(businessId:string){
  const {data,error}=await supabase.from('business_membership_plans').select('*').eq('business_id',businessId).order('active',{ascending:false}).order('created_at',{ascending:false});
  if(error)throw new Error(error.message);return (data??[]) as MembershipPlan[];
