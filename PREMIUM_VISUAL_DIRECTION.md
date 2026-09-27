@@ -281,3 +281,109 @@ Before calling this pass complete:
 8. Consumer screens should feel calmer and less boxed-in than business/admin screens.
 9. Every visual treatment must have a hierarchy purpose; remove decoration that exists only to fill space.
 10. Preserve all existing production logic, data authority, RLS, payments, dispatch, verification and marketplace flows.
+
+
+## Local weather context — small, live, useful
+
+Add a tiny live weather condition beside the user's location in the Home header.
+
+Example visual treatment:
+
+`Rooty Hill   ☁️ 18°`
+
+or, preferably on native, use a restrained monochrome/vector weather glyph that inherits Everest colours rather than a platform emoji. Emoji may be used as a web/fallback presentation only because Apple/Android/web emoji rendering is inconsistent.
+
+### Purpose
+
+This is ambient local context, not a weather feature. It should make Everest feel aware of the user's real local environment without consuming screen space.
+
+### Data source
+
+Use the user's resolved latitude/longitude from the existing location system. Do not infer weather from suburb text when coordinates are available.
+
+Fetch current weather from a provider abstraction. Initial provider can use Open-Meteo's forecast API because it returns current conditions using WMO weather interpretation codes and does not require a client API key. Keep the provider behind a small adapter so it can be replaced later without changing UI code.
+
+Do not put a paid/private API key in the client.
+
+Suggested data:
+- current weather_code
+- current temperature_2m
+- current is_day
+- current wind_speed_10m only if needed to distinguish unusually windy conditions
+
+Cache weather for roughly 15–30 minutes. Do not fetch on every render, tab swipe or location-label repaint.
+
+Refresh when:
+- cached data is stale;
+- the user's resolved coordinates materially change;
+- app returns to foreground after the cache window.
+
+Weather failure must never block Home rendering.
+
+### Condition mapping
+
+Map WMO codes into a small Everest weather model, for example:
+
+- clear / mainly clear → sunny/day or moon/night glyph
+- partly cloudy → partly-cloudy glyph
+- overcast → cloud
+- fog → fog
+- drizzle → drizzle
+- rain / showers → rain
+- snow → snow
+- thunderstorm → storm
+
+Use the API's `is_day` value to select day/night variants where relevant.
+
+Do not invent a weather condition from season.
+
+### Seasons
+
+Season can be used only as a subtle fallback when live weather is unavailable and only if the product team wants it.
+
+For Australia / Southern Hemisphere:
+- Summer: Dec–Feb
+- Autumn: Mar–May
+- Winter: Jun–Aug
+- Spring: Sep–Nov
+
+For Northern Hemisphere, invert accordingly.
+
+Do not show both a season badge and a weather icon at the same time. Weather is more useful.
+
+### UI rules
+
+Keep it tiny:
+- one glyph, about 14–16 px;
+- optional compact temperature such as `18°`;
+- aligned on the same baseline as the location;
+- no pill;
+- no extra card;
+- no border;
+- no large weather widget;
+- no animation loop.
+
+Weather colour should remain restrained:
+- normal conditions use muted/warm off-white;
+- rain/cloud remain neutral;
+- thunderstorm can use muted semantic emphasis;
+- do not turn the header blue/yellow based on weather.
+
+A subtle one-time condition transition may crossfade when weather changes, but do not animate continuously.
+
+Tapping the weather is optional. If implemented, use a lightweight local-weather detail sheet; do not turn Home into a weather app.
+
+### Privacy / data
+
+Use the existing customer location permission flow. Do not request a second location permission specifically for weather.
+
+Do not persist precise weather coordinates in analytics/logs merely to render the icon.
+
+### Acceptance criteria
+
+- Weather shown corresponds to real current provider data.
+- Location/weather fetch is cached and does not rerun during every navigation gesture.
+- A failed weather request leaves the location header intact.
+- No fake weather, fake season or hard-coded condition.
+- Header still looks premium with weather hidden.
+- UI remains compact at small iPhone widths.
