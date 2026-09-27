@@ -47,7 +47,7 @@ Deno.serve(async req=>{
 
  const auth=req.headers.get('Authorization');
  if(!auth)return json({error:'Authentication required'},401);
- const token=auth.replace(/^Bearer\\s+/i,'').trim();
+ const token=auth.replace(/^Bearer\s+/i,'').trim();
  if(!token)return json({error:'Authentication required'},401);
 
  const input=await req.json().catch(()=>null) as ConnectRequest|null;
