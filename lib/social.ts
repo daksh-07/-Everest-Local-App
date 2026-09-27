@@ -19,6 +19,11 @@ export interface SocialPost {
   comments_enabled: boolean;
   created_at: string;
   updated_at: string;
+  is_promoted?: boolean;
+  promotion_priority?: number;
+  collaborator_count?: number;
+  collaborator_labels?: string[];
+  feed_score?: number;
 }
 
 export interface PublicProfile {
@@ -118,19 +123,25 @@ export async function createPost(input: {
   return data as string;
 }
 
-export async function listPublicPosts(input: { limit?: number; offset?: number; businessId?: string } = {}): Promise<SocialPost[]> {
+export async function listPublicPosts(input: { limit?: number; offset?: number; businessId?: string; locality?: string } = {}): Promise<SocialPost[]> {
   requireSupabaseConfig();
   const limit = Math.min(Math.max(input.limit ?? 20, 1), 50);
   const offset = Math.max(input.offset ?? 0, 0);
-  let query = supabase
+  if (!input.businessId) {
+    const {data,error}=await supabase.rpc('list_discovery_feed',{
+      p_limit:limit,p_offset:offset,p_locality:input.locality?.trim()||null
+    });
+    if(error)throw new Error(error.message);
+    return (data??[]) as SocialPost[];
+  }
+  const { data, error } = await supabase
     .from('posts')
     .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at')
     .eq('status', 'PUBLISHED')
     .eq('visibility', 'PUBLIC')
+    .eq('business_id',input.businessId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
-  if (input.businessId) query = query.eq('business_id', input.businessId);
-  const { data, error } = await query;
   if (error) throw new Error(error.message);
   return (data ?? []) as SocialPost[];
 }
@@ -285,4 +296,86 @@ export async function toggleCommentLike(commentId:string,currentlyLiked:boolean)
     const {error}=await supabase.from('post_comment_reactions').upsert({comment_id:commentId,user_id:user.id,reaction:'LIKE'},{onConflict:'comment_id,user_id'});
     if(error)throw new Error(error.message);
   }
+}
+
+
+export interface MyPostInsight {
+  postId:string;
+  viewCount:number;
+  uniqueViewers:number;
+  likeCount:number;
+  commentCount:number;
+  promotionStatus:string|null;
+  promoteUntil:string|null;
+}
+
+export interface PostCollaborationInvite {
+  id:string;
+  post_id:string;
+  inviter_name:string;
+  caption:string|null;
+  business_name:string|null;
+  invited_at:string;
+}
+
+export async function recordPostView(postId:string):Promise<void>{
+  requireSupabaseConfig();
+  const {error}=await supabase.rpc('record_post_view',{p_post_id:postId});
+  if(error)throw new Error(error.message);
+}
+
+export async function listMyPosts(limit=24):Promise<SocialPost[]>{
+  requireSupabaseConfig();
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user)return [];
+  const {data,error}=await supabase.from('posts')
+    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at')
+    .eq('author_id',user.id)
+    .neq('status','REMOVED')
+    .order('created_at',{ascending:false})
+    .limit(Math.min(Math.max(limit,1),50));
+  if(error)throw new Error(error.message);
+  return (data??[]) as SocialPost[];
+}
+
+export async function getMyPostInsights(postIds:string[]):Promise<Record<string,MyPostInsight>>{
+  if(!postIds.length)return {};
+  requireSupabaseConfig();
+  const {data,error}=await supabase.rpc('get_my_post_insights',{p_post_ids:postIds});
+  if(error)throw new Error(error.message);
+  const result:Record<string,MyPostInsight>={};
+  for(const row of data??[]){
+    result[row.post_id]={
+      postId:row.post_id,
+      viewCount:Number(row.view_count??0),
+      uniqueViewers:Number(row.unique_viewers??0),
+      likeCount:Number(row.like_count??0),
+      commentCount:Number(row.comment_count??0),
+      promotionStatus:row.promotion_status??null,
+      promoteUntil:row.promote_until??null,
+    };
+  }
+  return result;
+}
+
+export async function invitePostCollaborator(input:{postId:string;businessId?:string;userId?:string}):Promise<string>{
+  requireSupabaseConfig();
+  const {data,error}=await supabase.rpc('invite_post_collaborator',{
+    p_post_id:input.postId,p_business_id:input.businessId??null,p_user_id:input.userId??null
+  });
+  if(error)throw new Error(error.message);
+  return String(data);
+}
+
+export async function listMyPostCollaborationInvites():Promise<PostCollaborationInvite[]>{
+  requireSupabaseConfig();
+  const {data,error}=await supabase.rpc('list_my_post_collaboration_invites');
+  if(error)throw new Error(error.message);
+  return (data??[]) as PostCollaborationInvite[];
+}
+
+export async function respondPostCollaboration(inviteId:string,accept:boolean):Promise<void>{
+  requireSupabaseConfig();
+  const {error}=await supabase.rpc('respond_post_collaboration',{p_invite_id:inviteId,p_accept:accept});
+  if(error)throw new Error(error.message);
 }
