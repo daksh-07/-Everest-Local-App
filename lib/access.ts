@@ -1,4 +1,5 @@
 import { supabase, requireSupabaseConfig } from './supabase';
+import {retryRead} from './resilience';
 
 export type AccessContext = {
   profile_role: 'CUSTOMER' | 'BUSINESS' | 'ADMIN' | 'DELIVERY_DRIVER' | null;
@@ -16,7 +17,7 @@ export type AccessContext = {
 
 export async function getMyAccessContext(): Promise<AccessContext> {
   requireSupabaseConfig();
-  const { data, error } = await supabase.rpc('get_my_access_context');
+  const { data, error } = await retryRead(()=>supabase.rpc('get_my_access_context'));
   if (error) throw new Error(error.message);
   return data as AccessContext;
 }
