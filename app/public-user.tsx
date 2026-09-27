@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -25,6 +26,7 @@ import {
   type PublicUserProfile,
 } from '@/lib/connections';
 import {useAppTheme} from '@/lib/theme';
+import {websiteLabel} from '@/lib/social-expansion';
 
 function initialsFor(name:string|null){
   const parts=(name??'').trim().split(/\s+/).filter(Boolean);
@@ -285,6 +287,13 @@ export default function PublicUser(){
                       <Text style={{fontSize:14,lineHeight:21,color:c.textSecondary,textAlign:'center',marginTop:12,maxWidth:500}}>
                         {p.bio}
                       </Text>
+                    ):null}
+
+                    {p.website_url?(
+                      <Pressable onPress={()=>void Linking.openURL(p.website_url!)} style={{marginTop:12,flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:11,paddingVertical:8,borderRadius:999,backgroundColor:c.soft}}>
+                        <Ionicons name="globe-outline" size={14} color={c.accent}/>
+                        <Text numberOfLines={1} style={{maxWidth:300,fontSize:12,fontWeight:'800',color:c.text}}>{websiteLabel(p.website_url)}</Text>
+                      </Pressable>
                     ):null}
 
                     {(p.suburb||joined)?(
