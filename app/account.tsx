@@ -151,16 +151,14 @@ export default function Account(){
      <View style={s.profileGlow}/>
      <Pressable accessibilityRole="button" accessibilityLabel="Open profile photo" accessibilityHint="Shows your profile photo and photo actions" disabled={uploadingAvatar} delayLongPress={350} onPress={()=>{void haptic.selection();setPhotoSheetOpen(true)}} onLongPress={()=>{void haptic.selection();setPhotoSheetOpen(true)}} style={s.avatarWrap}>{profile.avatar_url?<Image source={{uri:profile.avatar_url}} style={s.avatarImage}/>:<View style={s.avatar}><Ionicons name="person-outline" size={34} color={colors.text}/></View>}{uploadingAvatar?<View style={s.avatarBusy}><ActivityIndicator color="#fff"/></View>:null}<View style={s.avatarHint}><Ionicons name="expand-outline" size={12} color={colors.text}/></View></Pressable>
      <Text style={s.name}>{profile.full_name||'Everest Local account'}</Text>
+     {profile.bio?<Text style={s.bioText}>{profile.bio}</Text>:null}
      <Text style={s.copy}>{[profile.suburb,profile.city].filter(Boolean).join(', ')||'Your Everest profile'}</Text>
      <View style={s.roles}><View style={s.roleDot}/><Text style={s.rolesText}>{access?.is_business_member?'Customer + Business':'Customer'}{driverActive?' + Delivery Driver':''}</Text></View>
-     {profile.bio||profile.website_url?<View style={s.identityPanel}>
-      {profile.bio?<Text style={s.bioText}>{profile.bio}</Text>:null}
-      {profile.website_url?<Pressable accessibilityRole="link" accessibilityLabel={'Open '+websiteLabel(profile.website_url)} onPress={()=>void openWebsite()} style={[s.websiteCard,profile.bio?{marginTop:12}:null]}>
-       <View style={s.websiteIcon}><Ionicons name="globe-outline" size={17} color={colors.brand}/></View>
-       <View style={{flex:1,minWidth:0}}><Text style={s.websiteKicker}>WEBSITE</Text><Text numberOfLines={1} style={s.websiteText}>{websiteLabel(profile.website_url)}</Text></View>
-       <View style={s.websiteOpen}><Ionicons name="open-outline" size={15} color={colors.text}/></View>
-      </Pressable>:null}
-     </View>:null}
+     {profile.website_url?<Pressable accessibilityRole="link" accessibilityLabel={'Open '+websiteLabel(profile.website_url)} onPress={()=>void openWebsite()} style={s.websiteCard}>
+      <View style={s.websiteIcon}><Ionicons name="globe-outline" size={17} color={colors.brand}/></View>
+      <View style={{flex:1,minWidth:0}}><Text style={s.websiteKicker}>WEBSITE</Text><Text numberOfLines={1} style={s.websiteText}>{websiteLabel(profile.website_url)}</Text></View>
+      <View style={s.websiteOpen}><Ionicons name="open-outline" size={15} color={colors.text}/></View>
+     </Pressable>:null}
      <View style={s.heroActions}><Pressable onPress={()=>router.push('/edit-profile')} style={s.secondaryAction}><Ionicons name="create-outline" size={16} color={colors.text}/><Text style={s.secondaryText}>Edit profile</Text></Pressable><Pressable onPress={()=>router.push('/create')} style={s.primaryAction}><Ionicons name="add" size={18} color={colors.onBrand}/><Text style={s.primaryText}>Create post</Text></Pressable></View>
     </View>
 
@@ -267,9 +265,8 @@ const createStyles=(c:ThemeColors)=>StyleSheet.create({
  profile:{marginTop:10,backgroundColor:c.elevated,borderRadius:28,padding:22,alignItems:'center',borderWidth:1,borderColor:c.border,overflow:'hidden'},profileGlow:{position:'absolute',top:-80,right:-50,width:180,height:180,borderRadius:90,backgroundColor:c.soft,opacity:.75},
  avatarWrap:{width:94,height:94,borderRadius:47,position:'relative',overflow:'hidden',borderWidth:3,borderColor:c.canvas},avatar:{width:'100%',height:'100%',borderRadius:47,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},avatarImage:{width:'100%',height:'100%',borderRadius:47},avatarBusy:{...StyleSheet.absoluteFillObject,backgroundColor:c.overlay,alignItems:'center',justifyContent:'center'},avatarHint:{position:'absolute',right:2,bottom:2,width:25,height:25,borderRadius:13,backgroundColor:c.elevated,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},
  name:{color:c.text,fontSize:25,fontWeight:'900',marginTop:13,textAlign:'center'},copy:{color:c.muted,fontSize:12,lineHeight:18,textAlign:'center',marginTop:4},roles:{marginTop:10,borderRadius:14,backgroundColor:c.soft,paddingHorizontal:10,paddingVertical:6,flexDirection:'row',alignItems:'center',gap:6},roleDot:{width:6,height:6,borderRadius:3,backgroundColor:c.brand},rolesText:{fontSize:9,fontWeight:'900',letterSpacing:.4,color:c.text},
- identityPanel:{width:'100%',marginTop:14,borderRadius:19,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:14},
- bioText:{fontSize:12,lineHeight:19,fontWeight:'600',color:c.text,textAlign:'center'},
- websiteCard:{minHeight:49,borderRadius:15,backgroundColor:c.soft,paddingHorizontal:10,paddingVertical:8,flexDirection:'row',alignItems:'center',gap:9},
+ bioText:{fontSize:12,lineHeight:19,fontWeight:'600',color:c.text,textAlign:'center',marginTop:6,maxWidth:'90%'},
+ websiteCard:{width:'100%',minHeight:57,borderRadius:17,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,paddingHorizontal:11,paddingVertical:9,flexDirection:'row',alignItems:'center',gap:9,marginTop:14},
  websiteIcon:{width:34,height:34,borderRadius:12,backgroundColor:c.elevated,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:c.border},
  websiteKicker:{fontSize:7,fontWeight:'900',letterSpacing:1.05,color:c.muted},
  websiteText:{fontSize:11,fontWeight:'900',color:c.brand,marginTop:2},
