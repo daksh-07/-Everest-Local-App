@@ -14,7 +14,6 @@ const migration=[
  'supabase/migrations/20260927193500_business_ops_06_job_lifecycle.sql',
  'supabase/migrations/20260927193550_business_ops_06_messaging_live.sql',
 ].map(read).join('\n');
-const operations=read('lib/business-operations.ts');
 const workspace=read('lib/workspace.ts');
 const tabbar=read('components/BusinessTabBar.tsx');
 const switcher=read('components/ModeSwitcher.tsx');
