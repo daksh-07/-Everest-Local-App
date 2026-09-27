@@ -55,6 +55,9 @@ export type PublicSoundAsset={
  id:string;ownerId:string|null;source:SoundSource;title:string;artist:string|null;
  durationMs:number|null;reusable:boolean;musicTrackId:string|null;url:string|null;
 };
+export type SoundUsagePost={
+ id:string;caption:string|null;contentFormat:'POST'|'CLIP';createdAt:string;authorId:string;businessId:string|null;
+};
 
 const AUDIO_LIMIT=30*1024*1024;
 const AUDIO_MIMES=['audio/mpeg','audio/mp4','audio/x-m4a','audio/aac','audio/wav','audio/webm'] as const;
@@ -242,4 +245,14 @@ export async function setSoundReusable(audioAssetId:string,reusable:boolean){
  requireSupabaseConfig();
  const {error}=await supabase.rpc('set_audio_asset_reusable',{p_audio_asset_id:audioAssetId,p_reusable:reusable});
  if(error)throw new Error(userFacingError(error,'Sound sharing preference could not be saved.'));
+}
+
+export async function listSoundUsage(audioAssetId:string,limit=30):Promise<SoundUsagePost[]>{
+ requireSupabaseConfig();
+ const links=await supabase.from('post_audio_tracks').select('post_id').eq('audio_asset_id',audioAssetId).limit(Math.min(Math.max(limit,1),50));
+ if(links.error)throw new Error(userFacingError(links.error,'Sound usage could not be loaded.'));
+ const ids=[...new Set((links.data??[]).map(x=>x.post_id))];if(!ids.length)return[];
+ const posts=await supabase.from('posts').select('id,caption,content_format,created_at,author_id,business_id').in('id',ids).eq('status','PUBLISHED').order('created_at',{ascending:false});
+ if(posts.error)throw new Error(userFacingError(posts.error,'Sound posts could not be loaded.'));
+ return (posts.data??[]).map(row=>({id:row.id,caption:row.caption??null,contentFormat:row.content_format==='CLIP'?'CLIP':'POST',createdAt:row.created_at,authorId:row.author_id,businessId:row.business_id??null}));
 }
