@@ -1,10 +1,10 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,FlatList,Image,Modal,Pressable,RefreshControl,Share,StyleSheet,Text,TextInput,View,useWindowDimensions} from 'react-native';
+import {ActivityIndicator,FlatList,Image,Modal,Pressable,RefreshControl,Share,StyleSheet,Text,TextInput,View,useWindowDimensions,type ViewToken} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useLocalSearchParams} from 'expo-router';
 import {
-  addPostComment,getCommentEngagement,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,setPostCommentsEnabled,
+  addPostComment,getCommentEngagement,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,recordPostView,setPostCommentsEnabled,
   toggleCommentLike,togglePostLike,toggleSavedPost,type CommentEngagement,type PostComment,type PostEngagement,type SocialPost
 } from '@/lib/social';
 import {signedPostMedia} from '@/lib/request-post-media';
@@ -31,15 +31,26 @@ export default function Social(){
  const [commentPost,setCommentPost]=useState<FeedPost|null>(null);const [comments,setComments]=useState<PostComment[]>([]);const [commentText,setCommentText]=useState('');
  const [commentLikes,setCommentLikes]=useState<Record<string,CommentEngagement>>({});const [replyTo,setReplyTo]=useState<PostComment|null>(null);
  const [commentsBusy,setCommentsBusy]=useState(false);const [menuPost,setMenuPost]=useState<string|null>(null);const deepLinkOpened=useRef(false);
+ const viewedPosts=useRef(new Set<string>());
+ const viewabilityConfig=useRef({itemVisiblePercentThreshold:60,minimumViewTime:900}).current;
+ const onViewableItemsChanged=useRef(({viewableItems}:{viewableItems:ViewToken[]})=>{
+  for(const token of viewableItems){
+   const item=token.item as FeedPost|undefined;
+   if(!item?.id||viewedPosts.current.has(item.id))continue;
+   viewedPosts.current.add(item.id);
+   void recordPostView(item.id).catch(()=>undefined);
+  }
+ }).current;
 
  const load=useCallback(async()=>{
   setError('');
   try{
-   const [{data:{user}},items,loc]=await Promise.all([
+   const [{data:{user}},loc]=await Promise.all([
     supabase.auth.getUser(),
-    listPublicPosts({limit:40,offset:0}),
     resolveCustomerLocality({requestIfUndetermined:false}).catch(()=>null)
    ]);
+   const localityHint=loc?.suburb||loc?.city||undefined;
+   const items=await listPublicPosts({limit:40,offset:0,locality:localityHint});
    setUserId(user?.id??null);if(loc)setLocality(loc.suburb||loc.city||'Near you');
    const ids=items.map(x=>x.id);const businessIds=[...new Set(items.map(x=>x.business_id).filter((x):x is string=>Boolean(x)))];
    const authorIds=[...new Set(items.map(x=>x.author_id))];
@@ -56,7 +67,7 @@ export default function Social(){
    const mediaPairs=await Promise.all(items.map(async x=>[x.id,await signedPostMedia(x.id)] as const));const media=Object.fromEntries(mediaPairs);
    const terms=loc?[loc.suburb,loc.city,loc.state].filter(Boolean).map(x=>String(x).toLowerCase()):[];
    const score=(p:SocialPost)=>terms.reduce((n,t)=>n+((p.location_label??'').toLowerCase().includes(t)?3:0),0);
-   const sorted=[...items].sort((a,b)=>score(b)-score(a)||new Date(b.created_at).getTime()-new Date(a.created_at).getTime());
+   const sorted=[...items].sort((a,b)=>Number(b.feed_score??score(b))-Number(a.feed_score??score(a))||new Date(b.created_at).getTime()-new Date(a.created_at).getTime());
    setPosts(sorted.map(x=>({...x,media:media[x.id]??[],verifiedWork:verified.has(x.id),businesses:x.business_id?businessMap[x.business_id]??null:null,profile:profileMap[x.author_id]??null,engagement:engagement[x.id]??emptyEngagement})));
   }catch(e){setError(e instanceof Error?e.message:'Could not load Explore.');}
   finally{setLoading(false);setRefreshing(false);}
@@ -133,6 +144,8 @@ export default function Social(){
    keyExtractor={x=>x.id}
    contentContainerStyle={s.page}
    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{setRefreshing(true);void load()}}/>}
+   onViewableItemsChanged={onViewableItemsChanged}
+   viewabilityConfig={viewabilityConfig}
    ListHeaderComponent={<View>
     <View style={s.header}><View><Text style={s.kicker}>EVEREST EXPLORE</Text><Text style={s.title}>Discover</Text></View>
      <View style={s.headerActions}><Pressable onPress={()=>router.push('/search')} style={s.round}><Ionicons name="search" size={21} color={colors.text}/></Pressable><Pressable onPress={()=>router.push('/create-post')} style={s.postButton}><Ionicons name="add" size={20} color={colors.onBrand}/><Text style={s.postButtonText}>Post</Text></Pressable></View>
@@ -147,7 +160,8 @@ export default function Social(){
       {(item.businesses?.logo_url||item.profile?.avatar_url)?<Image source={{uri:item.businesses?.logo_url??item.profile?.avatar_url??''}} style={s.avatarImage}/>:<Ionicons name={item.business_id?'business-outline':'person-outline'} size={19} color={colors.text}/>}
      </Pressable>
      <Pressable style={{flex:1}} onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))}>
-      <Text style={s.name}>{item.businesses?.name??item.profile?.display_name??'Everest member'}</Text>
+      <View style={s.nameLine}><Text style={s.name}>{item.businesses?.name??item.profile?.display_name??'Everest member'}</Text>{item.is_promoted?<View style={s.promotedBadge}><Ionicons name="rocket" size={10} color={colors.brand}/><Text style={s.promotedText}>PROMOTED</Text></View>:null}</View>
+      {item.collaborator_labels?.length?<Text numberOfLines={1} style={s.collab}>with {item.collaborator_labels.join(' · ')}</Text>:null}
       <Text style={s.meta}>{item.location_label||'Everest Local'} · {new Date(item.created_at).toLocaleDateString()}</Text>
      </Pressable>
      <Pressable onPress={()=>setMenuPost(menuPost===item.id?null:item.id)} style={s.more}><Ionicons name="ellipsis-horizontal" size={21} color={colors.text}/></Pressable>
@@ -227,7 +241,7 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  headerActions:{flexDirection:'row',alignItems:'center',gap:9},round:{width:44,height:44,borderRadius:22,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},postButton:{height:44,borderRadius:22,backgroundColor:c.brand,paddingHorizontal:15,flexDirection:'row',alignItems:'center',gap:5},postButtonText:{fontWeight:'900',color:c.onBrand},
  tabs:{flexDirection:'row',gap:8,paddingHorizontal:14,paddingBottom:13},tabActive:{borderRadius:20,backgroundColor:c.text,paddingHorizontal:14,paddingVertical:9},tabActiveText:{fontSize:12,fontWeight:'900',color:c.canvas},tab:{borderRadius:20,borderWidth:1,borderColor:c.border,paddingHorizontal:14,paddingVertical:9},tabText:{fontSize:12,fontWeight:'800',color:c.text},
  error:{marginHorizontal:14,marginBottom:10,color:c.danger,fontWeight:'700'},card:{backgroundColor:c.surface,borderTopWidth:1,borderBottomWidth:1,borderColor:c.border,marginBottom:10,paddingBottom:14},
- authorRow:{flexDirection:'row',alignItems:'center',gap:10,padding:12},avatar:{width:42,height:42,borderRadius:21,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',overflow:'hidden'},avatarImage:{width:42,height:42},name:{fontSize:14,fontWeight:'900',color:c.text},meta:{fontSize:11,color:c.muted,marginTop:2},more:{width:40,height:40,alignItems:'center',justifyContent:'center'},
+ authorRow:{flexDirection:'row',alignItems:'center',gap:10,padding:12},avatar:{width:42,height:42,borderRadius:21,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',overflow:'hidden'},avatarImage:{width:42,height:42},nameLine:{flexDirection:'row',alignItems:'center',gap:7},name:{fontSize:14,fontWeight:'900',color:c.text,flexShrink:1},promotedBadge:{height:20,borderRadius:10,backgroundColor:c.soft,paddingHorizontal:7,flexDirection:'row',alignItems:'center',gap:3},promotedText:{fontSize:7,fontWeight:'900',letterSpacing:.6,color:c.brand},collab:{fontSize:10,fontWeight:'800',color:c.textSecondary,marginTop:1},meta:{fontSize:11,color:c.muted,marginTop:2},more:{width:40,height:40,alignItems:'center',justifyContent:'center'},
  menu:{marginHorizontal:12,marginBottom:10,borderWidth:1,borderColor:c.border,borderRadius:14,backgroundColor:c.canvas,overflow:'hidden'},menuItem:{minHeight:44,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:9},menuText:{fontSize:13,fontWeight:'800',color:c.text},
  mediaWrap:{position:'relative',alignItems:'center',backgroundColor:c.soft},media:{maxWidth:'100%',backgroundColor:c.soft},mediaCount:{position:'absolute',right:12,top:12,borderRadius:14,backgroundColor:'rgba(0,0,0,.62)',paddingHorizontal:9,paddingVertical:5},mediaCountText:{color:'#fff',fontSize:11,fontWeight:'900'},
  actions:{paddingHorizontal:10,paddingTop:9,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},leftActions:{flexDirection:'row',alignItems:'center'},action:{width:42,height:40,alignItems:'center',justifyContent:'center'},count:{paddingHorizontal:13,fontSize:13,fontWeight:'900',color:c.text},caption:{paddingHorizontal:13,paddingTop:7,fontSize:14,lineHeight:20,color:c.text},viewComments:{paddingHorizontal:13,paddingTop:8,fontSize:13,color:c.muted,fontWeight:'700'},commentsOff:{paddingHorizontal:13,paddingTop:7,fontSize:12,color:c.muted},
