@@ -9,8 +9,8 @@ import {uploadPostMedia} from '@/lib/request-post-media';
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {haptic} from '@/lib/haptics';
-import {MusicPicker} from '@/components/MusicPicker';
-import {setPostMusic,type MusicTrack} from '@/lib/social-expansion';
+import {SoundPicker} from '@/components/SoundPicker';
+import {publishDraftSound,setPhotoPostDuration,type DraftSound} from '@/lib/audio-studio';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 
 type Identity={kind:'PERSONAL';id:string;name:string}|{kind:'BUSINESS';id:string;name:string;business:BusinessWorkspace};
@@ -37,7 +37,7 @@ export default function CreatePost(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const params=useLocalSearchParams<{intent?:string}>();
  const [identities,setIdentities]=useState<Identity[]>([]);const [identity,setIdentity]=useState<Identity|null>(null);
  const [caption,setCaption]=useState('');const [type,setType]=useState<PostType>('UPDATE');const [visibility,setVisibility]=useState<'PUBLIC'|'FOLLOWERS'>('PUBLIC');const [location,setLocation]=useState('');
- const [photos,setPhotos]=useState<ImagePicker.ImagePickerAsset[]>([]);const [music,setMusic]=useState<MusicTrack|null>(null);const [musicOpen,setMusicOpen]=useState(false);const [services,setServices]=useState<Listing[]>([]);const [products,setProducts]=useState<Listing[]>([]);const [serviceId,setServiceId]=useState<string|null>(null);const [productId,setProductId]=useState<string|null>(null);
+ const [photos,setPhotos]=useState<ImagePicker.ImagePickerAsset[]>([]);const [sound,setSound]=useState<DraftSound|null>(null);const [soundOpen,setSoundOpen]=useState(false);const [photoDuration,setPhotoDuration]=useState<5000|10000|15000|30000>(10000);const [services,setServices]=useState<Listing[]>([]);const [products,setProducts]=useState<Listing[]>([]);const [serviceId,setServiceId]=useState<string|null>(null);const [productId,setProductId]=useState<string|null>(null);
  const [showDetails,setShowDetails]=useState(false);const [showServicePicker,setShowServicePicker]=useState(false);const [showProductPicker,setShowProductPicker]=useState(false);
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [progress,setProgress]=useState('');const [error,setError]=useState('');
 
@@ -83,13 +83,18 @@ export default function CreatePost(){
  async function publish(){
   if(!identity||busy)return;
   if(!caption.trim()&&!photos.length&&!serviceId&&!productId){setError('Add a note, photo, service or product before publishing.');return;}
-  setBusy(true);setError('');void haptic.medium();
+  if(sound&&!photos.length){setError('Add at least one photo before adding sound to a post.');return;}
+  if(sound?.source==='USER_UPLOAD'&&!sound.rightsConfirmed){setError('Confirm that you own or have permission to use the uploaded audio.');return;}
+  setBusy(true);setError('');void haptic.medium();let createdId:string|null=null;
   try{
-   const id=await createPost({businessId:identity.kind==='BUSINESS'?identity.id:undefined,caption,postType:type,visibility:identity.kind==='BUSINESS'?'PUBLIC':visibility,serviceId:identity.kind==='BUSINESS'?serviceId??undefined:undefined,productId:identity.kind==='BUSINESS'?productId??undefined:undefined,locationLabel:location||undefined});
-   if(photos.length){setProgress(`Uploading 0/${photos.length}`);await uploadPostMedia(id,photos,(d,t)=>setProgress(`Uploading ${d}/${t}`));}
-   if(music)await setPostMusic(id,music.id,0);
+   createdId=await createPost({businessId:identity.kind==='BUSINESS'?identity.id:undefined,caption,postType:type,visibility:identity.kind==='BUSINESS'?'PUBLIC':visibility,serviceId:identity.kind==='BUSINESS'?serviceId??undefined:undefined,productId:identity.kind==='BUSINESS'?productId??undefined:undefined,locationLabel:location||undefined});
+   if(photos.length){setProgress(`Uploading 0/${photos.length}`);await uploadPostMedia(createdId,photos,(d,t)=>setProgress(`Uploading ${d}/${t}`));}
+   if(sound){setProgress('Adding sound…');await publishDraftSound(createdId,sound);await setPhotoPostDuration(createdId,photoDuration);}
    await haptic.success();router.replace('/social');
-  }catch(e){void haptic.warning();setError(e instanceof Error?e.message:'Post could not be published.');}finally{setBusy(false);setProgress('');}
+  }catch(e){
+   if(createdId)await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',createdId).catch(()=>undefined);
+   void haptic.warning();setError(e instanceof Error?e.message:'Post could not be published.');
+  }finally{setBusy(false);setProgress('');}
  }
 
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">
@@ -139,7 +144,7 @@ export default function CreatePost(){
 
    <View style={s.addToPost}>
     <Text style={s.addTitle}>POST DETAILS</Text>
-    <Pressable onPress={()=>setMusicOpen(true)} style={s.detailRow}><View style={s.detailIcon}><Ionicons name="musical-notes-outline" size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.detailText}>{music?music.title:'Add Everest Music'}</Text>{music?<Text style={s.musicArtist}>{music.artist}</Text>:null}</View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
+    <Pressable onPress={()=>{if(!photos.length){setError('Add a photo first, then choose its sound.');return}setError('');setSoundOpen(true)}} style={[s.detailRow,!photos.length&&{opacity:.5}]}><View style={s.detailIcon}><Ionicons name={sound?.source==='VOICEOVER'?'mic-outline':sound?.source==='USER_UPLOAD'?'cloud-upload-outline':'musical-notes-outline'} size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.detailText}>{sound?sound.title:'Add sound'}</Text><Text style={s.musicArtist}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase()):(photos.length?'Music · Upload · Voiceover':'Add a photo first')}</Text></View>{sound?<View style={s.soundDuration}><Text style={s.soundDurationText}>{photoDuration/1000}s</Text></View>:null}<Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
     <Pressable onPress={()=>setShowDetails(v=>!v)} style={s.detailRow}><View style={s.detailIcon}><Ionicons name="location-outline" size={19} color={colors.text}/></View><Text style={s.detailText}>{location||'Location'}</Text><Ionicons name={showDetails?'chevron-up':'chevron-down'} size={18} color={colors.muted}/></Pressable>
     {showDetails?<View style={s.detailPanel}><TextInput value={location} onChangeText={setLocation} maxLength={120} placeholder="Add suburb or area (optional)" placeholderTextColor={colors.muted} style={[s.input,Platform.OS==='web'&&({outlineStyle:'none'} as object)]}/>{identity?.kind==='PERSONAL'?<View style={s.visibilityRow}><Text style={s.detailLabel}>Audience</Text><Pressable onPress={()=>setVisibility(visibility==='PUBLIC'?'FOLLOWERS':'PUBLIC')} style={s.audience}><Ionicons name={visibility==='PUBLIC'?'globe-outline':'people-outline'} size={16} color={colors.text}/><Text style={s.audienceText}>{visibility==='PUBLIC'?'Public':'Connections'}</Text></Pressable></View>:null}</View>:null}
 
@@ -154,7 +159,7 @@ export default function CreatePost(){
    {identity?.kind==='PERSONAL'&&type==='EXPERIENCE'?<View style={s.afterWork}><Ionicons name="heart-circle-outline" size={23} color={colors.brand}/><View style={{flex:1}}><Text style={s.afterWorkTitle}>Share the result, not just a rating</Text><Text style={s.afterWorkCopy}>Tell the local community what was done and how it felt. Your formal business review remains separate.</Text></View></View>:null}
 
    {progress?<Text style={s.note}>{progress}</Text>:null}{error?<Text style={s.error}>{error}</Text>:null}
-   <MusicPicker visible={musicOpen} selected={music} onClose={()=>setMusicOpen(false)} onSelect={setMusic}/>
+   <SoundPicker visible={soundOpen} value={sound} onChange={setSound} onClose={()=>setSoundOpen(false)} photoMode photoDurationMs={photoDuration} onPhotoDurationChange={setPhotoDuration}/>
    <Pressable disabled={busy} onPress={()=>void publish()} style={[s.primary,busy&&s.dim]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<><Ionicons name="paper-plane-outline" size={18} color={colors.onBrand}/><Text style={s.primaryText}>PUBLISH POST</Text></>}</Pressable>
   </>}
  </ScrollView></SafeAreaView>;
@@ -173,7 +178,7 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  mediaHero:{minHeight:102,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',padding:14},mediaHeroIcon:{width:42,height:42,borderRadius:21,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},mediaHeroTitle:{fontSize:14,fontWeight:'900',color:c.text,marginTop:7},mediaHeroCopy:{fontSize:10,lineHeight:15,color:c.muted,textAlign:'center',marginTop:2},
  photoRow:{gap:10,paddingRight:12},photoWrap:{width:220,height:220,borderRadius:18,overflow:'hidden',position:'relative',backgroundColor:c.surface},photo:{width:'100%',height:'100%'},cover:{position:'absolute',left:9,top:9,borderRadius:10,backgroundColor:'rgba(0,0,0,.72)',paddingHorizontal:8,paddingVertical:5},coverText:{fontSize:8,fontWeight:'900',letterSpacing:.8,color:'#fff'},remove:{position:'absolute',top:8,right:8,width:30,height:30,borderRadius:15,backgroundColor:'rgba(0,0,0,.72)',alignItems:'center',justifyContent:'center'},reorder:{position:'absolute',bottom:9,left:9,right:9,flexDirection:'row',justifyContent:'space-between'},
  mediaActions:{flexDirection:'row',gap:9,marginTop:10},mediaButton:{flex:1,minHeight:48,borderWidth:1,borderColor:c.border,borderRadius:16,backgroundColor:c.surface,paddingHorizontal:14,flexDirection:'row',gap:8,alignItems:'center',justifyContent:'center'},mediaText:{fontSize:10,fontWeight:'900',color:c.text},
- addToPost:{marginTop:22,borderWidth:1,borderColor:c.border,borderRadius:20,backgroundColor:c.surface,overflow:'hidden'},addTitle:{fontSize:9,fontWeight:'900',letterSpacing:1.6,color:c.muted,paddingHorizontal:15,paddingTop:15,paddingBottom:8},detailRow:{minHeight:52,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:10,borderTopWidth:1,borderTopColor:c.border},detailIcon:{width:34,height:34,borderRadius:17,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},detailText:{fontSize:12,fontWeight:'700',color:c.text},musicArtist:{fontSize:9,color:c.muted,marginTop:2},detailPanel:{paddingHorizontal:13,paddingBottom:12},input:{minHeight:48,borderWidth:1,borderColor:c.border,borderRadius:13,backgroundColor:c.input,color:c.text,paddingHorizontal:13,fontSize:16},visibilityRow:{marginTop:10,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},detailLabel:{fontSize:10,fontWeight:'800',color:c.muted},audience:{minHeight:36,borderRadius:18,borderWidth:1,borderColor:c.border,paddingHorizontal:11,flexDirection:'row',alignItems:'center',gap:6},audienceText:{fontSize:10,fontWeight:'800',color:c.text},
+ addToPost:{marginTop:22,borderWidth:1,borderColor:c.border,borderRadius:20,backgroundColor:c.surface,overflow:'hidden'},addTitle:{fontSize:9,fontWeight:'900',letterSpacing:1.6,color:c.muted,paddingHorizontal:15,paddingTop:15,paddingBottom:8},detailRow:{minHeight:52,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:10,borderTopWidth:1,borderTopColor:c.border},detailIcon:{width:34,height:34,borderRadius:17,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},detailText:{fontSize:12,fontWeight:'700',color:c.text},musicArtist:{fontSize:9,color:c.muted,marginTop:2},soundDuration:{height:26,borderRadius:13,backgroundColor:c.soft,paddingHorizontal:8,alignItems:'center',justifyContent:'center'},soundDurationText:{fontSize:8,fontWeight:'900',color:c.text},detailPanel:{paddingHorizontal:13,paddingBottom:12},input:{minHeight:48,borderWidth:1,borderColor:c.border,borderRadius:13,backgroundColor:c.input,color:c.text,paddingHorizontal:13,fontSize:16},visibilityRow:{marginTop:10,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},detailLabel:{fontSize:10,fontWeight:'800',color:c.muted},audience:{minHeight:36,borderRadius:18,borderWidth:1,borderColor:c.border,paddingHorizontal:11,flexDirection:'row',alignItems:'center',gap:6},audienceText:{fontSize:10,fontWeight:'800',color:c.text},
  linkRail:{gap:7,paddingHorizontal:12,paddingBottom:12},linkChip:{minHeight:36,borderRadius:18,borderWidth:1,borderColor:c.border,paddingHorizontal:12,alignItems:'center',justifyContent:'center'},linkChipActive:{borderColor:c.brand,backgroundColor:c.soft},linkText:{fontSize:9,fontWeight:'900',color:c.text},
  afterWork:{marginTop:14,borderRadius:16,backgroundColor:c.soft,padding:14,flexDirection:'row',gap:10,alignItems:'flex-start'},afterWorkTitle:{fontSize:12,fontWeight:'900',color:c.text},afterWorkCopy:{fontSize:10,lineHeight:16,color:c.muted,marginTop:3},
  note:{fontSize:11,lineHeight:17,color:c.muted,marginTop:12},error:{fontSize:12,lineHeight:18,color:c.danger,marginTop:13},primary:{minHeight:56,borderRadius:18,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginTop:20,flexDirection:'row',gap:8},primaryText:{fontSize:11,fontWeight:'900',letterSpacing:.7,color:c.onBrand}
