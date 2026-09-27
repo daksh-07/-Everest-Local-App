@@ -5,14 +5,14 @@ import {URL} from 'node:url';
 
 const read=(p)=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const migration=[
- 'supabase/migrations/20260927193000_business_ops_01_structure.sql',
- 'supabase/migrations/20260927193100_business_ops_02_permissions.sql',
- 'supabase/migrations/20260927193200_business_ops_03_members.sql',
- 'supabase/migrations/20260927193300_business_ops_04_assignment.sql',
- 'supabase/migrations/20260927193350_business_ops_04_dashboard.sql',
- 'supabase/migrations/20260927193400_business_ops_05_rls.sql',
- 'supabase/migrations/20260927193500_business_ops_06_job_lifecycle.sql',
- 'supabase/migrations/20260927193550_business_ops_06_messaging_live.sql',
+ 'supabase/migrations/20260927121749_business_ops_01_structure.sql',
+ 'supabase/migrations/20260927121756_business_ops_02_permissions.sql',
+ 'supabase/migrations/20260927121803_business_ops_03_members.sql',
+ 'supabase/migrations/20260927121813_business_ops_04_assignment.sql',
+ 'supabase/migrations/20260927121828_business_ops_04_dashboard.sql',
+ 'supabase/migrations/20260927121836_business_ops_05_rls.sql',
+ 'supabase/migrations/20260927121844_business_ops_06_job_lifecycle.sql',
+ 'supabase/migrations/20260927121851_business_ops_06_messaging_live.sql',
 ].map(read).join('\n');
 const workspace=read('lib/workspace.ts');
 const tabbar=read('components/BusinessTabBar.tsx');
