@@ -25,7 +25,7 @@ export default function CreateClip(){
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
 
  useEffect(()=>{let active=true;(async()=>{try{const [{data:{user}},ctx,{data:profile}]=await Promise.all([supabase.auth.getUser(),getWorkspaceContext(),supabase.from('profiles').select('full_name,suburb,city,state').maybeSingle()]);if(!user){router.replace('/auth');return}const list:Identity[]=[{kind:'PERSONAL',id:user.id,name:profile?.full_name||'My profile'},...ctx.businesses.map(b=>({kind:'BUSINESS' as const,id:b.id,name:b.name,business:b}))];if(active){setIdentities(list);setIdentity(ctx.mode==='BUSINESS'&&ctx.active_business_id?list.find(i=>i.id===ctx.active_business_id)??list[0]:list[0]);setLocation([profile?.suburb,profile?.city,profile?.state].filter(Boolean).join(', '))}}catch(e){if(active)setError(e instanceof Error?e.message:'Clip creator could not be opened.')}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
- useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active)setSound(next)}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Sound could not be loaded.')});return()=>{active=false}},[params.soundId]);
+ useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active){if(next.source==='VOICEOVER')setVoiceover(next);else setSound(next)}}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Sound could not be loaded.')});return()=>{active=false}},[params.soundId]);
 
  async function pick(){
   setError('');
