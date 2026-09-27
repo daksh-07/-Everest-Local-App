@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from 'react';
-import {Modal,Pressable,ScrollView,StyleSheet,Text,TextInput,View,useWindowDimensions} from 'react-native';
+import {Modal,Pressable,ScrollView,StyleSheet,Text,TextInput,View,useWindowDimensions,type DimensionValue} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {ClipPlayer} from '@/components/ClipPlayer';
 import {MusicPicker} from '@/components/MusicPicker';
@@ -20,6 +20,7 @@ const tools:ReadonlyArray<{id:Tool;label:string;icon:keyof typeof Ionicons.glyph
 ];
 
 const time=(ms:number)=>{const total=Math.max(0,Math.round(ms/100)/10);const m=Math.floor(total/60);const s=(total-m*60).toFixed(1).padStart(4,'0');return m+':'+s};
+const percent=(value:number):DimensionValue=>(`${Math.max(0,Math.min(100,value))}%` as `${number}%`);
 
 export function ClipEditor({
  visible,uri,durationMs,initial,music,onMusicChange,onClose,onDone
@@ -68,7 +69,7 @@ export function ClipEditor({
    <ScrollView style={s.panelScroll} contentContainerStyle={s.panel} keyboardShouldPersistTaps="handled">
     {tool==='TRIM'?<>
      <View style={s.panelHead}><View><Text style={s.panelTitle}>Trim</Text><Text style={s.panelCopy}>Set exactly where the clip starts and ends.</Text></View><Pressable onPress={()=>patch({trimStartMs:0,trimEndMs:durationMs&&durationMs>0?Math.min(durationMs,90_000):null})}><Text style={s.resetText}>FULL CLIP</Text></Pressable></View>
-     <View style={s.trimBar}><View style={s.trimFill}/><View style={[s.trimHandle,{left:Math.min(96,(start/maxMs)*96)+'%'}]}/><View style={[s.trimHandle,{left:Math.min(96,(end/maxMs)*96)+'%'}]}/></View>
+     <View style={s.trimBar}><View style={s.trimFill}/><View style={[s.trimHandle,{left:percent(Math.min(96,(start/maxMs)*96))}]}/><View style={[s.trimHandle,{left:percent(Math.min(96,(end/maxMs)*96))}]}/></View>
      <View style={s.trimRow}>
       <View style={s.timeCard}><Text style={s.timeLabel}>START</Text><Text style={s.timeValue}>{time(start)}</Text><View style={s.stepRow}><Pressable onPress={()=>setTrim('START',-500)} style={s.step}><Text style={s.stepText}>−0.5</Text></Pressable><Pressable onPress={()=>setTrim('START',500)} style={s.step}><Text style={s.stepText}>+0.5</Text></Pressable></View></View>
       <View style={s.timeCard}><Text style={s.timeLabel}>END</Text><Text style={s.timeValue}>{time(end)}</Text><View style={s.stepRow}><Pressable onPress={()=>setTrim('END',-500)} style={s.step}><Text style={s.stepText}>−0.5</Text></Pressable><Pressable onPress={()=>setTrim('END',500)} style={s.step}><Text style={s.stepText}>+0.5</Text></Pressable></View></View>
