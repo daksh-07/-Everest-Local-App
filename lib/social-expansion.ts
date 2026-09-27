@@ -15,7 +15,7 @@ export type Story={
  music_start_ms:number;created_at:string;
 };
 export type StoryCard=Story&{
- mediaUrl:string|null;mediaType:'IMAGE'|'VIDEO'|null;
+ mediaUrl:string|null;mediaType:'IMAGE'|'VIDEO'|null;mediaDurationMs:number|null;
  actorName:string;avatarUrl:string|null;businessName:string|null;
 };
 export type Clip=SocialPost&{
@@ -109,7 +109,7 @@ export async function listActiveStories(limit=40):Promise<StoryCard[]>{
  if(!stories.length)return[];
  const ids=stories.map(x=>x.id),authors=[...new Set(stories.map(x=>x.author_id))],businessIds=[...new Set(stories.map(x=>x.business_id).filter((x):x is string=>!!x))];
  const [media,profiles,businesses]=await Promise.all([
-  supabase.from('story_media').select('story_id,media_type,storage_path,sort_order').in('story_id',ids).order('sort_order'),
+  supabase.from('story_media').select('story_id,media_type,storage_path,duration_ms,sort_order').in('story_id',ids).order('sort_order'),
   supabase.from('public_profiles').select('id,display_name,avatar_url').in('id',authors),
   businessIds.length?supabase.from('businesses').select('id,name,logo_url').in('id',businessIds):Promise.resolve({data:[],error:null})
  ]);
@@ -118,7 +118,7 @@ export async function listActiveStories(limit=40):Promise<StoryCard[]>{
  const first=Object.fromEntries(mediaRows.filter((row,index,arr)=>arr.findIndex(x=>x.story_id===row.story_id)===index).map(row=>[row.story_id,row]));
  const profileMap=Object.fromEntries((profiles.data??[]).map(x=>[x.id,x]));const businessMap=Object.fromEntries((businesses.data??[]).map(x=>[x.id,x]));
  return stories.map(story=>{const m=first[story.id];const business=story.business_id?businessMap[story.business_id]:null;const profile=profileMap[story.author_id];return{
-  ...story,mediaUrl:m?signed[m.storage_path]??null:null,mediaType:(m?.media_type as 'IMAGE'|'VIDEO'|undefined)??null,
+  ...story,mediaUrl:m?signed[m.storage_path]??null:null,mediaType:(m?.media_type as 'IMAGE'|'VIDEO'|undefined)??null,mediaDurationMs:m?.duration_ms??null,
   actorName:business?.name??profile?.display_name??'Everest member',avatarUrl:business?.logo_url??profile?.avatar_url??null,businessName:business?.name??null
  }});
 }
@@ -247,7 +247,7 @@ export async function listHighlightStories(highlightId:string):Promise<StoryCard
  const stories=storyIds.map(id=>storyMap[id]).filter((x):x is Story=>Boolean(x));if(!stories.length)return[];
  const authors=[...new Set(stories.map(x=>x.author_id))],businessIds=[...new Set(stories.map(x=>x.business_id).filter((x):x is string=>Boolean(x)))];
  const [media,profiles,businesses]=await Promise.all([
-  supabase.from('story_media').select('story_id,media_type,storage_path,sort_order').in('story_id',storyIds).order('sort_order'),
+  supabase.from('story_media').select('story_id,media_type,storage_path,duration_ms,sort_order').in('story_id',storyIds).order('sort_order'),
   supabase.from('public_profiles').select('id,display_name,avatar_url').in('id',authors),
   businessIds.length?supabase.from('businesses').select('id,name,logo_url').in('id',businessIds):Promise.resolve({data:[],error:null})
  ]);
@@ -256,7 +256,7 @@ export async function listHighlightStories(highlightId:string):Promise<StoryCard
  const first:Record<string,(typeof mediaRows)[number]>={};for(const row of mediaRows)if(!first[row.story_id])first[row.story_id]=row;
  const profileMap=Object.fromEntries((profiles.data??[]).map(x=>[x.id,x]));const businessMap=Object.fromEntries((businesses.data??[]).map(x=>[x.id,x]));
  return stories.map(story=>{const m=first[story.id];const business=story.business_id?businessMap[story.business_id]:null;const profile=profileMap[story.author_id];return{
-  ...story,mediaUrl:m?signed[m.storage_path]??null:null,mediaType:(m?.media_type as 'IMAGE'|'VIDEO'|undefined)??null,
+  ...story,mediaUrl:m?signed[m.storage_path]??null:null,mediaType:(m?.media_type as 'IMAGE'|'VIDEO'|undefined)??null,mediaDurationMs:m?.duration_ms??null,
   actorName:business?.name??profile?.display_name??'Everest member',avatarUrl:business?.logo_url??profile?.avatar_url??null,businessName:business?.name??null
  }});
 }
