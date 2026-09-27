@@ -55,7 +55,7 @@ export default function Account(){
  const [profile,setProfile]=useState<Profile|null>(null);const [access,setAccess]=useState<AccessContext|null>(null);
  const [posts,setPosts]=useState<PostCard[]>([]);const [collabInvites,setCollabInvites]=useState<PostCollaborationInvite[]>([]);
  const [loading,setLoading]=useState(true);const [uploadingAvatar,setUploadingAvatar]=useState(false);const [collabBusy,setCollabBusy]=useState('');
- const [error,setError]=useState('');const [menuOpen,setMenuOpen]=useState(false);
+ const [error,setError]=useState('');const [menuOpen,setMenuOpen]=useState(false);const [photoSheetOpen,setPhotoSheetOpen]=useState(false);
 
  async function load(){
   setLoading(true);setError('');
@@ -100,7 +100,7 @@ export default function Account(){
  },[]));
 
  async function chooseAvatar(){
-  if(!profile||uploadingAvatar)return;setError('');setUploadingAvatar(true);
+  if(!profile||uploadingAvatar)return;setPhotoSheetOpen(false);setError('');setUploadingAvatar(true);
   try{
    const permission=await ImagePicker.requestMediaLibraryPermissionsAsync();
    if(!permission.granted)throw new Error('Photo access is required to choose a profile picture.');
@@ -113,7 +113,7 @@ export default function Account(){
   finally{setUploadingAvatar(false);}
  }
  async function clearAvatar(){
-  if(!profile?.avatar_url||uploadingAvatar)return;setError('');setUploadingAvatar(true);
+  if(!profile?.avatar_url||uploadingAvatar)return;setPhotoSheetOpen(false);setError('');setUploadingAvatar(true);
   try{const {removeProfileAvatar}=await import('@/lib/profile-media');await removeProfileAvatar();setProfile(current=>current?{...current,avatar_url:null}:current)}
   catch(e){setError(userFacingError(e,'Your profile photo could not be removed.'))}
   finally{setUploadingAvatar(false);}
@@ -149,8 +149,7 @@ export default function Account(){
    {loading?<ActivityIndicator color={colors.brand} style={{marginTop:70}}/>:profile?<>
     <View style={s.profile}>
      <View style={s.profileGlow}/>
-     <View style={s.avatarWrap}>{profile.avatar_url?<Image source={{uri:profile.avatar_url}} style={s.avatarImage}/>:<View style={s.avatar}><Ionicons name="person-outline" size={34} color={colors.text}/></View>}{uploadingAvatar?<View style={s.avatarBusy}><ActivityIndicator color="#fff"/></View>:null}</View>
-     <View style={s.photoActions}><Pressable disabled={uploadingAvatar} onPress={()=>void chooseAvatar()} style={s.photoButton}><Ionicons name="camera-outline" size={14} color={colors.onBrand}/><Text style={s.photoButtonText}>{profile.avatar_url?'CHANGE PHOTO':'ADD PHOTO'}</Text></Pressable>{profile.avatar_url?<Pressable disabled={uploadingAvatar} onPress={()=>void clearAvatar()} style={s.removePhoto}><Text style={s.removePhotoText}>REMOVE</Text></Pressable>:null}</View>
+     <Pressable accessibilityRole="button" accessibilityLabel="Open profile photo" accessibilityHint="Shows your profile photo and photo actions" disabled={uploadingAvatar} delayLongPress={350} onPress={()=>{void haptic.selection();setPhotoSheetOpen(true)}} onLongPress={()=>{void haptic.selection();setPhotoSheetOpen(true)}} style={s.avatarWrap}>{profile.avatar_url?<Image source={{uri:profile.avatar_url}} style={s.avatarImage}/>:<View style={s.avatar}><Ionicons name="person-outline" size={34} color={colors.text}/></View>}{uploadingAvatar?<View style={s.avatarBusy}><ActivityIndicator color="#fff"/></View>:null}<View style={s.avatarHint}><Ionicons name="expand-outline" size={12} color={colors.text}/></View></Pressable>
      <Text style={s.name}>{profile.full_name||'Everest Local account'}</Text>
      <Text style={s.copy}>{[profile.suburb,profile.city].filter(Boolean).join(', ')||'Your Everest profile'}</Text>
      <View style={s.roles}><View style={s.roleDot}/><Text style={s.rolesText}>{access?.is_business_member?'Customer + Business':'Customer'}{driverActive?' + Delivery Driver':''}</Text></View>
@@ -194,6 +193,36 @@ export default function Account(){
     {error?<Text style={s.error}>{error}</Text>:null}
    </>:<View style={s.profile}><View style={s.avatarWrap}><View style={s.avatar}><Ionicons name="person-outline" size={30} color={colors.text}/></View></View><Text style={s.name}>Welcome to Everest Local</Text><Text style={s.copy}>{error||'Sign in or create an account to manage requests, bookings, orders, posts and messages.'}</Text><Pressable onPress={()=>router.push('/auth')} style={s.primaryAction}><Text style={s.primaryText}>SIGN IN / CREATE ACCOUNT</Text></Pressable></View>}
   </ScrollView>
+  <Modal visible={photoSheetOpen} transparent animationType="slide" statusBarTranslucent onRequestClose={()=>setPhotoSheetOpen(false)}>
+   <View style={s.photoSheetOverlay}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Close profile photo" onPress={()=>setPhotoSheetOpen(false)} style={s.photoSheetBackdrop}/>
+    <SafeAreaView style={s.photoSheet} edges={['bottom']}>
+     <View style={s.sheetHandle}/>
+     <View style={s.photoSheetHeader}>
+      <View><Text style={s.photoSheetEyebrow}>PROFILE</Text><Text style={s.photoSheetTitle}>Profile photo</Text></View>
+      <Pressable accessibilityRole="button" accessibilityLabel="Close profile photo" onPress={()=>setPhotoSheetOpen(false)} style={s.photoSheetClose}><Ionicons name="close" size={21} color={colors.text}/></Pressable>
+     </View>
+     <View style={s.photoPreviewWrap}>
+      {profile?.avatar_url?<Image source={{uri:profile.avatar_url}} style={s.photoPreview}/>:<View style={[s.photoPreview,s.photoPreviewEmpty]}><Ionicons name="person-outline" size={54} color={colors.muted}/></View>}
+      {uploadingAvatar?<View style={s.photoPreviewBusy}><ActivityIndicator color="#fff"/></View>:null}
+     </View>
+     <View style={s.photoSheetActions}>
+      <Pressable disabled={uploadingAvatar} onPress={()=>void chooseAvatar()} style={s.photoSheetAction}>
+       <View style={s.photoSheetActionIcon}><Ionicons name="camera-outline" size={21} color={colors.text}/></View>
+       <Text style={s.photoSheetActionText}>{profile?.avatar_url?'Change photo':'Add photo'}</Text>
+      </Pressable>
+      <Pressable onPress={()=>{setPhotoSheetOpen(false);void haptic.selection();router.push('/edit-profile')}} style={s.photoSheetAction}>
+       <View style={s.photoSheetActionIcon}><Ionicons name="create-outline" size={21} color={colors.text}/></View>
+       <Text style={s.photoSheetActionText}>Edit profile</Text>
+      </Pressable>
+      <Pressable disabled={!profile?.avatar_url||uploadingAvatar} onPress={()=>void clearAvatar()} style={[s.photoSheetAction,(!profile?.avatar_url||uploadingAvatar)&&s.photoSheetActionDisabled]}>
+       <View style={[s.photoSheetActionIcon,s.removeActionIcon]}><Ionicons name="trash-outline" size={21} color={profile?.avatar_url?colors.danger:colors.muted}/></View>
+       <Text style={[s.photoSheetActionText,profile?.avatar_url?{color:colors.danger}:null]}>Remove photo</Text>
+      </Pressable>
+     </View>
+    </SafeAreaView>
+   </View>
+  </Modal>
   <Modal visible={menuOpen} transparent animationType="fade" statusBarTranslucent onRequestClose={()=>setMenuOpen(false)}>
    <View style={s.menuOverlay}>
     <Pressable accessibilityRole="button" accessibilityLabel="Close account menu" onPress={()=>setMenuOpen(false)} style={s.menuBackdrop}/>
@@ -236,7 +265,7 @@ const createStyles=(c:ThemeColors)=>StyleSheet.create({
  safe:{flex:1,backgroundColor:c.canvas},page:{paddingHorizontal:16,paddingTop:8,paddingBottom:145,maxWidth:760,width:'100%',alignSelf:'center'},
  top:{height:62,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},eyebrow:{fontSize:9,fontWeight:'900',letterSpacing:1.8,color:c.accent},topTitle:{fontSize:29,fontWeight:'900',letterSpacing:-.7,color:c.text,marginTop:1},topAction:{width:44,height:44,borderRadius:22,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},
  profile:{marginTop:10,backgroundColor:c.elevated,borderRadius:28,padding:22,alignItems:'center',borderWidth:1,borderColor:c.border,overflow:'hidden'},profileGlow:{position:'absolute',top:-80,right:-50,width:180,height:180,borderRadius:90,backgroundColor:c.soft,opacity:.75},
- avatarWrap:{width:94,height:94,borderRadius:47,position:'relative',overflow:'hidden',borderWidth:3,borderColor:c.canvas},avatar:{width:'100%',height:'100%',borderRadius:47,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},avatarImage:{width:'100%',height:'100%',borderRadius:47},avatarBusy:{...StyleSheet.absoluteFillObject,backgroundColor:c.overlay,alignItems:'center',justifyContent:'center'},photoActions:{flexDirection:'row',alignItems:'center',gap:6,marginTop:12},photoButton:{height:34,borderRadius:17,backgroundColor:c.brand,paddingHorizontal:12,flexDirection:'row',alignItems:'center',gap:6},photoButtonText:{fontSize:8,fontWeight:'900',letterSpacing:.5,color:c.onBrand},removePhoto:{height:34,paddingHorizontal:9,alignItems:'center',justifyContent:'center'},removePhotoText:{color:c.muted,fontSize:8,fontWeight:'900',letterSpacing:.5},
+ avatarWrap:{width:94,height:94,borderRadius:47,position:'relative',overflow:'hidden',borderWidth:3,borderColor:c.canvas},avatar:{width:'100%',height:'100%',borderRadius:47,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},avatarImage:{width:'100%',height:'100%',borderRadius:47},avatarBusy:{...StyleSheet.absoluteFillObject,backgroundColor:c.overlay,alignItems:'center',justifyContent:'center'},avatarHint:{position:'absolute',right:2,bottom:2,width:25,height:25,borderRadius:13,backgroundColor:c.elevated,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},
  name:{color:c.text,fontSize:25,fontWeight:'900',marginTop:13,textAlign:'center'},copy:{color:c.muted,fontSize:12,lineHeight:18,textAlign:'center',marginTop:4},roles:{marginTop:10,borderRadius:14,backgroundColor:c.soft,paddingHorizontal:10,paddingVertical:6,flexDirection:'row',alignItems:'center',gap:6},roleDot:{width:6,height:6,borderRadius:3,backgroundColor:c.brand},rolesText:{fontSize:9,fontWeight:'900',letterSpacing:.4,color:c.text},
  identityPanel:{width:'100%',marginTop:14,borderRadius:19,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:14},
  bioText:{fontSize:12,lineHeight:19,fontWeight:'600',color:c.text,textAlign:'center'},
@@ -253,6 +282,7 @@ const createStyles=(c:ThemeColors)=>StyleSheet.create({
  emptyPosts:{borderRadius:22,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:24,alignItems:'center'},emptyPostIcon:{width:50,height:50,borderRadius:18,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},emptyPostTitle:{fontSize:16,fontWeight:'900',color:c.text,marginTop:12},emptyPostCopy:{fontSize:11,lineHeight:18,color:c.muted,textAlign:'center',marginTop:5},emptyPostCta:{fontSize:9,fontWeight:'900',letterSpacing:.6,color:c.brand,marginTop:14},
  roleCard:{backgroundColor:c.surface,borderRadius:18,borderWidth:1,borderColor:c.border,padding:14,marginTop:8,flexDirection:'row',gap:11,alignItems:'center'},roleIcon:{width:40,height:40,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},roleTitle:{fontSize:13,fontWeight:'900',color:c.text},roleCopy:{fontSize:10,lineHeight:16,color:c.muted,marginTop:3},noticeCard:{backgroundColor:c.soft,borderRadius:18,padding:14,marginTop:8,flexDirection:'row',gap:10},noticeTitle:{fontSize:13,fontWeight:'900',color:c.text},link:{fontSize:9,fontWeight:'900',letterSpacing:.5,marginTop:10,color:c.brand},
  tools:{borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,overflow:'hidden'},row:{minHeight:67,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:11,borderBottomWidth:1,borderBottomColor:c.border},rowIcon:{width:38,height:38,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},rowText:{fontSize:13,fontWeight:'900',color:c.text},rowCopy:{fontSize:9,color:c.muted,marginTop:2},
+ photoSheetOverlay:{flex:1,justifyContent:'flex-end',backgroundColor:'transparent'},photoSheetBackdrop:{...StyleSheet.absoluteFillObject,backgroundColor:c.overlay},photoSheet:{minHeight:'54%',maxHeight:'68%',backgroundColor:c.elevated,borderTopLeftRadius:30,borderTopRightRadius:30,borderWidth:1,borderColor:c.border,paddingHorizontal:18,paddingTop:9,paddingBottom:12,shadowColor:'#000',shadowOffset:{width:0,height:-10},shadowOpacity:.28,shadowRadius:24,elevation:24},sheetHandle:{width:42,height:4,borderRadius:2,backgroundColor:c.border,alignSelf:'center',marginBottom:10},photoSheetHeader:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},photoSheetEyebrow:{fontSize:8,fontWeight:'900',letterSpacing:1.6,color:c.accent},photoSheetTitle:{fontSize:22,fontWeight:'900',letterSpacing:-.4,color:c.text,marginTop:2},photoSheetClose:{width:40,height:40,borderRadius:20,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},photoPreviewWrap:{width:196,height:196,alignSelf:'center',marginTop:14,marginBottom:18,borderRadius:26,overflow:'hidden',borderWidth:1,borderColor:c.border,backgroundColor:c.surface,position:'relative'},photoPreview:{width:'100%',height:'100%'},photoPreviewEmpty:{alignItems:'center',justifyContent:'center',backgroundColor:c.soft},photoPreviewBusy:{...StyleSheet.absoluteFillObject,backgroundColor:c.overlay,alignItems:'center',justifyContent:'center'},photoSheetActions:{flexDirection:'row',gap:8,marginTop:'auto'},photoSheetAction:{flex:1,minHeight:88,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',paddingHorizontal:8,paddingVertical:10},photoSheetActionDisabled:{opacity:.45},photoSheetActionIcon:{width:38,height:38,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',marginBottom:8},removeActionIcon:{backgroundColor:c.soft},photoSheetActionText:{fontSize:9,fontWeight:'900',color:c.text,textAlign:'center'},
  menuOverlay:{flex:1,backgroundColor:'transparent',flexDirection:'row',justifyContent:'flex-end'},menuBackdrop:{...StyleSheet.absoluteFillObject,backgroundColor:c.overlay},menuDrawer:{height:'100%',width:'92%',maxWidth:470,backgroundColor:c.canvas,borderLeftWidth:1,borderLeftColor:c.border,shadowColor:'#000',shadowOffset:{width:-10,height:0},shadowOpacity:.22,shadowRadius:24,elevation:24},menuHeader:{height:74,paddingHorizontal:18,flexDirection:'row',alignItems:'center',justifyContent:'space-between',borderBottomWidth:1,borderBottomColor:c.border},menuEyebrow:{fontSize:8,fontWeight:'900',letterSpacing:1.6,color:c.accent},menuTitle:{fontSize:24,fontWeight:'900',letterSpacing:-.5,color:c.text,marginTop:2},menuClose:{width:42,height:42,borderRadius:21,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},menuContent:{paddingHorizontal:16,paddingTop:6,paddingBottom:36},menuSection:{marginTop:22},menuSectionEyebrow:{fontSize:8,fontWeight:'900',letterSpacing:1.55,color:c.accent,marginBottom:5},menuSectionTitle:{fontSize:20,fontWeight:'900',letterSpacing:-.35,color:c.text,marginBottom:10},
  logout:{marginTop:24,minHeight:50,borderRadius:15,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7},logoutText:{fontSize:10,fontWeight:'900',color:c.text},error:{color:c.danger,fontSize:11,marginTop:14,textAlign:'center'}
 });
