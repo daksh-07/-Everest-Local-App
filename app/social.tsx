@@ -89,11 +89,15 @@ export default function Social(){
    setPosts(nextPosts);feedCache={posts:nextPosts,locality:nextLocality,userId:nextUserId,at:Date.now()};
    nextPosts.slice(0,8).flatMap(x=>x.media??[]).slice(0,10).forEach(uri=>{void Image.prefetch(uri).catch(()=>{})});
 
-   const [storyRows,clipRows,musicRows]=await Promise.all([
+   const [storyRows,clipRows,musicRows,postMusicResult]=await Promise.all([
     listActiveStories(40).catch(()=>[] as StoryCard[]),
     listClips({limit:24,offset:0,locality:localityHint}).catch(()=>[]),
-    listEverestMusic().catch(()=>[] as MusicTrack[])
+    listEverestMusic().catch(()=>[] as MusicTrack[]),
+    ids.length?supabase.from('posts').select('id,music_track_id,music_start_ms').in('id',ids):Promise.resolve({data:[],error:null})
    ]);
+   const musicMap=Object.fromEntries(musicRows.map(x=>[x.id,x]));
+   const postMusicMap=Object.fromEntries((postMusicResult.data??[]).map(x=>[x.id,x]));
+   setPosts(current=>current.map(post=>({...post,music:postMusicMap[post.id]?.music_track_id?musicMap[postMusicMap[post.id].music_track_id]??null:null,music_track_id:postMusicMap[post.id]?.music_track_id??post.music_track_id??null,music_start_ms:postMusicMap[post.id]?.music_start_ms??post.music_start_ms??0})));
    setStories(storyRows);
    if(clipRows.length){
     const clipIds=clipRows.map(x=>x.id);
@@ -106,8 +110,7 @@ export default function Social(){
     ]);
     const cp=Object.fromEntries((clipProfiles.data??[]).map(x=>[x.id,x]));
     const cb=Object.fromEntries((clipBusinesses.data??[]).map(x=>[x.id,x]));
-    const mm=Object.fromEntries(musicRows.map(x=>[x.id,x]));
-    const hydrated=clipRows.map(x=>({...x,media:[],verifiedWork:false,businesses:x.business_id?cb[x.business_id]??null:null,profile:cp[x.author_id]??null,engagement:clipEngagement[x.id]??emptyEngagement,music:x.music_track_id?mm[x.music_track_id]??null:null}));
+    const hydrated=clipRows.map(x=>({...x,media:[],verifiedWork:false,businesses:x.business_id?cb[x.business_id]??null:null,profile:cp[x.author_id]??null,engagement:clipEngagement[x.id]??emptyEngagement,music:x.music_track_id?musicMap[x.music_track_id]??null:null}));
     setClips(hydrated);
     if(!activeClipId&&hydrated[0])setActiveClipId(hydrated[0].id);
    }else setClips([]);
