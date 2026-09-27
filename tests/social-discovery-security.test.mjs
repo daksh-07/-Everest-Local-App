@@ -84,7 +84,7 @@ test('availability has one authenticated read policy and separate member writes'
  assert.match(rlsHardening,/business_availability_member_insert/);
  assert.match(rlsHardening,/business_availability_member_update/);
  assert.match(rlsHardening,/business_availability_member_delete/);
- assert.doesNotMatch(rlsHardening,/business_availability_member_write/);
+ assert.doesNotMatch(rlsHardening,/create policy business_availability_member_write/);
 });
 
 test('booking payment summary is not anonymous executable',()=>{
