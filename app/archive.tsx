@@ -3,7 +3,7 @@ import {ActivityIndicator,Alert,Pressable,ScrollView,StyleSheet,Text,View} from 
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {archivePost,deletePost,listMyPosts,restorePost,type SocialPost} from '@/lib/social';
+import {deletePost,listMyPosts,restorePost,type SocialPost} from '@/lib/social';
 import {deleteStory,listMyStoryArchive,type Story} from '@/lib/social-expansion';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
