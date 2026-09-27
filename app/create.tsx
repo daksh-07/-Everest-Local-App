@@ -7,9 +7,9 @@ import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
 
 const choices=[
- {title:'Post',copy:'Photos, updates, completed work and recommendations',tag:'Photos + music',icon:'images-outline' as const,route:'/create-post'},
+ {title:'Post',copy:'Photos, updates, completed work and recommendations',tag:'Photos + sound',icon:'images-outline' as const,route:'/create-post'},
  {title:'Story',copy:'Share something lightweight that disappears after 24 hours',tag:'Photo or video · 24h',icon:'ellipse-outline' as const,route:'/create-story'},
- {title:'Clip',copy:'A short vertical video built for local discovery',tag:'Video + music',icon:'play-circle-outline' as const,route:'/create-clip'},
+ {title:'Clip',copy:'A short vertical video built for local discovery',tag:'Video + sound',icon:'play-circle-outline' as const,route:'/create-clip'},
 ];
 
 export default function Create(){
