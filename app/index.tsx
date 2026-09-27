@@ -55,11 +55,24 @@ export default function Home(){
   }
   setBusinesses([...merged.values()].slice(0,8));
 
-  const feed=await listPublicPosts({limit:20});
+  const [feed,shop]=await Promise.all([
+   listPublicPosts({limit:20}),
+   searchShop({limit:20,offset:0}).catch(()=>[] as ShopProduct[])
+  ]);
   const terms=[locality.suburb,locality.city,locality.state].map(v=>v.trim().toLowerCase()).filter(Boolean);
-  const score=(post:SocialPost)=>{const label=(post.location_label??'').toLowerCase();return terms.reduce((n,t,i)=>n+(label.includes(t)?3-i:0),0)};
-  const localFeed=feed.filter(p=>score(p)>0).sort((a,b)=>score(b)-score(a));
-  setPosts((localFeed.length?localFeed:feed).slice(0,4));
+  const postScore=(post:SocialPost)=>{const label=(post.location_label??'').toLowerCase();return terms.reduce((n,t,i)=>n+(label.includes(t)?3-i:0),0)};
+  const localFeed=feed.filter(p=>postScore(p)>0).sort((a,b)=>postScore(b)-postScore(a));
+  const nextPosts=(localFeed.length?localFeed:feed).slice(0,4);
+  setPosts(nextPosts);
+  setPostMedia(await signedPostMediaBatch(nextPosts.map(post=>post.id)).catch(()=>({} as Record<string,string[]>)));
+
+  const productScore=(product:ShopProduct)=>{
+   const label=[product.suburb,product.city,product.state].filter(Boolean).join(' ').toLowerCase();
+   return terms.reduce((n,t,i)=>n+(label.includes(t)?3-i:0),0);
+  };
+  const localProducts=[...shop].sort((a,b)=>productScore(b)-productScore(a)).slice(0,8);
+  const signed=await signedProductMediaBatch(localProducts.map(product=>product.primary_image_path),6*3600).catch(()=>({} as Record<string,string|null>));
+  setProducts(localProducts.map(product=>({...product,imageUrl:product.primary_image_path?signed[product.primary_image_path]??null:null})));
  }
  async function refreshLocality(requestIfUndetermined=true){
   if(locating)return;setLocating(true);
@@ -69,6 +82,47 @@ export default function Home(){
    setSuburb(locality.suburb||locality.city||'Nearby');
    await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);
   }finally{setLocating(false);}
+ }
+
+ async function refreshHome(){
+  if(refreshing)return;
+  setRefreshing(true);
+  try{
+   const {data:{user}}=await supabase.auth.getUser();
+   const locality=await resolveCustomerLocality({requestIfUndetermined:false}).catch(()=>null);
+   if(locality){
+    setSuburb(locality.suburb||locality.city||'Nearby');
+    await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);
+   }else{
+    const [biz,feed,shop]=await Promise.all([
+     supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').limit(8),
+     listPublicPosts({limit:4}),
+     searchShop({limit:8,offset:0}).catch(()=>[] as ShopProduct[])
+    ]);
+    setBusinesses((biz.data??[]) as BusinessPreview[]);
+    setPosts(feed);
+    setPostMedia(await signedPostMediaBatch(feed.map(post=>post.id)).catch(()=>({} as Record<string,string[]>)));
+    const signed=await signedProductMediaBatch(shop.map(product=>product.primary_image_path),6*3600).catch(()=>({} as Record<string,string|null>));
+    setProducts(shop.map(product=>({...product,imageUrl:product.primary_image_path?signed[product.primary_image_path]??null:null})));
+   }
+
+   if(user){
+    const [notifications,booking,request]=await Promise.all([
+     supabase.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',user.id).is('read_at',null),
+     supabase.from('bookings').select('id,status,scheduled_date,scheduled_time').eq('customer_id',user.id).in('status',['REQUESTED','PENDING_PAYMENT','CONFIRMED','UPCOMING']).order('created_at',{ascending:false}).limit(1).maybeSingle(),
+     supabase.from('service_requests').select('id,status,description').eq('customer_id',user.id).in('status',['OPEN','MATCHING','QUOTING','BOOKED']).order('created_at',{ascending:false}).limit(1).maybeSingle()
+    ]);
+    setUnread(notifications.count??0);
+    if(booking.data){
+     const b=booking.data;
+     setContext({kind:'booking',title:'Upcoming booking',detail:b.scheduled_date?b.scheduled_date+(b.scheduled_time?' · '+String(b.scheduled_time).slice(0,5):''):b.status.replaceAll('_',' '),route:'/bookings'});
+    }else if(request.data){
+     setContext({kind:'request',title:'Active request',detail:String(request.data.description||request.data.status),route:'/requests'});
+    }else setContext(null);
+   }
+  }finally{
+   setRefreshing(false);
+  }
  }
 
  useEffect(()=>{let active=true;void(async()=>{try{
