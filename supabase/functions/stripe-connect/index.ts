@@ -209,14 +209,18 @@ Deno.serve(async req=>{
   return json({url:link.url,expires_at:link.expires_at,stripe_connected_account_id:connectedId});
  }catch(error){
   const stripeError=error as {code?:string;type?:string;requestId?:string;raw?:{requestId?:string}};
+  const message=error instanceof Error?error.message:'unknown';
   console.log('stripe_connect_failed',{
    businessId,
    action,
-   message:error instanceof Error?error.message:'unknown',
+   message,
    code:stripeError.code??null,
    type:stripeError.type??null,
    requestId:stripeError.requestId??stripeError.raw?.requestId??null,
   });
+  if(message.includes("signed up for Connect")){
+   return json({error:'Everest Local Stripe Connect is not activated yet. Complete Connect setup in the Stripe Dashboard, then try again.'},503);
+  }
   return json({error:'Stripe payout setup could not be completed. Please try again.'},500);
  }
 });
