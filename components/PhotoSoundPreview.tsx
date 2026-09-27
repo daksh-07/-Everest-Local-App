@@ -1,10 +1,11 @@
 import {useEffect,useMemo,useState} from 'react';
-import {Image,Pressable,StyleSheet,Text,View} from 'react-native';
+import {Image,Pressable,StyleSheet,Text,View,type DimensionValue} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAudioPlayer} from 'expo-audio';
 import type {DraftSound} from '@/lib/audio-studio';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+const percent=(value:number):DimensionValue=>(`${Math.max(0,Math.min(100,value))}%` as `${number}%`);
 
 export function PhotoSoundPreview({
  imageUri,sound,durationMs,onEditSound
@@ -48,7 +49,7 @@ export function PhotoSoundPreview({
    <Pressable onPress={onEditSound} style={s.meta}><Text numberOfLines={1} style={s.title}>{sound.title}</Text><Text numberOfLines={1} style={s.copy}>{sound.artist??sound.source.replaceAll('_',' ').toLowerCase()} · Tap to edit sound</Text></Pressable>
    <Pressable onPress={onEditSound} style={s.edit}><Ionicons name="options-outline" size={18} color="#fff"/></Pressable>
   </View>
-  <View style={s.progressTrack}><View style={[s.progress,{width:(progress*100)+'%'}]}/></View>
+  <View style={s.progressTrack}><View style={[s.progress,{width:percent(progress*100)}]}/></View>
  </View>;
 }
 const styles=(c:ThemeColors)=>StyleSheet.create({
