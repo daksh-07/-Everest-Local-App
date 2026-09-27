@@ -20,6 +20,7 @@ import { ServicePicker } from "@/components/ServicePicker";
 import { useReducedMotion } from "@/lib/motion";
 import { DateTimeField } from "@/components/DateTimeField";
 import {
+  createClientIdempotencyKey,
   createServiceRequest,
   getProfile,
   type LocationSource,
@@ -147,6 +148,7 @@ export default function Request() {
     string | null
   >(null);
   const submitRef = useRef(false);
+  const requestIdempotencyKeyRef = useRef<string | null>(null);
   const definitionMode =
     selectedDefinition?.default_delivery_mode ?? serviceMode;
   const effectiveMode =
@@ -475,7 +477,10 @@ export default function Request() {
         }
       }
       const win = windowKey ? timingWindows[windowKey] : undefined;
+      if (!requestIdempotencyKeyRef.current)
+        requestIdempotencyKeyRef.current = createClientIdempotencyKey("service-request");
       const id = await createServiceRequest({
+        idempotencyKey: requestIdempotencyKeyRef.current,
         categoryId: selectedDefinition?.category_id,
         serviceDefinitionId: selectedDefinition?.id,
         serviceId: serviceId || undefined,
@@ -533,7 +538,7 @@ export default function Request() {
           return;
         }
       }
-      const [requestResult, oppResult] = await Promise.all([
+      const [requestResult, oppResult] = await Promise.allSettled([
         supabase
           .from("service_requests")
           .select("status")
@@ -544,10 +549,18 @@ export default function Request() {
           .select("id", { count: "exact", head: true })
           .eq("request_id", id),
       ]);
+      const requestStatus =
+        requestResult.status === "fulfilled" && !requestResult.value.error
+          ? String(requestResult.value.data?.status ?? "OPEN")
+          : "OPEN";
+      const opportunityCount =
+        oppResult.status === "fulfilled" && !oppResult.value.error
+          ? (oppResult.value.count ?? 0)
+          : 0;
       setSuccess({
         id,
-        status: String(requestResult.data?.status ?? "OPEN"),
-        opportunities: oppResult.count ?? 0,
+        status: requestStatus,
+        opportunities: opportunityCount,
       });
     } catch (e) {
       setError(
