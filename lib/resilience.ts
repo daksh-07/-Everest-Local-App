@@ -23,7 +23,7 @@ export function isTransientReadError(error:unknown){
  ].some(token=>message.includes(token));
 }
 
-export async function retryRead<T>(operation:()=>Promise<T>,options:RetryOptions={}):Promise<T>{
+export async function retryRead<T>(operation:()=>PromiseLike<T>,options:RetryOptions={}):Promise<T>{
  const attempts=Math.max(1,Math.min(options.attempts??3,4));
  const base=Math.max(50,options.baseDelayMs??250);
  const max=Math.max(base,options.maxDelayMs??1400);
