@@ -73,6 +73,7 @@ The repository contains these existing functions:
 - `checkout`
 - `service-checkout`
 - `stripe-webhook`
+- `stripe-connect`
 
 `supabase/config.toml` keeps JWT verification enabled for authenticated user functions and disables it only for `stripe-webhook`, which authenticates requests using Stripe's webhook signature.
 
@@ -83,6 +84,7 @@ Required trusted server configuration is documented in `.env.example`:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_CONNECT_WEBHOOK_SECRET` — signing secret for events on connected accounts
 - `AI_API_URL`
 - `AI_MODEL`
 - `AI_API_KEY`
@@ -118,9 +120,18 @@ Record the exact operation, identity, expected result and actual result. Any une
 
 ## 7. Stripe test environment
 
-Keep the existing Stripe implementation. Do not create or replace the Stripe account.
+Keep the existing Everest Stripe platform account. Do not create or replace the platform account.
 
-Configure Stripe test mode and the deployed `stripe-webhook` endpoint. Set the webhook signing secret in the trusted Edge Function environment.
+### Marketplace payout model
+
+Everest Local uses Stripe Connect **direct charges** for one-business product orders and service payments. New connected accounts are configured so Stripe bills payment-processing and dispute fees to the connected business account. Everest collects only its marketplace commission through Stripe's `application_fee_amount`. This is the low-overhead launch configuration and avoids the additional Connect platform account/payout fees associated with platform-controlled pricing.
+
+Businesses may create draft services and products before payout onboarding, but the database refuses to activate a paid service or publish a paid product until the business is VERIFIED and Stripe reports both charges and payouts enabled. Bank and identity details are entered in Stripe-hosted onboarding and are never stored in Everest Local.
+
+This direct-charge model is **not escrow**. Funds land in the connected Stripe balance when a payment succeeds. Bank payout timing is governed by the connected account and any Stripe Platform Controls enabled for Everest. If the business later requires platform-held settlement until fulfilment, migrate that flow deliberately to destination charges or separate charges and transfers and re-evaluate the higher platform fee/risk burden first.
+
+Deploy `stripe-connect` and configure `APP_PUBLIC_URL` to the production HTTPS origin. Configure the normal platform webhook secret in `STRIPE_WEBHOOK_SECRET`. Also create a Stripe webhook endpoint for **events on connected accounts** pointing at the same deployed `stripe-webhook` function and store that endpoint's signing secret in `STRIPE_CONNECT_WEBHOOK_SECRET`. At minimum subscribe to `account.updated`, Checkout Session payment events, and PaymentIntent success/failure/cancellation events used by Everest.
+
 
 Execute at minimum:
 
@@ -133,9 +144,17 @@ Execute at minimum:
 7. invalid webhook signature;
 8. concurrent checkout attempts;
 9. cart modification during checkout;
-10. insufficient inventory.
+10. insufficient inventory;
+11. verified business creates a connected account through Stripe-hosted onboarding;
+12. paid service/product publication is blocked before Connect is ready;
+13. connected `account.updated` synchronizes charges/payout readiness and pauses listings if Stripe later restricts the account;
+14. product direct charge is created on the connected account and Everest receives only the expected application fee;
+15. service deposit/balance direct charge uses the booking business connected account;
+16. duplicate connected-account webhook delivery remains idempotent;
+17. connected-account payment-processing fees are not added to Everest's application fee;
+18. payout/bank screen exposes readiness and Everest ledger amounts without exposing bank-account numbers.
 
-Verify database state after every scenario. Do not treat a Stripe Dashboard event alone as proof that the database state is correct.
+Verify database and Stripe state after every scenario. Do not treat a Stripe Dashboard event alone as proof that the database state is correct.
 
 ## 8. Production promotion
 
