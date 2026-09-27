@@ -56,13 +56,18 @@ export default function Account(){
    if(!supabaseConfigured){setLoading(false);return;}
    const {data:{user}}=await supabase.auth.getUser();
    if(!user){setLoading(false);return;}
-   const [p,a,myPosts,invites]=await Promise.all([getProfile(),getMyAccessContext(),listMyPosts(24),listMyPostCollaborationInvites()]);
-   const insights=await getMyPostInsights(myPosts.map(item=>item.id));
+   const [p,a]=await Promise.all([getProfile(),getMyAccessContext()]);
+   setProfile(p);setAccess(a);
+   const [myPosts,invites]=await Promise.all([
+    listMyPosts(24).catch(()=>[] as SocialPost[]),
+    listMyPostCollaborationInvites().catch(()=>[] as PostCollaborationInvite[])
+   ]);
+   const insights=await getMyPostInsights(myPosts.map(item=>item.id)).catch(()=>({} as Record<string,MyPostInsight>));
    const coverPairs=await Promise.all(myPosts.slice(0,18).map(async item=>{
     try{const media=await signedPostMedia(item.id);return [item.id,media[0]??null] as const;}catch{return [item.id,null] as const;}
    }));
    const covers=Object.fromEntries(coverPairs);
-   setProfile(p);setAccess(a);setCollabInvites(invites);
+   setCollabInvites(invites);
    setPosts(myPosts.map(post=>({post,insight:insights[post.id]??emptyInsight(post.id),cover:covers[post.id]??null})));
   }catch(e){setError(userFacingError(e,'We could not load your account right now.'))}
   finally{setLoading(false);}
@@ -160,7 +165,7 @@ export default function Account(){
 
     {error?<Text style={s.error}>{error}</Text>:null}
     <Pressable onPress={()=>void logout()} style={s.logout}><Ionicons name="log-out-outline" size={17} color={colors.text}/><Text style={s.logoutText}>SIGN OUT</Text></Pressable>
-   </>:<View style={s.profile}><View style={s.avatar}><Ionicons name="person-outline" size={30} color={colors.text}/></View><Text style={s.name}>Welcome to Everest Local</Text><Text style={s.copy}>{error||'Sign in or create an account to manage requests, bookings, orders, posts and messages.'}</Text><Pressable onPress={()=>router.push('/auth')} style={s.primaryAction}><Text style={s.primaryText}>SIGN IN / CREATE ACCOUNT</Text></Pressable></View>}
+   </>:<View style={s.profile}><View style={s.avatarWrap}><View style={s.avatar}><Ionicons name="person-outline" size={30} color={colors.text}/></View></View><Text style={s.name}>Welcome to Everest Local</Text><Text style={s.copy}>{error||'Sign in or create an account to manage requests, bookings, orders, posts and messages.'}</Text><Pressable onPress={()=>router.push('/auth')} style={s.primaryAction}><Text style={s.primaryText}>SIGN IN / CREATE ACCOUNT</Text></Pressable></View>}
   </ScrollView>
   <CustomerTabBar active="/account"/>
  </View></SafeAreaView>;
