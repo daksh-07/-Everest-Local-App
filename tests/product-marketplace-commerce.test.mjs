@@ -51,6 +51,15 @@ test('customer product page is variant and stock aware',()=>{
  assert.match(product,/ADD TO CART/);
 });
 
+test('product gallery supports swipe paging and pinch zoom in page and fullscreen',()=>{
+ assert.match(product,/horizontal pagingEnabled/);
+ assert.match(product,/onMomentumScrollEnd/);
+ assert.match(product,/PanResponder\.create/);
+ assert.match(product,/clamp\(nextScale,1,4\)/);
+ assert.match(product,/fullscreenZoomed/);
+ assert.match(product,/setFullscreen\(true\)/);
+});
+
 test('checkout never trusts a client price',()=>{
  assert.doesNotMatch(commerce,/p_price/);
  assert.match(migration,/item\.unit_price:=coalesce\(item\.v_price,item\.sale_price,item\.price\)/);
