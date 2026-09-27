@@ -234,3 +234,29 @@ export async function deleteStory(storyId:string){
  const {error}=await supabase.from('stories').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',storyId).eq('author_id',user.id);
  if(error)throw new Error(userFacingError(error,'Story could not be deleted.'));
 }
+
+
+export async function listHighlightStories(highlightId:string):Promise<StoryCard[]>{
+ requireSupabaseConfig();
+ const {data:items,error:itemError}=await supabase.from('story_highlight_items').select('story_id,sort_order').eq('highlight_id',highlightId).order('sort_order');
+ if(itemError)throw new Error(itemError.message);
+ const storyIds=(items??[]).map(x=>x.story_id);if(!storyIds.length)return[];
+ const {data,error}=await supabase.from('stories').select('id,author_id,business_id,caption,visibility,location_label,status,expires_at,music_track_id,music_start_ms,created_at').in('id',storyIds);
+ if(error)throw new Error(error.message);
+ const storyMap=Object.fromEntries(((data??[]) as Story[]).map(x=>[x.id,x]));
+ const stories=storyIds.map(id=>storyMap[id]).filter((x):x is Story=>Boolean(x));if(!stories.length)return[];
+ const authors=[...new Set(stories.map(x=>x.author_id))],businessIds=[...new Set(stories.map(x=>x.business_id).filter((x):x is string=>Boolean(x)))];
+ const [media,profiles,businesses]=await Promise.all([
+  supabase.from('story_media').select('story_id,media_type,storage_path,sort_order').in('story_id',storyIds).order('sort_order'),
+  supabase.from('public_profiles').select('id,display_name,avatar_url').in('id',authors),
+  businessIds.length?supabase.from('businesses').select('id,name,logo_url').in('id',businessIds):Promise.resolve({data:[],error:null})
+ ]);
+ if(media.error)throw new Error(media.error.message);
+ const mediaRows=media.data??[];const signed=await signedMediaUrls('story-media',mediaRows.map(x=>x.storage_path),3600);
+ const first:Record<string,(typeof mediaRows)[number]>={};for(const row of mediaRows)if(!first[row.story_id])first[row.story_id]=row;
+ const profileMap=Object.fromEntries((profiles.data??[]).map(x=>[x.id,x]));const businessMap=Object.fromEntries((businesses.data??[]).map(x=>[x.id,x]));
+ return stories.map(story=>{const m=first[story.id];const business=story.business_id?businessMap[story.business_id]:null;const profile=profileMap[story.author_id];return{
+  ...story,mediaUrl:m?signed[m.storage_path]??null:null,mediaType:(m?.media_type as 'IMAGE'|'VIDEO'|undefined)??null,
+  actorName:business?.name??profile?.display_name??'Everest member',avatarUrl:business?.logo_url??profile?.avatar_url??null,businessName:business?.name??null
+ }});
+}
