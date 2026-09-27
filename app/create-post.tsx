@@ -10,6 +10,7 @@ import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {haptic} from '@/lib/haptics';
 import {SoundPicker} from '@/components/SoundPicker';
+import {PhotoSoundPreview} from '@/components/PhotoSoundPreview';
 import {draftFromReusableSound,publishDraftSound,setPhotoPostDuration,type DraftSound} from '@/lib/audio-studio';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 
@@ -142,6 +143,7 @@ export default function CreatePost(){
     <Pressable onPress={()=>void pickLibrary()} style={s.mediaButton}><Ionicons name="images-outline" size={18} color={colors.text}/><Text style={s.mediaText}>{photos.length?'Add more':'Choose photos'}</Text></Pressable>
     {Platform.OS!=='web'?<Pressable onPress={()=>void takePhoto()} style={s.mediaButton}><Ionicons name="camera-outline" size={18} color={colors.text}/><Text style={s.mediaText}>Camera</Text></Pressable>:null}
    </View>
+   {photos[0]&&sound?<PhotoSoundPreview imageUri={photos[0].uri} sound={sound} durationMs={photoDuration} onEditSound={()=>setSoundOpen(true)}/>:null}
 
    <View style={s.addToPost}>
     <Text style={s.addTitle}>POST DETAILS</Text>
