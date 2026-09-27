@@ -72,7 +72,7 @@ export function SoundPicker({
  }
  async function close(){
   previewPlayer.pause();
-  if(recorderState.isRecording){try{await recorder.stop();await setAudioModeAsync({allowsRecording:false,playsInSilentMode:true})}catch{}}
+  if(recorderState.isRecording){try{await recorder.stop();await setAudioModeAsync({allowsRecording:false,playsInSilentMode:true})}catch{void 0}}
   onClose();
  }
  const patch=(next:Partial<DraftSound>)=>{if(value)onChange(normalizeDraftSound({...value,...next}))};
