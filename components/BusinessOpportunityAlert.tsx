@@ -34,11 +34,8 @@ export function BusinessOpportunityAlert(){
 
  const remember=useCallback((id:string)=>{
   seen.current.add(id);
-  while(seen.current.size>MAX_SEEN){
-   const first=seen.current.values().next().value as string|undefined;
-   if(!first)break;
-   seen.current.delete(first);
-  }
+  if(seen.current.size>MAX_SEEN)
+   seen.current=new Set(Array.from(seen.current).slice(-MAX_SEEN));
  },[]);
 
  const show=useCallback((next:AlertOpportunity)=>{
@@ -110,7 +107,7 @@ export function BusinessOpportunityAlert(){
    if(error||data!==true)throw error??new Error('Decline was not confirmed');
   }catch{
    // A failed mutation must be recoverable; allow the same opportunity to surface again.
-   seen.current.delete(declined.id);
+   seen.current=new Set(Array.from(seen.current).filter(value=>value!==declined.id));
    checkAgain.current=true;
    setTimeout(()=>void check(),250);
   }
