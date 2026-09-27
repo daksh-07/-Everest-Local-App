@@ -138,7 +138,9 @@ async function createV2MerchantAccount(stripeKey:string,business:{
  return data.id;
 }
 
-async function ensureWebhookSecrets(stripe:Stripe,admin:ReturnType<typeof createClient>){
+type WebhookRpcClient={rpc:(fn:string,args?:Record<string,unknown>)=>PromiseLike<{data:unknown;error:unknown}>};
+
+async function ensureWebhookSecrets(stripe:Stripe,admin:WebhookRpcClient){
  const {data:stored,error:readError}=await admin.rpc('get_stripe_webhook_secrets');
  if(readError)throw readError;
  const existing=(stored&&typeof stored==='object'?stored:{}) as {platform?:unknown;connect?:unknown};
@@ -320,7 +322,7 @@ Deno.serve(async req=>{
    return json({error:'APP_PUBLIC_URL must use HTTPS for Stripe onboarding'},503);
   }
 
-  await ensureWebhookSecrets(stripe,admin);
+  await ensureWebhookSecrets(stripe,admin as unknown as WebhookRpcClient);
 
   if(!connectedId){
    connectedId=await createV2MerchantAccount(stripeKey,{
