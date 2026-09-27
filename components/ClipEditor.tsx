@@ -34,7 +34,7 @@ export function ClipEditor({
  const start=draft.trimStartMs??0;const end=draft.trimEndMs??maxMs;
  const previewH=Math.min(560,Math.max(360,height*.57));const previewW=Math.min(width-28,previewH*9/16);
 
- useEffect(()=>{if(visible)setDraft(normalizeClipEditManifest(initial,durationMs))},[visible,uri]);
+ useEffect(()=>{if(visible)setDraft(normalizeClipEditManifest(initial,durationMs))},[visible,uri,durationMs,initial]);
  useEffect(()=>{let alive=true;if(!music?.storage_path){setMusicUrl(null);return()=>{alive=false}}void signedMusicUrl(music.storage_path).then(url=>{if(alive)setMusicUrl(url??null)}).catch(()=>{if(alive)setMusicUrl(null)});return()=>{alive=false}},[music?.id,music?.storage_path]);
 
  const patch=(next:Partial<ClipEditManifest>)=>setDraft(current=>normalizeClipEditManifest({...current,...next},durationMs));
@@ -43,7 +43,7 @@ export function ClipEditor({
   else patch({trimEndMs:Math.min(maxMs,Math.max(start+500,end+delta))});
  };
  const setText=(value:string)=>setDraft(current=>normalizeClipEditManifest({...current,text:value?{value,position:current.text?.position??'CENTER',style:current.text?.style??'BOLD'}:null},durationMs));
- const choose=<T extends string|number>(items:ReadonlyArray<T>,value:T,onChange:(v:T)=>void,label:(v:T)=>string=String)=><View style={s.choices}>{items.map(item=><Pressable key={String(item)} onPress={()=>{onChange(item);void haptic.selection()}} style={[s.choice,item===value&&s.choiceActive]}><Text style={[s.choiceText,item===value&&s.choiceTextActive]}>{label(item)}</Text></Pressable>)}</View>;
+ const choose=<T extends string|number,>(items:ReadonlyArray<T>,value:T,onChange:(v:T)=>void,label:(v:T)=>string=String)=><View style={s.choices}>{items.map(item=><Pressable key={String(item)} onPress={()=>{onChange(item);void haptic.selection()}} style={[s.choice,item===value&&s.choiceActive]}><Text style={[s.choiceText,item===value&&s.choiceTextActive]}>{label(item)}</Text></Pressable>)}</View>;
 
  return <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
   <View style={s.safe}>
