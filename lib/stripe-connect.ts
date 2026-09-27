@@ -19,7 +19,18 @@ export type BusinessPayoutStatus={
 async function connectAction(businessId:string,action:'status'|'onboard'){
  requireSupabaseConfig();
  const {data,error}=await supabase.functions.invoke('stripe-connect',{body:{business_id:businessId,action}});
- if(error)throw new Error(userFacingError(error,'Stripe payout setup is temporarily unavailable.'));
+ if(error){
+  let backendMessage='';
+  const response=(error as {context?:Response}).context;
+  if(response&&typeof response.clone==='function'){
+   try{
+    const payload=await response.clone().json() as {error?:unknown};
+    if(typeof payload?.error==='string')backendMessage=payload.error;
+   }catch{/* fall back to safe generic message */}
+  }
+  if(backendMessage)throw new Error(userFacingError(new Error(backendMessage),'Stripe payout setup is temporarily unavailable.'));
+  throw new Error(userFacingError(error,'Stripe payout setup is temporarily unavailable.'));
+ }
  if(data?.error)throw new Error(String(data.error));
  return data as Record<string,unknown>;
 }
