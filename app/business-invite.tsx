@@ -72,7 +72,7 @@ export default function BusinessInvite(){
 }
 
 const styles=(c:ThemeColors)=>StyleSheet.create({
- safe:{flex:1,backgroundColor:c.background},page:{flex:1,paddingHorizontal:22,paddingTop:28,justifyContent:'center',paddingBottom:40},
+ safe:{flex:1,backgroundColor:c.canvas},page:{flex:1,paddingHorizontal:22,paddingTop:28,justifyContent:'center',paddingBottom:40},
  brand:{position:'absolute',top:24,left:22},brandText:{fontSize:11,fontWeight:'900',letterSpacing:2,color:c.accent},
  card:{width:'100%',maxWidth:520,alignSelf:'center',borderRadius:26,borderWidth:1,borderColor:c.border,backgroundColor:c.elevated,padding:24},
  icon:{width:52,height:52,borderRadius:17,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',marginBottom:22},
