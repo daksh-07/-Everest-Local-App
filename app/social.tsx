@@ -213,7 +213,7 @@ export default function Social(){
   setPosts(v=>v.map(x=>x.id===post.id?{...x,comments_enabled:!x.comments_enabled}:x));setMenuPost(null);
  }
  const mediaWidth=Math.min(width-24,720);const clipHeight=Math.min(Math.max(height-210,520),760);
- function switchMode(next:'POSTS'|'CLIPS'){if(next===mode)return;setMode(next);setActiveClipId(next==='CLIPS'?(clips[0]?.id??null):null);void haptic.selection()}
+ function switchMode(next:'POSTS'|'CLIPS'){if(next===mode)return;setMode(next);setActiveClipId(next==='CLIPS'?(clips[0]?.id??null):null);router.setParams({mode:next==='CLIPS'?'clips':'posts'});void haptic.selection()}
  const audibleTracks=(post:FeedPost)=>post.audioTracks?.filter(track=>!track.muted&&Boolean(track.url))??[];
  const audibleTrack=(post:FeedPost)=>audibleTracks(post)[0]??null;
 
