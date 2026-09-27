@@ -54,7 +54,7 @@ export function ClipEditor({
    </View>
 
    <View style={[s.preview,{height:previewH,width:previewW}]}>
-    <ClipPlayer key={uri} uri={uri} active={visible} edit={draft} musicUri={sound?.previewUri??null} musicStartMs={sound?.startMs??draft.musicStartMs} musicVolume={sound?.muted?0:(sound?.volume??draft.musicVolume)} originalVolume={draft.originalVolume}/>
+    <ClipPlayer key={uri} uri={uri} active={visible} edit={draft} musicUri={sound?.previewUri??null} musicStartMs={sound?.startMs??draft.musicStartMs} musicEndMs={sound?.endMs} musicVolume={sound?.muted?0:(sound?.volume??draft.musicVolume)} musicFadeInMs={sound?.fadeInMs} musicFadeOutMs={sound?.fadeOutMs} originalVolume={draft.originalVolume}/>
     <View pointerEvents="none" style={s.previewHint}><Ionicons name="play" size={11} color="#fff"/><Text style={s.previewHintText}>Tap video to play or pause</Text></View>
    </View>
 
