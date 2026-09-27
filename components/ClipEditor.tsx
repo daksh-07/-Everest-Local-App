@@ -2,15 +2,15 @@ import {useEffect,useMemo,useState} from 'react';
 import {Modal,Pressable,ScrollView,StyleSheet,Text,TextInput,View,useWindowDimensions,type DimensionValue} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {ClipPlayer} from '@/components/ClipPlayer';
-import {MusicPicker} from '@/components/MusicPicker';
-import {normalizeClipEditManifest,signedMusicUrl,type ClipEditManifest,type MusicTrack} from '@/lib/social-expansion';
+import {normalizeClipEditManifest,type ClipEditManifest} from '@/lib/social-expansion';
+import type {DraftSound} from '@/lib/audio-studio';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
 
-type Tool='TRIM'|'MUSIC'|'TEXT'|'FILTER'|'EFFECT'|'SPEED'|'FRAME'|'VOLUME';
+type Tool='TRIM'|'SOUND'|'TEXT'|'FILTER'|'EFFECT'|'SPEED'|'FRAME'|'VOLUME';
 const tools:ReadonlyArray<{id:Tool;label:string;icon:keyof typeof Ionicons.glyphMap}>=[
  {id:'TRIM',label:'Trim',icon:'cut-outline'},
- {id:'MUSIC',label:'Music',icon:'musical-notes-outline'},
+ {id:'SOUND',label:'Sound',icon:'musical-notes-outline'},
  {id:'TEXT',label:'Text',icon:'text-outline'},
  {id:'FILTER',label:'Filter',icon:'color-filter-outline'},
  {id:'EFFECT',label:'Effects',icon:'sparkles-outline'},
@@ -23,20 +23,19 @@ const time=(ms:number)=>{const total=Math.max(0,Math.round(ms/100)/10);const m=M
 const percent=(value:number):DimensionValue=>(`${Math.max(0,Math.min(100,value))}%` as `${number}%`);
 
 export function ClipEditor({
- visible,uri,durationMs,initial,music,onMusicChange,onClose,onDone
+ visible,uri,durationMs,initial,sound,onOpenSound,onClose,onDone
 }:{
- visible:boolean;uri:string;durationMs:number|null|undefined;initial:ClipEditManifest;music:MusicTrack|null;
- onMusicChange:(track:MusicTrack|null)=>void;onClose:()=>void;onDone:(edit:ClipEditManifest)=>void;
+ visible:boolean;uri:string;durationMs:number|null|undefined;initial:ClipEditManifest;sound:DraftSound|null;
+ onOpenSound:()=>void;onClose:()=>void;onDone:(edit:ClipEditManifest)=>void;
 }){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {height,width}=useWindowDimensions();
  const [draft,setDraft]=useState<ClipEditManifest>(()=>normalizeClipEditManifest(initial,durationMs));
- const [tool,setTool]=useState<Tool>('TRIM');const [musicOpen,setMusicOpen]=useState(false);const [musicUrl,setMusicUrl]=useState<string|null>(null);
+ const [tool,setTool]=useState<Tool>('TRIM');
  const maxMs=durationMs&&durationMs>0?Math.min(durationMs,90_000):90_000;
  const start=draft.trimStartMs??0;const end=draft.trimEndMs??maxMs;
  const previewH=Math.min(560,Math.max(360,height*.57));const previewW=Math.min(width-28,previewH*9/16);
 
  useEffect(()=>{if(visible)setDraft(normalizeClipEditManifest(initial,durationMs))},[visible,uri,durationMs,initial]);
- useEffect(()=>{let alive=true;if(!music?.storage_path){setMusicUrl(null);return()=>{alive=false}}void signedMusicUrl(music.storage_path).then(url=>{if(alive)setMusicUrl(url??null)}).catch(()=>{if(alive)setMusicUrl(null)});return()=>{alive=false}},[music?.id,music?.storage_path]);
 
  const patch=(next:Partial<ClipEditManifest>)=>setDraft(current=>normalizeClipEditManifest({...current,...next},durationMs));
  const setTrim=(side:'START'|'END',delta:number)=>{
@@ -55,7 +54,7 @@ export function ClipEditor({
    </View>
 
    <View style={[s.preview,{height:previewH,width:previewW}]}>
-    <ClipPlayer key={uri} uri={uri} active={visible} edit={draft} musicUri={musicUrl} musicStartMs={draft.musicStartMs} musicVolume={draft.musicVolume} originalVolume={draft.originalVolume}/>
+    <ClipPlayer key={uri} uri={uri} active={visible} edit={draft} musicUri={sound?.previewUri??null} musicStartMs={sound?.startMs??draft.musicStartMs} musicVolume={sound?.muted?0:(sound?.volume??draft.musicVolume)} originalVolume={draft.originalVolume}/>
     <View pointerEvents="none" style={s.previewHint}><Ionicons name="play" size={11} color="#fff"/><Text style={s.previewHintText}>Tap video to play or pause</Text></View>
    </View>
 
@@ -77,12 +76,10 @@ export function ClipEditor({
      <View style={s.quickRow}>{[15,30,60].filter(sec=>sec*1000<=maxMs).map(sec=><Pressable key={sec} onPress={()=>patch({trimStartMs:0,trimEndMs:sec*1000})} style={s.quick}><Text style={s.quickText}>First {sec}s</Text></Pressable>)}</View>
     </>:null}
 
-    {tool==='MUSIC'?<>
-     <View style={s.panelHead}><View><Text style={s.panelTitle}>Music</Text><Text style={s.panelCopy}>Pick a licensed track and choose the exact section.</Text></View></View>
-     <Pressable onPress={()=>setMusicOpen(true)} style={s.musicCard}><View style={s.musicIcon}><Ionicons name="musical-notes" size={21} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.musicTitle}>{music?music.title:'Choose music'}</Text><Text style={s.musicArtist}>{music?music.artist:'Open the Everest Music library'}</Text></View><Ionicons name="chevron-forward" size={19} color={colors.muted}/></Pressable>
-     {music?<><Text style={s.sectionLabel}>MUSIC VOLUME</Text>{choose([.25,.5,.75,1] as const,draft.musicVolume??.75,v=>patch({musicVolume:v}),v=>Math.round(Number(v)*100)+'%')}
-      <View style={s.offsetCard}><View><Text style={s.timeLabel}>SONG START</Text><Text style={s.timeValue}>{time(draft.musicStartMs??0)}</Text></View><View style={s.stepRow}><Pressable onPress={()=>patch({musicStartMs:Math.max(0,(draft.musicStartMs??0)-5000)})} style={s.step}><Text style={s.stepText}>−5s</Text></Pressable><Pressable onPress={()=>patch({musicStartMs:Math.min(Math.max(0,music.duration_ms-1000),(draft.musicStartMs??0)+5000)})} style={s.step}><Text style={s.stepText}>+5s</Text></Pressable></View></View>
-     </>:null}
+    {tool==='SOUND'?<>
+     <View style={s.panelHead}><View><Text style={s.panelTitle}>Sound</Text><Text style={s.panelCopy}>Use original audio, licensed music, your own audio file, or record a voiceover.</Text></View></View>
+     <Pressable onPress={onOpenSound} style={s.musicCard}><View style={s.musicIcon}><Ionicons name={sound?.source==='VOICEOVER'?'mic':sound?.source==='USER_UPLOAD'?'cloud-upload':'musical-notes'} size={21} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.musicTitle}>{sound?sound.title:'Add sound'}</Text><Text style={s.musicArtist}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase()):'Music · Original · Upload · Voiceover'}</Text></View><Ionicons name="chevron-forward" size={19} color={colors.muted}/></Pressable>
+     {sound?<View style={s.offsetCard}><View><Text style={s.timeLabel}>SOUND START</Text><Text style={s.timeValue}>{time(sound.startMs)}</Text></View><View><Text style={s.timeLabel}>VOLUME</Text><Text style={s.timeValue}>{sound.muted?'Muted':Math.round(sound.volume*100)+'%'}</Text></View></View>:null}
     </>:null}
 
     {tool==='TEXT'?<>
@@ -97,12 +94,11 @@ export function ClipEditor({
     {tool==='EFFECT'?<><View style={s.panelHead}><View><Text style={s.panelTitle}>Effects</Text><Text style={s.panelCopy}>Lightweight motion effects without destroying the original file.</Text></View></View>{choose(['NONE','PULSE','FLASH','FOCUS'] as const,draft.effect??'NONE',v=>patch({effect:v}),v=>v[0]+v.slice(1).toLowerCase())}</>:null}
     {tool==='SPEED'?<><View style={s.panelHead}><View><Text style={s.panelTitle}>Speed</Text><Text style={s.panelCopy}>Slow it down or move faster.</Text></View></View>{choose([.5,.75,1,1.25,1.5,2] as const,draft.speed??1,v=>patch({speed:v}),v=>String(v)+'×')}</>:null}
     {tool==='FRAME'?<><View style={s.panelHead}><View><Text style={s.panelTitle}>Frame</Text><Text style={s.panelCopy}>Fill the screen or preserve the entire video.</Text></View></View>{choose(['FILL','FIT'] as const,draft.fit??'FILL',v=>patch({fit:v}),v=>v==='FILL'?'Fill screen':'Fit video')}<Pressable onPress={()=>patch({mirror:!draft.mirror})} style={[s.toggle,draft.mirror&&s.toggleActive]}><Ionicons name="swap-horizontal" size={18} color={draft.mirror?colors.onBrand:colors.text}/><Text style={[s.toggleText,draft.mirror&&{color:colors.onBrand}]}>Mirror video</Text><Ionicons name={draft.mirror?'checkmark-circle':'ellipse-outline'} size={20} color={draft.mirror?colors.onBrand:colors.muted}/></Pressable></>:null}
-    {tool==='VOLUME'?<><View style={s.panelHead}><View><Text style={s.panelTitle}>Original audio</Text><Text style={s.panelCopy}>Balance the recorded sound against music.</Text></View></View>{choose([0,.25,.5,.75,1] as const,draft.originalVolume??1,v=>patch({originalVolume:v}),v=>Number(v)===0?'Muted':Math.round(Number(v)*100)+'%')}</>:null}
+    {tool==='VOLUME'?<><View style={s.panelHead}><View><Text style={s.panelTitle}>Original audio</Text><Text style={s.panelCopy}>Balance the recorded sound against your added sound.</Text></View></View>{choose([0,.25,.5,.75,1] as const,draft.originalVolume??1,v=>patch({originalVolume:v}),v=>Number(v)===0?'Muted':Math.round(Number(v)*100)+'%')}</>:null}
 
     <Pressable onPress={()=>{setDraft(normalizeClipEditManifest({},durationMs));void haptic.selection()}} style={s.reset}><Ionicons name="refresh-outline" size={16} color={colors.text}/><Text style={s.resetButtonText}>Reset all edits</Text></Pressable>
    </ScrollView>
   </View>
-  <MusicPicker visible={musicOpen} selected={music} onClose={()=>setMusicOpen(false)} onSelect={track=>{onMusicChange(track);if(!track)patch({musicStartMs:0})}}/>
  </Modal>;
 }
 
