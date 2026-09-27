@@ -30,6 +30,7 @@ export interface SocialPost {
   music_volume?: number;
   original_volume?: number;
   cover_storage_path?: string|null;
+  photo_duration_ms?: number|null;
 }
 
 export interface PublicProfile {
@@ -149,7 +150,7 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
     // RLS still governs which published public posts the caller can read.
     const fallback=await supabase
       .from('posts')
-      .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path')
+      .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path,photo_duration_ms')
       .eq('status','PUBLISHED')
       .eq('visibility','PUBLIC')
       .eq('content_format','POST')
@@ -160,7 +161,7 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
   }
   const { data, error } = await supabase
     .from('posts')
-    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path')
+    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path,photo_duration_ms')
     .eq('status', 'PUBLISHED')
     .eq('visibility', 'PUBLIC')
     .eq('content_format','POST')
@@ -359,7 +360,7 @@ export async function listMyPosts(limit=24):Promise<SocialPost[]>{
   const {data:{user}}=await supabase.auth.getUser();
   if(!user)return [];
   const {data,error}=await supabase.from('posts')
-    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path')
+    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path,photo_duration_ms')
     .eq('author_id',user.id)
     .neq('status','REMOVED')
     .order('created_at',{ascending:false})
