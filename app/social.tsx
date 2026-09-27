@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,FlatList,Image,Modal,Pressable,RefreshControl,Share,StyleSheet,Text,TextInput,View,useWindowDimensions,type ViewToken} from 'react-native';
+import {ActivityIndicator,FlatList,Image,Modal,Pressable,RefreshControl,ScrollView,Share,StyleSheet,Text,TextInput,View,useWindowDimensions,type ViewToken} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useLocalSearchParams} from 'expo-router';
