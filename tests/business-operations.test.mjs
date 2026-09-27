@@ -73,7 +73,8 @@ test('worker job transitions are constrained and synchronize authoritative booki
 test('Everest Live provider acceptance bridges into the employee work queue',()=>{
  assert.match(migration,/function private\.sync_service_dispatch_business_assignment/);
  assert.match(migration,/service_dispatch_business_assignment_sync/);
- assert.match(migration,/join public\.bookings b on b\.id=sda\.booking_id/);\n assert.doesNotMatch(migration,/service_provider_profiles/);
+ assert.match(migration,/join public\.bookings b on b\.id=sda\.booking_id/);
+ assert.doesNotMatch(migration,/service_provider_profiles/);
  assert.match(migration,/join public\.business_members bm/);
  assert.match(work,/getMyAssignedJobs/);
 });
