@@ -73,6 +73,13 @@ export async function acceptBusinessInvitation(invitationId:string){
  if(error)throw new Error(message(error,'The invitation could not be accepted.'));
  return String(data);
 }
+export async function sendBusinessInvitationEmail(invitationId:string){
+ const {data,error}=await supabase.functions.invoke('business-invite-email',{body:{invitationId}});
+ if(error)throw new Error(message(error,'The invitation exists, but the email could not be sent.'));
+ const result=(data??{}) as {sent?:boolean};
+ if(result.sent!==true)throw new Error('The invitation exists, but the email could not be sent.');
+ return true;
+}
 export async function inviteBusinessMember(input:{
  businessId:string;email:string;role:BusinessRole;displayName?:string;jobTitle?:string;employeeNumber?:string;
  locationId?:string|null;isDispatchable?:boolean;
@@ -83,7 +90,13 @@ export async function inviteBusinessMember(input:{
   p_location_id:input.locationId??null,p_is_dispatchable:input.isDispatchable??false,
  });
  if(error)throw new Error(message(error,'The team invitation could not be created.'));
- return String(data);
+ const invitationId=String(data);
+ try{
+  await sendBusinessInvitationEmail(invitationId);
+  return {id:invitationId,emailSent:true as const};
+ }catch(error){
+  return {id:invitationId,emailSent:false as const,deliveryError:message(error,'Email delivery failed. Tap RESEND on the pending invitation.')};
+ }
 }
 export async function revokeBusinessInvitation(businessId:string,invitationId:string){
  const {data,error}=await supabase.rpc('revoke_business_invitation',{p_business_id:businessId,p_invitation_id:invitationId});

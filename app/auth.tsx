@@ -199,6 +199,11 @@ function PrimaryButton({
 }
 
 async function routeAfterAuth(selectedIntent: AuthIntent) {
+  if(Platform.OS==='web'&&typeof window!=='undefined'){
+    const returnTo=window.localStorage.getItem('everest-auth-return-to');
+    if(returnTo)window.localStorage.removeItem('everest-auth-return-to');
+    if(returnTo?.startsWith('/')){router.replace(returnTo as never);return}
+  }
   const pending=await consumePendingQuickActionRoute();
   if(pending){router.replace(pending as never);return}
   const { resolvePostAuthRoute } = await import('@/lib/access');
@@ -343,7 +348,7 @@ export default function Auth() {
         return;
       }
       const data = await auth.signUp(email, password, name);
-      if (data.session) router.replace('/');
+      if (data.session) await routeAfterAuth(intent ?? 'CUSTOMER');
       else setNotice('Account created. Check your email to verify your account before signing in.');
     } catch (e) {
       setError(

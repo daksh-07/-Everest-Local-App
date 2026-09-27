@@ -21,6 +21,10 @@ const command=read('app/business-operations.tsx');
 const work=read('app/business-my-work.tsx');
 const control=read('app/business-control.tsx');
 const stripe=read('supabase/functions/stripe-connect/index.ts');
+const inviteEmail=read('supabase/functions/business-invite-email/index.ts');
+const inviteRoute=read('app/business-invite.tsx');
+const operationsClient=read('lib/business-operations.ts');
+const authScreen=read('app/auth.tsx');
 
 test('businesses stay the organization root while staff structure is additive',()=>{
  for(const table of ['business_locations','business_staff_invitations','business_member_permission_overrides','business_teams','business_team_members','business_member_skills','business_staff_shifts','business_job_assignments','business_job_events','booking_job_records','booking_job_checklist_items']){
@@ -49,6 +53,22 @@ test('employee invitations cannot self-promote and are bound to the signed-in em
  assert.doesNotMatch(migration,/member_role[^\n]*p_member_role[^\n]*without/i);
  assert.match(switcher,/getMyBusinessInvitations/);
  assert.match(switcher,/acceptBusinessInvitation/);
+});
+
+test('employee invitations send real authenticated email and deep-link back to acceptance',()=>{
+ assert.match(operationsClient,/functions\.invoke\('business-invite-email'/);
+ assert.match(inviteEmail,/Deno\.env\.get\('RESEND_API_KEY'\)/);
+ assert.match(inviteEmail,/https:\/\/api\.resend\.com\/emails/);
+ assert.match(inviteEmail,/has_business_permission/);
+ assert.match(inviteEmail,/TEAM_MANAGE/);
+ assert.match(inviteEmail,/business-invite\?invitationId=/);
+ assert.match(inviteEmail,/Idempotency-Key/);
+ assert.match(inviteEmail,/BUSINESS_INVITATION_EMAIL_SENT/);
+ assert.match(inviteRoute,/acceptBusinessInvitation/);
+ assert.match(inviteRoute,/storePendingQuickActionRoute/);
+ assert.match(inviteRoute,/everest-auth-return-to/);
+ assert.match(authScreen,/everest-auth-return-to/);
+ assert.match(command,/RESEND/);
 });
 
 test('jobs have exactly one commercial source and one assignee target',()=>{
