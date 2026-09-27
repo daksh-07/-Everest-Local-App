@@ -68,7 +68,7 @@ test('checkout never trusts a client price',()=>{
 
 
 test('product gallery index follows the visible page and cart is always discoverable',()=>{
- assert.match(product,/scrollEventThrottle={16}/);
+ assert.match(product,/scrollEventThrottle=\{16\}/);
  assert.match(product,/onScroll={e=>{const next=clamp\(Math\.round\(e\.nativeEvent\.contentOffset\.x\/heroWidth\)/);
  assert.match(product,/\{index\+1\} \/ \{media\.length\}/);
  assert.match(product,/router\.push\('\/cart'\)/);
