@@ -74,8 +74,8 @@ const extFor=(fileName:string|null,mime:string|null)=>{
 };
 
 export function normalizeDraftSound(value:DraftSound):DraftSound{
- const startMs=clamp(value.startMs,0,899900);
  const maxEnd=value.durationMs&&value.durationMs>0?Math.min(value.durationMs,900000):900000;
+ const startMs=clamp(value.startMs,0,Math.max(0,maxEnd-100));
  const endMs=value.endMs==null?null:Math.max(startMs+100,clamp(value.endMs,100,maxEnd));
  return{
   ...value,title:safeTitle(value.title),artist:value.artist?.trim().slice(0,120)||null,
