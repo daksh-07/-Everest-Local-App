@@ -66,7 +66,7 @@ Deno.serve(async req=>{
   const connected=business as ConnectBusiness|null;
 
   if(!connectReady(connected)){
-   await userClient.rpc('release_my_order_reservations',{p_order_id:orderId}).catch(()=>undefined);
+   try{await userClient.rpc('release_my_order_reservations',{p_order_id:orderId});}catch{/* best-effort reservation cleanup */}
    orderId=undefined;
    return json({error:'This business is still setting up payouts. No payment was taken.'},409);
   }
@@ -144,7 +144,7 @@ Deno.serve(async req=>{
    checkoutUrl:session.url,reused:order.reused,
   });
  }catch(error){
-  if(orderId&&!stripeSessionCreated)await userClient.rpc('release_my_order_reservations',{p_order_id:orderId}).catch(()=>undefined);
+  if(orderId&&!stripeSessionCreated){try{await userClient.rpc('release_my_order_reservations',{p_order_id:orderId});}catch{/* best-effort reservation cleanup */}}
   console.error('checkout_failed',{message:error instanceof Error?error.message:'unknown',orderId:orderId??null,stripeSessionCreated});
   return json({error:'Checkout could not be created. No payment was confirmed.'},500);
  }
