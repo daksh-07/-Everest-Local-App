@@ -6,55 +6,54 @@ import type {PublicAudioTrack} from '@/lib/audio-studio';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
 
-const sourceLabel=(track:PublicAudioTrack)=>track.source==='LICENSED_MUSIC'?(track.artist||'Everest Music'):track.source==='VOICEOVER'?'Voiceover':'Original sound';
+const sourceLabel=(track:PublicAudioTrack)=>track.source==='LICENSED_MUSIC'?(track.artist||'Everest Music'):track.source==='VOICEOVER'?'Voiceover':'Creator sound';
 const seconds=(ms:number|null|undefined)=>ms==null?'':Math.max(1,Math.round(ms/1000))+'s';
 
+function TrackBed({track,active,restartToken,defaultDurationMs}:{track:PublicAudioTrack;active:boolean;restartToken:number;defaultDurationMs:number}){
+ const player=useAudioPlayer(null);
+ useEffect(()=>{player.pause();if(track.url)player.replace(track.url);player.loop=false;player.volume=track.muted?0:track.volume;return()=>player.pause()},[track.url,track.volume,track.muted,player]);
+ useEffect(()=>{if(!track.url)return;if(active){void player.seekTo(Math.max(0,track.startMs)/1000).then(()=>player.play())}else player.pause()},[active,restartToken,track.url,track.startMs,player]);
+ useEffect(()=>{
+  if(!active)return;
+  const end=track.endMs??(track.startMs+defaultDurationMs);
+  const timer=setInterval(()=>{const now=player.currentTime*1000;if(now>=end){player.pause();return}let gain=Math.max(0,Math.min(1,track.volume));if(track.fadeInMs>0)gain*=Math.max(0,Math.min(1,(now-track.startMs)/track.fadeInMs));if(track.fadeOutMs>0)gain*=Math.max(0,Math.min(1,(end-now)/track.fadeOutMs));player.volume=track.muted?0:gain},100);
+  return()=>clearInterval(timer);
+ },[active,defaultDurationMs,track.startMs,track.endMs,track.volume,track.fadeInMs,track.fadeOutMs,track.muted,player]);
+ return null;
+}
+
 export function PostSoundPlayer({
- track,photoDurationMs,onOpenSound
+ tracks,photoDurationMs,onOpenSound
 }:{
- track:PublicAudioTrack;photoDurationMs?:number|null;onOpenSound?:()=>void;
+ tracks:PublicAudioTrack[];photoDurationMs?:number|null;onOpenSound?:(track:PublicAudioTrack)=>void;
 }){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
- const player=useAudioPlayer(track.url??null);
- const [playing,setPlaying]=useState(false);
+ const [playing,setPlaying]=useState(false);const [restartToken,setRestartToken]=useState(0);
+ const audible=tracks.filter(track=>!track.muted&&Boolean(track.url));
+ const primary=audible.find(track=>track.source!=='VOICEOVER')??audible[0]??tracks[0];
+ const voice=audible.find(track=>track.source==='VOICEOVER');
+ const durationMs=photoDurationMs??Math.max(5000,...audible.map(track=>track.endMs?Math.max(1000,track.endMs-track.startMs):15000));
 
- useEffect(()=>{
-  player.pause();player.loop=false;player.volume=track.muted?0:Math.max(0,Math.min(1,track.volume));
-  if(track.url)player.replace(track.url);
-  setPlaying(false);
-  return()=>player.pause();
- },[track.url,track.volume,track.muted,player]);
+ useEffect(()=>{setPlaying(false)},[tracks.map(x=>x.id).join('|'),photoDurationMs]);
+ useEffect(()=>{if(!playing)return;const timer=setTimeout(()=>setPlaying(false),durationMs);return()=>clearTimeout(timer)},[playing,durationMs]);
 
- async function toggle(){
-  if(!track.url)return;
-  try{
-   if(player.playing){player.pause();setPlaying(false)}
-   else{
-    const start=Math.max(0,track.startMs)/1000;
-    const end=track.endMs==null?null:Math.max(track.startMs+100,track.endMs)/1000;
-    if(player.currentTime<start||(end!=null&&player.currentTime>=end))await player.seekTo(start);
-    player.play();setPlaying(true);void haptic.selection();
-   }
-  }catch{setPlaying(false)}
+ function toggle(){
+  if(!audible.length)return;
+  if(playing)setPlaying(false);else{setRestartToken(v=>v+1);setPlaying(true)}
+  void haptic.selection();
  }
-
- useEffect(()=>{
-  if(!playing)return;
-  const endMs=track.endMs??(photoDurationMs?track.startMs+photoDurationMs:null);
-  if(endMs==null)return;
-  const timer=setInterval(()=>{const now=player.currentTime*1000;if(now>=endMs){player.pause();setPlaying(false);return}let gain=Math.max(0,Math.min(1,track.volume));if(track.fadeInMs>0)gain*=Math.max(0,Math.min(1,(now-track.startMs)/track.fadeInMs));if(track.fadeOutMs>0)gain*=Math.max(0,Math.min(1,(endMs-now)/track.fadeOutMs));player.volume=track.muted?0:gain},120);
-  return()=>clearInterval(timer);
- },[playing,track.endMs,track.startMs,photoDurationMs,player]);
+ if(!primary)return null;
 
  return <View style={s.wrap}>
-  <Pressable onPress={()=>void toggle()} disabled={!track.url} style={[s.play,!track.url&&{opacity:.45}]}>
+  {audible.map(track=><TrackBed key={track.id} track={track} active={playing} restartToken={restartToken} defaultDurationMs={durationMs}/>)}
+  <Pressable onPress={toggle} disabled={!audible.length} style={[s.play,!audible.length&&{opacity:.45}]}>
    <Ionicons name={playing?'pause':'play'} size={16} color={colors.onBrand}/>
   </Pressable>
-  <Pressable disabled={!onOpenSound} onPress={onOpenSound} style={s.meta}>
-   <View style={s.titleRow}><Ionicons name={track.source==='VOICEOVER'?'mic':'musical-note'} size={12} color={colors.brand}/><Text numberOfLines={1} style={s.title}>{track.title}</Text></View>
-   <Text numberOfLines={1} style={s.copy}>{sourceLabel(track)}{photoDurationMs?' · '+seconds(photoDurationMs):''}</Text>
+  <Pressable disabled={!onOpenSound} onPress={()=>onOpenSound?.(primary)} style={s.meta}>
+   <View style={s.titleRow}><Ionicons name={primary.source==='VOICEOVER'?'mic':'musical-note'} size={12} color={colors.brand}/><Text numberOfLines={1} style={s.title}>{primary.title}</Text></View>
+   <Text numberOfLines={1} style={s.copy}>{sourceLabel(primary)}{voice&&voice.id!==primary.id?' · voiceover mixed':''}{photoDurationMs?' · '+seconds(photoDurationMs):''}</Text>
   </Pressable>
-  {track.reusable&&onOpenSound?<View style={s.reuse}><Ionicons name="repeat" size={12} color={colors.brand}/><Text style={s.reuseText}>USE SOUND</Text></View>:null}
+  {primary.reusable&&onOpenSound?<View style={s.reuse}><Ionicons name="repeat" size={12} color={colors.brand}/><Text style={s.reuseText}>USE SOUND</Text></View>:null}
  </View>;
 }
 
