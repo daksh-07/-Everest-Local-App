@@ -20,6 +20,14 @@ try{
    globalThis.localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify({access_token:'fixture-token',refresh_token:'fixture-refresh',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user}));
   },{user});
   const posted=[];let taxonomyLoads=0;
+  await context.route('https://nominatim.openstreetmap.org/**',async route=>{
+   const url=new URL(route.request().url());
+   const address={house_number:'12',road:'Railway Street',suburb:'Rooty Hill',city:'Sydney',state:'New South Wales',postcode:'2766',country:'Australia'};
+   const body=url.pathname.endsWith('/search')
+    ?[{lat:'-33.771',lon:'150.843',display_name:'12 Railway Street, Rooty Hill, Sydney, New South Wales 2766, Australia',address}]
+    :{display_name:'12 Railway Street, Rooty Hill, Sydney, New South Wales 2766, Australia',address};
+   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+  });
   await context.route('**/*.supabase.co/**',async route=>{
    const url=new URL(route.request().url());let body=[];
    if(url.pathname.endsWith('/auth/v1/user'))body=user;
@@ -27,7 +35,7 @@ try{
    else if(url.pathname.endsWith('/categories'))body=categories;
    else if(url.pathname.endsWith('/service_definitions')){body=services;taxonomyLoads++}
    else if(url.pathname.endsWith('/profiles'))body={...user,suburb:'Rooty Hill',city:'Sydney',state:'New South Wales'};
-   else if(url.pathname.endsWith('/rpc/create_service_request_v3')){posted.push(route.request().postDataJSON());body='request-fixture'}
+   else if(url.pathname.endsWith('/rpc/create_service_request_v5')){posted.push(route.request().postDataJSON());body='request-fixture'}
    else if(url.pathname.endsWith('/service_requests'))body=url.searchParams.get('id')?{status:'OPEN'}:null;
    await route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*','content-range':'0-0/0'},body:JSON.stringify(body)});
   });
@@ -68,13 +76,13 @@ try{
   await page.screenshot({path:`${artifacts}/location-${width}.png`});
   assert.equal(await page.getByRole('textbox',{name:'Search services'}).count(),0);
   assert.equal(await page.getByRole('textbox',{name:'Job details'}).count(),0);
-  await page.getByRole('button',{name:'USE THIS LOCATION',exact:true}).click();await next.click();
+  await page.getByRole('textbox',{name:'Street address',exact:true}).fill('12 Railway Street');await page.getByRole('button',{name:'CONFIRM PRECISE ADDRESS',exact:true}).click();await next.click();
   await page.getByText('When do you need it?',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Edit service type',exact:true}).click();
   await page.getByTestId('selected-service').waitFor();assert.equal(await details.inputValue(),'Full interior and exterior detail for my sedan.');
   await next.click();await next.click();await page.getByRole('button',{name:'POST REQUEST',exact:true}).click();
   await page.getByText('We’re finding the best businesses near you.',{exact:true}).waitFor();
-  assert.equal(posted.length,1);assert.equal(posted[0].p_service_definition_id,'detail');assert.equal(posted[0].p_category_id,'auto');assert.equal(posted[0].p_location_confirmed,true);assert.equal(posted[0].p_delivery_mode,'LOCAL');
+  assert.equal(posted.length,1);assert.equal(posted[0].p_service_definition_id,'detail');assert.equal(posted[0].p_category_id,'auto');assert.equal(posted[0].p_location_confirmed,true);assert.equal(posted[0].p_delivery_mode,'LOCAL');assert.equal(posted[0].p_address_line1,'12 Railway Street');assert.ok(String(posted[0].p_idempotency_key).length>=16);
   assert.equal(taxonomyLoads,1);
   assert.equal(await page.evaluate(()=>globalThis.document.documentElement.scrollWidth>globalThis.innerWidth),false);
   assert.deepEqual(errors,[]);
