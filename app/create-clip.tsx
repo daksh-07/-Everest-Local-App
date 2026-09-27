@@ -2,13 +2,13 @@ import {useEffect,useMemo,useState} from 'react';
 import {ActivityIndicator,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
-import {router} from 'expo-router';
+import {router,useLocalSearchParams} from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import {SoundPicker} from '@/components/SoundPicker';
 import {ClipPlayer} from '@/components/ClipPlayer';
 import {ClipEditor} from '@/components/ClipEditor';
 import {normalizeClipEditManifest,publishClip,type ClipEditManifest} from '@/lib/social-expansion';
-import {publishDraftSound,type DraftSound} from '@/lib/audio-studio';
+import {draftFromReusableSound,publishDraftSound,type DraftSound} from '@/lib/audio-studio';
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
@@ -17,7 +17,7 @@ import {haptic} from '@/lib/haptics';
 type Identity={kind:'PERSONAL';id:string;name:string}|{kind:'BUSINESS';id:string;name:string;business:BusinessWorkspace};
 
 export default function CreateClip(){
- const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
+ const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const params=useLocalSearchParams<{soundId?:string}>();
  const [identities,setIdentities]=useState<Identity[]>([]);const [identity,setIdentity]=useState<Identity|null>(null);
  const [asset,setAsset]=useState<ImagePicker.ImagePickerAsset|null>(null);const [caption,setCaption]=useState('');const [location,setLocation]=useState('');
  const [visibility,setVisibility]=useState<'PUBLIC'|'FOLLOWERS'>('PUBLIC');const [sound,setSound]=useState<DraftSound|null>(null);const [soundOpen,setSoundOpen]=useState(false);
@@ -25,6 +25,7 @@ export default function CreateClip(){
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
 
  useEffect(()=>{let active=true;(async()=>{try{const [{data:{user}},ctx,{data:profile}]=await Promise.all([supabase.auth.getUser(),getWorkspaceContext(),supabase.from('profiles').select('full_name,suburb,city,state').maybeSingle()]);if(!user){router.replace('/auth');return}const list:Identity[]=[{kind:'PERSONAL',id:user.id,name:profile?.full_name||'My profile'},...ctx.businesses.map(b=>({kind:'BUSINESS' as const,id:b.id,name:b.name,business:b}))];if(active){setIdentities(list);setIdentity(ctx.mode==='BUSINESS'&&ctx.active_business_id?list.find(i=>i.id===ctx.active_business_id)??list[0]:list[0]);setLocation([profile?.suburb,profile?.city,profile?.state].filter(Boolean).join(', '))}}catch(e){if(active)setError(e instanceof Error?e.message:'Clip creator could not be opened.')}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
+ useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active)setSound(next)}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Sound could not be loaded.')});return()=>{active=false}},[params.soundId]);
 
  async function pick(){
   setError('');
@@ -32,7 +33,7 @@ export default function CreateClip(){
   try{
    const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:['videos'],allowsMultipleSelection:false,videoMaxDuration:90,quality:.9});
    if(!result.canceled&&result.assets[0]){
-    const next=result.assets[0];setAsset(next);setSound(null);
+    const next=result.assets[0];setAsset(next);
     setEdit(normalizeClipEditManifest({trimStartMs:0,trimEndMs:next.duration&&next.duration>0?Math.min(next.duration,90_000):null},next.duration));
     setEditorOpen(true);void haptic.selection();
    }
