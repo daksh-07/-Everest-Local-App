@@ -1,6 +1,7 @@
 import {Platform} from 'react-native';
 import * as Location from 'expo-location';
 import {supabase} from './supabase';
+import {withTimeout} from './resilience';
 
 export type CustomerLocality={
  suburb:string;
@@ -18,7 +19,31 @@ export type CustomerServiceLocation=CustomerLocality&{
  formattedAddress:string;
 };
 
+const GEO_TIMEOUT_MS=9000;
+const WEB_CACHE_MS=10*60_000;
+const webCache=new Map<string,{expires:number;value:unknown}>();
 function clean(value:string|null|undefined){return (value??'').trim();}
+async function fetchJsonCached<T>(url:string):Promise<T|null>{
+ const cached=webCache.get(url);
+ if(cached&&cached.expires>Date.now())return cached.value as T;
+ const controller=typeof AbortController!=='undefined'?new AbortController():null;
+ const timer=controller?setTimeout(()=>controller.abort(),GEO_TIMEOUT_MS):null;
+ try{
+  const response=await fetch(url,{headers:{Accept:'application/json'},signal:controller?.signal});
+  if(!response.ok)return null;
+  const value=await response.json() as T;
+  webCache.set(url,{expires:Date.now()+WEB_CACHE_MS,value});
+  if(webCache.size>40){const first=webCache.keys().next().value as string|undefined;if(first)webCache.delete(first)}
+  return value;
+ }catch{return null}finally{if(timer)clearTimeout(timer)}
+}
+async function currentPosition(precise:boolean){
+ if(precise){
+  try{return await withTimeout(Location.getCurrentPositionAsync({accuracy:Location.Accuracy.High}),GEO_TIMEOUT_MS,'Location request')}catch{/* fallback below */}
+  try{const last=await Location.getLastKnownPositionAsync({maxAge:60_000,requiredAccuracy:120});if(last)return last}catch{/* fallback below */}
+ }
+ return withTimeout(Location.getCurrentPositionAsync({accuracy:Location.Accuracy.Balanced}),GEO_TIMEOUT_MS,'Location request');
+}
 function unique(parts:string[]){return parts.filter((value,index,all)=>Boolean(value)&&all.indexOf(value)===index)}
 function formatAddress(input:{addressLine1:string;suburb:string;city:string;state:string;postalCode:string;country:string}){
  return unique([
@@ -46,9 +71,8 @@ function webAddressParts(a:WebAddress){
 async function reverseGeocodeWeb(latitude:number,longitude:number,zoom=18){
  try{
   const params=new URLSearchParams({format:'jsonv2',lat:String(latitude),lon:String(longitude),zoom:String(zoom),addressdetails:'1'});
-  const response=await fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`,{headers:{Accept:'application/json'}});
-  if(!response.ok)return null;
-  const payload=await response.json() as {display_name?:string;address?:WebAddress};
+  const payload=await fetchJsonCached<{display_name?:string;address?:WebAddress}>(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`);
+  if(!payload)return null;
   const parts=webAddressParts(payload.address??{});
   if(!parts.suburb&&!parts.city)return null;
   return{...parts,formattedAddress:clean(payload.display_name)||formatAddress(parts)};
@@ -78,7 +102,7 @@ function nativeAddressParts(place:Location.LocationGeocodedAddress){
 
 async function reversePrecise(latitude:number,longitude:number){
  try{
-  const places=await Location.reverseGeocodeAsync({latitude,longitude});
+  const places=await withTimeout(Location.reverseGeocodeAsync({latitude,longitude}),GEO_TIMEOUT_MS,'Reverse geocoding');
   if(places[0]){
    const parts=nativeAddressParts(places[0]);
    if(parts.suburb||parts.city)return parts;
@@ -96,7 +120,7 @@ export async function resolveCustomerLocality(options:{requestIfUndetermined?:bo
  }
  if(status!=='granted')return null;
 
- const current=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.Balanced});
+ const current=await currentPosition(false);
  const named=await reversePrecise(current.coords.latitude,current.coords.longitude);
  if(!named)return null;
  return{
@@ -108,7 +132,7 @@ export async function resolveCustomerLocality(options:{requestIfUndetermined?:bo
 export async function resolveCustomerServiceLocation():Promise<CustomerServiceLocation|null>{
  const permission=await Location.requestForegroundPermissionsAsync();
  if(permission.status!=='granted')return null;
- const current=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.Highest});
+ const current=await currentPosition(true);
  const named=await reversePrecise(current.coords.latitude,current.coords.longitude);
  if(!named)return null;
  return{
@@ -123,9 +147,8 @@ export async function resolveCustomerServiceLocation():Promise<CustomerServiceLo
 async function geocodeWeb(query:string){
  try{
   const params=new URLSearchParams({format:'jsonv2',q:query,limit:'1',addressdetails:'1',countrycodes:'au'});
-  const response=await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`,{headers:{Accept:'application/json'}});
-  if(!response.ok)return null;
-  const rows=await response.json() as Array<{lat:string;lon:string;display_name?:string;address?:WebAddress}>;
+  const rows=await fetchJsonCached<Array<{lat:string;lon:string;display_name?:string;address?:WebAddress}>>(`https://nominatim.openstreetmap.org/search?${params.toString()}`);
+  if(!rows)return null;
   const row=rows[0];if(!row)return null;
   const latitude=Number(row.lat),longitude=Number(row.lon);if(!Number.isFinite(latitude)||!Number.isFinite(longitude))return null;
   const parts=webAddressParts(row.address??{});
@@ -139,7 +162,7 @@ export async function geocodeServiceAddress(input:{addressLine1:string;suburb:st
  if(!addressLine1||!suburb||!state)return null;
  if(Platform.OS==='web')return geocodeWeb(query);
  try{
-  const rows=await Location.geocodeAsync(query);
+  const rows=await withTimeout(Location.geocodeAsync(query),GEO_TIMEOUT_MS,'Address lookup');
   const first=rows[0];if(!first)return null;
   const normalized=await reversePrecise(first.latitude,first.longitude);
   return{

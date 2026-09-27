@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { supabase, requireSupabaseConfig } from './supabase';
+import {retryRead} from './resilience';
 
 export type AppMode='CUSTOMER'|'BUSINESS';
 export type BusinessWorkspace={
@@ -27,7 +28,7 @@ async function writeLocal(key:string,value:string|null){
 
 export async function getWorkspaceContext():Promise<WorkspaceContext>{
   requireSupabaseConfig();
-  const {data,error}=await supabase.rpc('get_my_workspace_context');
+  const {data,error}=await retryRead(()=>supabase.rpc('get_my_workspace_context'));
   if(error)throw new Error(error.message);
   const server=(data??{}) as Partial<WorkspaceContext>;
   const businesses=Array.isArray(server.businesses)?server.businesses as BusinessWorkspace[]:[];
