@@ -1,6 +1,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import {ActivityIndicator,Modal,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
  RecordingPresets,requestRecordingPermissionsAsync,setAudioModeAsync,useAudioPlayer,useAudioRecorder,useAudioRecorderState
 } from 'expo-audio';
@@ -24,7 +25,7 @@ export function SoundPicker({
  hasOriginalAudio?:boolean;originalVolume?:number;onOriginalVolumeChange?:(value:number)=>void;
  photoMode?:boolean;photoDurationMs?:5000|10000|15000|30000;onPhotoDurationChange?:(value:5000|10000|15000|30000)=>void;
 }){
- const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
+ const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const insets=useSafeAreaInsets();
  const [tab,setTab]=useState<Tab>('MUSIC');const [query,setQuery]=useState('');const [tracks,setTracks]=useState<MusicTrack[]>([]);
  const [loading,setLoading]=useState(false);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
  const previewPlayer=useAudioPlayer(null);const recorder=useAudioRecorder(RecordingPresets.HIGH_QUALITY);const recorderState=useAudioRecorderState(recorder,200);
@@ -80,12 +81,18 @@ export function SoundPicker({
  const removeActive=()=>{previewPlayer.pause();if(tab==='VOICEOVER'&&onVoiceoverChange)onVoiceoverChange(null);else onChange(null);void haptic.selection()};
  const selectedLabel=tab==='ORIGINAL'?'Original audio':activeValue?activeValue.title:(tab==='VOICEOVER'?'No voiceover':hasOriginalAudio&&originalVolume>0?'Original audio':'No added sound');
  const activeEnd=activeValue?(activeValue.endMs??activeValue.durationMs):null;
+ const sourceOptions=([
+  ['MUSIC','Music','musical-notes-outline'],
+  ['ORIGINAL','Original','volume-high-outline'],
+  ['UPLOAD','Upload','cloud-upload-outline'],
+  ['VOICEOVER','Voiceover','mic-outline']
+ ] as const).filter(([id])=>id!=='ORIGINAL'||hasOriginalAudio);
 
- return <Modal visible={visible} transparent animationType="slide" onRequestClose={()=>void close()}>
+ return <Modal visible={visible} transparent statusBarTranslucent animationType="slide" onRequestClose={()=>void close()}>
   <Pressable style={s.scrim} onPress={()=>void close()}/>
-  <View style={s.sheet}>
+  <View style={[s.sheet,{top:Math.max(insets.top+4,8),paddingBottom:Math.max(insets.bottom,8)}]}>
    <View style={s.handle}/>
-   <View style={s.head}><View><Text style={s.kicker}>EVEREST STUDIO</Text><Text style={s.title}>Add sound</Text><Text style={s.subtitle}>Music, your own audio, or a voiceover — all in one place.</Text></View><Pressable onPress={()=>void close()} style={s.close}><Ionicons name="close" size={21} color={colors.text}/></Pressable></View>
+   <View style={s.head}><View style={{flex:1,minWidth:0}}><Text style={s.kicker}>EVEREST STUDIO</Text><Text style={s.title}>Add sound</Text><Text style={s.subtitle}>Choose one main sound. Add a voiceover too if you want.</Text></View><Pressable accessibilityLabel="Close sound studio" onPress={()=>void close()} style={s.close}><Ionicons name="close" size={21} color={colors.text}/></Pressable></View>
 
    <View style={s.selected}>
     <View style={s.selectedIcon}><Ionicons name={activeValue?.source==='VOICEOVER'?'mic':activeValue?.source==='USER_UPLOAD'?'cloud-upload':'musical-notes'} size={18} color={colors.brand}/></View>
@@ -94,12 +101,12 @@ export function SoundPicker({
     {activeValue?<Pressable onPress={removeActive} style={s.remove}><Ionicons name="trash-outline" size={17} color={colors.danger}/></Pressable>:null}
    </View>
 
-   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabs}>
-    {([
-     ['MUSIC','Music','musical-notes-outline'],['ORIGINAL','Original','volume-high-outline'],
-     ['UPLOAD','Upload','cloud-upload-outline'],['VOICEOVER','Voiceover','mic-outline']
-    ] as const).map(([id,label,icon])=>{const disabled=id==='ORIGINAL'&&!hasOriginalAudio;return <Pressable key={id} disabled={disabled} onPress={()=>{setTab(id);setError('');void haptic.selection()}} style={[s.tab,tab===id&&s.tabActive,disabled&&{opacity:.35}]}><Ionicons name={icon} size={17} color={tab===id?colors.onBrand:colors.text}/><Text style={[s.tabText,tab===id&&s.tabTextActive]}>{label}</Text></Pressable>})}
-   </ScrollView>
+   <View style={s.sourceBlock}>
+    <Text style={s.sourceLabel}>CHOOSE A SOURCE</Text>
+    <View style={s.tabs}>
+     {sourceOptions.map(([id,label,icon])=><Pressable key={id} onPress={()=>{setTab(id);setError('');void haptic.selection()}} style={[s.tab,tab===id&&s.tabActive]}><Ionicons name={icon} size={18} color={tab===id?colors.onBrand:colors.text}/><Text numberOfLines={1} style={[s.tabText,tab===id&&s.tabTextActive]}>{label}</Text></Pressable>)}
+    </View>
+   </View>
 
    <ScrollView style={s.body} contentContainerStyle={s.bodyContent} keyboardShouldPersistTaps="handled">
     {tab==='MUSIC'?<>
@@ -147,13 +154,13 @@ export function SoundPicker({
 }
 
 const styles=(c:ThemeColors)=>StyleSheet.create({
- scrim:{flex:1,backgroundColor:'rgba(0,0,0,.62)'},sheet:{position:'absolute',left:0,right:0,bottom:0,height:'90%',backgroundColor:c.surface,borderTopLeftRadius:30,borderTopRightRadius:30,borderWidth:1,borderColor:c.border,paddingTop:9},handle:{width:42,height:4,borderRadius:2,backgroundColor:c.border,alignSelf:'center',marginBottom:10},head:{paddingHorizontal:18,flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:14},kicker:{fontSize:8,fontWeight:'900',letterSpacing:1.6,color:c.accent},title:{fontSize:26,fontWeight:'900',color:c.text,marginTop:2},subtitle:{fontSize:9,lineHeight:14,color:c.muted,marginTop:3,maxWidth:290},close:{width:42,height:42,borderRadius:21,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},
- selected:{marginHorizontal:18,marginTop:13,minHeight:60,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.canvas,padding:9,flexDirection:'row',alignItems:'center',gap:9},selectedIcon:{width:40,height:40,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},selectedTitle:{fontSize:12,fontWeight:'900',color:c.text},selectedCopy:{fontSize:9,color:c.muted,marginTop:2},preview:{width:36,height:36,borderRadius:18,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},remove:{width:36,height:36,borderRadius:18,alignItems:'center',justifyContent:'center'},
- tabs:{paddingHorizontal:18,paddingVertical:12,gap:8},tab:{height:38,borderRadius:19,borderWidth:1,borderColor:c.border,backgroundColor:c.canvas,paddingHorizontal:12,flexDirection:'row',alignItems:'center',gap:6},tabActive:{backgroundColor:c.brand,borderColor:c.brand},tabText:{fontSize:9,fontWeight:'900',color:c.text},tabTextActive:{color:c.onBrand},
- body:{flex:1,borderTopWidth:1,borderTopColor:c.border},bodyContent:{padding:18,paddingBottom:36},search:{height:50,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.input,flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:13},input:{flex:1,color:c.text,fontSize:13},musicList:{marginTop:8},musicRow:{minHeight:62,borderBottomWidth:1,borderBottomColor:c.border},musicMain:{flex:1,minHeight:62,flexDirection:'row',alignItems:'center',gap:9},musicArt:{width:40,height:40,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},musicTitle:{fontSize:12,fontWeight:'900',color:c.text},musicArtist:{fontSize:9,color:c.muted,marginTop:2},duration:{fontSize:8,fontWeight:'800',color:c.muted},
+ scrim:{flex:1,backgroundColor:'rgba(0,0,0,.62)'},sheet:{position:'absolute',left:0,right:0,bottom:0,backgroundColor:c.surface,borderTopLeftRadius:26,borderTopRightRadius:26,borderWidth:1,borderColor:c.border,paddingTop:8,overflow:'hidden'},handle:{width:38,height:4,borderRadius:2,backgroundColor:c.border,alignSelf:'center',marginBottom:8},head:{paddingHorizontal:16,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12},kicker:{fontSize:8,fontWeight:'900',letterSpacing:1.5,color:c.accent},title:{fontSize:24,fontWeight:'900',color:c.text,marginTop:1},subtitle:{fontSize:10,lineHeight:15,color:c.muted,marginTop:3,maxWidth:330},close:{width:40,height:40,borderRadius:20,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},
+ selected:{marginHorizontal:16,marginTop:10,minHeight:58,borderRadius:17,borderWidth:1,borderColor:c.border,backgroundColor:c.canvas,padding:9,flexDirection:'row',alignItems:'center',gap:9},selectedIcon:{width:40,height:40,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},selectedTitle:{fontSize:12,fontWeight:'900',color:c.text},selectedCopy:{fontSize:9,color:c.muted,marginTop:2},preview:{width:36,height:36,borderRadius:18,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},remove:{width:36,height:36,borderRadius:18,alignItems:'center',justifyContent:'center'},
+ sourceBlock:{paddingHorizontal:16,paddingTop:12,paddingBottom:10},sourceLabel:{fontSize:7,fontWeight:'900',letterSpacing:1.2,color:c.muted,marginBottom:7},tabs:{flexDirection:'row',gap:7},tab:{flex:1,minWidth:0,height:54,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.canvas,alignItems:'center',justifyContent:'center',gap:4,paddingHorizontal:4},tabActive:{backgroundColor:c.brand,borderColor:c.brand},tabText:{fontSize:8,fontWeight:'900',color:c.text},tabTextActive:{color:c.onBrand},
+ body:{flex:1,borderTopWidth:1,borderTopColor:c.border},bodyContent:{paddingHorizontal:16,paddingTop:14,paddingBottom:28},search:{height:50,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.input,flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:13},input:{flex:1,color:c.text,fontSize:13},musicList:{marginTop:8},musicRow:{minHeight:62,borderBottomWidth:1,borderBottomColor:c.border},musicMain:{flex:1,minHeight:62,flexDirection:'row',alignItems:'center',gap:9},musicArt:{width:40,height:40,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},musicTitle:{fontSize:12,fontWeight:'900',color:c.text},musicArtist:{fontSize:9,color:c.muted,marginTop:2},duration:{fontSize:8,fontWeight:'800',color:c.muted},
  empty:{paddingVertical:44,alignItems:'center'},emptyIcon:{width:60,height:60,borderRadius:22,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},emptyTitle:{fontSize:17,fontWeight:'900',color:c.text,marginTop:13},emptyCopy:{maxWidth:340,fontSize:10,lineHeight:17,color:c.muted,textAlign:'center',marginTop:6},emptyActions:{flexDirection:'row',gap:8,marginTop:15},smallCta:{height:36,borderRadius:18,borderWidth:1,borderColor:c.border,paddingHorizontal:12,alignItems:'center',justifyContent:'center'},smallCtaText:{fontSize:8,fontWeight:'900',color:c.text},
  section:{alignItems:'center',paddingVertical:14},sectionIcon:{width:58,height:58,borderRadius:21,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},sectionTitle:{fontSize:18,fontWeight:'900',color:c.text,marginTop:12},sectionCopy:{fontSize:10,lineHeight:16,color:c.muted,textAlign:'center',maxWidth:340,marginTop:4},label:{alignSelf:'flex-start',fontSize:7,fontWeight:'900',letterSpacing:1.1,color:c.muted,marginTop:17,marginBottom:8},choiceRow:{flexDirection:'row',flexWrap:'wrap',gap:7,alignSelf:'stretch'},choice:{height:36,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.canvas,paddingHorizontal:11,alignItems:'center',justifyContent:'center'},choiceActive:{backgroundColor:c.brand,borderColor:c.brand},choiceText:{fontSize:8,fontWeight:'900',color:c.text},choiceTextActive:{color:c.onBrand},bigAction:{minHeight:48,borderRadius:16,backgroundColor:c.brand,paddingHorizontal:16,marginTop:17,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:7,minWidth:180},stopAction:{backgroundColor:c.danger},bigActionText:{fontSize:9,fontWeight:'900',letterSpacing:.5,color:c.onBrand},
  confirm:{alignSelf:'stretch',marginTop:10,minHeight:58,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.canvas,padding:11,flexDirection:'row',alignItems:'center',gap:9},confirmActive:{backgroundColor:c.brand,borderColor:c.brand},confirmTitle:{fontSize:10,fontWeight:'900',color:c.text},confirmCopy:{fontSize:8,color:c.muted,marginTop:2},recordOrb:{width:72,height:72,borderRadius:36,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},recordOrbLive:{backgroundColor:c.brand},recordTime:{fontSize:26,fontWeight:'900',color:c.text,marginTop:11},voiceReady:{alignSelf:'stretch',marginTop:12,minHeight:44,borderRadius:14,backgroundColor:c.soft,paddingHorizontal:11,flexDirection:'row',alignItems:'center',gap:7},voiceReadyText:{flex:1,fontSize:9,fontWeight:'800',color:c.text},listen:{fontSize:8,fontWeight:'900',color:c.brand},
  controls:{marginTop:14,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.canvas,padding:13},controlsTitle:{fontSize:8,fontWeight:'900',letterSpacing:1.1,color:c.muted},controlRow:{flexDirection:'row',alignItems:'center',gap:7,marginTop:10},controlLabel:{fontSize:9,color:c.muted},controlValue:{fontSize:17,fontWeight:'900',color:c.text,marginTop:1},step:{height:34,borderRadius:17,backgroundColor:c.soft,paddingHorizontal:11,alignItems:'center',justifyContent:'center'},stepText:{fontSize:8,fontWeight:'900',color:c.text},
- error:{fontSize:10,lineHeight:16,color:c.danger,textAlign:'center',marginTop:12},done:{height:52,borderRadius:18,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginHorizontal:18,marginBottom:14},doneText:{fontSize:10,fontWeight:'900',letterSpacing:.8,color:c.onBrand}
+ error:{fontSize:10,lineHeight:16,color:c.danger,textAlign:'center',marginTop:12},done:{height:54,borderRadius:17,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginHorizontal:16,marginTop:8,marginBottom:4},doneText:{fontSize:10,fontWeight:'900',letterSpacing:.8,color:c.onBrand}
 });
