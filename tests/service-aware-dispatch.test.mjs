@@ -6,7 +6,7 @@ import { cwd } from 'node:process';
 
 const root = cwd();
 const migrationsDir = path.join(root, 'supabase', 'migrations');
-const migrationFiles = fs.readdirSync(migrationsDir).filter((file) => file.endsWith('.sql'));
+const migrationFiles = fs.readdirSync(migrationsDir,{withFileTypes:true}).filter((entry) => entry.isFile() && entry.name.endsWith('.sql')).map((entry) => entry.name);
 
 function findMigration(fragment) {
   const file = migrationFiles.find((name) => name.includes(fragment));

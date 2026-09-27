@@ -7,7 +7,7 @@ import { join } from 'node:path';
 const migrationsDir = join(process.cwd(), 'supabase', 'migrations');
 
 async function readCartHardeningMigration() {
-  const files = (await readdir(migrationsDir)).filter((file) => /\.sql$/i.test(file));
+  const files = (await readdir(migrationsDir,{withFileTypes:true})).filter((entry) => entry.isFile() && /\.sql$/i.test(entry.name)).map((entry) => entry.name);
   const matches = files.filter((file) => file.includes('harden_cart_checkout_binding'));
   assert.equal(matches.length, 1, 'cart checkout binding migration must exist exactly once');
   return readFile(join(migrationsDir, matches[0]), 'utf8');

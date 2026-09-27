@@ -7,7 +7,7 @@ import process from 'node:process';
 const migrationsDir = join(process.cwd(), 'supabase', 'migrations');
 
 async function readMigrations() {
-  const files = (await readdir(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
+  const files = (await readdir(migrationsDir,{withFileTypes:true})).filter((entry) => entry.isFile() && entry.name.endsWith('.sql')).map((entry) => entry.name).sort();
   return Promise.all(files.map((file) => readFile(join(migrationsDir, file), 'utf8')));
 }
 

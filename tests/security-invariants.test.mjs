@@ -15,7 +15,7 @@ async function walk(dir) {
   for (const entry of entries) {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) files.push(...await walk(path));
-    else files.push(path);
+    else if (entry.isFile()) files.push(path);
   }
   return files;
 }
