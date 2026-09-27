@@ -12,6 +12,10 @@ const nativeMap=fs.readFileSync('components/LiveSearchMap.native.tsx','utf8');
 const webMap=fs.readFileSync('components/LiveSearchMap.web.tsx','utf8');
 const marketplace=fs.readFileSync('lib/marketplace.ts','utf8');
 const businessJob=fs.readFileSync('app/business-job.tsx','utf8');
+const stabilityMigration=fs.readFileSync('supabase/migrations/20260927131500_marketplace_stability_hardening.sql','utf8');
+const miniPlayer=fs.readFileSync('components/EverestLiveMiniPlayer.tsx','utf8');
+const resilience=fs.readFileSync('lib/resilience.ts','utf8');
+const billingFunction=fs.readFileSync('supabase/functions/business-subscription-billing/index.ts','utf8');
 
 test('ASAP customer request starts one backend-authoritative Live search',()=>{
  assert.match(request,/startEverestLive\(id,\s*arrivalWindow\)/);
@@ -45,10 +49,17 @@ test('cancel and expiry atomically stop pending opportunities',()=>{
 });
 
 test('customer sees real counts, realtime changes and reconnect recovery',()=>{
- assert.match(migration,/eligible_count bigint,notified_count bigint,viewed_count bigint,responding_count bigint,quote_count bigint/);
+ assert.match(stabilityMigration,/eligible_count bigint/);
+ assert.match(stabilityMigration,/notified_count bigint/);
+ assert.match(stabilityMigration,/viewed_count bigint/);
+ assert.match(stabilityMigration,/responding_count bigint/);
+ assert.match(stabilityMigration,/quote_count bigint/);
  assert.match(screen,/postgres_changes/);
- assert.match(screen,/Reconnecting to your live search/);
- assert.match(screen,/setInterval\(\(\)=>void refresh\(true\),30000\)/);
+ assert.match(screen,/Promise\.allSettled/);
+ assert.match(screen,/RefreshControl/);
+ assert.match(screen,/refreshInFlight/);
+ assert.match(screen,/RECONNECTING/);
+ assert.match(screen,/AppState\.currentState==='active'/);
 });
 
 test('exact coordinates are not returned by Live state or business notifications',()=>{
@@ -73,7 +84,7 @@ test('security keeps service functions restricted and RLS-backed',()=>{
 
 
 test('local requests require and persist a precise geocoded service address',()=>{
- assert.match(marketplace,/create_service_request_v4/);
+ assert.match(marketplace,/create_service_request_v5/);
  assert.match(preciseMigration,/address_line1 text/);
  assert.match(preciseMigration,/service_address_label text/);
  assert.match(preciseMigration,/p_latitude is null or p_longitude is null/);
@@ -126,4 +137,64 @@ test('Live offers expose real ETA without exposing the customer home address',()
  assert.match(alert,/eta_seconds/);
  assert.match(alert,/min away/);
  assert.doesNotMatch(alert,/address_line1|service_address_label|latitude|longitude/);
+});
+
+
+test('service request mutation retries are idempotent',()=>{
+ assert.match(stabilityMigration,/request_idempotency_key text/);
+ assert.match(stabilityMigration,/service_requests_customer_idempotency_uidx/);
+ assert.match(stabilityMigration,/create or replace function public\.create_service_request_v5/);
+ assert.match(stabilityMigration,/where customer_id=auth\.uid\(\) and request_idempotency_key=key_v/);
+ assert.match(stabilityMigration,/exception when unique_violation/);
+ assert.match(marketplace,/createClientIdempotencyKey/);
+ assert.match(marketplace,/p_idempotency_key:input\.idempotencyKey\.trim\(\)/);
+ assert.match(request,/requestIdempotencyKeyRef/);
+ assert.match(request,/idempotencyKey: requestIdempotencyKeyRef\.current/);
+});
+
+test('repeating start Live does not expire already notified opportunities',()=>{
+ const start=stabilityMigration.slice(stabilityMigration.indexOf('create or replace function public.start_everest_live'));
+ const guard=start.indexOf("if r.is_live");
+ const earlyReturn=start.indexOf("return r.id;",guard);
+ const expire=start.indexOf("update public.opportunities",earlyReturn);
+ assert.ok(guard>=0&&earlyReturn>guard&&expire>earlyReturn);
+ assert.match(start,/live_expires_at>now\(\)/);
+ assert.match(start,/RESPONSES_AVAILABLE/);
+ assert.match(start,/PROVIDER_SELECTED/);
+});
+
+test('concurrent Live expansion requests are server-cooled',()=>{
+ const expand=stabilityMigration.slice(stabilityMigration.indexOf('create or replace function public.expand_everest_live'));
+ assert.match(expand,/for update/);
+ assert.match(expand,/updated_at>now\(\)-interval '15 seconds'/);
+ assert.match(expand,/return 0/);
+});
+
+test('Live state aggregates opportunities in one grouped pass',()=>{
+ const state=stabilityMigration.slice(stabilityMigration.indexOf('create or replace function public.get_everest_live_state'));
+ assert.match(state,/opportunity_counts as/);
+ assert.match(state,/count\(\*\) filter\(where o\.viewed_at is not null\)/);
+ assert.match(state,/count\(\*\) filter\(where o\.responded_at is not null\)/);
+});
+
+test('global Live mini-player coalesces frequent triggers without auth polling',()=>{
+ assert.match(miniPlayer,/inFlight=useRef\(false\)/);
+ assert.match(miniPlayer,/checkAgain|rerun/);
+ assert.match(miniPlayer,/AppState\.currentState==='active'/);
+ assert.match(miniPlayer,/REALTIME_COALESCE_MS/);
+ assert.doesNotMatch(miniPlayer,/auth\.getUser\(/);
+ assert.match(miniPlayer,/\.eq\('is_live',true\)/);
+});
+
+test('transient read retries are bounded and never wrap mutations automatically',()=>{
+ assert.match(resilience,/attempts\?\?3/);
+ assert.match(resilience,/Math\.min\(options\.attempts\?\?3,4\)/);
+ assert.match(resilience,/isTransientReadError/);
+ assert.doesNotMatch(marketplace,/retryRead\(\(\)=>supabase\.rpc\('create_service_request_v5'/);
+ assert.doesNotMatch(marketplace,/retryRead\(\(\)=>supabase\.rpc\('accept_quote'/);
+});
+
+test('subscription billing uses the Deno-native npm Supabase client',()=>{
+ assert.match(billingFunction,/npm:@supabase\/supabase-js@2/);
+ assert.doesNotMatch(billingFunction,/esm\.sh\/@supabase\/supabase-js/);
 });
