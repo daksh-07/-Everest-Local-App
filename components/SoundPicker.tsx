@@ -17,10 +17,10 @@ const volumeChoices=[0,.25,.5,.75,1] as const;
 const seconds=(ms:number)=>Math.round(ms/1000)+'s';
 
 export function SoundPicker({
- visible,value,onChange,onClose,hasOriginalAudio=false,originalVolume=1,onOriginalVolumeChange,
+ visible,value,onChange,voiceover=null,onVoiceoverChange,onClose,hasOriginalAudio=false,originalVolume=1,onOriginalVolumeChange,
  photoMode=false,photoDurationMs=10000,onPhotoDurationChange
 }:{
- visible:boolean;value:DraftSound|null;onChange:(value:DraftSound|null)=>void;onClose:()=>void;
+ visible:boolean;value:DraftSound|null;onChange:(value:DraftSound|null)=>void;voiceover?:DraftSound|null;onVoiceoverChange?:(value:DraftSound|null)=>void;onClose:()=>void;
  hasOriginalAudio?:boolean;originalVolume?:number;onOriginalVolumeChange?:(value:number)=>void;
  photoMode?:boolean;photoDurationMs?:5000|10000|15000|30000;onPhotoDurationChange?:(value:5000|10000|15000|30000)=>void;
 }){
@@ -67,7 +67,7 @@ export function SoundPicker({
    const durationMs=Math.max(100,recorderState.durationMillis||Math.round(recorder.currentTime*1000));
    await recorder.stop();await setAudioModeAsync({allowsRecording:false,playsInSilentMode:true});
    if(!recorder.uri){setError('Voiceover could not be saved.');return;}
-   const next=voiceoverDraft(recorder.uri,durationMs);onChange(next);void haptic.success();await preview(next.previewUri);
+   const next=voiceoverDraft(recorder.uri,durationMs);if(onVoiceoverChange)onVoiceoverChange(next);else onChange(next);void haptic.success();await preview(next.previewUri);
   }catch(e){setError(e instanceof Error?e.message:'Voiceover could not be saved.')}
  }
  async function close(){
@@ -75,8 +75,10 @@ export function SoundPicker({
   if(recorderState.isRecording){try{await recorder.stop();await setAudioModeAsync({allowsRecording:false,playsInSilentMode:true})}catch{void 0}}
   onClose();
  }
- const patch=(next:Partial<DraftSound>)=>{if(value)onChange(normalizeDraftSound({...value,...next}))};
- const selectedLabel=value?value.title:(hasOriginalAudio&&originalVolume>0?'Original audio':'No added sound');
+ const activeValue=tab==='VOICEOVER'&&onVoiceoverChange?voiceover:value;
+ const patch=(next:Partial<DraftSound>)=>{if(!activeValue)return;const updated=normalizeDraftSound({...activeValue,...next});if(tab==='VOICEOVER'&&onVoiceoverChange)onVoiceoverChange(updated);else onChange(updated)};
+ const removeActive=()=>{previewPlayer.pause();if(tab==='VOICEOVER'&&onVoiceoverChange)onVoiceoverChange(null);else onChange(null);void haptic.selection()};
+ const selectedLabel=activeValue?activeValue.title:(tab==='VOICEOVER'?'No voiceover':hasOriginalAudio&&originalVolume>0?'Original audio':'No added sound');
 
  return <Modal visible={visible} transparent animationType="slide" onRequestClose={()=>void close()}>
   <Pressable style={s.scrim} onPress={()=>void close()}/>
@@ -85,10 +87,10 @@ export function SoundPicker({
    <View style={s.head}><View><Text style={s.kicker}>EVEREST STUDIO</Text><Text style={s.title}>Add sound</Text><Text style={s.subtitle}>Music, your own audio, or a voiceover — all in one place.</Text></View><Pressable onPress={()=>void close()} style={s.close}><Ionicons name="close" size={21} color={colors.text}/></Pressable></View>
 
    <View style={s.selected}>
-    <View style={s.selectedIcon}><Ionicons name={value?.source==='VOICEOVER'?'mic':value?.source==='USER_UPLOAD'?'cloud-upload':'musical-notes'} size={18} color={colors.brand}/></View>
-    <View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={s.selectedTitle}>{selectedLabel}</Text><Text numberOfLines={1} style={s.selectedCopy}>{value?.artist??(value?value.source.replaceAll('_',' ').toLowerCase():'Tap a source below')}</Text></View>
-    {value?.previewUri?<Pressable onPress={()=>void preview(value.previewUri,value.startMs)} style={s.preview}><Ionicons name="play" size={16} color={colors.text}/></Pressable>:null}
-    {value?<Pressable onPress={()=>{previewPlayer.pause();onChange(null);void haptic.selection()}} style={s.remove}><Ionicons name="trash-outline" size={17} color={colors.danger}/></Pressable>:null}
+    <View style={s.selectedIcon}><Ionicons name={activeValue?.source==='VOICEOVER'?'mic':activeValue?.source==='USER_UPLOAD'?'cloud-upload':'musical-notes'} size={18} color={colors.brand}/></View>
+    <View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={s.selectedTitle}>{selectedLabel}</Text><Text numberOfLines={1} style={s.selectedCopy}>{activeValue?.artist??(activeValue?activeValue.source.replaceAll('_',' ').toLowerCase():(voiceover&&tab!=='VOICEOVER'?'Voiceover also added':'Tap a source below'))}</Text></View>
+    {activeValue?.previewUri?<Pressable onPress={()=>void preview(activeValue.previewUri,activeValue.startMs)} style={s.preview}><Ionicons name="play" size={16} color={colors.text}/></Pressable>:null}
+    {activeValue?<Pressable onPress={removeActive} style={s.remove}><Ionicons name="trash-outline" size={17} color={colors.danger}/></Pressable>:null}
    </View>
 
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabs}>
@@ -106,7 +108,7 @@ export function SoundPicker({
 
     {tab==='ORIGINAL'?<View style={s.section}>
      <View style={s.sectionIcon}><Ionicons name="volume-high-outline" size={24} color={colors.brand}/></View><Text style={s.sectionTitle}>Original clip audio</Text><Text style={s.sectionCopy}>Keep the sound recorded with the video, lower it under music, or mute it completely.</Text>
-     <Pressable onPress={()=>{onChange(null);onOriginalVolumeChange?.(1);previewPlayer.pause();void haptic.selection()}} style={s.bigAction}><Ionicons name="volume-high" size={18} color={colors.onBrand}/><Text style={s.bigActionText}>USE ORIGINAL ONLY</Text></Pressable>
+     <Pressable onPress={()=>{onChange(null);onVoiceoverChange?.(null);onOriginalVolumeChange?.(1);previewPlayer.pause();void haptic.selection()}} style={s.bigAction}><Ionicons name="volume-high" size={18} color={colors.onBrand}/><Text style={s.bigActionText}>USE ORIGINAL ONLY</Text></Pressable>
      <Text style={s.label}>ORIGINAL VOLUME</Text><View style={s.choiceRow}>{volumeChoices.map(v=><Pressable key={v} onPress={()=>{onOriginalVolumeChange?.(v);void haptic.selection()}} style={[s.choice,Math.abs(originalVolume-v)<.01&&s.choiceActive]}><Text style={[s.choiceText,Math.abs(originalVolume-v)<.01&&s.choiceTextActive]}>{v===0?'Mute':Math.round(v*100)+'%'}</Text></Pressable>)}</View>
     </View>:null}
 
@@ -124,14 +126,14 @@ export function SoundPicker({
      <Text style={s.sectionTitle}>{recorderState.isRecording?'Recording…':'Record a voiceover'}</Text><Text style={s.sectionCopy}>{recorderState.isRecording?'Speak naturally. You can stop when you are done.':'Record narration directly inside Everest Studio.'}</Text>
      {recorderState.isRecording?<Text style={s.recordTime}>{Math.max(0,Math.floor(recorderState.durationMillis/1000))}s</Text>:null}
      <Pressable onPress={()=>void(recorderState.isRecording?stopVoiceover():startVoiceover())} style={[s.bigAction,recorderState.isRecording&&s.stopAction]}><Ionicons name={recorderState.isRecording?'stop':'mic'} size={18} color={colors.onBrand}/><Text style={s.bigActionText}>{recorderState.isRecording?'STOP RECORDING':'START RECORDING'}</Text></Pressable>
-     {value?.source==='VOICEOVER'?<View style={s.voiceReady}><Ionicons name="checkmark-circle" size={18} color={colors.brand}/><Text style={s.voiceReadyText}>Voiceover ready · {value.durationMs?seconds(value.durationMs):'Recorded'}</Text><Pressable onPress={()=>void preview(value.previewUri)}><Text style={s.listen}>LISTEN</Text></Pressable></View>:null}
+     {voiceover?.source==='VOICEOVER'?<View style={s.voiceReady}><Ionicons name="checkmark-circle" size={18} color={colors.brand}/><Text style={s.voiceReadyText}>Voiceover ready · {voiceover.durationMs?seconds(voiceover.durationMs):'Recorded'}</Text><Pressable onPress={()=>void preview(voiceover.previewUri,voiceover.startMs)}><Text style={s.listen}>LISTEN</Text></Pressable></View>:null}
     </View>:null}
 
-    {value?<View style={s.controls}>
-     <Text style={s.controlsTitle}>SOUND CONTROLS</Text>
-     <View style={s.controlRow}><View style={{flex:1}}><Text style={s.controlLabel}>Start point</Text><Text style={s.controlValue}>{seconds(value.startMs)}</Text></View><Pressable onPress={()=>patch({startMs:Math.max(0,value.startMs-5000)})} style={s.step}><Text style={s.stepText}>−5s</Text></Pressable><Pressable onPress={()=>patch({startMs:value.startMs+5000})} style={s.step}><Text style={s.stepText}>+5s</Text></Pressable></View>
-     <Text style={s.label}>SOUND VOLUME</Text><View style={s.choiceRow}>{volumeChoices.filter(v=>v>0).map(v=><Pressable key={v} onPress={()=>patch({volume:v,muted:false})} style={[s.choice,Math.abs(value.volume-v)<.01&&!value.muted&&s.choiceActive]}><Text style={[s.choiceText,Math.abs(value.volume-v)<.01&&!value.muted&&s.choiceTextActive]}>{Math.round(v*100)}%</Text></Pressable>)}<Pressable onPress={()=>patch({muted:!value.muted})} style={[s.choice,value.muted&&s.choiceActive]}><Text style={[s.choiceText,value.muted&&s.choiceTextActive]}>Mute</Text></Pressable></View>
-     <Text style={s.label}>FADE</Text><View style={s.choiceRow}><Pressable onPress={()=>patch({fadeInMs:value.fadeInMs?0:1000})} style={[s.choice,value.fadeInMs>0&&s.choiceActive]}><Text style={[s.choiceText,value.fadeInMs>0&&s.choiceTextActive]}>Fade in</Text></Pressable><Pressable onPress={()=>patch({fadeOutMs:value.fadeOutMs?0:1000})} style={[s.choice,value.fadeOutMs>0&&s.choiceActive]}><Text style={[s.choiceText,value.fadeOutMs>0&&s.choiceTextActive]}>Fade out</Text></Pressable></View>
+    {activeValue?<View style={s.controls}>
+     <Text style={s.controlsTitle}>{tab==='VOICEOVER'?'VOICEOVER CONTROLS':'SOUND CONTROLS'}</Text>
+     <View style={s.controlRow}><View style={{flex:1}}><Text style={s.controlLabel}>Start point</Text><Text style={s.controlValue}>{seconds(activeValue.startMs)}</Text></View><Pressable onPress={()=>patch({startMs:Math.max(0,activeValue.startMs-5000)})} style={s.step}><Text style={s.stepText}>−5s</Text></Pressable><Pressable onPress={()=>patch({startMs:activeValue.startMs+5000})} style={s.step}><Text style={s.stepText}>+5s</Text></Pressable></View>
+     <Text style={s.label}>VOLUME</Text><View style={s.choiceRow}>{volumeChoices.filter(v=>v>0).map(v=><Pressable key={v} onPress={()=>patch({volume:v,muted:false})} style={[s.choice,Math.abs(activeValue.volume-v)<.01&&!activeValue.muted&&s.choiceActive]}><Text style={[s.choiceText,Math.abs(activeValue.volume-v)<.01&&!activeValue.muted&&s.choiceTextActive]}>{Math.round(v*100)}%</Text></Pressable>)}<Pressable onPress={()=>patch({muted:!activeValue.muted})} style={[s.choice,activeValue.muted&&s.choiceActive]}><Text style={[s.choiceText,activeValue.muted&&s.choiceTextActive]}>Mute</Text></Pressable></View>
+     <Text style={s.label}>FADE</Text><View style={s.choiceRow}><Pressable onPress={()=>patch({fadeInMs:activeValue.fadeInMs?0:1000})} style={[s.choice,activeValue.fadeInMs>0&&s.choiceActive]}><Text style={[s.choiceText,activeValue.fadeInMs>0&&s.choiceTextActive]}>Fade in</Text></Pressable><Pressable onPress={()=>patch({fadeOutMs:activeValue.fadeOutMs?0:1000})} style={[s.choice,activeValue.fadeOutMs>0&&s.choiceActive]}><Text style={[s.choiceText,activeValue.fadeOutMs>0&&s.choiceTextActive]}>Fade out</Text></Pressable></View>
     </View>:null}
 
     {photoMode?<View style={s.controls}><Text style={s.controlsTitle}>PHOTO DURATION</Text><Text style={s.sectionCopy}>Choose how long the photo stays on screen while the sound plays.</Text><View style={s.choiceRow}>{PHOTO_DURATIONS.map(ms=><Pressable key={ms} onPress={()=>onPhotoDurationChange?.(ms)} style={[s.choice,photoDurationMs===ms&&s.choiceActive]}><Text style={[s.choiceText,photoDurationMs===ms&&s.choiceTextActive]}>{ms/1000}s</Text></Pressable>)}</View></View>:null}
