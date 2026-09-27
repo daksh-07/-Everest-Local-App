@@ -12,7 +12,7 @@ import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {ModeSwitcher} from '@/components/ModeSwitcher';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
 import {
- getMyPostInsights,listMyPostCollaborationInvites,listMyPosts,respondPostCollaboration,
+ getFollowCounts,getMyPostInsights,listMyPostCollaborationInvites,listMyPosts,respondPostCollaboration,
  type MyPostInsight,type PostCollaborationInvite,type SocialPost
 } from '@/lib/social';
 import {signedPostMedia} from '@/lib/request-post-media';
@@ -54,6 +54,7 @@ export default function Account(){
  const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
  const [profile,setProfile]=useState<Profile|null>(null);const [access,setAccess]=useState<AccessContext|null>(null);
  const [posts,setPosts]=useState<PostCard[]>([]);const [collabInvites,setCollabInvites]=useState<PostCollaborationInvite[]>([]);
+ const [connectionCount,setConnectionCount]=useState(0);const [followingCount,setFollowingCount]=useState(0);
  const [loading,setLoading]=useState(true);const [uploadingAvatar,setUploadingAvatar]=useState(false);const [collabBusy,setCollabBusy]=useState('');
  const [error,setError]=useState('');const [menuOpen,setMenuOpen]=useState(false);const [photoSheetOpen,setPhotoSheetOpen]=useState(false);
 
@@ -66,8 +67,16 @@ export default function Account(){
    if(!supabaseConfigured){setLoading(false);return;}
    const {data:{user}}=await supabase.auth.getUser();
    if(!user){setLoading(false);return;}
-   const [p,a]=await Promise.all([getProfile(),getMyAccessContext()]);
+   const {getPublicUserProfile}=await import('@/lib/connections');
+   const [p,a,socialProfile,followCounts]=await Promise.all([
+    getProfile(),
+    getMyAccessContext(),
+    getPublicUserProfile(user.id).catch(()=>null),
+    getFollowCounts({userId:user.id}).catch(()=>({follower_count:0,following_count:0}))
+   ]);
    setProfile(p);setAccess(a);
+   setConnectionCount(Number(socialProfile?.connection_count??0));
+   setFollowingCount(Number(followCounts.following_count??0));
    const [myPosts,invites]=await Promise.all([
     listMyPosts(24).catch(()=>[] as SocialPost[]),
     listMyPostCollaborationInvites().catch(()=>[] as PostCollaborationInvite[])
@@ -152,8 +161,7 @@ export default function Account(){
  const driverStatus=access?.driver_application_status??null;
  const driverPending=!!driverStatus&&!driverActive;
  const driverNeedsAttention=['DRAFT','MORE_INFORMATION_REQUIRED','REJECTED','EXPIRED'].includes(driverStatus??'');
- const totalViews=posts.reduce((sum,item)=>sum+item.insight.viewCount,0);
- const totalEngagement=posts.reduce((sum,item)=>sum+item.insight.likeCount+item.insight.commentCount,0);
+
 
  return <SafeAreaView style={s.safe} edges={['top']}><View style={{flex:1}}>
   <ScrollView contentContainerStyle={s.page} showsVerticalScrollIndicator={false}>
@@ -176,8 +184,10 @@ export default function Account(){
 
     <View style={s.stats}>
      <View style={s.stat}><Text style={s.statValue}>{posts.length}</Text><Text style={s.statLabel}>POSTS</Text></View>
-     <View style={s.statDivider}/><View style={s.stat}><Text style={s.statValue}>{compact(totalViews)}</Text><Text style={s.statLabel}>VIEWS</Text></View>
-     <View style={s.statDivider}/><View style={s.stat}><Text style={s.statValue}>{compact(totalEngagement)}</Text><Text style={s.statLabel}>ENGAGEMENTS</Text></View>
+     <View style={s.statDivider}/>
+     <Pressable accessibilityRole="button" accessibilityLabel={connectionCount+' connections'} onPress={()=>{void haptic.selection();router.push('/connections')}} style={s.stat}><Text style={s.statValue}>{compact(connectionCount)}</Text><Text style={s.statLabel}>CONNECTIONS</Text></Pressable>
+     <View style={s.statDivider}/>
+     <View style={s.stat}><Text style={s.statValue}>{compact(followingCount)}</Text><Text style={s.statLabel}>FOLLOWING</Text></View>
     </View>
 
     {collabInvites.length?<View style={s.sectionBlock}><View style={s.sectionHead}><View><Text style={s.sectionEyebrow}>TOGETHER ON EVEREST</Text><Text style={s.section}>Collab requests</Text></View><View style={s.countPill}><Text style={s.countPillText}>{collabInvites.length}</Text></View></View>
