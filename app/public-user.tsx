@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -25,6 +26,7 @@ import {
   type PublicUserProfile,
 } from '@/lib/connections';
 import {useAppTheme} from '@/lib/theme';
+import {listHighlights,websiteLabel,type StoryHighlight} from '@/lib/social-expansion';
 
 function initialsFor(name:string|null){
   const parts=(name??'').trim().split(/\s+/).filter(Boolean);
@@ -52,6 +54,7 @@ export default function PublicUser(){
 
   const [p,setP]=useState<PublicUserProfile|null>(null);
   const [posts,setPosts]=useState<Awaited<ReturnType<typeof publicPostsForUser>>>([]);
+  const [highlights,setHighlights]=useState<StoryHighlight[]>([]);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
@@ -64,12 +67,14 @@ export default function PublicUser(){
     setLoading(true);
     setError('');
     try{
-      const [profile,content]=await Promise.all([
+      const [profile,content,highlightRows]=await Promise.all([
         getPublicUserProfile(userId),
         publicPostsForUser(userId),
+        listHighlights({userId}).catch(()=>[] as StoryHighlight[]),
       ]);
       setP(profile);
       setPosts(content);
+      setHighlights(highlightRows);
     }catch(e){
       setError(e instanceof Error?e.message:'Profile could not be loaded.');
     }finally{
@@ -287,6 +292,13 @@ export default function PublicUser(){
                       </Text>
                     ):null}
 
+                    {p.website_url?(
+                      <Pressable onPress={()=>void Linking.openURL(p.website_url!)} style={{marginTop:12,flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:11,paddingVertical:8,borderRadius:999,backgroundColor:c.soft}}>
+                        <Ionicons name="globe-outline" size={14} color={c.accent}/>
+                        <Text numberOfLines={1} style={{maxWidth:300,fontSize:12,fontWeight:'800',color:c.text}}>{websiteLabel(p.website_url)}</Text>
+                      </Pressable>
+                    ):null}
+
                     {(p.suburb||joined)?(
                       <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',gap:8,marginTop:14}}>
                         {p.suburb?(
@@ -386,6 +398,25 @@ export default function PublicUser(){
                   </View>
                 </View>
               </View>
+
+              {highlights.length?(
+                <View style={{paddingHorizontal:20,marginTop:22}}>
+                  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:11}}>
+                    <Text style={{fontSize:17,fontWeight:'900',color:c.text}}>Highlights</Text>
+                    <Text style={{fontSize:10,color:c.muted}}>{highlights.length}</Text>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:12,paddingRight:12}}>
+                    {highlights.map(item=>(
+                      <Pressable key={item.id} onPress={()=>router.push(('/highlight?id='+item.id) as never)} style={{width:76,alignItems:'center'}}>
+                        <View style={{width:64,height:64,borderRadius:32,borderWidth:2,borderColor:c.accent,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',overflow:'hidden',padding:2}}>
+                          {item.coverUrl?<Image source={{uri:item.coverUrl}} style={{width:56,height:56,borderRadius:28}}/>:<Ionicons name="sparkles-outline" size={21} color={c.accent}/>}
+                        </View>
+                        <Text numberOfLines={2} style={{fontSize:10,fontWeight:'800',color:c.text,textAlign:'center',marginTop:6}}>{item.title}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              ):null}
 
               {canMessage?(
                 <View style={{paddingHorizontal:20,marginTop:18}}>

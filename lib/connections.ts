@@ -9,7 +9,7 @@ export type SocialPreferences={
  search_visible:boolean;
  show_location:boolean;
 };
-export type PublicUserProfile={id:string;display_name:string|null;username:string|null;avatar_url:string|null;bio:string|null;suburb:string|null;joined_at:string|null;connection_count:number;mutual_count:number;connection_state:ConnectionState};
+export type PublicUserProfile={id:string;display_name:string|null;username:string|null;avatar_url:string|null;bio:string|null;website_url:string|null;suburb:string|null;joined_at:string|null;connection_count:number;mutual_count:number;connection_state:ConnectionState};
 export type ConnectionPerson={id:string;display_name:string|null;avatar_url:string|null;bio:string|null;mutual_count:number};
 export type ConnectionRequest={id:string;requester_id:string;display_name:string|null;avatar_url:string|null;bio:string|null;mutual_count:number;created_at:string};
 export type PersonalConversation={id:string;other_user_id:string;display_name:string|null;avatar_url:string|null;status:'REQUEST'|'ACTIVE'|'DECLINED';initiated_by:string;updated_at:string;latest_message:string|null;latest_message_at:string|null;unread_count:number};
