@@ -76,6 +76,36 @@ $$;
 revoke all on function public.set_business_website(uuid,text) from public,anon;
 grant execute on function public.set_business_website(uuid,text) to authenticated;
 
+-- Keep the existing public-profile privacy contract and expose the website only
+-- through the same guarded profile RPC.
+create or replace function public.get_public_user_profile(p_user uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path=''
+as $
+declare v jsonb; v_pref public.user_social_preferences; v_count bigint;
+begin
+ if auth.uid() is null then raise exception 'Authentication required'; end if;
+ if public.users_blocked(auth.uid(),p_user) then return null; end if;
+ select * into v_pref from public.user_social_preferences where user_id=p_user;
+ if p_user<>auth.uid() and coalesce(v_pref.profile_visibility,'PUBLIC')='PRIVATE' then return null; end if;
+ select count(*) into v_count from public.user_connections c where c.user_a=p_user or c.user_b=p_user;
+ select jsonb_build_object(
+   'id',pp.id,'display_name',pp.display_name,'username',pp.username,'avatar_url',pp.avatar_url,
+   'bio',case when coalesce(v_pref.profile_visibility,'PUBLIC')='LIMITED' and p_user<>auth.uid() and not public.users_connected(auth.uid(),p_user) then null else pp.bio end,
+   'website_url',case when coalesce(v_pref.profile_visibility,'PUBLIC')='LIMITED' and p_user<>auth.uid() and not public.users_connected(auth.uid(),p_user) then null else pp.website_url end,
+   'suburb',case when coalesce(v_pref.show_location,false) and (coalesce(v_pref.profile_visibility,'PUBLIC')<>'LIMITED' or p_user=auth.uid() or public.users_connected(auth.uid(),p_user)) then pp.suburb else null end,
+   'joined_at',pp.joined_at,'connection_count',v_count,'mutual_count',public.mutual_connection_count(p_user),
+   'connection_state',case when p_user=auth.uid() then 'SELF' else public.get_connection_state(p_user) end
+ ) into v from public.public_profiles pp where pp.id=p_user and (pp.visibility='PUBLIC' or pp.id=auth.uid());
+ return v;
+end
+$;
+revoke all on function public.get_public_user_profile(uuid) from public,anon;
+grant execute on function public.get_public_user_profile(uuid) to authenticated;
+
 -- ------------------------------------------------------------
 -- Everest Music catalogue. Licensing/admin metadata is never granted to clients.
 -- ------------------------------------------------------------
