@@ -210,7 +210,24 @@ export default function Social(){
     {error?<Text style={s.error}>{error}</Text>:null}
    </View>}
    ListEmptyComponent={<View style={s.empty}><Ionicons name={mode==='CLIPS'?'play-circle-outline':'images-outline'} size={34} color={colors.muted}/><Text style={s.emptyTitle}>{mode==='CLIPS'?'Clips are just getting started':'No posts yet'}</Text><Text style={s.emptyCopy}>{mode==='CLIPS'?'Share the first useful local clip.':'New public posts from people and businesses will appear here.'}</Text>{mode==='CLIPS'?<Pressable onPress={()=>router.push('/create-clip')} style={s.emptyCta}><Text style={s.emptyCtaText}>CREATE CLIP</Text></Pressable>:null}</View>}
-   renderItem={({item})=><View style={s.card}>
+   renderItem={({item})=>mode==='CLIPS'?<View style={s.clipCard}>
+    <View style={[s.clipMedia,{height:Math.min(Math.max(width*1.5,500),720)}]}>
+     {item.videoUrl?<ClipPlayer uri={item.videoUrl} active={activeClipId===item.id}/>:<View style={s.clipMissing}><Ionicons name="videocam-off-outline" size={30} color="#fff"/><Text style={s.clipMissingText}>Video unavailable</Text></View>}
+     <View style={s.clipTop}><View style={s.clipLocal}><Ionicons name="location-outline" size={13} color="#fff"/><Text numberOfLines={1} style={s.clipLocalText}>{item.location_label||'Everest Local'}</Text></View>{item.is_promoted?<View style={s.clipPromoted}><Text style={s.clipPromotedText}>PROMOTED</Text></View>:null}</View>
+     <View style={s.clipSide}>
+      <Pressable onPress={()=>void like(item)} style={s.clipAction}><Ionicons name={item.engagement.likedByMe?'heart':'heart-outline'} size={27} color={item.engagement.likedByMe?'#ff8c8c':'#fff'}/><Text style={s.clipActionText}>{item.engagement.likeCount}</Text></Pressable>
+      <Pressable onPress={()=>void openComments(item)} style={s.clipAction}><Ionicons name="chatbubble-outline" size={25} color="#fff"/><Text style={s.clipActionText}>{item.engagement.commentCount}</Text></Pressable>
+      <Pressable onPress={()=>void save(item)} style={s.clipAction}><Ionicons name={item.engagement.savedByMe?'bookmark':'bookmark-outline'} size={25} color="#fff"/></Pressable>
+      <Pressable onPress={()=>void share(item)} style={s.clipAction}><Ionicons name="paper-plane-outline" size={25} color="#fff"/></Pressable>
+     </View>
+     <View style={s.clipBottom}>
+      <Pressable onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))} style={s.clipAuthor}><View style={s.clipAvatar}>{(item.businesses?.logo_url||item.profile?.avatar_url)?<Image source={{uri:item.businesses?.logo_url??item.profile?.avatar_url??''}} style={s.clipAvatarImage}/>:<Ionicons name={item.business_id?'business':'person'} size={17} color="#fff"/>}</View><Text numberOfLines={1} style={s.clipName}>{item.businesses?.name??item.profile?.display_name??'Everest member'}</Text></Pressable>
+      {item.caption?<Text numberOfLines={3} style={s.clipCaption}>{item.caption}</Text>:null}
+      {item.music?<View style={s.clipMusic}><Ionicons name="musical-note" size={13} color="#fff"/><Text numberOfLines={1} style={s.clipMusicText}>{item.music.title} — {item.music.artist}</Text></View>:null}
+      {(item.service_id||item.product_id)?<View style={s.clipCommerce}>{item.service_id?<Pressable onPress={()=>router.push('/request?serviceId='+item.service_id)} style={s.clipCommerceButton}><Text style={s.clipCommerceText}>View service</Text></Pressable>:null}{item.product_id?<Pressable onPress={()=>router.push('/product?id='+item.product_id)} style={s.clipCommerceButton}><Text style={s.clipCommerceText}>View product</Text></Pressable>:null}</View>:null}
+     </View>
+    </View>
+   </View>:<View style={s.card}>
     <View style={s.authorRow}>
      <Pressable onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))} style={s.avatar}>
       {(item.businesses?.logo_url||item.profile?.avatar_url)?<Image source={{uri:item.businesses?.logo_url??item.profile?.avatar_url??''}} style={s.avatarImage}/>:<Ionicons name={item.business_id?'business-outline':'person-outline'} size={19} color={colors.text}/>}
@@ -229,6 +246,7 @@ export default function Social(){
     {item.media?.length?<View style={s.mediaWrap}>{item.media.slice(0,1).map(uri=><Image key={uri} source={{uri}} resizeMode="cover" style={[s.media,{width:mediaWidth,height:Math.min(mediaWidth*1.05,650)}]}/>)}
       {item.media.length>1?<View style={s.mediaCount}><Text style={s.mediaCountText}>1/{item.media.length}</Text></View>:null}
     </View>:null}
+    {item.music?<View style={s.postMusic}><Ionicons name="musical-note" size={13} color={colors.accent}/><Text numberOfLines={1} style={s.postMusicText}>{item.music.title} — {item.music.artist}</Text></View>:null}
     <View style={s.actions}>
      <View style={s.leftActions}>
       <Pressable onPress={()=>void like(item)} style={s.action}><Ionicons name={item.engagement.likedByMe?'heart':'heart-outline'} size={26} color={item.engagement.likedByMe?colors.danger:colors.text}/></Pressable>
