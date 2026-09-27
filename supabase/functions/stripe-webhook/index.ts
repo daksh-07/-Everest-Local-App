@@ -80,23 +80,63 @@ function invoicePaymentIntentId(invoice:unknown){
  const i=invoice as {payment_intent?:string|{id?:string}|null};
  return typeof i.payment_intent==='string'?i.payment_intent:i.payment_intent?.id??null;
 }
+function connectSnapshot(account:Stripe.Account){
+ const controller=account.controller as {fees?:{payer?:string}}|undefined;
+ const due=[...new Set([...(account.requirements?.past_due??[]),...(account.requirements?.currently_due??[])])];
+ const status=account.details_submitted&&account.charges_enabled&&account.payouts_enabled
+  ?'ACTIVE'
+  :((account.requirements?.past_due?.length??0)>0||Boolean(account.requirements?.disabled_reason)?'RESTRICTED':'PENDING');
+ return {
+  stripe_connect_status:status,
+  stripe_details_submitted:Boolean(account.details_submitted),
+  stripe_charges_enabled:Boolean(account.charges_enabled),
+  stripe_payouts_enabled:Boolean(account.payouts_enabled),
+  stripe_bank_connected:Boolean(account.external_accounts?.data?.length),
+  stripe_requirements_due:due,
+  stripe_connect_fee_payer:controller?.fees?.payer==='application'?'PLATFORM':'ACCOUNT',
+  stripe_connect_synced_at:new Date().toISOString(),
+ };
+}
 
 Deno.serve(async req=>{
  if(req.method!=='POST')return json({error:'Method not allowed'},405);
- const secret=Deno.env.get('STRIPE_SECRET_KEY'),webhookSecret=Deno.env.get('STRIPE_WEBHOOK_SECRET'),url=Deno.env.get('SUPABASE_URL'),service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+ const secret=Deno.env.get('STRIPE_SECRET_KEY'),webhookSecret=Deno.env.get('STRIPE_WEBHOOK_SECRET'),connectWebhookSecret=Deno.env.get('STRIPE_CONNECT_WEBHOOK_SECRET'),url=Deno.env.get('SUPABASE_URL'),service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
  if(!secret||!webhookSecret||!url||!service)return json({error:'Webhook not configured'},503);
  const signature=req.headers.get('stripe-signature');if(!signature)return json({error:'Missing signature'},400);
  const body=await req.text();const stripe=new Stripe(secret,{apiVersion:'2025-07-30.basil'});
- let event:Stripe.Event;try{event=stripe.webhooks.constructEvent(body,signature,webhookSecret);}catch{return json({error:'Invalid signature'},400)}
+ let event:Stripe.Event|null=null;
+ for(const candidate of [webhookSecret,connectWebhookSecret].filter((v):v is string=>Boolean(v))){
+  try{event=stripe.webhooks.constructEvent(body,signature,candidate);break;}catch{/* try the other registered endpoint secret */}
+ }
+ if(!event)return json({error:'Invalid signature'},400)
  const db=createClient(url,service);
  const {data:claimed,error:claimError}=await db.rpc('claim_stripe_event',{p_event_id:event.id,p_event_type:event.type});
  if(claimError)return json({error:'Webhook event could not be claimed'},500);
  if(!claimed)return new Response('ok');
 
  try{
-  const object=event.data.object as Stripe.Checkout.Session|Stripe.PaymentIntent|Stripe.Subscription;
+  const object=event.data.object as Stripe.Checkout.Session|Stripe.PaymentIntent|Stripe.Subscription|Stripe.Account;
   const metadata=(object.metadata??{}) as StripeMetadata;
+  const connectedAccountId=(event as Stripe.Event&{account?:string}).account??null;
   let handledKind='';
+
+  if(event.type==='account.updated'){
+   const account=event.data.object as Stripe.Account;
+   const snapshot=connectSnapshot(account);
+   const businessId=String(account.metadata?.everest_business_id??'');
+   let update= db.from('businesses').update(snapshot);
+   update=businessId?update.eq('id',businessId):update.eq('stripe_connected_account_id',account.id);
+   const {data:rows,error}=await update.select('id');
+   if(error)throw error;
+   const ids=(rows??[]).map(row=>String(row.id));
+   if(snapshot.stripe_connect_status!=='ACTIVE'&&ids.length){
+    await Promise.all([
+     db.from('services').update({active:false,updated_at:new Date().toISOString()}).in('business_id',ids).eq('active',true),
+     db.from('products').update({status:'PAUSED',updated_at:new Date().toISOString()}).in('business_id',ids).eq('status','ACTIVE'),
+    ]);
+   }
+   handledKind='stripe_connect_account';
+  }
 
   // Invoice objects do not reliably copy subscription metadata. Resolve the
   // subscription first and route by its server-owned metadata.
@@ -232,6 +272,13 @@ Deno.serve(async req=>{
      }else{
        const {error}=await db.rpc('process_stripe_service_success',{p_payment_id:servicePaymentId});
        if(error)throw error;
+       if(connectedAccountId){
+        const {error:ledgerError}=await db.from('marketplace_payout_ledger').update({
+         status:'DIRECT_SETTLED',charge_model:'DIRECT',fee_payer:'CONNECTED_ACCOUNT',
+         stripe_connected_account_id:connectedAccountId,updated_at:new Date().toISOString(),
+        }).eq('source_type','SERVICE_PAYMENT').eq('source_id',servicePaymentId);
+        if(ledgerError)throw ledgerError;
+       }
      }
     }else if(failureEvents){
      const {error}=await db.rpc('process_stripe_service_failure',{p_payment_id:servicePaymentId});
@@ -244,6 +291,13 @@ Deno.serve(async req=>{
      if(!orderId){await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:false});return json({error:'Missing order metadata'},400);}
      const {error}=await db.rpc('process_stripe_order_success',{p_order_id:orderId});
      if(error)throw error;
+     if(connectedAccountId){
+      const {error:ledgerError}=await db.from('marketplace_payout_ledger').update({
+       status:'DIRECT_SETTLED',charge_model:'DIRECT',fee_payer:'CONNECTED_ACCOUNT',
+       stripe_connected_account_id:connectedAccountId,updated_at:new Date().toISOString(),
+      }).eq('source_type','PRODUCT_ORDER').eq('source_id',orderId);
+      if(ledgerError)throw ledgerError;
+     }
     }
    }else if(failureEvents){
     if(!orderId){await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:false});return json({error:'Missing order metadata'},400);}
@@ -254,7 +308,7 @@ Deno.serve(async req=>{
 
   const {error:auditError}=await db.from('audit_logs').insert({
    action:'stripe:'+event.id,entity_type:'stripe_event',entity_id:null,
-   metadata:{type:event.type,payment_kind:handledKind||metadata.payment_kind||null,business_id:metadata.business_id??null,membership_id:metadata.membership_id??null,customer_package_id:metadata.customer_package_id??null,promotion_id:metadata.promotion_id??null,order_id:metadata.order_id??null,service_payment_id:metadata.service_payment_id??null,booking_id:metadata.booking_id??null}
+   metadata:{type:event.type,payment_kind:handledKind||metadata.payment_kind||null,connected_account_id:connectedAccountId,business_id:metadata.business_id??null,membership_id:metadata.membership_id??null,customer_package_id:metadata.customer_package_id??null,promotion_id:metadata.promotion_id??null,order_id:metadata.order_id??null,service_payment_id:metadata.service_payment_id??null,booking_id:metadata.booking_id??null}
   });
   if(auditError)throw auditError;
   const {error:finishError}=await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:true});
