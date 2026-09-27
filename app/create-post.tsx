@@ -38,7 +38,7 @@ export default function CreatePost(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const params=useLocalSearchParams<{intent?:string;soundId?:string}>();
  const [identities,setIdentities]=useState<Identity[]>([]);const [identity,setIdentity]=useState<Identity|null>(null);
  const [caption,setCaption]=useState('');const [type,setType]=useState<PostType>('UPDATE');const [visibility,setVisibility]=useState<'PUBLIC'|'FOLLOWERS'>('PUBLIC');const [location,setLocation]=useState('');
- const [photos,setPhotos]=useState<ImagePicker.ImagePickerAsset[]>([]);const [sound,setSound]=useState<DraftSound|null>(null);const [soundOpen,setSoundOpen]=useState(false);const [photoDuration,setPhotoDuration]=useState<5000|10000|15000|30000>(10000);const [services,setServices]=useState<Listing[]>([]);const [products,setProducts]=useState<Listing[]>([]);const [serviceId,setServiceId]=useState<string|null>(null);const [productId,setProductId]=useState<string|null>(null);
+ const [photos,setPhotos]=useState<ImagePicker.ImagePickerAsset[]>([]);const [sound,setSound]=useState<DraftSound|null>(null);const [voiceover,setVoiceover]=useState<DraftSound|null>(null);const [soundOpen,setSoundOpen]=useState(false);const [photoDuration,setPhotoDuration]=useState<5000|10000|15000|30000>(10000);const [services,setServices]=useState<Listing[]>([]);const [products,setProducts]=useState<Listing[]>([]);const [serviceId,setServiceId]=useState<string|null>(null);const [productId,setProductId]=useState<string|null>(null);
  const [showDetails,setShowDetails]=useState(false);const [showServicePicker,setShowServicePicker]=useState(false);const [showProductPicker,setShowProductPicker]=useState(false);
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [progress,setProgress]=useState('');const [error,setError]=useState('');
 
@@ -91,7 +91,7 @@ export default function CreatePost(){
   try{
    createdId=await createPost({businessId:identity.kind==='BUSINESS'?identity.id:undefined,caption,postType:type,visibility:identity.kind==='BUSINESS'?'PUBLIC':visibility,serviceId:identity.kind==='BUSINESS'?serviceId??undefined:undefined,productId:identity.kind==='BUSINESS'?productId??undefined:undefined,locationLabel:location||undefined});
    if(photos.length){setProgress(`Uploading 0/${photos.length}`);await uploadPostMedia(createdId,photos,(d,t)=>setProgress(`Uploading ${d}/${t}`));}
-   if(sound){setProgress('Adding sound…');await publishDraftSound(createdId,sound);await setPhotoPostDuration(createdId,photoDuration);}
+   if(sound||voiceover){setProgress('Adding sound…');if(sound)await publishDraftSound(createdId,sound);if(voiceover)await publishDraftSound(createdId,voiceover);await setPhotoPostDuration(createdId,photoDuration);}
    await haptic.success();router.replace('/social');
   }catch(e){
    if(createdId){try{await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',createdId)}catch{void 0}}
@@ -143,11 +143,11 @@ export default function CreatePost(){
     <Pressable onPress={()=>void pickLibrary()} style={s.mediaButton}><Ionicons name="images-outline" size={18} color={colors.text}/><Text style={s.mediaText}>{photos.length?'Add more':'Choose photos'}</Text></Pressable>
     {Platform.OS!=='web'?<Pressable onPress={()=>void takePhoto()} style={s.mediaButton}><Ionicons name="camera-outline" size={18} color={colors.text}/><Text style={s.mediaText}>Camera</Text></Pressable>:null}
    </View>
-   {photos[0]&&sound?<PhotoSoundPreview imageUri={photos[0].uri} sound={sound} durationMs={photoDuration} onEditSound={()=>setSoundOpen(true)}/>:null}
+   {photos[0]&&(sound||voiceover)?<PhotoSoundPreview imageUri={photos[0].uri} sound={sound} voiceover={voiceover} durationMs={photoDuration} onEditSound={()=>setSoundOpen(true)}/>:null}
 
    <View style={s.addToPost}>
     <Text style={s.addTitle}>POST DETAILS</Text>
-    <Pressable onPress={()=>{if(!photos.length){setError('Add a photo first, then choose its sound.');return}setError('');setSoundOpen(true)}} style={[s.detailRow,!photos.length&&{opacity:.5}]}><View style={s.detailIcon}><Ionicons name={sound?.source==='VOICEOVER'?'mic-outline':sound?.source==='USER_UPLOAD'?'cloud-upload-outline':'musical-notes-outline'} size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.detailText}>{sound?sound.title:'Add sound'}</Text><Text style={s.musicArtist}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase()):(photos.length?'Music · Upload · Voiceover':'Add a photo first')}</Text></View>{sound?<View style={s.soundDuration}><Text style={s.soundDurationText}>{photoDuration/1000}s</Text></View>:null}<Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
+    <Pressable onPress={()=>{if(!photos.length){setError('Add a photo first, then choose its sound.');return}setError('');setSoundOpen(true)}} style={[s.detailRow,!photos.length&&{opacity:.5}]}><View style={s.detailIcon}><Ionicons name={sound?.source==='VOICEOVER'?'mic-outline':sound?.source==='USER_UPLOAD'?'cloud-upload-outline':'musical-notes-outline'} size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.detailText}>{sound?sound.title:voiceover?'Voiceover added':'Add sound'}</Text><Text style={s.musicArtist}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase())+(voiceover?' · voiceover also added':''):(voiceover?'Voiceover · tap to add music or upload':photos.length?'Music · Upload · Voiceover':'Add a photo first')}</Text></View>{(sound||voiceover)?<View style={s.soundDuration}><Text style={s.soundDurationText}>{photoDuration/1000}s</Text></View>:null}<Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
     <Pressable onPress={()=>setShowDetails(v=>!v)} style={s.detailRow}><View style={s.detailIcon}><Ionicons name="location-outline" size={19} color={colors.text}/></View><Text style={s.detailText}>{location||'Location'}</Text><Ionicons name={showDetails?'chevron-up':'chevron-down'} size={18} color={colors.muted}/></Pressable>
     {showDetails?<View style={s.detailPanel}><TextInput value={location} onChangeText={setLocation} maxLength={120} placeholder="Add suburb or area (optional)" placeholderTextColor={colors.muted} style={[s.input,Platform.OS==='web'&&({outlineStyle:'none'} as object)]}/>{identity?.kind==='PERSONAL'?<View style={s.visibilityRow}><Text style={s.detailLabel}>Audience</Text><Pressable onPress={()=>setVisibility(visibility==='PUBLIC'?'FOLLOWERS':'PUBLIC')} style={s.audience}><Ionicons name={visibility==='PUBLIC'?'globe-outline':'people-outline'} size={16} color={colors.text}/><Text style={s.audienceText}>{visibility==='PUBLIC'?'Public':'Connections'}</Text></Pressable></View>:null}</View>:null}
 
@@ -162,7 +162,7 @@ export default function CreatePost(){
    {identity?.kind==='PERSONAL'&&type==='EXPERIENCE'?<View style={s.afterWork}><Ionicons name="heart-circle-outline" size={23} color={colors.brand}/><View style={{flex:1}}><Text style={s.afterWorkTitle}>Share the result, not just a rating</Text><Text style={s.afterWorkCopy}>Tell the local community what was done and how it felt. Your formal business review remains separate.</Text></View></View>:null}
 
    {progress?<Text style={s.note}>{progress}</Text>:null}{error?<Text style={s.error}>{error}</Text>:null}
-   <SoundPicker visible={soundOpen} value={sound} onChange={setSound} onClose={()=>setSoundOpen(false)} photoMode photoDurationMs={photoDuration} onPhotoDurationChange={setPhotoDuration}/>
+   <SoundPicker visible={soundOpen} value={sound} onChange={setSound} voiceover={voiceover} onVoiceoverChange={setVoiceover} onClose={()=>setSoundOpen(false)} photoMode photoDurationMs={photoDuration} onPhotoDurationChange={setPhotoDuration}/>
    <Pressable disabled={busy} onPress={()=>void publish()} style={[s.primary,busy&&s.dim]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<><Ionicons name="paper-plane-outline" size={18} color={colors.onBrand}/><Text style={s.primaryText}>PUBLISH POST</Text></>}</Pressable>
   </>}
  </ScrollView></SafeAreaView>;
