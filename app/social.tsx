@@ -88,14 +88,38 @@ export default function Social(){
    const nextPosts=sorted.map(x=>({...x,media:media[x.id]??[],verifiedWork:verified.has(x.id),businesses:x.business_id?businessMap[x.business_id]??null:null,profile:profileMap[x.author_id]??null,engagement:engagement[x.id]??emptyEngagement}));
    setPosts(nextPosts);feedCache={posts:nextPosts,locality:nextLocality,userId:nextUserId,at:Date.now()};
    nextPosts.slice(0,8).flatMap(x=>x.media??[]).slice(0,10).forEach(uri=>{void Image.prefetch(uri).catch(()=>{})});
+
+   const [storyRows,clipRows,musicRows]=await Promise.all([
+    listActiveStories(40).catch(()=>[] as StoryCard[]),
+    listClips({limit:24,offset:0,locality:localityHint}).catch(()=>[]),
+    listEverestMusic().catch(()=>[] as MusicTrack[])
+   ]);
+   setStories(storyRows);
+   if(clipRows.length){
+    const clipIds=clipRows.map(x=>x.id);
+    const clipAuthorIds=[...new Set(clipRows.map(x=>x.author_id))];
+    const clipBusinessIds=[...new Set(clipRows.map(x=>x.business_id).filter((x):x is string=>Boolean(x)))];
+    const [clipEngagement,clipProfiles,clipBusinesses]=await Promise.all([
+     getPostEngagement(clipIds),
+     clipAuthorIds.length?supabase.from('public_profiles').select('id,display_name,avatar_url').in('id',clipAuthorIds):Promise.resolve({data:[],error:null}),
+     clipBusinessIds.length?supabase.from('businesses').select('id,name,slug,logo_url,suburb,city,state').in('id',clipBusinessIds):Promise.resolve({data:[],error:null})
+    ]);
+    const cp=Object.fromEntries((clipProfiles.data??[]).map(x=>[x.id,x]));
+    const cb=Object.fromEntries((clipBusinesses.data??[]).map(x=>[x.id,x]));
+    const mm=Object.fromEntries(musicRows.map(x=>[x.id,x]));
+    const hydrated=clipRows.map(x=>({...x,media:[],verifiedWork:false,businesses:x.business_id?cb[x.business_id]??null:null,profile:cp[x.author_id]??null,engagement:clipEngagement[x.id]??emptyEngagement,music:x.music_track_id?mm[x.music_track_id]??null:null}));
+    setClips(hydrated);
+    if(!activeClipId&&hydrated[0])setActiveClipId(hydrated[0].id);
+   }else setClips([]);
   }catch(e){setError(e instanceof Error?e.message:'Could not load Explore.');}
   finally{setLoading(false);setRefreshing(false);}
  },[]);
 
  useEffect(()=>{void load()},[load]);
- useEffect(()=>{if(deepLinkOpened.current||!params.postId||!posts.length)return;const target=posts.find(p=>p.id===params.postId);if(!target)return;deepLinkOpened.current=true;void openComments(target)},[params.postId,posts]);
+ useEffect(()=>{if(params.mode==='clips')setMode('CLIPS')},[params.mode]);
+ useEffect(()=>{if(deepLinkOpened.current||!params.postId)return;const target=(mode==='CLIPS'?clips:posts).find(p=>p.id===params.postId);if(!target)return;deepLinkOpened.current=true;void openComments(target)},[params.postId,posts,clips,mode]);
 
- const updateEngagement=(id:string,fn:(e:PostEngagement)=>PostEngagement)=>setPosts(current=>current.map(p=>p.id===id?{...p,engagement:fn(p.engagement)}:p));
+ const updateEngagement=(id:string,fn:(e:PostEngagement)=>PostEngagement)=>{setPosts(current=>current.map(p=>p.id===id?{...p,engagement:fn(p.engagement)}:p));setClips(current=>current.map(p=>p.id===id?{...p,engagement:fn(p.engagement)}:p));};
 
  async function like(post:FeedPost){
   void haptic.selection();const before=post.engagement.likedByMe;
