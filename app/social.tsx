@@ -196,7 +196,8 @@ export default function Social(){
  }
  const mediaWidth=Math.min(width-24,720);const clipHeight=Math.min(Math.max(height-210,520),760);
  function switchMode(next:'POSTS'|'CLIPS'){if(next===mode)return;setMode(next);setActiveClipId(next==='CLIPS'?(clips[0]?.id??null):null);void haptic.selection()}
- const audibleTrack=(post:FeedPost)=>post.audioTracks?.find(track=>!track.muted&&Boolean(track.url))??null;
+ const audibleTracks=(post:FeedPost)=>post.audioTracks?.filter(track=>!track.muted&&Boolean(track.url))??[];
+ const audibleTrack=(post:FeedPost)=>audibleTracks(post)[0]??null;
 
  if(loading&&!posts.length)return <SafeAreaView style={s.safe}><ActivityIndicator style={{marginTop:100}}/></SafeAreaView>;
 
@@ -238,7 +239,7 @@ export default function Social(){
    ListEmptyComponent={<View style={s.empty}><Ionicons name={mode==='CLIPS'?'play-circle-outline':'images-outline'} size={34} color={colors.muted}/><Text style={s.emptyTitle}>{mode==='CLIPS'?'Clips are just getting started':'No posts yet'}</Text><Text style={s.emptyCopy}>{mode==='CLIPS'?'Share the first useful local clip.':'New public posts from people and businesses will appear here.'}</Text>{mode==='CLIPS'?<Pressable onPress={()=>router.push('/create-clip')} style={s.emptyCta}><Text style={s.emptyCtaText}>CREATE CLIP</Text></Pressable>:null}</View>}
    renderItem={({item})=>mode==='CLIPS'?<View style={s.clipCard}>
     <View style={[s.clipMedia,{height:clipHeight}]}>
-     {item.videoUrl?<ClipPlayer uri={item.videoUrl} active={activeClipId===item.id} edit={item.edit_manifest} musicUri={audibleTrack(item)?.url??item.musicUrl??null} musicStartMs={audibleTrack(item)?.startMs??item.music_start_ms??0} musicEndMs={audibleTrack(item)?.endMs} musicVolume={audibleTrack(item)?.volume??item.music_volume??.75} musicFadeInMs={audibleTrack(item)?.fadeInMs} musicFadeOutMs={audibleTrack(item)?.fadeOutMs} originalVolume={item.original_volume??1}/>:<View style={s.clipMissing}><Ionicons name="videocam-off-outline" size={30} color="#fff"/><Text style={s.clipMissingText}>Video unavailable</Text></View>}
+     {item.videoUrl?<ClipPlayer uri={item.videoUrl} active={activeClipId===item.id} edit={item.edit_manifest} audioBeds={audibleTracks(item).map(track=>({id:track.id,uri:track.url!,startMs:track.startMs,endMs:track.endMs,volume:track.volume,fadeInMs:track.fadeInMs,fadeOutMs:track.fadeOutMs}))} musicUri={item.musicUrl??null} musicStartMs={item.music_start_ms??0} musicVolume={item.music_volume??.75} originalVolume={item.original_volume??1}/>:<View style={s.clipMissing}><Ionicons name="videocam-off-outline" size={30} color="#fff"/><Text style={s.clipMissingText}>Video unavailable</Text></View>}
      <View style={s.clipTop}><View style={s.clipLocal}><Ionicons name="location-outline" size={13} color="#fff"/><Text numberOfLines={1} style={s.clipLocalText}>{item.location_label||'Everest Local'}</Text></View>{item.is_promoted?<View style={s.clipPromoted}><Text style={s.clipPromotedText}>PROMOTED</Text></View>:null}</View>
      <View style={s.clipSide}>
       <Pressable onPress={()=>void like(item)} style={s.clipAction}><Ionicons name={item.engagement.likedByMe?'heart':'heart-outline'} size={27} color={item.engagement.likedByMe?'#ff8c8c':'#fff'}/><Text style={s.clipActionText}>{item.engagement.likeCount}</Text></Pressable>
@@ -272,7 +273,7 @@ export default function Social(){
     {item.media?.length?<View style={s.mediaWrap}>{item.media.slice(0,1).map(uri=><Image key={uri} source={{uri}} resizeMode="cover" style={[s.media,{width:mediaWidth,height:Math.min(mediaWidth*1.05,650)}]}/>)}
       {item.media.length>1?<View style={s.mediaCount}><Text style={s.mediaCountText}>1/{item.media.length}</Text></View>:null}
     </View>:null}
-    {audibleTrack(item)?<PostSoundPlayer track={audibleTrack(item)!} photoDurationMs={item.photo_duration_ms} onOpenSound={()=>router.push(('/sound?id='+audibleTrack(item)!.audioAssetId) as never)}/>:item.music?<View style={s.postMusic}><Ionicons name="musical-note" size={13} color={colors.accent}/><Text numberOfLines={1} style={s.postMusicText}>{item.music.title} — {item.music.artist}</Text></View>:null}
+    {audibleTracks(item).length?<PostSoundPlayer tracks={audibleTracks(item)} photoDurationMs={item.photo_duration_ms} onOpenSound={track=>router.push(('/sound?id='+track.audioAssetId) as never)}/>:item.music?<View style={s.postMusic}><Ionicons name="musical-note" size={13} color={colors.accent}/><Text numberOfLines={1} style={s.postMusicText}>{item.music.title} — {item.music.artist}</Text></View>:null}
     <View style={s.actions}>
      <View style={s.leftActions}>
       <Pressable onPress={()=>void like(item)} style={s.action}><Ionicons name={item.engagement.likedByMe?'heart':'heart-outline'} size={26} color={item.engagement.likedByMe?colors.danger:colors.text}/></Pressable>
