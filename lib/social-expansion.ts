@@ -9,6 +9,37 @@ export type MusicTrack={
  id:string;title:string;artist:string;storage_path:string;artwork_path:string|null;
  duration_ms:number;genre:string|null;mood:string|null;
 };
+export type ClipTextOverlay={value:string;position:'TOP'|'CENTER'|'BOTTOM';style:'BOLD'|'CLASSIC'|'NEON'};
+export type ClipEditManifest={
+ trimStartMs:number;trimEndMs:number|null;speed:number;fit:'FILL'|'FIT';filter:'ORIGINAL'|'WARM'|'COOL'|'FADE'|'GOLD'|'NIGHT';
+ effect:'NONE'|'PULSE'|'FLASH'|'FOCUS';mirror:boolean;text:ClipTextOverlay|null;originalVolume:number;musicVolume:number;musicStartMs:number;
+};
+export const DEFAULT_CLIP_EDIT:ClipEditManifest={trimStartMs:0,trimEndMs:null,speed:1,fit:'FILL',filter:'ORIGINAL',effect:'NONE',mirror:false,text:null,originalVolume:1,musicVolume:.75,musicStartMs:0};
+const number=(value:unknown,fallback:number)=>typeof value==='number'&&Number.isFinite(value)?value:fallback;
+const oneOf=<T extends string>(value:unknown,allowed:readonly T[],fallback:T):T=>allowed.includes(value as T)?value as T:fallback;
+export function normalizeClipEditManifest(value:Partial<ClipEditManifest>|null|undefined,durationMs?:number|null):ClipEditManifest{
+ const max=durationMs&&durationMs>0?Math.min(durationMs,90_000):90_000;
+ const start=Math.max(0,Math.min(number(value?.trimStartMs,0),Math.max(0,max-500)));
+ const rawEnd=value?.trimEndMs==null?null:number(value.trimEndMs,max);
+ const end=rawEnd==null?null:Math.min(max,Math.max(start+500,rawEnd));
+ const rawText=value?.text;
+ const text=rawText&&typeof rawText.value==='string'&&rawText.value.trim()?{
+  value:rawText.value.slice(0,120),
+  position:oneOf(rawText.position,['TOP','CENTER','BOTTOM'] as const,'CENTER'),
+  style:oneOf(rawText.style,['BOLD','CLASSIC','NEON'] as const,'BOLD')
+ }:null;
+ return{
+  trimStartMs:start,trimEndMs:end,
+  speed:Math.max(.5,Math.min(2,number(value?.speed,1))),
+  fit:oneOf(value?.fit,['FILL','FIT'] as const,'FILL'),
+  filter:oneOf(value?.filter,['ORIGINAL','WARM','COOL','FADE','GOLD','NIGHT'] as const,'ORIGINAL'),
+  effect:oneOf(value?.effect,['NONE','PULSE','FLASH','FOCUS'] as const,'NONE'),
+  mirror:Boolean(value?.mirror),text,
+  originalVolume:Math.max(0,Math.min(1,number(value?.originalVolume,1))),
+  musicVolume:Math.max(0,Math.min(1,number(value?.musicVolume,.75))),
+  musicStartMs:Math.max(0,Math.min(900_000,number(value?.musicStartMs,0)))
+ };
+}
 export type Story={
  id:string;author_id:string;business_id:string|null;caption:string|null;visibility:'PUBLIC'|'FOLLOWERS';
  location_label:string|null;status:'ACTIVE'|'ARCHIVED'|'REMOVED';expires_at:string;music_track_id:string|null;
@@ -20,7 +51,7 @@ export type StoryCard=Story&{
 };
 export type Clip=SocialPost&{
  music_track_id?:string|null;music_start_ms?:number;music_volume?:number;original_volume?:number;
- cover_storage_path?:string|null;videoUrl?:string|null;
+ cover_storage_path?:string|null;edit_manifest?:ClipEditManifest|null;videoUrl?:string|null;
 };
 
 function safeWebsite(value:string){
@@ -53,11 +84,11 @@ export async function listEverestMusic(query=''):Promise<MusicTrack[]>{
  return (data??[]) as MusicTrack[];
 }
 export async function signedMusicUrl(path:string|null|undefined){return signedMediaUrl('everest-music',path,3600)}
-export async function setPostMusic(postId:string,trackId:string|null,startMs=0){
+export async function setPostMusic(postId:string,trackId:string|null,startMs=0,musicVolume=.75,originalVolume=1){
  requireSupabaseConfig();
  const {error}=await supabase.rpc('set_post_music',{
   p_post_id:postId,p_music_track_id:trackId,p_music_start_ms:Math.max(0,startMs),
-  p_music_volume:.75,p_original_volume:1
+  p_music_volume:Math.max(0,Math.min(1,musicVolume)),p_original_volume:Math.max(0,Math.min(1,originalVolume))
  });
  if(error)throw new Error(userFacingError(error,'Music could not be attached to this post.'));
 }
@@ -136,29 +167,34 @@ export async function archiveStory(storyId:string){
 export async function publishClip(input:{
  asset:ImagePicker.ImagePickerAsset;caption?:string;businessId?:string;visibility?:'PUBLIC'|'FOLLOWERS';
  locationLabel?:string;serviceId?:string;productId?:string;musicTrackId?:string|null;musicStartMs?:number;
+ musicVolume?:number;originalVolume?:number;editManifest?:Partial<ClipEditManifest>;
 }){
  requireSupabaseConfig();
  const {data:{user}}=await supabase.auth.getUser();if(!user)throw new Error('Authentication required.');
+ const edit=normalizeClipEditManifest({...input.editManifest,musicStartMs:input.musicStartMs??input.editManifest?.musicStartMs,musicVolume:input.musicVolume??input.editManifest?.musicVolume,originalVolume:input.originalVolume??input.editManifest?.originalVolume},input.asset.duration);
  const {data,error}=await supabase.rpc('publish_clip',{
   p_business_id:input.businessId??null,p_caption:input.caption?.trim()||null,p_visibility:input.visibility??'PUBLIC',
   p_location_label:input.locationLabel?.trim()||null,p_service_id:input.serviceId??null,p_product_id:input.productId??null,
-  p_music_track_id:input.musicTrackId??null,p_music_start_ms:input.musicStartMs??0
+  p_music_track_id:input.musicTrackId??null,p_music_start_ms:edit.musicStartMs
  });
  if(error)throw new Error(userFacingError(error,'Clip could not be created.'));
- const postId=String(data);
- const allowed=['video/mp4','video/quicktime','video/webm'];
+ const postId=String(data);const allowed=['video/mp4','video/quicktime','video/webm'];let uploadedPath:string|null=null;
  try{
   const {mime,ext,body}=await assetBytes(input.asset,200*1024*1024,allowed);
-  const path=`${user.id}/${postId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const path=`${user.id}/${postId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;uploadedPath=path;
   const upload=await supabase.storage.from('clip-media').upload(path,body,{contentType:mime,cacheControl:'86400',upsert:false});
   if(upload.error)throw upload.error;
   const row=await supabase.from('post_media').insert({
    post_id:postId,media_type:'VIDEO',storage_path:path,storage_bucket:'clip-media',
    duration_ms:input.asset.duration??null,width:input.asset.width??null,height:input.asset.height??null,sort_order:0
   });
-  if(row.error){await supabase.storage.from('clip-media').remove([path]);throw row.error;}
+  if(row.error)throw row.error;
+  const manifest=await supabase.rpc('set_clip_edit_manifest',{p_post_id:postId,p_edit_manifest:edit});
+  if(manifest.error)throw manifest.error;
+  await setPostMusic(postId,input.musicTrackId??null,edit.musicStartMs,edit.musicVolume,edit.originalVolume);
   return postId;
  }catch(e){
+  if(uploadedPath)await supabase.storage.from('clip-media').remove([uploadedPath]).catch(()=>undefined);
   await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',postId).eq('author_id',user.id);
   throw new Error(userFacingError(e,'Clip upload failed.'));
  }
