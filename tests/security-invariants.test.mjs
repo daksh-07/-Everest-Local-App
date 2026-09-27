@@ -25,7 +25,7 @@ const migrationFiles = allMigrationFiles.filter((file) => /^\d{3}_.+\.sql$/i.tes
 const timestampMigrationFiles = allMigrationFiles.filter((file) => /^\d{14}_.+\.sql$/i.test(file.split('/').at(-1)));
 const migrationText = (await Promise.all(allMigrationFiles.map((file) => readFile(file, 'utf8')))).join('\n');
 const runtimeMigrationText = (await Promise.all(allMigrationFiles
-  .filter((file) => file.split('/').at(-1) !== '20260920243000_lock_initial_admin_identity.sql')
+  .filter((file) => !/lock_initial_admin_identity\.sql$/i.test(file.split('/').at(-1) ?? ''))
   .map((file) => readFile(file, 'utf8')))).join('\n');
 const appAndLibFiles = (await Promise.all([walk(appDir), walk(libDir)])).flat();
 const clientText = (await Promise.all(appAndLibFiles.map((file) => readFile(file, 'utf8')))).join('\n');
