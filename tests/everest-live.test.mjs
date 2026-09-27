@@ -110,7 +110,8 @@ test('Everest Live requires the confirmed precise pin and uses real map points',
  assert.match(screen,/LiveSearchMap/);
  assert.match(nativeMap,/MapView/);
  assert.match(nativeMap,/Circle/);
- assert.match(webMap,/basemaps\.cartocdn\.com\/dark_all/);\n assert.match(webMap,/OpenStreetMap contributors · © CARTO/);
+ assert.match(webMap,/basemaps\.cartocdn\.com\/dark_all/);
+ assert.match(webMap,/OpenStreetMap contributors · © CARTO/);
  assert.doesNotMatch(nativeMap,/Math\.random|mock|fake/i);
  assert.doesNotMatch(webMap,/Math\.random|mockProvider|fakeProvider/i);
 });
