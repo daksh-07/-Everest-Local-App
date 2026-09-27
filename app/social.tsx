@@ -31,14 +31,14 @@ const FEED_CACHE_MS=5*60_000;
 let feedCache:{posts:FeedPost[];locality:string;userId:string|null;at:number}|null=null;
 
 export default function Social(){
- const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {width}=useWindowDimensions();const params=useLocalSearchParams<{postId?:string;commentId?:string;mode?:string}>();
+ const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {width,height}=useWindowDimensions();const params=useLocalSearchParams<{postId?:string;commentId?:string;mode?:string}>();
  const cachedFeed=feedCache&&Date.now()-feedCache.at<FEED_CACHE_MS?feedCache:null;
  const [posts,setPosts]=useState<FeedPost[]>(()=>cachedFeed?.posts??[]);const [clips,setClips]=useState<FeedPost[]>([]);const [stories,setStories]=useState<StoryCard[]>([]);const [mode,setMode]=useState<'POSTS'|'CLIPS'>(()=>params.mode==='clips'?'CLIPS':'POSTS');const [activeClipId,setActiveClipId]=useState<string|null>(null);const [loading,setLoading]=useState(()=>!cachedFeed);const [refreshing,setRefreshing]=useState(false);
  const [error,setError]=useState('');const [locality,setLocality]=useState(()=>cachedFeed?.locality??'Near you');const [userId,setUserId]=useState<string|null>(()=>cachedFeed?.userId??null);
  const [commentPost,setCommentPost]=useState<FeedPost|null>(null);const [comments,setComments]=useState<PostComment[]>([]);const [commentText,setCommentText]=useState('');
  const [commentLikes,setCommentLikes]=useState<Record<string,CommentEngagement>>({});const [replyTo,setReplyTo]=useState<PostComment|null>(null);
  const [commentsBusy,setCommentsBusy]=useState(false);const [menuPost,setMenuPost]=useState<string|null>(null);const deepLinkOpened=useRef(false);
- const viewedPosts=useRef(new Set<string>());
+ const viewedPosts=useRef(new Set<string>());const listRef=useRef<FlatList<FeedPost>>(null);const scrollOffsets=useRef<Record<'POSTS'|'CLIPS',number>>({POSTS:0,CLIPS:0});
  const viewabilityConfig=useRef({itemVisiblePercentThreshold:60,minimumViewTime:900}).current;
  const onViewableItemsChanged=useRef(({viewableItems}:{viewableItems:ViewToken[]})=>{
   for(const token of viewableItems){
@@ -120,6 +120,7 @@ export default function Social(){
 
  useEffect(()=>{void load()},[load]);
  useEffect(()=>{if(params.mode==='clips')setMode('CLIPS')},[params.mode]);
+ useEffect(()=>{const timer=setTimeout(()=>listRef.current?.scrollToOffset({offset:scrollOffsets.current[mode],animated:false}),0);return()=>clearTimeout(timer)},[mode]);
  useEffect(()=>{if(deepLinkOpened.current||!params.postId)return;const target=(mode==='CLIPS'?clips:posts).find(p=>p.id===params.postId);if(!target)return;deepLinkOpened.current=true;void openComments(target)},[params.postId,posts,clips,mode]);
 
  const updateEngagement=(id:string,fn:(e:PostEngagement)=>PostEngagement)=>{setPosts(current=>current.map(p=>p.id===id?{...p,engagement:fn(p.engagement)}:p));setClips(current=>current.map(p=>p.id===id?{...p,engagement:fn(p.engagement)}:p));};
@@ -180,12 +181,14 @@ export default function Social(){
   await setPostCommentsEnabled(post.id,!post.comments_enabled);
   setPosts(v=>v.map(x=>x.id===post.id?{...x,comments_enabled:!x.comments_enabled}:x));setMenuPost(null);
  }
- const mediaWidth=Math.min(width-24,720);
+ const mediaWidth=Math.min(width-24,720);const clipHeight=Math.min(Math.max(height-210,520),760);
+ function switchMode(next:'POSTS'|'CLIPS'){if(next===mode)return;setMode(next);setActiveClipId(next==='CLIPS'?(clips[0]?.id??null):null);void haptic.selection()}
 
  if(loading&&!posts.length)return <SafeAreaView style={s.safe}><ActivityIndicator style={{marginTop:100}}/></SafeAreaView>;
 
  return <SafeAreaView style={s.safe}>
   <FlatList
+   ref={listRef}
    data={mode==='CLIPS'?clips:posts}
    key={mode}
    keyExtractor={x=>x.id}
@@ -194,6 +197,12 @@ export default function Social(){
    windowSize={mode==='CLIPS'?3:5}
    updateCellsBatchingPeriod={40}
    contentContainerStyle={s.page}
+   scrollEventThrottle={16}
+   onScroll={e=>{scrollOffsets.current[mode]=Math.max(0,e.nativeEvent.contentOffset.y)}}
+   snapToInterval={mode==='CLIPS'?clipHeight+10:undefined}
+   snapToAlignment={mode==='CLIPS'?'start':undefined}
+   disableIntervalMomentum={mode==='CLIPS'}
+   decelerationRate={mode==='CLIPS'?'fast':'normal'}
    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{setRefreshing(true);void load()}}/>}
    onViewableItemsChanged={mode==='CLIPS'?onClipViewableItemsChanged:onViewableItemsChanged}
    viewabilityConfig={viewabilityConfig}
@@ -208,13 +217,13 @@ export default function Social(){
       <Text numberOfLines={1} style={s.storyName}>{story.actorName}</Text>
      </Pressable>)}
     </ScrollView>
-    <View style={s.segment}><Pressable accessibilityRole="tab" accessibilityState={{selected:mode==='POSTS'}} onPress={()=>{setMode('POSTS');setActiveClipId(null);void haptic.selection()}} style={[s.segmentItem,mode==='POSTS'&&s.segmentActive]}><Ionicons name="grid-outline" size={16} color={mode==='POSTS'?colors.text:colors.muted}/><Text style={[s.segmentText,mode==='POSTS'&&s.segmentTextActive]}>Posts</Text></Pressable><Pressable accessibilityRole="tab" accessibilityState={{selected:mode==='CLIPS'}} onPress={()=>{setMode('CLIPS');setActiveClipId(clips[0]?.id??null);void haptic.selection()}} style={[s.segmentItem,mode==='CLIPS'&&s.segmentActive]}><Ionicons name="play-outline" size={17} color={mode==='CLIPS'?colors.text:colors.muted}/><Text style={[s.segmentText,mode==='CLIPS'&&s.segmentTextActive]}>Clips</Text></Pressable></View>
+    <View style={s.segment}><Pressable accessibilityRole="tab" accessibilityState={{selected:mode==='POSTS'}} onPress={()=>switchMode('POSTS')} style={[s.segmentItem,mode==='POSTS'&&s.segmentActive]}><Ionicons name="grid-outline" size={16} color={mode==='POSTS'?colors.text:colors.muted}/><Text style={[s.segmentText,mode==='POSTS'&&s.segmentTextActive]}>Posts</Text></Pressable><Pressable accessibilityRole="tab" accessibilityState={{selected:mode==='CLIPS'}} onPress={()=>switchMode('CLIPS')} style={[s.segmentItem,mode==='CLIPS'&&s.segmentActive]}><Ionicons name="play-outline" size={17} color={mode==='CLIPS'?colors.text:colors.muted}/><Text style={[s.segmentText,mode==='CLIPS'&&s.segmentTextActive]}>Clips</Text></Pressable></View>
     <View style={s.tabs}><View style={s.tabActive}><Text style={s.tabActiveText}>For you</Text></View><View style={s.tab}><Text style={s.tabText}>{locality}</Text></View><Pressable onPress={()=>router.push('/search?tab=BUSINESS')} style={s.tab}><Text style={s.tabText}>Businesses</Text></Pressable></View>
     {error?<Text style={s.error}>{error}</Text>:null}
    </View>}
    ListEmptyComponent={<View style={s.empty}><Ionicons name={mode==='CLIPS'?'play-circle-outline':'images-outline'} size={34} color={colors.muted}/><Text style={s.emptyTitle}>{mode==='CLIPS'?'Clips are just getting started':'No posts yet'}</Text><Text style={s.emptyCopy}>{mode==='CLIPS'?'Share the first useful local clip.':'New public posts from people and businesses will appear here.'}</Text>{mode==='CLIPS'?<Pressable onPress={()=>router.push('/create-clip')} style={s.emptyCta}><Text style={s.emptyCtaText}>CREATE CLIP</Text></Pressable>:null}</View>}
    renderItem={({item})=>mode==='CLIPS'?<View style={s.clipCard}>
-    <View style={[s.clipMedia,{height:Math.min(Math.max(width*1.5,500),720)}]}>
+    <View style={[s.clipMedia,{height:clipHeight}]}>
      {item.videoUrl?<ClipPlayer uri={item.videoUrl} active={activeClipId===item.id}/>:<View style={s.clipMissing}><Ionicons name="videocam-off-outline" size={30} color="#fff"/><Text style={s.clipMissingText}>Video unavailable</Text></View>}
      <View style={s.clipTop}><View style={s.clipLocal}><Ionicons name="location-outline" size={13} color="#fff"/><Text numberOfLines={1} style={s.clipLocalText}>{item.location_label||'Everest Local'}</Text></View>{item.is_promoted?<View style={s.clipPromoted}><Text style={s.clipPromotedText}>PROMOTED</Text></View>:null}</View>
      <View style={s.clipSide}>
