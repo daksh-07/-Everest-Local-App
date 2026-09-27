@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { myBusiness } from '@/lib/catalog';
 import { BusinessVerificationError, submitBusinessVerification } from '@/lib/business-verification';
 import { isValidAbn, normalizeAbn } from '@/lib/abn';
@@ -153,13 +154,25 @@ export default function BusinessVerification() {
               ABN submission is the first verification step. Everest checks the ABN with ABR public data, including active status and registered business name. A successful government check does not itself grant VERIFIED marketplace status. We may request supporting documents during review.
             </Text>
 
-            <Pressable
-              disabled={busy || !abnValid || verified}
-              onPress={() => void submit()}
-              style={[s.button, (busy || !abnValid || verified) ? s.buttonDisabled : null]}
-            >
-              <Text style={s.buttonText}>{busy ? 'CHECKING ABR…' : pending ? 'RECHECK ABR' : verified ? 'VERIFIED' : 'CHECK ABN & SUBMIT'}</Text>
-            </Pressable>
+            {verified ? (
+              <>
+                <View style={s.verifiedNext}>
+                  <Text style={s.pendingTitle}>Next: connect payouts</Text>
+                  <Text style={s.pendingCopy}>Your business is verified. Connect Stripe and a bank account before paid services or products can go live.</Text>
+                </View>
+                <Pressable onPress={() => router.push('/business-payouts')} style={s.button}>
+                  <Text style={s.buttonText}>SET UP PAYMENTS & PAYOUTS</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable
+                disabled={busy || !abnValid}
+                onPress={() => void submit()}
+                style={[s.button, (busy || !abnValid) ? s.buttonDisabled : null]}
+              >
+                <Text style={s.buttonText}>{busy ? 'CHECKING ABR…' : pending ? 'RECHECK ABR' : 'CHECK ABN & SUBMIT'}</Text>
+              </Pressable>
+            )}
           </>
         ) : (
           <View style={s.empty}>
@@ -187,6 +200,7 @@ const s = StyleSheet.create({
   pendingCard: { backgroundColor: '#eeece7', borderRadius: 16, padding: 16, marginTop: 14 },
   pendingTitle: { fontSize: 14, fontWeight: '900' },
   pendingCopy: { fontSize: 12, lineHeight: 18, color: '#666', marginTop: 5 },
+  verifiedNext: { backgroundColor: '#eeece7', borderRadius: 16, padding: 16, marginTop: 18 },
   label: { fontSize: 9, fontWeight: '900', letterSpacing: 1.2, color: '#777', marginTop: 20, marginBottom: 7 },
   input: { height: 52, borderRadius: 14, borderWidth: 1, borderColor: '#dfdcd5', backgroundColor: '#fff', paddingHorizontal: 15 },
   inputError: { borderColor: '#b42318' },
