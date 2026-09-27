@@ -26,8 +26,9 @@ export function PhotoSoundPreview({
   if(!playing)return;
   const started=Date.now();const timer=setInterval(()=>{
    const elapsed=Date.now()-started;setProgress(Math.min(1,elapsed/durationMs));
-   const soundEnd=sound.endMs??Number.POSITIVE_INFINITY;
-   if(elapsed>=durationMs||player.currentTime*1000>=soundEnd){player.pause();setPlaying(false);setProgress(1)}
+   const now=player.currentTime*1000;const soundEnd=sound.endMs??(sound.startMs+durationMs);
+   if(elapsed>=durationMs||now>=soundEnd){player.pause();setPlaying(false);setProgress(1);return}
+   let gain=Math.max(0,Math.min(1,sound.volume));if(sound.fadeInMs>0)gain*=Math.max(0,Math.min(1,(now-sound.startMs)/sound.fadeInMs));if(sound.fadeOutMs>0)gain*=Math.max(0,Math.min(1,(soundEnd-now)/sound.fadeOutMs));player.volume=sound.muted?0:gain;
   },100);
   return()=>clearInterval(timer);
  },[playing,durationMs,sound.endMs,player]);
