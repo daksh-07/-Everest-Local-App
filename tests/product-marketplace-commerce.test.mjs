@@ -12,7 +12,8 @@ const commerce=fs.readFileSync('lib/commerce.ts','utf8');
 const productCommerce=fs.readFileSync('lib/product-commerce.ts','utf8');
 
 test('Shop Local uses dedicated product marketplace',()=>{
- assert.match(home,/route:'\/shop'/);
+ assert.match(home,/Shop nearby/);
+ assert.match(home,/go\('\/shop'\)/);
  assert.match(shop,/Search products/);
  assert.match(productCommerce,/shop_products/);
  assert.match(shop,/\/product\?id=/);

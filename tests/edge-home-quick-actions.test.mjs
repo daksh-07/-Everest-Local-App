@@ -33,11 +33,18 @@ test('home uses contextual real-data sections rather than fabricated metrics',()
  assert.doesNotMatch(home,/trending score|fake distance|popular now/i);
 });
 
-test('home exposes the primary quote action, core discovery shortcuts and universal search',()=>{
+test('home v3 exposes intent actions and real discovery without gateway-card duplication',()=>{
  assert.match(home,/accessibilityLabel="Request a Quote"/);
  assert.match(home,/Get matched with local businesses/);
- for(const label of ['Find Services','Shop Local','Ask Everest','Local Feed'])assert.match(home,new RegExp(label));
- assert.match(home,/Search people, services, businesses/);
+ assert.match(home,/Need it now\?/);
+ assert.match(home,/Search people, services, products, businesses/);
+ assert.match(home,/Shop nearby/);
+ assert.match(home,/From around Everest/);
+ assert.match(home,/RefreshControl/);
+ assert.match(home,/signedPostMediaBatch/);
+ assert.match(home,/signedProductMediaBatch/);
+ assert.match(home,/AmbientEdge/);
+ assert.doesNotMatch(home,/OR START HERE/);
  assert.doesNotMatch(home,/label:'Request a Quote'/);
 });
 
