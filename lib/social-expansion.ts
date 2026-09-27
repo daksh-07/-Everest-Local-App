@@ -256,7 +256,7 @@ export async function listHighlightStories(highlightId:string):Promise<StoryCard
  const first:Record<string,(typeof mediaRows)[number]>={};for(const row of mediaRows)if(!first[row.story_id])first[row.story_id]=row;
  const profileMap=Object.fromEntries((profiles.data??[]).map(x=>[x.id,x]));const businessMap=Object.fromEntries((businesses.data??[]).map(x=>[x.id,x]));
  return stories.map(story=>{const m=first[story.id];const business=story.business_id?businessMap[story.business_id]:null;const profile=profileMap[story.author_id];return{
-  ...story,mediaUrl:m?signed[m.storage_path]??null:null,mediaType:(m?.media_type as 'IMAGE'|'VIDEO'|undefined)??null,
+  ...story,mediaUrl:m?signed[m.storage_path]??null:null,mediaType:(m?.media_type as 'IMAGE'|'VIDEO'|undefined)??null,mediaDurationMs:m?.duration_ms??null,
   actorName:business?.name??profile?.display_name??'Everest member',avatarUrl:business?.logo_url??profile?.avatar_url??null,businessName:business?.name??null
  }});
 }
