@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {URL} from 'node:url';
 
 const read=(path)=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const soundMigration=read('supabase/migrations/20260927150000_everest_studio_sound_system.sql');
