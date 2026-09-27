@@ -1,6 +1,6 @@
 import {Ionicons} from '@expo/vector-icons';
 import {useGlobalSearchParams,usePathname,useRouter} from 'expo-router';
-import {type ReactNode,useMemo,useRef,useState} from 'react';
+import {type ReactNode,useCallback,useMemo,useRef,useState} from 'react';
 import {Animated,PanResponder,StyleSheet,Text,View,useWindowDimensions} from 'react-native';
 import {haptic} from '@/lib/haptics';
 import {ease,useReducedMotion} from '@/lib/motion';
@@ -48,16 +48,16 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
  const hintKey=useRef('');
  const [hint,setHint]=useState<SwipeHint>(null);
 
- const reset=()=>{
+ const reset=useCallback(()=>{
   hintKey.current='';setHint(null);
   if(reducedMotion){dragX.setValue(0);cueOpacity.setValue(0);return}
   Animated.parallel([
    Animated.spring(dragX,{toValue:0,useNativeDriver:true,damping:20,stiffness:280,mass:.7}),
    Animated.timing(cueOpacity,{toValue:0,duration:100,useNativeDriver:true})
   ]).start();
- };
+ },[cueOpacity,dragX,reducedMotion]);
 
- const updateHint=(dx:number)=>{
+ const updateHint=useCallback((dx:number)=>{
   if(pageIndex<0)return;
   const direction:(-1|1)=dx>=0?1:-1;
   const hard=Math.abs(dx)>=HARD_DISTANCE;
@@ -67,9 +67,9 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
   const key=direction+':'+target.key+':'+String(hard);
   if(hintKey.current!==key){hintKey.current=key;setHint({direction,label:target.label,hard})}
   cueOpacity.setValue(Math.min(1,Math.max(0,(Math.abs(dx)-18)/56)));
- };
+ },[cueOpacity,pageIndex]);
 
- const navigate=(direction:-1|1,hard:boolean)=>{
+ const navigate=useCallback((direction:-1|1,hard:boolean)=>{
   const immediate=pageAt(pageIndex+direction);
   const target=pageAt(pageIndex+direction*(hard?2:1))??immediate;
   if(!target){reset();return}
@@ -84,7 +84,7 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
   };
   if(reducedMotion){finish();return}
   Animated.timing(dragX,{toValue:direction*Math.min(width*.18,76),duration:105,easing:ease,useNativeDriver:true}).start(finish);
- };
+ },[cueOpacity,dragX,pageIndex,reducedMotion,reset,router,width]);
 
  const pan=useMemo(()=>PanResponder.create({
   onMoveShouldSetPanResponder:(_,gesture)=>{
@@ -108,7 +108,7 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
   },
   onPanResponderTerminate:reset,
   onPanResponderTerminationRequest:()=>true,
- }),[pageIndex,reducedMotion,width]);
+ }),[cueOpacity,dragX,navigate,pageIndex,reset,updateHint]);
 
  const scale=dragX.interpolate({inputRange:[-60,0,60],outputRange:[.997,1,.997],extrapolate:'clamp'});
  return <View style={styles.root}>
