@@ -4,10 +4,11 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import {MusicPicker} from '@/components/MusicPicker';
+import {SoundPicker} from '@/components/SoundPicker';
 import {ClipPlayer} from '@/components/ClipPlayer';
 import {ClipEditor} from '@/components/ClipEditor';
-import {normalizeClipEditManifest,publishClip,signedMusicUrl,type ClipEditManifest,type MusicTrack} from '@/lib/social-expansion';
+import {normalizeClipEditManifest,publishClip,type ClipEditManifest} from '@/lib/social-expansion';
+import {publishDraftSound,type DraftSound} from '@/lib/audio-studio';
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
@@ -19,12 +20,11 @@ export default function CreateClip(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
  const [identities,setIdentities]=useState<Identity[]>([]);const [identity,setIdentity]=useState<Identity|null>(null);
  const [asset,setAsset]=useState<ImagePicker.ImagePickerAsset|null>(null);const [caption,setCaption]=useState('');const [location,setLocation]=useState('');
- const [visibility,setVisibility]=useState<'PUBLIC'|'FOLLOWERS'>('PUBLIC');const [music,setMusic]=useState<MusicTrack|null>(null);const [musicUrl,setMusicUrl]=useState<string|null>(null);const [musicOpen,setMusicOpen]=useState(false);
+ const [visibility,setVisibility]=useState<'PUBLIC'|'FOLLOWERS'>('PUBLIC');const [sound,setSound]=useState<DraftSound|null>(null);const [soundOpen,setSoundOpen]=useState(false);
  const [edit,setEdit]=useState<ClipEditManifest>(()=>normalizeClipEditManifest({}));const [editorOpen,setEditorOpen]=useState(false);
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
 
  useEffect(()=>{let active=true;(async()=>{try{const [{data:{user}},ctx,{data:profile}]=await Promise.all([supabase.auth.getUser(),getWorkspaceContext(),supabase.from('profiles').select('full_name,suburb,city,state').maybeSingle()]);if(!user){router.replace('/auth');return}const list:Identity[]=[{kind:'PERSONAL',id:user.id,name:profile?.full_name||'My profile'},...ctx.businesses.map(b=>({kind:'BUSINESS' as const,id:b.id,name:b.name,business:b}))];if(active){setIdentities(list);setIdentity(ctx.mode==='BUSINESS'&&ctx.active_business_id?list.find(i=>i.id===ctx.active_business_id)??list[0]:list[0]);setLocation([profile?.suburb,profile?.city,profile?.state].filter(Boolean).join(', '))}}catch(e){if(active)setError(e instanceof Error?e.message:'Clip creator could not be opened.')}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
- useEffect(()=>{let active=true;if(!music?.storage_path){setMusicUrl(null);return()=>{active=false}}void signedMusicUrl(music.storage_path).then(url=>{if(active)setMusicUrl(url??null)}).catch(()=>{if(active)setMusicUrl(null)});return()=>{active=false}},[music?.id,music?.storage_path]);
 
  async function pick(){
   setError('');
@@ -32,7 +32,7 @@ export default function CreateClip(){
   try{
    const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:['videos'],allowsMultipleSelection:false,videoMaxDuration:90,quality:.9});
    if(!result.canceled&&result.assets[0]){
-    const next=result.assets[0];setAsset(next);
+    const next=result.assets[0];setAsset(next);setSound(null);
     setEdit(normalizeClipEditManifest({trimStartMs:0,trimEndMs:next.duration&&next.duration>0?Math.min(next.duration,90_000):null},next.duration));
     setEditorOpen(true);void haptic.selection();
    }
@@ -41,14 +41,21 @@ export default function CreateClip(){
 
  async function publish(){
   if(!asset||!identity||busy){if(!asset)setError('Choose a video first.');return}
-  setBusy(true);setError('');
+  if(sound?.source==='USER_UPLOAD'&&!sound.rightsConfirmed){setError('Confirm that you own or have permission to use the uploaded audio.');return}
+  setBusy(true);setError('');let createdId:string|null=null;
   try{
-   const id=await publishClip({
+   const syncedEdit=normalizeClipEditManifest({...edit,musicStartMs:sound?.startMs??edit.musicStartMs,musicVolume:sound?.volume??edit.musicVolume},asset.duration);
+   createdId=await publishClip({
     asset,caption,businessId:identity.kind==='BUSINESS'?identity.id:undefined,visibility:identity.kind==='BUSINESS'?'PUBLIC':visibility,
-    locationLabel:location,musicTrackId:music?.id??null,musicStartMs:edit.musicStartMs,musicVolume:edit.musicVolume,originalVolume:edit.originalVolume,editManifest:edit
+    locationLabel:location,musicTrackId:sound?.source==='LICENSED_MUSIC'?(sound.musicTrackId??null):null,
+    musicStartMs:sound?.startMs??0,musicVolume:sound?.volume??.75,originalVolume:syncedEdit.originalVolume,editManifest:syncedEdit
    });
-   void haptic.success();router.replace(('/social?mode=clips&postId='+id) as never);
-  }catch(e){void haptic.warning();setError(e instanceof Error?e.message:'Clip could not be published.')}finally{setBusy(false)}
+   if(sound)await publishDraftSound(createdId,sound);
+   void haptic.success();router.replace(('/social?mode=clips&postId='+createdId) as never);
+  }catch(e){
+   if(createdId)await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',createdId).catch(()=>undefined);
+   void haptic.warning();setError(e instanceof Error?e.message:'Clip could not be published.');
+  }finally{setBusy(false)}
  }
 
  return <SafeAreaView style={s.safe}>
@@ -58,22 +65,22 @@ export default function CreateClip(){
     <Text style={s.label}>POSTING AS</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.rail}>{identities.map(item=>{const active=item.id===identity?.id&&item.kind===identity?.kind;return <Pressable key={item.kind+item.id} onPress={()=>{setIdentity(item);if(item.kind==='BUSINESS')setVisibility('PUBLIC')}} style={[s.identity,active&&s.identityActive]}><Ionicons name={item.kind==='BUSINESS'?'business-outline':'person-outline'} size={16} color={active?colors.onBrand:colors.text}/><Text style={[s.identityText,active&&{color:colors.onBrand}]}>{item.kind==='PERSONAL'?'My profile':item.name}</Text></Pressable>})}</ScrollView>
 
     {asset?<View style={s.preview}>
-      <ClipPlayer key={asset.uri} uri={asset.uri} active edit={edit} musicUri={musicUrl} musicStartMs={edit.musicStartMs} musicVolume={edit.musicVolume} originalVolume={edit.originalVolume}/>
+      <ClipPlayer key={asset.uri} uri={asset.uri} active edit={edit} musicUri={sound?.previewUri??null} musicStartMs={sound?.startMs??0} musicVolume={sound?.muted?0:(sound?.volume??.75)} originalVolume={edit.originalVolume}/>
       <Pressable onPress={()=>setEditorOpen(true)} style={s.editPill}><Ionicons name="options-outline" size={16} color="#111"/><Text style={s.editPillText}>EDIT CLIP</Text></Pressable>
-     </View>:<Pressable onPress={()=>void pick()} style={s.preview}><View style={s.empty}><View style={s.emptyIcon}><Ionicons name="videocam-outline" size={31} color={colors.brand}/></View><Text style={s.emptyTitle}>Choose a video</Text><Text style={s.emptyCopy}>Pick a clip up to 90 seconds. The editor opens automatically so you can trim, add music, text, filters, effects and more.</Text><View style={s.chooseButton}><Text style={s.chooseButtonText}>CHOOSE VIDEO</Text></View></View></Pressable>}
+     </View>:<Pressable onPress={()=>void pick()} style={s.preview}><View style={s.empty}><View style={s.emptyIcon}><Ionicons name="videocam-outline" size={31} color={colors.brand}/></View><Text style={s.emptyTitle}>Choose a video</Text><Text style={s.emptyCopy}>Pick a clip up to 90 seconds. The editor opens automatically so you can trim, add sound, text, filters, effects and more.</Text><View style={s.chooseButton}><Text style={s.chooseButtonText}>CHOOSE VIDEO</Text></View></View></Pressable>}
 
     {asset?<View style={s.clipActions}><Pressable onPress={()=>setEditorOpen(true)} style={s.editButton}><Ionicons name="sparkles-outline" size={16} color={colors.onBrand}/><Text style={s.editButtonText}>Edit video</Text></Pressable><Pressable onPress={()=>void pick()} style={s.replace}><Ionicons name="repeat-outline" size={16} color={colors.text}/><Text style={s.replaceText}>Replace</Text></Pressable></View>:null}
 
     <TextInput value={caption} onChangeText={setCaption} multiline maxLength={2200} placeholder="Write a caption…" placeholderTextColor={colors.muted} style={s.caption}/>
-    <Pressable onPress={()=>setMusicOpen(true)} style={s.option}><View style={s.optionIcon}><Ionicons name="musical-notes-outline" size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.optionTitle}>{music?music.title:'Add music'}</Text><Text style={s.optionCopy}>{music?music.artist:'Choose from Everest’s licensed catalogue'}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
+    <Pressable onPress={()=>setSoundOpen(true)} style={s.option}><View style={s.optionIcon}><Ionicons name={sound?.source==='VOICEOVER'?'mic-outline':sound?.source==='USER_UPLOAD'?'cloud-upload-outline':'musical-notes-outline'} size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.optionTitle}>{sound?sound.title:'Add sound'}</Text><Text style={s.optionCopy}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase()):'Music · Original audio · Upload · Voiceover'}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
     <View style={s.option}><View style={s.optionIcon}><Ionicons name="location-outline" size={19} color={colors.text}/></View><TextInput value={location} onChangeText={setLocation} placeholder="Location (optional)" placeholderTextColor={colors.muted} style={s.optionInput}/></View>
     {identity?.kind==='PERSONAL'?<Pressable onPress={()=>setVisibility(v=>v==='PUBLIC'?'FOLLOWERS':'PUBLIC')} style={s.option}><View style={s.optionIcon}><Ionicons name={visibility==='PUBLIC'?'globe-outline':'people-outline'} size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.optionTitle}>{visibility==='PUBLIC'?'Public clip':'Connections only'}</Text><Text style={s.optionCopy}>Tap to change audience</Text></View></Pressable>:null}
     {error?<Text style={s.error}>{error}</Text>:null}
     <Pressable disabled={busy||!asset} onPress={()=>void publish()} style={[s.primary,(busy||!asset)&&{opacity:.45}]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<><Ionicons name="play" size={17} color={colors.onBrand}/><Text style={s.primaryText}>PUBLISH CLIP</Text></>}</Pressable>
    </>}
   </ScrollView>
-  <MusicPicker visible={musicOpen} selected={music} onClose={()=>setMusicOpen(false)} onSelect={setMusic}/>
-  {asset?<ClipEditor visible={editorOpen} uri={asset.uri} durationMs={asset.duration} initial={edit} music={music} onMusicChange={setMusic} onClose={()=>setEditorOpen(false)} onDone={next=>{setEdit(next);setEditorOpen(false)}}/>:null}
+  {asset?<ClipEditor visible={editorOpen} uri={asset.uri} durationMs={asset.duration} initial={edit} sound={sound} onOpenSound={()=>setSoundOpen(true)} onClose={()=>setEditorOpen(false)} onDone={next=>{setEdit(next);setEditorOpen(false)}}/>:null}
+  <SoundPicker visible={soundOpen} value={sound} onChange={next=>{setSound(next);if(next)setEdit(current=>normalizeClipEditManifest({...current,musicStartMs:next.startMs,musicVolume:next.volume},asset?.duration))}} onClose={()=>setSoundOpen(false)} hasOriginalAudio={Boolean(asset)} originalVolume={edit.originalVolume} onOriginalVolumeChange={value=>setEdit(current=>normalizeClipEditManifest({...current,originalVolume:value},asset?.duration))}/>
  </SafeAreaView>;
 }
 const styles=(c:ThemeColors)=>StyleSheet.create({
