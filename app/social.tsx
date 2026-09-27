@@ -183,24 +183,33 @@ export default function Social(){
 
  return <SafeAreaView style={s.safe}>
   <FlatList
-   data={posts}
+   data={mode==='CLIPS'?clips:posts}
+   key={mode}
    keyExtractor={x=>x.id}
-   initialNumToRender={4}
-   maxToRenderPerBatch={5}
-   windowSize={5}
+   initialNumToRender={mode==='CLIPS'?2:4}
+   maxToRenderPerBatch={mode==='CLIPS'?3:5}
+   windowSize={mode==='CLIPS'?3:5}
    updateCellsBatchingPeriod={40}
    contentContainerStyle={s.page}
    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{setRefreshing(true);void load()}}/>}
-   onViewableItemsChanged={onViewableItemsChanged}
+   onViewableItemsChanged={mode==='CLIPS'?onClipViewableItemsChanged:onViewableItemsChanged}
    viewabilityConfig={viewabilityConfig}
    ListHeaderComponent={<View>
     <View style={s.header}><View><Text style={s.kicker}>EVEREST EXPLORE</Text><Text style={s.title}>Discover</Text></View>
-     <View style={s.headerActions}><Pressable onPress={()=>router.push('/search')} style={s.round}><Ionicons name="search" size={21} color={colors.text}/></Pressable><Pressable onPress={()=>router.push('/create-post')} style={s.postButton}><Ionicons name="add" size={20} color={colors.onBrand}/><Text style={s.postButtonText}>Post</Text></Pressable></View>
+     <View style={s.headerActions}><Pressable onPress={()=>router.push('/search')} style={s.round}><Ionicons name="search" size={21} color={colors.text}/></Pressable><Pressable onPress={()=>router.push('/create')} style={s.postButton}><Ionicons name="add" size={20} color={colors.onBrand}/><Text style={s.postButtonText}>Create</Text></Pressable></View>
     </View>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.storyRail}>
+     <Pressable onPress={()=>router.push('/create-story')} style={s.storyTile}><View style={[s.storyRing,s.yourStory]}><Ionicons name="add" size={25} color={colors.brand}/></View><Text numberOfLines={1} style={s.storyName}>Your story</Text></Pressable>
+     {stories.map(story=><Pressable key={story.id} onPress={()=>router.push(('/story?id='+story.id) as never)} style={s.storyTile}>
+      <View style={s.storyRing}>{story.mediaUrl?<Image source={{uri:story.mediaUrl}} style={s.storyImage}/>:story.avatarUrl?<Image source={{uri:story.avatarUrl}} style={s.storyImage}/>:<Ionicons name={story.business_id?'business':'person'} size={23} color={colors.text}/>}</View>
+      <Text numberOfLines={1} style={s.storyName}>{story.actorName}</Text>
+     </Pressable>)}
+    </ScrollView>
+    <View style={s.segment}><Pressable accessibilityRole="tab" accessibilityState={{selected:mode==='POSTS'}} onPress={()=>{setMode('POSTS');setActiveClipId(null);void haptic.selection()}} style={[s.segmentItem,mode==='POSTS'&&s.segmentActive]}><Ionicons name="grid-outline" size={16} color={mode==='POSTS'?colors.text:colors.muted}/><Text style={[s.segmentText,mode==='POSTS'&&s.segmentTextActive]}>Posts</Text></Pressable><Pressable accessibilityRole="tab" accessibilityState={{selected:mode==='CLIPS'}} onPress={()=>{setMode('CLIPS');setActiveClipId(clips[0]?.id??null);void haptic.selection()}} style={[s.segmentItem,mode==='CLIPS'&&s.segmentActive]}><Ionicons name="play-outline" size={17} color={mode==='CLIPS'?colors.text:colors.muted}/><Text style={[s.segmentText,mode==='CLIPS'&&s.segmentTextActive]}>Clips</Text></Pressable></View>
     <View style={s.tabs}><View style={s.tabActive}><Text style={s.tabActiveText}>For you</Text></View><View style={s.tab}><Text style={s.tabText}>{locality}</Text></View><Pressable onPress={()=>router.push('/search?tab=BUSINESS')} style={s.tab}><Text style={s.tabText}>Businesses</Text></Pressable></View>
     {error?<Text style={s.error}>{error}</Text>:null}
    </View>}
-   ListEmptyComponent={<View style={s.empty}><Ionicons name="images-outline" size={34} color={colors.muted}/><Text style={s.emptyTitle}>No posts yet</Text><Text style={s.emptyCopy}>New public posts from people and businesses will appear here.</Text></View>}
+   ListEmptyComponent={<View style={s.empty}><Ionicons name={mode==='CLIPS'?'play-circle-outline':'images-outline'} size={34} color={colors.muted}/><Text style={s.emptyTitle}>{mode==='CLIPS'?'Clips are just getting started':'No posts yet'}</Text><Text style={s.emptyCopy}>{mode==='CLIPS'?'Share the first useful local clip.':'New public posts from people and businesses will appear here.'}</Text>{mode==='CLIPS'?<Pressable onPress={()=>router.push('/create-clip')} style={s.emptyCta}><Text style={s.emptyCtaText}>CREATE CLIP</Text></Pressable>:null}</View>}
    renderItem={({item})=><View style={s.card}>
     <View style={s.authorRow}>
      <Pressable onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))} style={s.avatar}>
