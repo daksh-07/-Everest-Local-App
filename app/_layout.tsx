@@ -12,7 +12,7 @@ import {ExperienceProvider} from '@/lib/experience';
 import {configureEverestQuickActions,quickActionHref,QuickActions,storePendingQuickActionRoute} from '@/lib/quick-actions';
 
 const protectedRoutes = new Set([
-  '/account','/activity','/memberships','/assistant','/request','/everest-live','/requests','/quotes','/bookings','/booking','/orders','/cart','/messages','/reviews','/notifications','/settings','/edit-profile','/appearance','/notification-settings','/help','/create','/create-post','/create-story','/create-clip','/archive','/highlights','/business-profile-edit',
+  '/account','/activity','/memberships','/assistant','/request','/everest-live','/requests','/quotes','/bookings','/booking','/orders','/cart','/messages','/reviews','/notifications','/settings','/edit-profile','/appearance','/notification-settings','/help','/create','/create-post','/create-story','/create-clip','/sound','/archive','/highlights','/business-profile-edit',
 ]);
 const businessApplicationRoutes = new Set(['/business','/business-onboarding','/business-dashboard','/business-verification','/business-today','/business-control']);
 const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities','/business-leads','/business-jobs','/business-job','/business-inbox','/business-crm','/business-calendar','/business-integrations','/business-calendar-integrations','/business-automations','/business-growth']);
