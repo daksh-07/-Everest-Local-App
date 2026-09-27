@@ -172,6 +172,18 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
   return (data ?? []) as SocialPost[];
 }
 
+export async function getAccessiblePost(postId:string):Promise<SocialPost|null>{
+  requireSupabaseConfig();
+  const {data,error}=await supabase
+    .from('posts')
+    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path,photo_duration_ms')
+    .eq('id',postId)
+    .neq('status','REMOVED')
+    .maybeSingle();
+  if(error)throw new Error(error.message);
+  return data as SocialPost|null;
+}
+
 async function setOwnPostStatus(postId:string,status:'PUBLISHED'|'HIDDEN'|'REMOVED'):Promise<void>{
   requireSupabaseConfig();
   const {data:{user}}=await supabase.auth.getUser();
