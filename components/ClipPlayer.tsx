@@ -3,16 +3,18 @@ import {Animated,Pressable,StyleSheet,Text,View,type ViewStyle} from 'react-nati
 import {Ionicons} from '@expo/vector-icons';
 import {useEvent} from 'expo';
 import {VideoView,useVideoPlayer} from 'expo-video';
+import {useAudioPlayer} from 'expo-audio';
 import {normalizeClipEditManifest,type ClipEditManifest} from '@/lib/social-expansion';
 
 let sessionMuted=true;
 
 function MusicBed({uri,active,muted,startMs,volume,restartToken}:{uri:string;active:boolean;muted:boolean;startMs:number;volume:number;restartToken:number}){
- const player=useVideoPlayer(uri,p=>{p.loop=true;p.muted=muted;p.volume=volume;p.audioMixingMode='mixWithOthers';p.currentTime=Math.max(0,startMs)/1000;if(active)p.play()});
- useEffect(()=>{player.muted=muted;player.volume=volume;player.audioMixingMode='mixWithOthers'},[muted,volume,player]);
+ const player=useAudioPlayer(null);
+ useEffect(()=>{player.pause();player.replace(uri);player.loop=true;player.volume=muted?0:volume;void player.seekTo(Math.max(0,startMs)/1000);if(active)player.play();return()=>player.pause()},[uri,player]);
+ useEffect(()=>{player.volume=muted?0:volume},[muted,volume,player]);
  useEffect(()=>{if(active)player.play();else player.pause()},[active,player]);
- useEffect(()=>{if(!active)return;player.currentTime=Math.max(0,startMs)/1000;player.play()},[active,startMs,restartToken,player]);
- return <VideoView pointerEvents="none" player={player} nativeControls={false} style={s.hiddenMedia}/>;
+ useEffect(()=>{if(!active)return;void player.seekTo(Math.max(0,startMs)/1000).then(()=>player.play())},[active,startMs,restartToken,player]);
+ return null;
 }
 
 export function ClipPlayer({
@@ -73,7 +75,7 @@ export function ClipPlayer({
  </Pressable>;
 }
 const s=StyleSheet.create({
- wrap:{flex:1,backgroundColor:'#000',overflow:'hidden'},video:{...StyleSheet.absoluteFillObject},mirror:{transform:[{scaleX:-1}]},hiddenMedia:{position:'absolute',width:1,height:1,opacity:0,left:-10,top:-10},
+ wrap:{flex:1,backgroundColor:'#000',overflow:'hidden'},video:{...StyleSheet.absoluteFillObject},mirror:{transform:[{scaleX:-1}]},
  sound:{position:'absolute',right:14,top:14,width:38,height:38,borderRadius:19,backgroundColor:'rgba(0,0,0,.42)',alignItems:'center',justifyContent:'center'},playBadge:{position:'absolute',left:'50%',top:'50%',marginLeft:-25,marginTop:-25,width:50,height:50,borderRadius:25,backgroundColor:'rgba(0,0,0,.42)',alignItems:'center',justifyContent:'center'},
  focus:{...StyleSheet.absoluteFillObject,borderWidth:18,borderColor:'rgba(0,0,0,.18)',borderRadius:26},textWrap:{position:'absolute',left:20,right:20,alignItems:'center'},overlayText:{fontSize:25,lineHeight:30,fontWeight:'900',color:'#fff',textAlign:'center',paddingHorizontal:10,paddingVertical:5,textShadowColor:'rgba(0,0,0,.75)',textShadowRadius:5,textShadowOffset:{width:0,height:2}},classicText:{fontWeight:'600',backgroundColor:'rgba(0,0,0,.42)',borderRadius:8,overflow:'hidden'},neonText:{textShadowColor:'#fff',textShadowRadius:13,textShadowOffset:{width:0,height:0}}
 });
