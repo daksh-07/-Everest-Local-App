@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
-import {ActivityIndicator,Image,Linking,Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
+import {ActivityIndicator,Image,Linking,Modal,Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
@@ -55,7 +55,7 @@ export default function Account(){
  const [profile,setProfile]=useState<Profile|null>(null);const [access,setAccess]=useState<AccessContext|null>(null);
  const [posts,setPosts]=useState<PostCard[]>([]);const [collabInvites,setCollabInvites]=useState<PostCollaborationInvite[]>([]);
  const [loading,setLoading]=useState(true);const [uploadingAvatar,setUploadingAvatar]=useState(false);const [collabBusy,setCollabBusy]=useState('');
- const [error,setError]=useState('');
+ const [error,setError]=useState('');const [menuOpen,setMenuOpen]=useState(false);
 
  async function load(){
   setLoading(true);setError('');
@@ -130,6 +130,9 @@ export default function Account(){
   try{void haptic.selection();await Linking.openURL(websiteHref(profile.website_url))}
   catch{setError('That website could not be opened. Check the address in Edit profile.')}
  }
+ function goFromMenu(route:string){
+  setMenuOpen(false);void haptic.selection();router.push(route as never);
+ }
 
  const businessReady=access?.is_verified_business===true;
  const businessPending=access?.is_business_member===true&&!businessReady;
@@ -142,7 +145,7 @@ export default function Account(){
 
  return <SafeAreaView style={s.safe} edges={['top']}><View style={{flex:1}}>
   <ScrollView contentContainerStyle={s.page} showsVerticalScrollIndicator={false}>
-   <View style={s.top}><View><Text style={s.eyebrow}>MY EVEREST</Text><Text style={s.topTitle}>Account</Text></View><Pressable onPress={()=>router.push('/settings')} style={s.topAction}><Ionicons name="settings-outline" size={20} color={colors.text}/></Pressable></View>
+   <View style={s.top}><View><Text style={s.eyebrow}>MY EVEREST</Text><Text style={s.topTitle}>Account</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Open account menu" onPress={()=>{void haptic.selection();setMenuOpen(true)}} style={s.topAction}><Ionicons name="menu-outline" size={24} color={colors.text}/></Pressable></View>
    {loading?<ActivityIndicator color={colors.brand} style={{marginTop:70}}/>:profile?<>
     <View style={s.profile}>
      <View style={s.profileGlow}/>
@@ -188,23 +191,43 @@ export default function Account(){
      })}</View>:<Pressable onPress={()=>router.push('/create-post')} style={s.emptyPosts}><View style={s.emptyPostIcon}><Ionicons name="images-outline" size={25} color={colors.brand}/></View><Text style={s.emptyPostTitle}>Your posts will live here</Text><Text style={s.emptyPostCopy}>Share local moments, completed work, questions or recommendations and track how people respond.</Text><Text style={s.emptyPostCta}>CREATE YOUR FIRST POST →</Text></Pressable>}
     </View>
 
-    <View style={s.sectionBlock}><Text style={s.sectionEyebrow}>ACCOUNT MODE</Text><Text style={s.section}>Switch mode</Text><ModeSwitcher/></View>
-
-    <View style={s.sectionBlock}><Text style={s.sectionEyebrow}>BUILD WITH EVEREST LOCAL</Text><Text style={s.section}>Tools & roles</Text>
-     {driverActive?<Pressable style={s.roleCard} onPress={()=>router.push('/delivery')}><View style={s.roleIcon}><Ionicons name="car-outline" size={19} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.roleTitle}>Delivery Driver</Text><Text style={s.roleCopy}>View assigned deliveries and update authorized delivery jobs.</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>:null}
-     {access?.is_authorized_admin?<Pressable style={s.roleCard} onPress={()=>router.push('/admin')}><View style={s.roleIcon}><Ionicons name="shield-checkmark-outline" size={19} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.roleTitle}>Admin Operations</Text><Text style={s.roleCopy}>Business verification, compliance and marketplace operations.</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>:null}
-     {!access?.is_business_member?<Pressable style={s.roleCard} onPress={()=>router.push('/business-onboarding')}><View style={s.roleIcon}><Ionicons name="storefront-outline" size={19} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.roleTitle}>Create a Business</Text><Text style={s.roleCopy}>Start your business profile and verification.</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>:null}
-     {businessPending?<View style={s.noticeCard}><Ionicons name="time-outline" size={20} color={colors.brand}/><View style={{flex:1}}><Text style={s.noticeTitle}>Business verification pending</Text><Text style={s.roleCopy}>Complete verification before public marketplace activity.</Text><Pressable onPress={()=>router.push('/business-verification')}><Text style={s.link}>OPEN VERIFICATION →</Text></Pressable></View></View>:null}
-     {!driverStatus?<Pressable style={s.roleCard} onPress={()=>router.push('/driver-onboarding')}><View style={s.roleIcon}><Ionicons name="navigate-outline" size={19} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.roleTitle}>Become a Delivery Driver</Text><Text style={s.roleCopy}>Apply to deliver Everest orders.</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>:null}
-     {driverPending?<View style={s.noticeCard}><Ionicons name="alert-circle-outline" size={20} color={colors.brand}/><View style={{flex:1}}><Text style={s.noticeTitle}>{driverStatus==='EXPIRED'?'Driver access restricted':driverStatus==='SUSPENDED'?'Driver access suspended':driverStatus==='REJECTED'?'Driver application needs attention':'Driver application '+driverStatus?.toLowerCase()}</Text><Text style={s.roleCopy}>{driverNeedsAttention?'Open your application to update the requested information.':'Your driver information is being reviewed.'}</Text><Pressable onPress={()=>router.push('/driver-onboarding')}><Text style={s.link}>VIEW APPLICATION →</Text></Pressable></View></View>:null}
-    </View>
-
-    <View style={s.sectionBlock}><Text style={s.sectionEyebrow}>EVERYTHING ELSE</Text><Text style={s.section}>Account tools</Text><View style={s.tools}>{links.map(item=><Pressable style={s.row} key={item.label} onPress={()=>router.push(item.route)}><View style={s.rowIcon}><Ionicons name={item.icon} size={18} color={colors.text}/></View><View style={{flex:1}}><Text style={s.rowText}>{item.label}</Text><Text style={s.rowCopy}>{item.copy}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>)}</View></View>
-
     {error?<Text style={s.error}>{error}</Text>:null}
-    <Pressable onPress={()=>void logout()} style={s.logout}><Ionicons name="log-out-outline" size={17} color={colors.text}/><Text style={s.logoutText}>SIGN OUT</Text></Pressable>
    </>:<View style={s.profile}><View style={s.avatarWrap}><View style={s.avatar}><Ionicons name="person-outline" size={30} color={colors.text}/></View></View><Text style={s.name}>Welcome to Everest Local</Text><Text style={s.copy}>{error||'Sign in or create an account to manage requests, bookings, orders, posts and messages.'}</Text><Pressable onPress={()=>router.push('/auth')} style={s.primaryAction}><Text style={s.primaryText}>SIGN IN / CREATE ACCOUNT</Text></Pressable></View>}
   </ScrollView>
+  <Modal visible={menuOpen} transparent animationType="fade" statusBarTranslucent onRequestClose={()=>setMenuOpen(false)}>
+   <View style={s.menuOverlay}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Close account menu" onPress={()=>setMenuOpen(false)} style={s.menuBackdrop}/>
+    <SafeAreaView style={s.menuDrawer} edges={['top','bottom']}>
+     <View style={s.menuHeader}>
+      <View><Text style={s.menuEyebrow}>MY EVEREST</Text><Text style={s.menuTitle}>Account menu</Text></View>
+      <Pressable accessibilityRole="button" accessibilityLabel="Close account menu" onPress={()=>{void haptic.selection();setMenuOpen(false)}} style={s.menuClose}><Ionicons name="close" size={23} color={colors.text}/></Pressable>
+     </View>
+     <ScrollView contentContainerStyle={s.menuContent} showsVerticalScrollIndicator={false}>
+      <View style={s.menuSection}>
+       <Text style={s.menuSectionEyebrow}>ACCOUNT MODE</Text><Text style={s.menuSectionTitle}>Switch mode</Text>
+       <ModeSwitcher/>
+      </View>
+
+      <View style={s.menuSection}>
+       <Text style={s.menuSectionEyebrow}>BUILD WITH EVEREST LOCAL</Text><Text style={s.menuSectionTitle}>Tools & roles</Text>
+       {driverActive?<Pressable style={s.roleCard} onPress={()=>goFromMenu('/delivery')}><View style={s.roleIcon}><Ionicons name="car-outline" size={19} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.roleTitle}>Delivery Driver</Text><Text style={s.roleCopy}>View assigned deliveries and update authorized delivery jobs.</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>:null}
+       {access?.is_authorized_admin?<Pressable style={s.roleCard} onPress={()=>goFromMenu('/admin')}><View style={s.roleIcon}><Ionicons name="shield-checkmark-outline" size={19} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.roleTitle}>Admin Operations</Text><Text style={s.roleCopy}>Business verification, compliance and marketplace operations.</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>:null}
+       {!access?.is_business_member?<Pressable style={s.roleCard} onPress={()=>goFromMenu('/business-onboarding')}><View style={s.roleIcon}><Ionicons name="storefront-outline" size={19} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.roleTitle}>Create a Business</Text><Text style={s.roleCopy}>Start your business profile and verification.</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>:null}
+       {businessPending?<View style={s.noticeCard}><Ionicons name="time-outline" size={20} color={colors.brand}/><View style={{flex:1}}><Text style={s.noticeTitle}>Business verification pending</Text><Text style={s.roleCopy}>Complete verification before public marketplace activity.</Text><Pressable onPress={()=>goFromMenu('/business-verification')}><Text style={s.link}>OPEN VERIFICATION →</Text></Pressable></View></View>:null}
+       {!driverStatus?<Pressable style={s.roleCard} onPress={()=>goFromMenu('/driver-onboarding')}><View style={s.roleIcon}><Ionicons name="navigate-outline" size={19} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.roleTitle}>Become a Delivery Driver</Text><Text style={s.roleCopy}>Apply to deliver Everest orders.</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>:null}
+       {driverPending?<View style={s.noticeCard}><Ionicons name="alert-circle-outline" size={20} color={colors.brand}/><View style={{flex:1}}><Text style={s.noticeTitle}>{driverStatus==='EXPIRED'?'Driver access restricted':driverStatus==='SUSPENDED'?'Driver access suspended':driverStatus==='REJECTED'?'Driver application needs attention':'Driver application '+driverStatus?.toLowerCase()}</Text><Text style={s.roleCopy}>{driverNeedsAttention?'Open your application to update the requested information.':'Your driver information is being reviewed.'}</Text><Pressable onPress={()=>goFromMenu('/driver-onboarding')}><Text style={s.link}>VIEW APPLICATION →</Text></Pressable></View></View>:null}
+      </View>
+
+      <View style={s.menuSection}>
+       <Text style={s.menuSectionEyebrow}>EVERYTHING ELSE</Text><Text style={s.menuSectionTitle}>Account tools</Text>
+       <View style={s.tools}>{links.map(item=><Pressable style={s.row} key={item.label} onPress={()=>goFromMenu(item.route)}><View style={s.rowIcon}><Ionicons name={item.icon} size={18} color={colors.text}/></View><View style={{flex:1}}><Text style={s.rowText}>{item.label}</Text><Text style={s.rowCopy}>{item.copy}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>)}</View>
+      </View>
+
+      <Pressable onPress={()=>{setMenuOpen(false);void logout()}} style={s.logout}><Ionicons name="log-out-outline" size={17} color={colors.text}/><Text style={s.logoutText}>SIGN OUT</Text></Pressable>
+     </ScrollView>
+    </SafeAreaView>
+   </View>
+  </Modal>
   <CustomerTabBar active="/account"/>
  </View></SafeAreaView>;
 }
@@ -230,5 +253,6 @@ const createStyles=(c:ThemeColors)=>StyleSheet.create({
  emptyPosts:{borderRadius:22,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:24,alignItems:'center'},emptyPostIcon:{width:50,height:50,borderRadius:18,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},emptyPostTitle:{fontSize:16,fontWeight:'900',color:c.text,marginTop:12},emptyPostCopy:{fontSize:11,lineHeight:18,color:c.muted,textAlign:'center',marginTop:5},emptyPostCta:{fontSize:9,fontWeight:'900',letterSpacing:.6,color:c.brand,marginTop:14},
  roleCard:{backgroundColor:c.surface,borderRadius:18,borderWidth:1,borderColor:c.border,padding:14,marginTop:8,flexDirection:'row',gap:11,alignItems:'center'},roleIcon:{width:40,height:40,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},roleTitle:{fontSize:13,fontWeight:'900',color:c.text},roleCopy:{fontSize:10,lineHeight:16,color:c.muted,marginTop:3},noticeCard:{backgroundColor:c.soft,borderRadius:18,padding:14,marginTop:8,flexDirection:'row',gap:10},noticeTitle:{fontSize:13,fontWeight:'900',color:c.text},link:{fontSize:9,fontWeight:'900',letterSpacing:.5,marginTop:10,color:c.brand},
  tools:{borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,overflow:'hidden'},row:{minHeight:67,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:11,borderBottomWidth:1,borderBottomColor:c.border},rowIcon:{width:38,height:38,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},rowText:{fontSize:13,fontWeight:'900',color:c.text},rowCopy:{fontSize:9,color:c.muted,marginTop:2},
+ menuOverlay:{flex:1,backgroundColor:'transparent',flexDirection:'row',justifyContent:'flex-end'},menuBackdrop:{...StyleSheet.absoluteFillObject,backgroundColor:c.overlay},menuDrawer:{height:'100%',width:'92%',maxWidth:470,backgroundColor:c.canvas,borderLeftWidth:1,borderLeftColor:c.border,shadowColor:'#000',shadowOffset:{width:-10,height:0},shadowOpacity:.22,shadowRadius:24,elevation:24},menuHeader:{height:74,paddingHorizontal:18,flexDirection:'row',alignItems:'center',justifyContent:'space-between',borderBottomWidth:1,borderBottomColor:c.border},menuEyebrow:{fontSize:8,fontWeight:'900',letterSpacing:1.6,color:c.accent},menuTitle:{fontSize:24,fontWeight:'900',letterSpacing:-.5,color:c.text,marginTop:2},menuClose:{width:42,height:42,borderRadius:21,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},menuContent:{paddingHorizontal:16,paddingTop:6,paddingBottom:36},menuSection:{marginTop:22},menuSectionEyebrow:{fontSize:8,fontWeight:'900',letterSpacing:1.55,color:c.accent,marginBottom:5},menuSectionTitle:{fontSize:20,fontWeight:'900',letterSpacing:-.35,color:c.text,marginBottom:10},
  logout:{marginTop:24,minHeight:50,borderRadius:15,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7},logoutText:{fontSize:10,fontWeight:'900',color:c.text},error:{color:c.danger,fontSize:11,marginTop:14,textAlign:'center'}
 });
