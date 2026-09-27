@@ -59,7 +59,7 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
 
  const updateHint=useCallback((dx:number)=>{
   if(pageIndex<0)return;
-  const direction:(-1|1)=dx>=0?1:-1;
+  const direction:(-1|1)=dx<0?1:-1;
   const hard=Math.abs(dx)>=HARD_DISTANCE;
   const immediate=pageAt(pageIndex+direction);
   const target=pageAt(pageIndex+direction*(hard?2:1))??immediate;
@@ -79,11 +79,11 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
    router.replace(target.href as never);
    hintKey.current='';setHint(null);cueOpacity.setValue(0);
    if(reducedMotion){dragX.setValue(0);navigating.current=false;return}
-   dragX.setValue(-direction*Math.min(width*.055,24));
+   dragX.setValue(direction*Math.min(width*.045,18));
    Animated.spring(dragX,{toValue:0,useNativeDriver:true,damping:19,stiffness:270,mass:.72}).start(()=>{navigating.current=false});
   };
   if(reducedMotion){finish();return}
-  Animated.timing(dragX,{toValue:direction*Math.min(width*.18,76),duration:105,easing:ease,useNativeDriver:true}).start(finish);
+  Animated.timing(dragX,{toValue:-direction*Math.min(width*.14,58),duration:120,easing:ease,useNativeDriver:true}).start(finish);
  },[cueOpacity,dragX,pageIndex,reducedMotion,reset,router,width]);
 
  const pan=useMemo(()=>PanResponder.create({
@@ -95,14 +95,14 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
   onPanResponderGrant:()=>{dragX.stopAnimation();cueOpacity.stopAnimation()},
   onPanResponderMove:(_,gesture)=>{
    if(navigating.current)return;
-   const resisted=Math.max(-58,Math.min(58,gesture.dx*.2));
+   const resisted=Math.max(-46,Math.min(46,gesture.dx*.16));
    dragX.setValue(resisted);updateHint(gesture.dx);
   },
   onPanResponderRelease:(_,gesture)=>{
    if(navigating.current)return;
    const distance=Math.abs(gesture.dx),velocity=Math.abs(gesture.vx);
    if(distance<SOFT_DISTANCE&&velocity<SOFT_VELOCITY){reset();return}
-   const direction:(-1|1)=gesture.dx>=0?1:-1;
+   const direction:(-1|1)=gesture.dx<0?1:-1;
    const hard=distance>=HARD_DISTANCE||velocity>=HARD_VELOCITY;
    navigate(direction,hard);
   },
@@ -110,9 +110,8 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
   onPanResponderTerminationRequest:()=>true,
  }),[cueOpacity,dragX,navigate,pageIndex,reset,updateHint]);
 
- const scale=dragX.interpolate({inputRange:[-60,0,60],outputRange:[.997,1,.997],extrapolate:'clamp'});
  return <View style={styles.root}>
-  <Animated.View {...pan.panHandlers} style={[styles.content,{transform:[{translateX:dragX},{scale}]}]}>{children}</Animated.View>
+  <Animated.View {...pan.panHandlers} style={[styles.content,{transform:[{translateX:dragX}]}]}>{children}</Animated.View>
   {hint?<Animated.View pointerEvents="none" style={[styles.cue,hint.direction>0?styles.cueRight:styles.cueLeft,{opacity:cueOpacity,backgroundColor:colors.navigation,borderColor:colors.border}]}>
    <Ionicons name={hint.direction>0?(hint.hard?'play-forward':'chevron-forward'):(hint.hard?'play-back':'chevron-back')} size={15} color={colors.brand}/>
    <View><Text style={[styles.cueKicker,{color:colors.muted}]}>{hint.hard?'SKIP TO':'SWIPE TO'}</Text><Text style={[styles.cueLabel,{color:colors.text}]}>{hint.label}</Text></View>
