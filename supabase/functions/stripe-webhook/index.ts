@@ -101,15 +101,24 @@ function connectSnapshot(account:Stripe.Account){
 Deno.serve(async req=>{
  if(req.method!=='POST')return json({error:'Method not allowed'},405);
  const secret=Deno.env.get('STRIPE_SECRET_KEY'),webhookSecret=Deno.env.get('STRIPE_WEBHOOK_SECRET'),connectWebhookSecret=Deno.env.get('STRIPE_CONNECT_WEBHOOK_SECRET'),url=Deno.env.get('SUPABASE_URL'),service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
- if(!secret||!webhookSecret||!url||!service)return json({error:'Webhook not configured'},503);
+ if(!secret||!url||!service)return json({error:'Webhook not configured'},503);
  const signature=req.headers.get('stripe-signature');if(!signature)return json({error:'Missing signature'},400);
  const body=await req.text();const stripe=new Stripe(secret,{apiVersion:'2025-07-30.basil'});
+ const db=createClient(url,service);
+ const candidates=[webhookSecret,connectWebhookSecret].filter((v):v is string=>Boolean(v));
+ const {data:vaultSecrets,error:vaultError}=await db.rpc('get_stripe_webhook_secrets');
+ if(!vaultError&&vaultSecrets&&typeof vaultSecrets==='object'){
+  const saved=vaultSecrets as {platform?:unknown;connect?:unknown};
+  for(const value of [saved.platform,saved.connect]){
+   if(typeof value==='string'&&value&&!candidates.includes(value))candidates.push(value);
+  }
+ }
+ if(!candidates.length)return json({error:'Webhook signing secret not configured'},503);
  let event:Stripe.Event|null=null;
- for(const candidate of [webhookSecret,connectWebhookSecret].filter((v):v is string=>Boolean(v))){
-  try{event=stripe.webhooks.constructEvent(body,signature,candidate);break;}catch{/* try the other registered endpoint secret */}
+ for(const candidate of candidates){
+  try{event=stripe.webhooks.constructEvent(body,signature,candidate);break;}catch{/* try the next registered endpoint secret */}
  }
  if(!event)return json({error:'Invalid signature'},400)
- const db=createClient(url,service);
  const {data:claimed,error:claimError}=await db.rpc('claim_stripe_event',{p_event_id:event.id,p_event_type:event.type});
  if(claimError)return json({error:'Webhook event could not be claimed'},500);
  if(!claimed)return new Response('ok');
