@@ -84,7 +84,7 @@ language plpgsql
 stable
 security definer
 set search_path=''
-as $
+as $profile$
 declare v jsonb; v_pref public.user_social_preferences; v_count bigint;
 begin
  if auth.uid() is null then raise exception 'Authentication required'; end if;
@@ -102,7 +102,7 @@ begin
  ) into v from public.public_profiles pp where pp.id=p_user and (pp.visibility='PUBLIC' or pp.id=auth.uid());
  return v;
 end
-$;
+$profile$;
 revoke all on function public.get_public_user_profile(uuid) from public,anon;
 grant execute on function public.get_public_user_profile(uuid) to authenticated;
 
@@ -231,7 +231,7 @@ create or replace function public.publish_clip(
 language plpgsql
 security definer
 set search_path=''
-as $
+as $clip$
 declare uid uuid:=auth.uid(); post_id uuid;
 begin
   if uid is null then raise exception 'Authentication required'; end if;
@@ -255,7 +255,7 @@ begin
   ) returning id into post_id;
   return post_id;
 end
-$;
+$clip$;
 revoke all on function public.publish_clip(uuid,text,text,text,uuid,uuid,uuid,integer) from public,anon;
 grant execute on function public.publish_clip(uuid,text,text,text,uuid,uuid,uuid,integer) to authenticated;
 
