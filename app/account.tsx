@@ -92,9 +92,21 @@ export default function Account(){
     const {data:{user}}=await supabase.auth.getUser();
     if(!user)return;
     const {getProfile}=await import('@/lib/marketplace');
-    const latest=await getProfile();
-    if(active&&latest)setProfile(latest);
-   }catch(e){if(active)setError(userFacingError(e,'Your latest profile details could not be refreshed.'))}
+    const [latest,myPosts,invites]=await Promise.all([
+     getProfile(),
+     listMyPosts(24),
+     listMyPostCollaborationInvites().catch(()=>[] as PostCollaborationInvite[])
+    ]);
+    const insights=await getMyPostInsights(myPosts.map(item=>item.id)).catch(()=>({} as Record<string,MyPostInsight>));
+    const coverPairs=await Promise.all(myPosts.slice(0,18).map(async item=>{
+     try{const media=await signedPostMedia(item.id);return [item.id,media[0]??null] as const;}catch{return [item.id,null] as const;}
+    }));
+    if(!active)return;
+    const covers=Object.fromEntries(coverPairs);
+    if(latest)setProfile(latest);
+    setCollabInvites(invites);
+    setPosts(myPosts.map(post=>({post,insight:insights[post.id]??emptyInsight(post.id),cover:covers[post.id]??null})));
+   }catch(e){if(active)setError(userFacingError(e,'Your latest profile and posts could not be refreshed.'))}
   })();
   return()=>{active=false};
  },[]));
@@ -178,7 +190,7 @@ export default function Account(){
       const activePromo=item.insight.promotionStatus==='ACTIVE'&&item.insight.promoteUntil&&new Date(item.insight.promoteUntil)>new Date();
       const promotable=item.post.status==='PUBLISHED'&&item.post.visibility==='PUBLIC';
       return <View key={item.post.id} style={s.postCard}>
-       <Pressable onPress={()=>router.push(('/social?postId='+item.post.id) as never)}>{item.cover?<Image source={{uri:item.cover}} style={s.postMedia}/>:<View style={s.postMediaEmpty}><Ionicons name={item.post.post_type==='BEFORE_AFTER'?'images-outline':'sparkles-outline'} size={28} color={colors.brand}/><Text style={s.postType}>{item.post.post_type.replaceAll('_',' ')}</Text></View>}</Pressable>
+       <Pressable onPress={()=>router.push(('/social?mode='+(item.post.content_format==='CLIP'?'clips':'posts')+'&postId='+item.post.id) as never)}>{item.cover?<Image source={{uri:item.cover}} style={s.postMedia}/>:<View style={s.postMediaEmpty}><Ionicons name={item.post.post_type==='BEFORE_AFTER'?'images-outline':'sparkles-outline'} size={28} color={colors.brand}/><Text style={s.postType}>{item.post.post_type.replaceAll('_',' ')}</Text></View>}</Pressable>
        <View style={s.postBody}><View style={s.postMetaRow}><Text style={s.postDate}>{new Date(item.post.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</Text><View style={[s.statusChip,item.post.status!=='PUBLISHED'&&{backgroundColor:colors.soft}]}><Text style={s.statusText}>{item.post.status}</Text></View></View>
        <Text numberOfLines={2} style={s.postCaption}>{item.post.caption||'Media post'}</Text>
        <View style={s.metricRow}><View style={s.metric}><Ionicons name="eye-outline" size={15} color={colors.muted}/><Text style={s.metricText}>{compact(item.insight.viewCount)}</Text></View><View style={s.metric}><Ionicons name="heart-outline" size={15} color={colors.muted}/><Text style={s.metricText}>{compact(item.insight.likeCount)}</Text></View><View style={s.metric}><Ionicons name="chatbubble-outline" size={14} color={colors.muted}/><Text style={s.metricText}>{compact(item.insight.commentCount)}</Text></View></View>
