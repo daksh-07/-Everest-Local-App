@@ -42,7 +42,7 @@ export function PostSoundPlayer({
   if(!playing)return;
   const endMs=track.endMs??(photoDurationMs?track.startMs+photoDurationMs:null);
   if(endMs==null)return;
-  const timer=setInterval(()=>{if(player.currentTime*1000>=endMs){player.pause();setPlaying(false)}},120);
+  const timer=setInterval(()=>{const now=player.currentTime*1000;if(now>=endMs){player.pause();setPlaying(false);return}let gain=Math.max(0,Math.min(1,track.volume));if(track.fadeInMs>0)gain*=Math.max(0,Math.min(1,(now-track.startMs)/track.fadeInMs));if(track.fadeOutMs>0)gain*=Math.max(0,Math.min(1,(endMs-now)/track.fadeOutMs));player.volume=track.muted?0:gain},120);
   return()=>clearInterval(timer);
  },[playing,track.endMs,track.startMs,photoDurationMs,player]);
 
