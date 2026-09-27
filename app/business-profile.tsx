@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,8 +10,9 @@ import {signedProductMedia} from '@/lib/product-commerce';
 import {approveMembership,buyPackage,createPublicMembershipEnrollment,intervalLabel,listPublicMembershipPlans,listPublicPackages,type BusinessPackage,type MembershipPlan} from '@/lib/growth';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
 import {getOrCreateBusinessInquiry} from '@/lib/messaging';
+import {websiteLabel} from '@/lib/social-expansion';
 
-type Business = { id:string; name:string; description:string|null; logo_url:string|null; cover_url:string|null; verification_status:string; suburb:string|null; city:string|null; state:string|null; opening_hours:Record<string,unknown>|null; phone:string|null; email:string|null };
+type Business = { id:string; name:string; description:string|null; logo_url:string|null; cover_url:string|null; verification_status:string; suburb:string|null; city:string|null; state:string|null; opening_hours:Record<string,unknown>|null; phone:string|null; email:string|null; website_url:string|null };
 type Service = { id:string; name:string; description:string|null; base_price:number|null; duration_minutes:number|null; delivery_mode:'LOCAL'|'REMOTE'|'BOTH'; service_booking_settings:{instant_booking_enabled:boolean}|{instant_booking_enabled:boolean}[]|null };
 type Product = { id:string; name:string; description:string|null; price:number; sale_price:number|null; delivery_eligible:boolean; pickup_available:boolean; status:string; product_images:{storage_path:string|null;url:string;is_primary:boolean;sort_order:number}[]; image_url?:string|null };
 
@@ -48,7 +49,7 @@ export default function BusinessProfile() {
     setError('');setWarning('');
     try {
       const [businessResult, serviceResult, productResult, reviewResult] = await Promise.all([
-        supabase.from('businesses').select('id,name,description,logo_url,cover_url,verification_status,suburb,city,state,opening_hours,phone,email').eq('id',id).single(),
+        supabase.from('businesses').select('id,name,description,logo_url,cover_url,verification_status,suburb,city,state,opening_hours,phone,email,website_url').eq('id',id).single(),
         supabase.from('services').select('id,name,description,base_price,duration_minutes,delivery_mode,service_booking_settings(instant_booking_enabled)').eq('business_id',id).eq('active',true).order('name'),
         supabase.from('products').select('id,name,description,price,sale_price,delivery_eligible,pickup_available,status,product_images(storage_path,url,is_primary,sort_order)').eq('business_id',id).in('status',['ACTIVE','OUT_OF_STOCK']).order('name').limit(8),
         supabase.from('reviews').select('rating').eq('business_id',id).limit(200),
@@ -110,6 +111,7 @@ export default function BusinessProfile() {
     <View style={s.socialRow}><Pressable disabled={followBusy||saving} onPress={()=>void toggleFollow()} style={[s.followButton,following&&s.followingButton]} accessibilityLabel={following?'Unfollow business':'Follow business'}><Ionicons name={following?'person':'person-add-outline'} size={18} color={following?colors.text:colors.onBrand}/><Text style={[s.followText,following&&{color:colors.text}]}>{following?'FOLLOWING':'FOLLOW'}</Text></Pressable><Pressable onPress={()=>router.push('/business-followers?businessId='+business.id+'&name='+encodeURIComponent(business.name))} style={s.followerCount} accessibilityLabel={`View ${followers} followers`}><Text style={s.followerNumber}>{followers}</Text><Text style={s.followerLabel}>FOLLOWERS</Text></Pressable><Pressable disabled={saving||followBusy} onPress={()=>void saveBusiness()} style={s.saveRow} accessibilityLabel={saved?'Remove business from saved':'Save business'}><Ionicons name={saved?'bookmark':'bookmark-outline'} size={19} color={colors.text}/><Text style={s.saveText}>{saved?'SAVED':'SAVE'}</Text></Pressable></View>
     {!!warning&&<Text style={s.warning}>{warning}</Text>}{!!error&&<Text style={s.error}>{error}</Text>}{!!message&&<Text style={s.message}>{message}</Text>}
     {business.description&&<Text style={s.copy}>{business.description}</Text>}
+    {business.website_url?<Pressable onPress={()=>void Linking.openURL(business.website_url!)} style={s.website}><Ionicons name="globe-outline" size={15} color={colors.accent}/><Text numberOfLines={1} style={s.websiteText}>{websiteLabel(business.website_url)}</Text><Ionicons name="open-outline" size={14} color={colors.muted}/></Pressable>:null}
     <View style={s.actions}><Pressable style={s.actionPrimary} onPress={()=>router.push('/request')}><Text style={s.actionPrimaryText}>POST REQUEST</Text></Pressable><Pressable style={s.actionSecondary} onPress={()=>router.push('/search?tab=SERVICES')}><Text style={s.actionSecondaryText}>VIEW SERVICES</Text></Pressable></View>
     <Text style={s.heading}>Services</Text>
     {services.length?services.map(item=>{const raw=item.service_booking_settings;const instant=Array.isArray(raw)?raw[0]?.instant_booking_enabled:raw?.instant_booking_enabled;return <Pressable accessibilityRole="button" accessibilityLabel={`${instant?'Instant book or request a quote for':'Request a quote for'} ${item.name}`} onPress={()=>router.push(instant?`/instant-book?serviceId=${item.id}&name=${encodeURIComponent(item.name)}`:`/request?serviceId=${item.id}`)} key={item.id} style={s.card}><View style={s.cardHeader}><Text style={s.cardTitle}>{item.name}</Text><Ionicons name="chevron-forward" size={17} color={colors.muted}/></View>{item.description&&<Text style={s.meta}>{item.description}</Text>}<Text style={s.price}>{item.delivery_mode==='REMOTE'?'🖥 Remote':item.delivery_mode==='BOTH'?'📍 Local + 🖥 Remote':'📍 Local'}{item.base_price!=null?` · From ${Number(item.base_price).toFixed(2)} AUD`:' · Quote required'}{item.duration_minutes? ` · ${item.duration_minutes} min`:''}</Text><Text style={[s.cardCta,instant&&{color:colors.brand}]}>{instant?'INSTANT BOOK':'REQUEST QUOTE'}</Text><Pressable disabled={!!growthBusy} onPress={(e)=>{e.stopPropagation();void askAboutService(item)}} style={s.askService}><Ionicons name="chatbubble-ellipses-outline" size={15} color={colors.brand}/><Text style={s.askServiceText}>{growthBusy==='ask:'+item.id?'OPENING…':'ASK ABOUT THIS SERVICE'}</Text></Pressable></Pressable>}):<View style={s.emptyInline}><Text style={s.meta}>No active services listed.</Text></View>}
