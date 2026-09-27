@@ -66,19 +66,19 @@ export function AmbientEdge({
  const tracer=(position:'top'|'right'|'bottom'|'left')=>{
   if(position==='top')return <>
    <Animated.View style={[styles.horizontal,{height:thickness,top:0,backgroundColor:edgeColor,opacity:topOpacity,transform:[{translateX:topX}]}]}/>
-   <Animated.View style={[styles.dot,{top:-1,backgroundColor:edgeColor,opacity:topOpacity,transform:[{translateX:dotTopX}]}]}/>
+   <Animated.View style={[styles.dot,{left:0,top:-1,backgroundColor:edgeColor,opacity:topOpacity,transform:[{translateX:dotTopX}]}]}/>
   </>;
   if(position==='right')return <>
    <Animated.View style={[styles.vertical,{width:thickness,right:0,backgroundColor:edgeColor,opacity:rightOpacity,transform:[{translateY:rightY}]}]}/>
-   <Animated.View style={[styles.dot,{right:-1,backgroundColor:edgeColor,opacity:rightOpacity,transform:[{translateY:dotRightY}]}]}/>
+   <Animated.View style={[styles.dot,{right:-1,top:0,backgroundColor:edgeColor,opacity:rightOpacity,transform:[{translateY:dotRightY}]}]}/>
   </>;
   if(position==='bottom')return <>
    <Animated.View style={[styles.horizontal,{height:thickness,bottom:0,backgroundColor:edgeColor,opacity:bottomOpacity,transform:[{translateX:bottomX}]}]}/>
-   <Animated.View style={[styles.dot,{bottom:-1,backgroundColor:edgeColor,opacity:bottomOpacity,transform:[{translateX:dotBottomX}]}]}/>
+   <Animated.View style={[styles.dot,{left:0,bottom:-1,backgroundColor:edgeColor,opacity:bottomOpacity,transform:[{translateX:dotBottomX}]}]}/>
   </>;
   return <>
    <Animated.View style={[styles.vertical,{width:thickness,left:0,backgroundColor:edgeColor,opacity:leftOpacity,transform:[{translateY:leftY}]}]}/>
-   <Animated.View style={[styles.dot,{left:-1,backgroundColor:edgeColor,opacity:leftOpacity,transform:[{translateY:dotLeftY}]}]}/>
+   <Animated.View style={[styles.dot,{left:-1,top:0,backgroundColor:edgeColor,opacity:leftOpacity,transform:[{translateY:dotLeftY}]}]}/>
   </>;
  };
 
@@ -97,5 +97,5 @@ const styles=StyleSheet.create({
  root:{position:'relative'},
  horizontal:{position:'absolute',left:0,width:28,borderRadius:999},
  vertical:{position:'absolute',top:0,height:28,borderRadius:999},
- dot:{position:'absolute',left:0,top:0,width:3,height:3,borderRadius:2},
+ dot:{position:'absolute',width:3,height:3,borderRadius:2},
 });
