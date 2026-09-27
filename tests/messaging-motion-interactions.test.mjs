@@ -74,7 +74,7 @@ test('message and action motion are present but bounded',()=>{
  assert.match(messages,/outputRange:\[mine\?7:-7,0\]/);
  assert.match(messages,/MessageActionMenu/);
  assert.match(messages,/Animated\.spring\(open/);
- assert.match(messages,/transform:\[\{scale:pressed\?1\.13:1\}\]/);
+ assert.match(messages,/transform:\[\{scale:pressed\?1\.07:1\}\]/);
 });
 
 test('conversation rows suppress browser selection only within their own scoped surface',()=>{

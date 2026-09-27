@@ -30,6 +30,7 @@ export interface SocialPost {
   music_volume?: number;
   original_volume?: number;
   cover_storage_path?: string|null;
+  post_media?: Array<{id:string;media_type:string}>;
   photo_duration_ms?: number|null;
 }
 
@@ -372,7 +373,7 @@ export async function listMyPosts(limit=24):Promise<SocialPost[]>{
   const {data:{user}}=await supabase.auth.getUser();
   if(!user)return [];
   const {data,error}=await supabase.from('posts')
-    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path,photo_duration_ms')
+    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path,photo_duration_ms,post_media(id,media_type)')
     .eq('author_id',user.id)
     .neq('status','REMOVED')
     .order('created_at',{ascending:false})

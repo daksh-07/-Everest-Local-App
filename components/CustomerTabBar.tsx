@@ -1,79 +1,48 @@
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
+import {useCallback,useMemo,useState} from 'react';
 import {Pressable,StyleSheet,View} from 'react-native';
-import {useCallback,useEffect,useMemo,useState} from 'react';
 import {Gesture,GestureDetector} from 'react-native-gesture-handler';
-import Animated,{runOnJS,useAnimatedStyle,useSharedValue,withSpring} from 'react-native-reanimated';
+import Animated,{runOnJS,useAnimatedStyle,useSharedValue,withSpring,type SharedValue} from 'react-native-reanimated';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {ui} from '@/lib/ui';
 import {useAppTheme} from '@/lib/theme';
-import {haptic} from '@/lib/haptics';
 import {useExperience} from '@/lib/experience';
+import {useCustomerPager,type CustomerPage} from '@/lib/customer-pager';
 import {useReducedMotion} from '@/lib/motion';
+import {haptic} from '@/lib/haptics';
 
-type IconName=keyof typeof Ionicons.glyphMap;
 type Destination='/'|'/social'|'/activity'|'/messages'|'/account';
-const NAV_SOFT_DISTANCE=34;
-const NAV_HARD_DISTANCE=112;
-const NAV_SOFT_VELOCITY=340;
-const NAV_HARD_VELOCITY=1050;
-const items:ReadonlyArray<{route:Destination;label:string;icon:IconName;activeIcon:IconName}>=[
- {route:'/',label:'Home',icon:'home-outline',activeIcon:'home'},
- {route:'/social',label:'Explore',icon:'compass-outline',activeIcon:'compass'},
- {route:'/activity',label:'My Everest',icon:'pulse-outline',activeIcon:'pulse'},
- {route:'/messages',label:'Messages',icon:'chatbubble-outline',activeIcon:'chatbubble'},
- {route:'/account',label:'Account',icon:'person-outline',activeIcon:'person'},
+const items=[
+ {route:'/' as Destination,label:'Home',icon:'home-outline' as const,selected:'home' as const,page:0 as CustomerPage},
+ {route:'/social' as Destination,label:'Explore',icon:'compass-outline' as const,selected:'compass' as const,page:1 as CustomerPage},
+ {route:'/activity' as Destination,label:'My Everest',icon:'pulse-outline' as const,selected:'pulse' as const,page:3 as CustomerPage},
+ {route:'/messages' as Destination,label:'Messages',icon:'chatbubble-outline' as const,selected:'chatbubble' as const,page:4 as CustomerPage},
+ {route:'/account' as Destination,label:'Account',icon:'person-outline' as const,selected:'person' as const,page:5 as CustomerPage},
 ];
-
-function CustomerTabItem({item,selected,colors,t,reducedMotion}:{item:(typeof items)[number];selected:boolean;colors:ReturnType<typeof useAppTheme>['colors'];t:ReturnType<typeof useExperience>['tokens'];reducedMotion:boolean}){
- const progress=useSharedValue(selected?1:0);
- useEffect(()=>{progress.value=reducedMotion?(selected?1:0):withSpring(selected?1:0,{damping:19,stiffness:280,mass:.68})},[progress,reducedMotion,selected]);
- const iconStyle=useAnimatedStyle(()=>({transform:[{translateY:-2*progress.value},{scale:1+.1*progress.value}]}));
- const labelStyle=useAnimatedStyle(()=>({transform:[{translateY:-progress.value}]}));
- return <Pressable accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{selected}} onPress={()=>{if(!selected){void haptic.selection();router.replace(item.route)}}} style={({pressed})=>[s.item,{minHeight:t.controls.touchTarget},pressed&&s.pressed]}>
-  <View style={s.itemContent}><View style={s.iconStage}><Animated.View style={iconStyle}><Ionicons name={selected?item.activeIcon:item.icon} size={selected?t.navigation.iconSize+1:t.navigation.iconSize} color={selected?colors.brand:colors.muted}/></Animated.View></View>
-   {t.navigation.showLabels?<Animated.Text numberOfLines={1} style={[s.label,{fontSize:t.navigation.labelSize,color:selected?colors.text:colors.muted},selected&&s.labelActive,labelStyle]}>{item.label}</Animated.Text>:null}
-  </View>
- </Pressable>;
+function TabIcon({index,progress,colors,label,icon,selected,showLabels,labelSize,iconSize}:{index:number;progress:SharedValue<number>;colors:ReturnType<typeof useAppTheme>['colors'];label:string;icon:(typeof items)[number]['icon'];selected:(typeof items)[number]['selected'];showLabels:boolean;labelSize:number;iconSize:number}){
+ const inactive=useAnimatedStyle(()=>{const p=progress.value<=1?progress.value:progress.value<=2?1:progress.value-1;return{opacity:1-Math.max(0,Math.min(1,1-Math.abs(p-index))),transform:[{scale:1-.06*Math.max(0,1-Math.abs(p-index))}]}});
+ const active=useAnimatedStyle(()=>{const p=progress.value<=1?progress.value:progress.value<=2?1:progress.value-1;const strength=Math.max(0,1-Math.abs(p-index));return{opacity:strength,transform:[{translateY:-2*strength},{scale:.94+.06*strength}]}});
+ return <View style={styles.iconContent}><View style={styles.icons}><Animated.View style={[styles.iconLayer,inactive]}><Ionicons name={icon} size={iconSize} color={colors.muted}/></Animated.View><Animated.View style={[styles.iconLayer,active]}><Ionicons name={selected} size={iconSize} color={colors.brand}/></Animated.View></View>{showLabels?<Animated.Text numberOfLines={1} style={[styles.label,{fontSize:labelSize,color:colors.text},active]}>{label}</Animated.Text>:null}</View>;
 }
-
-export function CustomerTabBar({active,hidden=false}:{active:Destination;hidden?:boolean}){
- const insets=useSafeAreaInsets();const {colors}=useAppTheme();const {tokens:t,mode}=useExperience();const reducedMotion=useReducedMotion();
- const activeIndex=Math.max(0,items.findIndex(item=>item.route===active));
- const indicatorIndex=useSharedValue(activeIndex);const startIndex=useSharedValue(activeIndex);const crossedIndex=useSharedValue(activeIndex);const visibility=useSharedValue(hidden?0:1);
- const [barWidth,setBarWidth]=useState(0);const [previewIndex,setPreviewIndex]=useState(activeIndex);
- const itemWidth=barWidth?Math.max(1,(barWidth-12)/items.length):1;
- useEffect(()=>{setPreviewIndex(activeIndex);crossedIndex.value=activeIndex;indicatorIndex.value=reducedMotion?activeIndex:withSpring(activeIndex,{damping:20,stiffness:290,mass:.7})},[activeIndex,crossedIndex,indicatorIndex,reducedMotion]);
- useEffect(()=>{visibility.value=reducedMotion?(hidden?0:1):withSpring(hidden?0:1,{damping:22,stiffness:280,mass:.72})},[hidden,reducedMotion,visibility]);
-
- const preview=useCallback((index:number)=>{setPreviewIndex(index);void haptic.selection()},[]);
- const navigateIndex=useCallback((index:number,hard:boolean)=>{const target=items[index];if(!target||target.route===active)return;if(hard)void haptic.medium();router.replace(target.route)},[active]);
- const cancel=useCallback(()=>setPreviewIndex(activeIndex),[activeIndex]);
- const gesture=useMemo(()=>Gesture.Pan().enabled(!hidden).activeOffsetX([-10,10]).failOffsetY([-12,12])
-  .onBegin(()=>{startIndex.value=activeIndex;crossedIndex.value=activeIndex})
-  .onUpdate(event=>{
-   const raw=startIndex.value-(event.translationX/itemWidth);const clamped=Math.max(0,Math.min(items.length-1,raw));indicatorIndex.value=clamped;
-   const next=Math.round(clamped);if(next!==crossedIndex.value){crossedIndex.value=next;runOnJS(preview)(next)}
-  })
-  .onEnd(event=>{
-   const distance=Math.abs(event.translationX),velocity=Math.abs(event.velocityX);
-   if(distance<NAV_SOFT_DISTANCE&&velocity<NAV_SOFT_VELOCITY){indicatorIndex.value=withSpring(activeIndex,{damping:20,stiffness:300,mass:.7});runOnJS(cancel)();return}
-   const direction=event.translationX<0?1:-1;const hard=distance>=NAV_HARD_DISTANCE||velocity>=NAV_HARD_VELOCITY;
-   const target=Math.max(0,Math.min(items.length-1,startIndex.value+direction*(hard?2:1)));
-   indicatorIndex.value=withSpring(target,{damping:20,stiffness:290,mass:.7},finished=>{if(finished)runOnJS(navigateIndex)(target,hard)});
-   if(target!==crossedIndex.value){crossedIndex.value=target;runOnJS(preview)(target)}
-  })
-  .onFinalize((_event,success)=>{if(!success){indicatorIndex.value=withSpring(activeIndex,{damping:20,stiffness:300,mass:.7});runOnJS(cancel)()}}),[activeIndex,cancel,crossedIndex,hidden,indicatorIndex,itemWidth,navigateIndex,preview,startIndex]);
-
- const shellStyle=useAnimatedStyle(()=>({opacity:visibility.value,transform:[{translateY:(1-visibility.value)*96}]}));
- const pillStyle=useAnimatedStyle(()=>({transform:[{translateX:indicatorIndex.value*itemWidth+6+(itemWidth-48)/2}]}),[itemWidth]);
- const lineStyle=useAnimatedStyle(()=>({transform:[{translateX:indicatorIndex.value*itemWidth+6+(itemWidth-22)/2}]}),[itemWidth]);
- const bottom=Math.max(10,insets.bottom?insets.bottom+4:14);
- return <Animated.View pointerEvents={hidden?'none':'auto'} style={[s.shell,{bottom},shellStyle]}><GestureDetector gesture={gesture}><View onLayout={e=>setBarWidth(e.nativeEvent.layout.width)} style={[s.bar,{height:t.navigation.height,backgroundColor:colors.navigation,borderColor:colors.border,borderWidth:t.surfaces.borderWidth,shadowOpacity:Math.max(.12,t.surfaces.shadowOpacity)}]}>
-  {barWidth>0?<Animated.View pointerEvents="none" style={[s.movingPill,{backgroundColor:mode==='PULSE'?colors.accentSoft:colors.soft},pillStyle]}/>:null}
-  {barWidth>0?<Animated.View pointerEvents="none" style={[s.movingIndicator,{backgroundColor:colors.brand},lineStyle]}/>:null}
-  {items.map((item,index)=><CustomerTabItem key={item.route} item={item} selected={index===previewIndex} colors={colors} t={t} reducedMotion={reducedMotion}/>) }
- </View></GestureDetector></Animated.View>;
+export function CustomerTabBar({active,hidden=false,shell=false}:{active:Destination;hidden?:boolean;shell?:boolean}){
+ const pager=useCustomerPager();const insets=useSafeAreaInsets();const {colors}=useAppTheme();const {tokens:t}=useExperience();const reduced=useReducedMotion();
+ const initial=Math.max(0,items.findIndex(item=>item.route===active));
+ const fallback=useSharedValue(initial);const progress=pager?.progress??fallback;
+ const [barWidth,setBarWidth]=useState(0);const start=useSharedValue(0);
+ const navigate=useCallback((index:number)=>{const item=items[index];if(!item)return;if(pager)pager.navigate(item.page);else{void haptic.selection();router.replace(item.route)}},[pager]);
+ const gesture=useMemo(()=>Gesture.Pan().activeOffsetX([-12,12]).failOffsetY([-13,13])
+  .onBegin(()=>{const p=progress.value;start.value=p<=1?p:p<=2?1:p-1})
+  .onUpdate(event=>{if(!pager)return;const tab=Math.max(0,Math.min(4,start.value-event.translationX/Math.max(1,(barWidth-12)/5)));progress.value=tab<=1?tab:tab+1})
+  .onEnd(event=>{if(!pager)return;const shift=event.translationX/Math.max(1,(barWidth-12)/5);const raw=Math.max(0,Math.min(4,start.value-shift-event.velocityX/1800));const index=Math.round(raw);runOnJS(navigate)(index)})
+  .onFinalize((_event,success)=>{if(!success&&pager){const selected=pager.selected;progress.value=withSpring(selected,{damping:23,stiffness:280})}}),[barWidth,navigate,pager,progress,start]);
+ const lineStyle=useAnimatedStyle(()=>{const p=progress.value<=1?progress.value:progress.value<=2?1:progress.value-1;return{transform:[{translateX:6+p*(barWidth-12)/5+(barWidth-12)/10-12}]}});
+ const backgroundStyle=useAnimatedStyle(()=>{const p=progress.value<=1?progress.value:progress.value<=2?1:progress.value-1;return{transform:[{translateX:6+p*(barWidth-12)/5+(barWidth-12)/10-24}]}});
+ if(pager&&!shell)return null;
+ const bottom=Math.max(9,insets.bottom?insets.bottom+3:12);
+ return <View pointerEvents={hidden?'none':'auto'} style={[styles.shell,{bottom,opacity:hidden?0:1}]}><GestureDetector gesture={gesture}><View onLayout={event=>setBarWidth(event.nativeEvent.layout.width)} style={[styles.bar,{height:t.navigation.height,backgroundColor:colors.navigation,shadowOpacity:reduced?.12:.18}]}>
+  {barWidth?<Animated.View pointerEvents="none" style={[styles.highlight,{backgroundColor:colors.soft},backgroundStyle]}/>:null}
+  {barWidth?<Animated.View pointerEvents="none" style={[styles.indicator,{backgroundColor:colors.brand},lineStyle]}/>:null}
+  {items.map((item,index)=><Pressable key={item.route} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{selected:item.route===active}} onPress={()=>navigate(index)} style={({pressed})=>[styles.item,pressed&&styles.pressed]}><TabIcon index={index} progress={progress} colors={colors} label={item.label} icon={item.icon} selected={item.selected} showLabels={t.navigation.showLabels} labelSize={t.navigation.labelSize} iconSize={t.navigation.iconSize}/></Pressable>)}
+ </View></GestureDetector></View>;
 }
-
-const s=StyleSheet.create({shell:{position:'absolute',left:12,right:12,zIndex:70,alignItems:'center'},bar:{width:'100%',maxWidth:Math.min(ui.navMaxWidth,620),flexDirection:'row',alignItems:'center',justifyContent:'space-around',borderRadius:28,paddingHorizontal:6,shadowColor:'#000',shadowRadius:24,shadowOffset:{width:0,height:10},elevation:18,overflow:'hidden'},item:{flex:1,minWidth:0,minHeight:58,alignItems:'center',justifyContent:'center',paddingHorizontal:2},itemContent:{alignItems:'center',justifyContent:'center'},iconStage:{minWidth:46,height:32,paddingHorizontal:10,borderRadius:16,alignItems:'center',justifyContent:'center',overflow:'hidden'},movingPill:{position:'absolute',top:12,left:0,width:48,height:32,borderRadius:16,zIndex:0},movingIndicator:{position:'absolute',top:2,left:0,width:22,height:3,borderRadius:2,zIndex:2},pressed:{opacity:.62,transform:[{scale:.96}]},label:{maxWidth:'100%',fontSize:10,lineHeight:14,fontWeight:'700',marginTop:2},labelActive:{fontWeight:'900'}});
+const styles=StyleSheet.create({shell:{position:'absolute',left:12,right:12,zIndex:70,alignItems:'center'},bar:{width:'100%',maxWidth:620,flexDirection:'row',alignItems:'center',borderRadius:27,paddingHorizontal:6,shadowColor:'#000',shadowRadius:20,shadowOffset:{width:0,height:9},elevation:14,overflow:'hidden'},item:{flex:1,height:'100%',alignItems:'center',justifyContent:'center'},pressed:{opacity:.7},iconContent:{alignItems:'center',justifyContent:'center'},icons:{width:30,height:29,alignItems:'center',justifyContent:'center'},iconLayer:{position:'absolute',alignItems:'center',justifyContent:'center'},label:{fontWeight:'800',marginTop:2,maxWidth:70,textAlign:'center'},highlight:{position:'absolute',top:10,width:48,height:38,borderRadius:19},indicator:{position:'absolute',top:2,width:24,height:3,borderRadius:2}});

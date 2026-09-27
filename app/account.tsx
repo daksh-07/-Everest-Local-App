@@ -1,9 +1,8 @@
-import {useCallback,useEffect,useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {ActivityIndicator,Image,Linking,Modal,Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
-import {useFocusEffect} from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import type {Profile} from '@/lib/types';
 import type {AccessContext} from '@/lib/access';
@@ -11,13 +10,13 @@ import {userFacingError} from '@/lib/errors';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {ModeSwitcher} from '@/components/ModeSwitcher';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
+import {useCustomerRouteHost} from '@/lib/customer-pager';
 import {PostMediaImage} from '@/components/PostMediaImage';
-import {AmbientEdge} from '@/components/AmbientEdge';
 import {
  getFollowCounts,getMyPostInsights,listMyPostCollaborationInvites,listMyPosts,respondPostCollaboration,
  type MyPostInsight,type PostCollaborationInvite,type SocialPost
 } from '@/lib/social';
-import {signedPostMediaBatch} from '@/lib/request-post-media';
+import {signedPostMedia,signedPostMediaResilient} from '@/lib/request-post-media';
 import {haptic} from '@/lib/haptics';
 
 type AccountRoute='/requests'|'/quotes'|'/bookings'|'/orders'|'/messages'|'/reviews'|'/notifications'|'/settings'|'/saved'|'/create'|'/archive'|'/highlights';
@@ -51,12 +50,13 @@ function websiteHref(value:string){
  const clean=value.trim();
  return /^https:\/\//i.test(clean)?clean:'https://'+clean.replace(/^http:\/\//i,'');
 }
-async function loadPostCovers(posts:SocialPost[]){
- const signed=await signedPostMediaBatch(posts.slice(0,18).map(item=>item.id),{strict:true});
+async function loadPostCovers(posts:SocialPost[],onPartialFailure?:()=>void){
+ const signed=await signedPostMediaResilient(posts.slice(0,18).map(item=>item.id),{onPartialFailure});
  return Object.fromEntries(posts.slice(0,18).map(item=>[item.id,signed[item.id]?.[0]??null]));
 }
 
-export default function Account(){
+export default function Account(){const hosted=useCustomerRouteHost();return hosted?null:<AccountScreen/>}
+export function AccountScreen({visible=true}:{visible?:boolean}={}){
  const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
  const [profile,setProfile]=useState<Profile|null>(null);const [access,setAccess]=useState<AccessContext|null>(null);
  const [posts,setPosts]=useState<PostCard[]>([]);const [collabInvites,setCollabInvites]=useState<PostCollaborationInvite[]>([]);
@@ -88,14 +88,16 @@ export default function Account(){
     listMyPostCollaborationInvites().catch(()=>[] as PostCollaborationInvite[])
    ]);
    const insights=await getMyPostInsights(myPosts.map(item=>item.id)).catch(()=>({} as Record<string,MyPostInsight>));
-   const covers=await loadPostCovers(myPosts).catch(()=>{setError('Some post photos could not be loaded. Open a post to retry.');return {} as Record<string,string|null>});
+   const covers=await loadPostCovers(myPosts,()=>setError('Some post photos could not be loaded. Open a post to retry.')).catch(()=>{setError('Some post photos could not be loaded. Open a post to retry.');return {} as Record<string,string|null>});
    setCollabInvites(invites);
    setPosts(myPosts.map(post=>({post,insight:insights[post.id]??emptyInsight(post.id),cover:covers[post.id]??null})));
   }catch(e){setError(userFacingError(e,'We could not load your account right now.'))}
   finally{setLoading(false);}
  }
- useEffect(()=>{void load()},[]);
- useFocusEffect(useCallback(()=>{
+ const lastRefresh=useRef(0);
+ useEffect(()=>{if(!visible||Date.now()-lastRefresh.current<60_000)return;
+  if(!lastRefresh.current){lastRefresh.current=Date.now();void load();return}
+  lastRefresh.current=Date.now();
   let active=true;
   void (async()=>{
    try{
@@ -110,7 +112,7 @@ export default function Account(){
      listMyPostCollaborationInvites().catch(()=>[] as PostCollaborationInvite[])
     ]);
     const insights=await getMyPostInsights(myPosts.map(item=>item.id)).catch(()=>({} as Record<string,MyPostInsight>));
-    const covers=await loadPostCovers(myPosts).catch(()=>{if(active)setError('Some post photos could not be refreshed.');return {} as Record<string,string|null>});
+    const covers=await loadPostCovers(myPosts,()=>{if(active)setError('Some post photos could not be refreshed.')}).catch(()=>{if(active)setError('Some post photos could not be refreshed.');return {} as Record<string,string|null>});
     if(!active)return;
     if(latest)setProfile(latest);
     setCollabInvites(invites);
@@ -118,7 +120,7 @@ export default function Account(){
    }catch(e){if(active)setError(userFacingError(e,'Your latest profile and posts could not be refreshed.'))}
   })();
   return()=>{active=false};
- },[]));
+ },[visible]);
 
  async function chooseAvatar(){
   if(!profile||uploadingAvatar)return;setPhotoSheetOpen(false);setError('');setUploadingAvatar(true);
@@ -165,7 +167,7 @@ export default function Account(){
 
  return <SafeAreaView style={s.safe} edges={['top']}><View style={{flex:1}}>
   <ScrollView contentContainerStyle={s.page} showsVerticalScrollIndicator={false}>
-   <View style={s.top}><View><Text style={s.eyebrow}>MY EVEREST</Text><Text style={s.topTitle}>Account</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Open account menu" onPress={()=>{void haptic.selection();setMenuOpen(true)}} style={s.topAction}><Ionicons name="menu-outline" size={24} color={colors.text}/></Pressable></View>
+   <View style={s.top}><View><Text style={s.eyebrow}>EVEREST LOCAL</Text><Text style={s.topTitle}>Your profile</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Open account menu" onPress={()=>{void haptic.selection();setMenuOpen(true)}} style={s.topAction}><Ionicons name="ellipsis-horizontal" size={23} color={colors.text}/></Pressable></View>
    {loading?<ActivityIndicator color={colors.brand} style={{marginTop:70}}/>:profile?<>
     <View style={s.profile}>
      <View style={s.profileGlow}/>
@@ -182,27 +184,27 @@ export default function Account(){
      <View style={s.heroActions}><Pressable onPress={()=>router.push('/edit-profile')} style={s.secondaryAction}><Ionicons name="create-outline" size={16} color={colors.text}/><Text style={s.secondaryText}>Edit profile</Text></Pressable><Pressable onPress={()=>router.push('/create')} style={s.primaryAction}><Ionicons name="add" size={18} color={colors.onBrand}/><Text style={s.primaryText}>Create post</Text></Pressable></View>
     </View>
 
-    <AmbientEdge borderRadius={22} continuous style={s.statsEdge}>
+    <View style={s.statsEdge}>
      <View style={s.stats}>
-      <View style={s.stat}><Text style={s.statValue}>{posts.length}</Text><Text style={s.statLabel}>POSTS</Text></View>
+      <View style={s.stat}><Text style={s.statValue}>{posts.length>=24?'24+':posts.length}</Text><Text style={s.statLabel}>Posts</Text></View>
       <View style={s.statDivider}/>
-      <Pressable accessibilityRole="button" accessibilityLabel={connectionCount+' connections'} onPress={()=>{void haptic.selection();router.push('/connections')}} style={s.stat}><Text style={s.statValue}>{compact(connectionCount)}</Text><Text style={s.statLabel}>CONNECTIONS</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={connectionCount+' connections'} onPress={()=>{void haptic.selection();router.push('/connections')}} style={s.stat}><Text style={s.statValue}>{compact(connectionCount)}</Text><Text style={s.statLabel}>Connections</Text></Pressable>
       <View style={s.statDivider}/>
-      <View style={s.stat}><Text style={s.statValue}>{compact(followingCount)}</Text><Text style={s.statLabel}>FOLLOWING</Text></View>
+      <View style={s.stat}><Text style={s.statValue}>{compact(followingCount)}</Text><Text style={s.statLabel}>Following</Text></View>
      </View>
-    </AmbientEdge>
+    </View>
 
     {collabInvites.length?<View style={s.sectionBlock}><View style={s.sectionHead}><View><Text style={s.sectionEyebrow}>TOGETHER ON EVEREST</Text><Text style={s.section}>Collab requests</Text></View><View style={s.countPill}><Text style={s.countPillText}>{collabInvites.length}</Text></View></View>
      {collabInvites.map(invite=><View key={invite.id} style={s.collabCard}><View style={s.collabIcon}><Ionicons name="people-outline" size={20} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.collabTitle}>{invite.business_name||invite.inviter_name}</Text><Text numberOfLines={2} style={s.collabCopy}>{invite.inviter_name} wants to publish this post together{invite.caption?': '+invite.caption:''}</Text><View style={s.collabActions}><Pressable disabled={collabBusy===invite.id} onPress={()=>void respondCollab(invite.id,false)} style={s.decline}><Text style={s.declineText}>Decline</Text></Pressable><Pressable disabled={collabBusy===invite.id} onPress={()=>void respondCollab(invite.id,true)} style={s.accept}>{collabBusy===invite.id?<ActivityIndicator size="small" color={colors.onBrand}/>:<Text style={s.acceptText}>Accept collab</Text>}</Pressable></View></View></View>)}
     </View>:null}
 
     <View style={s.sectionBlock}>
-     <View style={s.sectionHead}><View><Text style={s.sectionEyebrow}>CREATOR SPACE</Text><Text style={s.section}>Your posts</Text></View><Pressable onPress={()=>router.push('/create-post')} style={s.miniAdd}><Ionicons name="add" size={20} color={colors.text}/></Pressable></View>
+     <View style={s.sectionHead}><View><Text style={s.sectionEyebrow}>SHARED WITH YOUR COMMUNITY</Text><Text style={s.section}>Posts</Text></View><Pressable onPress={()=>router.push('/create-post')} style={s.miniAdd}><Ionicons name="add" size={20} color={colors.text}/></Pressable></View>
      {posts.length?<View style={s.postGrid}>{posts.map(item=>{
       const activePromo=item.insight.promotionStatus==='ACTIVE'&&item.insight.promoteUntil&&new Date(item.insight.promoteUntil)>new Date();
       const promotable=item.post.status==='PUBLISHED'&&item.post.visibility==='PUBLIC';
       return <View key={item.post.id} style={s.postCard}>
-       <Pressable onPress={()=>router.push(('/social?mode='+(item.post.content_format==='CLIP'?'clips':'posts')+'&postId='+item.post.id) as never)}>{item.cover?<PostMediaImage postId={item.post.id} uri={item.cover} style={s.postMedia}/>:<View style={s.postMediaEmpty}><Ionicons name={item.post.post_type==='BEFORE_AFTER'?'images-outline':'sparkles-outline'} size={28} color={colors.brand}/><Text style={s.postType}>{item.post.post_type.replaceAll('_',' ')}</Text></View>}</Pressable>
+       {item.cover?<Pressable onPress={()=>router.push(('/social?mode='+(item.post.content_format==='CLIP'?'clips':'posts')+'&postId='+item.post.id) as never)}><PostMediaImage postId={item.post.id} uri={item.cover} style={s.postMedia}/></Pressable>:item.post.post_media?.some(media=>media.media_type==='IMAGE')?<Pressable accessibilityRole="button" accessibilityLabel="Retry post photo" onPress={()=>void signedPostMedia(item.post.id,{force:true,strict:true}).then(urls=>{if(!urls[0])throw new Error('Photo unavailable');setPosts(current=>current.map(post=>post.post.id===item.post.id?{...post,cover:urls[0]}:post));setError('')}).catch(()=>setError('Photo unavailable. Please try again.'))} style={s.postMediaEmpty}><Ionicons name="image-outline" size={27} color={colors.muted}/><Text style={s.postType}>Photo unavailable · tap to retry</Text></Pressable>:<View style={s.postMediaEmpty}><Ionicons name={item.post.post_type==='BEFORE_AFTER'?'images-outline':'sparkles-outline'} size={28} color={colors.brand}/><Text style={s.postType}>{item.post.post_type.replaceAll('_',' ')}</Text></View>}
        <View style={s.postBody}><View style={s.postMetaRow}><Text style={s.postDate}>{new Date(item.post.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</Text><View style={[s.statusChip,item.post.status!=='PUBLISHED'&&{backgroundColor:colors.soft}]}><Text style={s.statusText}>{item.post.status}</Text></View></View>
        <Text numberOfLines={2} style={s.postCaption}>{item.post.caption||'Media post'}</Text>
        <View style={s.metricRow}><View style={s.metric}><Ionicons name="eye-outline" size={15} color={colors.muted}/><Text style={s.metricText}>{compact(item.insight.viewCount)}</Text></View><View style={s.metric}><Ionicons name="heart-outline" size={15} color={colors.muted}/><Text style={s.metricText}>{compact(item.insight.likeCount)}</Text></View><View style={s.metric}><Ionicons name="chatbubble-outline" size={14} color={colors.muted}/><Text style={s.metricText}>{compact(item.insight.commentCount)}</Text></View></View>
@@ -286,20 +288,20 @@ export default function Account(){
 const createStyles=(c:ThemeColors)=>StyleSheet.create({
  safe:{flex:1,backgroundColor:c.canvas},page:{paddingHorizontal:16,paddingTop:8,paddingBottom:145,maxWidth:760,width:'100%',alignSelf:'center'},
  top:{height:62,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},eyebrow:{fontSize:9,fontWeight:'900',letterSpacing:1.8,color:c.accent},topTitle:{fontSize:29,fontWeight:'900',letterSpacing:-.7,color:c.text,marginTop:1},topAction:{width:44,height:44,borderRadius:22,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},
- profile:{marginTop:10,backgroundColor:c.elevated,borderRadius:28,padding:22,alignItems:'center',borderWidth:1,borderColor:c.border,overflow:'hidden'},profileGlow:{position:'absolute',top:-80,right:-50,width:180,height:180,borderRadius:90,backgroundColor:c.soft,opacity:.75},
+ profile:{marginTop:18,paddingHorizontal:2,paddingVertical:14,alignItems:'flex-start'},profileGlow:{display:'none'},
  avatarWrap:{width:94,height:94,borderRadius:47,position:'relative',overflow:'hidden',borderWidth:3,borderColor:c.canvas},avatar:{width:'100%',height:'100%',borderRadius:47,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},avatarImage:{width:'100%',height:'100%',borderRadius:47},avatarBusy:{...StyleSheet.absoluteFillObject,backgroundColor:c.overlay,alignItems:'center',justifyContent:'center'},avatarHint:{position:'absolute',right:2,bottom:2,width:25,height:25,borderRadius:13,backgroundColor:c.elevated,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},
- name:{color:c.text,fontSize:25,fontWeight:'900',marginTop:13,textAlign:'center'},copy:{color:c.muted,fontSize:12,lineHeight:18,textAlign:'center',marginTop:4},roles:{marginTop:10,borderRadius:14,backgroundColor:c.soft,paddingHorizontal:10,paddingVertical:6,flexDirection:'row',alignItems:'center',gap:6},roleDot:{width:6,height:6,borderRadius:3,backgroundColor:c.brand},rolesText:{fontSize:9,fontWeight:'900',letterSpacing:.4,color:c.text},
- bioText:{fontSize:12,lineHeight:19,fontWeight:'600',color:c.text,textAlign:'center',marginTop:6,maxWidth:'90%'},
- websiteCard:{width:'100%',minHeight:57,borderRadius:17,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,paddingHorizontal:11,paddingVertical:9,flexDirection:'row',alignItems:'center',gap:9,marginTop:14},
- websiteIcon:{width:34,height:34,borderRadius:12,backgroundColor:c.elevated,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:c.border},
+ name:{color:c.text,fontSize:28,fontWeight:'800',letterSpacing:-.7,marginTop:14,textAlign:'left'},copy:{color:c.muted,fontSize:12,lineHeight:18,textAlign:'left',marginTop:5},roles:{marginTop:13,flexDirection:'row',alignItems:'center',gap:7},roleDot:{width:6,height:6,borderRadius:3,backgroundColor:c.brand},rolesText:{fontSize:11,fontWeight:'600',color:c.textSecondary},
+ bioText:{fontSize:14,lineHeight:21,fontWeight:'500',color:c.text,textAlign:'left',marginTop:10,maxWidth:540},
+ websiteCard:{minHeight:38,paddingVertical:4,flexDirection:'row',alignItems:'center',gap:7,marginTop:9},
+ websiteIcon:{width:22,height:26,alignItems:'center',justifyContent:'center'},
  websiteKicker:{fontSize:7,fontWeight:'900',letterSpacing:1.05,color:c.muted},
  websiteText:{fontSize:11,fontWeight:'900',color:c.brand,marginTop:2},
- websiteOpen:{width:30,height:30,borderRadius:10,backgroundColor:c.elevated,alignItems:'center',justifyContent:'center'},
+ websiteOpen:{width:25,height:27,alignItems:'center',justifyContent:'center'},
  heroActions:{width:'100%',flexDirection:'row',gap:9,marginTop:18},secondaryAction:{flex:1,minHeight:47,borderRadius:15,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:6},secondaryText:{fontSize:10,fontWeight:'900',color:c.text},primaryAction:{flex:1,minHeight:47,borderRadius:15,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:6,paddingHorizontal:14},primaryText:{fontSize:10,fontWeight:'900',letterSpacing:.4,color:c.onBrand},
- statsEdge:{marginTop:12},stats:{minHeight:84,borderRadius:22,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,flexDirection:'row',alignItems:'center',justifyContent:'space-around',paddingHorizontal:8},stat:{flex:1,alignItems:'center'},statValue:{fontSize:20,fontWeight:'900',color:c.text},statLabel:{fontSize:7,fontWeight:'900',letterSpacing:1.1,color:c.muted,marginTop:4},statDivider:{width:1,height:34,backgroundColor:c.border},
+ statsEdge:{marginTop:12,paddingTop:17,borderTopWidth:1,borderTopColor:c.border},stats:{minHeight:67,flexDirection:'row',alignItems:'center',justifyContent:'space-around'},stat:{flex:1,alignItems:'center'},statValue:{fontSize:20,fontWeight:'800',color:c.text},statLabel:{fontSize:11,fontWeight:'500',color:c.muted,marginTop:4},statDivider:{width:1,height:30,backgroundColor:c.border},
  sectionBlock:{marginTop:27},sectionHead:{flexDirection:'row',alignItems:'flex-end',justifyContent:'space-between',marginBottom:10},sectionEyebrow:{fontSize:8,fontWeight:'900',letterSpacing:1.6,color:c.accent,marginBottom:4},section:{fontSize:22,fontWeight:'900',letterSpacing:-.4,color:c.text,marginBottom:10},countPill:{minWidth:28,height:28,borderRadius:14,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:9},countPillText:{fontSize:10,fontWeight:'900',color:c.onBrand},miniAdd:{width:38,height:38,borderRadius:19,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center',marginBottom:7},
  collabCard:{borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:14,flexDirection:'row',gap:11,marginBottom:9},collabIcon:{width:42,height:42,borderRadius:15,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},collabTitle:{fontSize:14,fontWeight:'900',color:c.text},collabCopy:{fontSize:10,lineHeight:16,color:c.muted,marginTop:3},collabActions:{flexDirection:'row',gap:8,marginTop:11},decline:{height:38,borderRadius:12,borderWidth:1,borderColor:c.border,paddingHorizontal:14,alignItems:'center',justifyContent:'center'},declineText:{fontSize:9,fontWeight:'900',color:c.text},accept:{height:38,borderRadius:12,backgroundColor:c.brand,paddingHorizontal:14,alignItems:'center',justifyContent:'center'},acceptText:{fontSize:9,fontWeight:'900',color:c.onBrand},
- postGrid:{gap:11},postCard:{borderRadius:22,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,overflow:'hidden'},postMedia:{width:'100%',aspectRatio:1.55,backgroundColor:c.soft},postMediaEmpty:{width:'100%',aspectRatio:1.8,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',gap:8},postType:{fontSize:8,fontWeight:'900',letterSpacing:1.1,color:c.muted},postBody:{padding:14},postMetaRow:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},postDate:{fontSize:9,fontWeight:'800',color:c.muted},statusChip:{borderRadius:9,backgroundColor:c.soft,paddingHorizontal:7,paddingVertical:4},statusText:{fontSize:7,fontWeight:'900',letterSpacing:.7,color:c.text},postCaption:{fontSize:14,lineHeight:20,fontWeight:'800',color:c.text,marginTop:8},metricRow:{flexDirection:'row',gap:14,marginTop:12},metric:{flexDirection:'row',alignItems:'center',gap:4},metricText:{fontSize:10,fontWeight:'900',color:c.text},promote:{minHeight:42,borderRadius:13,backgroundColor:c.brand,marginTop:13,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7},promoteText:{fontSize:9,fontWeight:'900',letterSpacing:.3,color:c.onBrand},activePromo:{minHeight:38,borderRadius:12,backgroundColor:c.soft,marginTop:13,paddingHorizontal:11,alignItems:'center',flexDirection:'row',gap:6},activePromoText:{fontSize:9,fontWeight:'900',color:c.brand},notPromotable:{marginTop:11},notPromotableText:{fontSize:9,fontWeight:'800',color:c.muted},
+ postGrid:{flexDirection:'row',flexWrap:'wrap',gap:9},postCard:{width:'48%',flexGrow:1,maxWidth:'49%',backgroundColor:c.surface,overflow:'hidden'},postMedia:{width:'100%',aspectRatio:1,backgroundColor:c.soft},postMediaEmpty:{width:'100%',aspectRatio:1,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',gap:8},postType:{fontSize:8,fontWeight:'800',letterSpacing:.6,color:c.muted},postBody:{padding:10},postMetaRow:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},postDate:{fontSize:9,fontWeight:'600',color:c.muted},statusChip:{borderRadius:9,backgroundColor:c.soft,paddingHorizontal:6,paddingVertical:3},statusText:{fontSize:7,fontWeight:'800',letterSpacing:.4,color:c.text},postCaption:{fontSize:12,lineHeight:17,fontWeight:'600',color:c.text,marginTop:8},metricRow:{flexDirection:'row',gap:11,marginTop:10,flexWrap:'wrap'},metric:{flexDirection:'row',alignItems:'center',gap:3},metricText:{fontSize:10,fontWeight:'700',color:c.text},promote:{minHeight:34,borderRadius:10,backgroundColor:c.brand,marginTop:10,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:5},promoteText:{fontSize:9,fontWeight:'800',color:c.onBrand},activePromo:{minHeight:32,marginTop:10,alignItems:'center',flexDirection:'row',gap:5},activePromoText:{fontSize:9,fontWeight:'700',color:c.brand},notPromotable:{marginTop:10},notPromotableText:{fontSize:9,fontWeight:'600',color:c.muted},
  emptyPosts:{borderRadius:22,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:24,alignItems:'center'},emptyPostIcon:{width:50,height:50,borderRadius:18,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},emptyPostTitle:{fontSize:16,fontWeight:'900',color:c.text,marginTop:12},emptyPostCopy:{fontSize:11,lineHeight:18,color:c.muted,textAlign:'center',marginTop:5},emptyPostCta:{fontSize:9,fontWeight:'900',letterSpacing:.6,color:c.brand,marginTop:14},
  roleCard:{backgroundColor:c.surface,borderRadius:18,borderWidth:1,borderColor:c.border,padding:14,marginTop:8,flexDirection:'row',gap:11,alignItems:'center'},roleIcon:{width:40,height:40,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},roleTitle:{fontSize:13,fontWeight:'900',color:c.text},roleCopy:{fontSize:10,lineHeight:16,color:c.muted,marginTop:3},noticeCard:{backgroundColor:c.soft,borderRadius:18,padding:14,marginTop:8,flexDirection:'row',gap:10},noticeTitle:{fontSize:13,fontWeight:'900',color:c.text},link:{fontSize:9,fontWeight:'900',letterSpacing:.5,marginTop:10,color:c.brand},
  tools:{borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,overflow:'hidden'},row:{minHeight:67,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:11,borderBottomWidth:1,borderBottomColor:c.border},rowIcon:{width:38,height:38,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},rowText:{fontSize:13,fontWeight:'900',color:c.text},rowCopy:{fontSize:9,color:c.muted,marginTop:2},

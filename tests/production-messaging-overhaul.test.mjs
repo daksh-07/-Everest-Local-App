@@ -17,7 +17,7 @@ test('personal message pagination remains participant scoped and hidden-message 
 test('reply references stay inside the same conversation',()=>{
  assert.match(migration,/reply_to_message_id uuid references public\.personal_messages/);
  assert.match(migration,/rm\.id=p_reply_to and rm\.conversation_id=v_conversation/);
- assert.match(messages,/REPLYING/);
+ assert.match(messages,/Replying/);
  assert.match(messages,/reply_preview/);
 });
 
@@ -34,7 +34,7 @@ test('editing is sender-only with audit history and a finite window',()=>{
  assert.match(migration,/m\.sender_id=auth\.uid\(\)/);
  assert.match(migration,/m\.created_at>now\(\)-interval '15 minutes'/);
  assert.match(migration,/previous_body,next_body/);
- assert.match(messages,/EDITING MESSAGE/);
+ assert.match(messages,/Editing message/);
 });
 
 test('read state and unread summary are based on persisted read_at',()=>{

@@ -42,7 +42,7 @@ test('home v3 exposes intent actions and real discovery without gateway-card dup
  assert.match(home,/Shop nearby/);
  assert.match(home,/From around Everest/);
  assert.match(home,/RefreshControl/);
- assert.match(home,/signedPostMediaBatch/);
+ assert.match(home,/signedPostMediaResilient/);
  assert.match(home,/signedProductMediaBatch/);
  assert.match(home,/AmbientEdge/);
  assert.doesNotMatch(home,/OR START HERE/);
@@ -70,22 +70,22 @@ test('manifest shortcuts are progressive enhancement only',()=>{
 });
 
 
-test('primary customer surfaces support progressive horizontal swipe navigation',()=>{
+test('primary customer scenes stay mounted and track a single interactive progress value',()=>{
  assert.match(layout,/GlobalSwipeNavigator/);
  assert.match(swipe,/Home[\s\S]*Posts[\s\S]*Clips[\s\S]*My Everest[\s\S]*Messages[\s\S]*Account/);
- assert.match(swipe,/SOFT_DISTANCE=42/);
- assert.match(swipe,/HARD_DISTANCE=138/);
- assert.match(swipe,/hard\?2:1/);
- assert.match(swipe,/activeOffsetX\(\[-HORIZONTAL_ACTIVATION,HORIZONTAL_ACTIVATION\]\)/);
- assert.match(swipe,/failOffsetY\(\[-VERTICAL_FAILURE,VERTICAL_FAILURE\]\)/);
+ assert.match(swipe,/progress\.value=Math\.max\(-\.055/);
+ assert.match(swipe,/translateX:-progress\.value\*width/);
+ assert.match(swipe,/activeOffsetX\(\[-18,18\]\)/);
+ assert.match(swipe,/failOffsetY\(\[-14,14\]\)/);
  assert.match(swipe,/react-native-reanimated/);
  assert.match(swipe,/useReducedMotion/);
- assert.match(swipe,/haptic\.medium\(\)|haptic\.selection\(\)/);
+ assert.match(swipe,/haptic\.selection\(\)/);
+ assert.doesNotMatch(swipe,/SWIPE TO|SKIP TO/);
 });
 
 
-test('swipe direction matches mobile convention and bottom-nav gesture',()=>{
- assert.match(swipe,/translationX<0\?1:-1/);
- assert.match(tabs,/event\.translationX<0\?1:-1/);
- assert.match(tabs,/startIndex\.value-\(event\.translationX\/itemWidth\)/);
+test('bottom navigation derives its indicator and icons from the same page progress',()=>{
+ assert.match(tabs,/pager\?\.progress\?\?fallback/);
+ assert.match(tabs,/progress\.value<=1\?progress\.value/);
+ assert.match(swipe,/router\.replace\(CUSTOMER_PAGES\[target\]/);
 });

@@ -1,4 +1,4 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {ActivityIndicator,Image,Pressable,StyleSheet,Text,View,type ImageResizeMode,type ImageStyle,type StyleProp} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {signedPostMedia} from '@/lib/request-post-media';
@@ -6,9 +6,10 @@ import {useAppTheme} from '@/lib/theme';
 
 export function PostMediaImage({postId,uri,index=0,style,resizeMode='cover'}:{postId:string;uri:string;index?:number;style:StyleProp<ImageStyle>;resizeMode?:ImageResizeMode}){
  const {colors}=useAppTheme();const [source,setSource]=useState(uri);const [state,setState]=useState<'ready'|'retrying'|'failed'>('ready');
- useEffect(()=>{setSource(uri);setState('ready')},[uri]);
- const retry=async()=>{if(state==='retrying')return;setState('retrying');try{const urls=await signedPostMedia(postId,{force:true,strict:true});const next=urls[index];if(!next)throw new Error('Missing media URL');setSource(next);setState('ready')}catch{setState('failed')}};
- if(state==='failed')return <Pressable accessibilityRole="button" accessibilityLabel="Retry post photo" onPress={()=>void retry()} style={[style,styles.fallback,{backgroundColor:colors.soft}]}><Ionicons name="image-outline" size={25} color={colors.muted}/><Text style={[styles.copy,{color:colors.textSecondary}]}>Photo unavailable</Text><Text style={[styles.retry,{color:colors.brand}]}>Tap to retry</Text></Pressable>;
+ const attempts=useRef(0);
+ useEffect(()=>{attempts.current=0;setSource(uri);setState('ready')},[uri]);
+ const retry=async(manual=false)=>{if(state==='retrying')return;if(manual)attempts.current=0;if(attempts.current>=1){setState('failed');return}attempts.current++;setState('retrying');try{const urls=await signedPostMedia(postId,{force:true,strict:true});const next=urls[index];if(!next||next===source)throw new Error('Media URL did not change');setSource(next);setState('ready')}catch{setState('failed')}};
+ if(state==='failed')return <Pressable accessibilityRole="button" accessibilityLabel="Retry post photo" onPress={()=>void retry(true)} style={[style,styles.fallback,{backgroundColor:colors.soft}]}><Ionicons name="image-outline" size={25} color={colors.muted}/><Text style={[styles.copy,{color:colors.textSecondary}]}>Photo unavailable</Text><Text style={[styles.retry,{color:colors.brand}]}>Tap to retry</Text></Pressable>;
  return <View style={[style,styles.frame]}>{state==='retrying'?<View style={[StyleSheet.absoluteFill,styles.loading,{backgroundColor:colors.soft}]}><ActivityIndicator color={colors.brand}/></View>:null}<Image source={{uri:source}} resizeMode={resizeMode} style={StyleSheet.absoluteFill} onError={()=>void retry()}/></View>;
 }
 

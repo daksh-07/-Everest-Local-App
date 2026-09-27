@@ -21,12 +21,11 @@ test('paid listings are server-gated on verified Connect payout readiness',()=>{
 });
 
 test('connected accounts use Stripe-paid fee collection for the low-overhead direct charge model',()=>{
- assert.match(connect,/fees:\{payer:'account'\}/);
- assert.match(connect,/losses:\{payments:'stripe'\}/);
- assert.match(connect,/requirement_collection:'stripe'/);
- assert.match(connect,/stripe_dashboard:\{type:'full'\}/);
+ assert.match(connect,/fees_collector:'stripe'/);
+ assert.match(connect,/losses_collector:'stripe'/);
+ assert.match(connect,/dashboard:'full'/);
+ assert.match(connect,/https:\/\/api\.stripe\.com\/v2\/core\/accounts/);
  assert.match(connect,/card_payments:\{requested:true\}/);
- assert.match(connect,/transfers:\{requested:true\}/);
 });
 
 test('product and service checkouts are direct connected-account charges with Everest application fees',()=>{

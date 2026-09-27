@@ -50,10 +50,10 @@ test('delete choices depend on message ownership',()=>{
 });
 
 test('composer stays compact and bounded',()=>{
- assert.match(messages,/minHeight:42,maxHeight:98/);
- assert.match(messages,/minHeight:34,maxHeight:88/);
+ assert.match(messages,/minHeight:52,maxHeight:124/);
+ assert.match(messages,/minHeight:38,maxHeight:102/);
  assert.match(messages,/fontSize:16/);
- assert.match(messages,/borderRadius:22/);
+ assert.match(messages,/borderRadius:25/);
 });
 
 test('grouped messages render metadata only at end of cluster',()=>{
@@ -62,7 +62,7 @@ test('grouped messages render metadata only at end of cluster',()=>{
  assert.match(messages,/timeOnly\(m\.created_at\).*meta/);
 });
 
-test('pending state is a subtle pill instead of shouting metadata',()=>{
- assert.match(messages,/>Pending<\/Text>/);
+test('pending state is subtle contextual metadata instead of shouting',()=>{
+ assert.match(messages,/Request pending/);
  assert.doesNotMatch(messages,/>PENDING REQUEST<\/Text>/);
 });

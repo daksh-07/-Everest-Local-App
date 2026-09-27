@@ -53,10 +53,17 @@ export async function signedPostMedia(postId:string,options?:{force?:boolean;str
  return map[postId]??[];
 }
 
-export async function signedPostMediaBatch(postIds:string[],options?:{force?:boolean;strict?:boolean}){
+// Sign one batch, invalidate a stale signature once, then retain any successfully
+// signed siblings. A single bad asset must not blank every photo in the feed.
+export async function signedPostMediaResilient(postIds:string[],options?:{onPartialFailure?:()=>void}){
+ try{return await signedPostMediaBatch(postIds,{strict:true})}
+ catch{return signedPostMediaBatch(postIds,{force:true,strict:false},options?.onPartialFailure)}
+}
+
+export async function signedPostMediaBatch(postIds:string[],options?:{force?:boolean;strict?:boolean},onPartialFailure?:()=>void){
  if(!postIds.length)return {} as Record<string,string[]>;
  const {data,error}=await supabase.from('post_media').select('post_id,storage_path,storage_bucket,sort_order').in('post_id',postIds).order('sort_order');
- if(error){if(options?.strict)throw error;return {} as Record<string,string[]>}
+ if(error){if(options?.strict)throw error;onPartialFailure?.();return {} as Record<string,string[]>}
  const rows=data??[];
  const photoPaths=rows.filter(row=>(row.storage_bucket??'post-media')==='post-media').map(row=>row.storage_path);
  const clipPaths=rows.filter(row=>row.storage_bucket==='clip-media').map(row=>row.storage_path);
@@ -70,6 +77,8 @@ export async function signedPostMediaBatch(postIds:string[],options?:{force?:boo
   const url=(row.storage_bucket==='clip-media'?clips:photos)[row.storage_path];
   if(url)(grouped[row.post_id]??=[]).push(url);
  }
- if(options?.strict&&rows.some(row=>!(row.storage_bucket==='clip-media'?clips:photos)[row.storage_path]))throw new Error('One or more post photos could not be securely loaded.');
+ const missing=rows.some(row=>!(row.storage_bucket==='clip-media'?clips:photos)[row.storage_path]);
+ if(options?.strict&&missing)throw new Error('One or more post photos could not be securely loaded.');
+ if(missing)onPartialFailure?.();
  return grouped;
 }

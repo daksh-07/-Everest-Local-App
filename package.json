@@ -18,6 +18,7 @@
     "test:dispatch": "node --test tests/service-aware-dispatch.test.mjs",
     "test:external": "node --test tests/external-flow.test.mjs",
     "test:home-shell": "node --test tests/edge-home-quick-actions.test.mjs",
+    "test:navigation": "node --experimental-strip-types --test tests/customer-pager-regression.test.mjs tests/edge-home-quick-actions.test.mjs tests/post-media-resilience.test.mjs",
     "test:products": "node --test tests/product-marketplace-commerce.test.mjs",
     "test:request-posts": "node --test tests/request-posts-ux.test.mjs",
     "test:crm": "node --test tests/global-local-crm-p0.test.mjs tests/professional-crm-v2.test.mjs tests/crm-integrations-automation.test.mjs",

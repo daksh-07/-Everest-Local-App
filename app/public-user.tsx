@@ -27,7 +27,7 @@ import {
 } from '@/lib/connections';
 import {useAppTheme} from '@/lib/theme';
 import {listHighlights,websiteLabel,type StoryHighlight} from '@/lib/social-expansion';
-import {signedPostMediaBatch} from '@/lib/request-post-media';
+import {signedPostMediaBatch,signedPostMediaResilient} from '@/lib/request-post-media';
 import {PostMediaImage} from '@/components/PostMediaImage';
 
 function initialsFor(name:string|null){
@@ -78,8 +78,8 @@ export default function PublicUser(){
       setP(profile);
       setPosts(content);
       setHighlights(highlightRows);
-      try{setPostMedia(await signedPostMediaBatch(content.map(item=>item.id),{strict:true}))}
-      catch{setPostMedia({});setError('Some post photos could not be loaded. Tap a photo area to retry.')}
+      try{setPostMedia(await signedPostMediaResilient(content.map(item=>item.id),{onPartialFailure:()=>setError('Some post photos are unavailable. Tap a photo area to retry.')}))}
+      catch{setError('Some post photos could not be loaded. Tap a photo area to retry.')}
     }catch(e){
       setError(e instanceof Error?e.message:'Profile could not be loaded.');
     }finally{

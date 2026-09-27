@@ -13,7 +13,7 @@ const profile=fs.readFileSync('app/public-user.tsx','utf8');
 test('post media can bypass a stale signed-url cache and report strict failures',()=>{
  assert.match(cache,/force\?null:cachedMediaUrl/);
  assert.match(media,/options\?:\{force\?:boolean;strict\?:boolean\}/);
- assert.match(media,/options\?\.strict&&rows\.some/);
+ assert.match(media,/options\?\.strict&&missing/);
 });
 
 test('post photos retry signing instead of silently becoming placeholders',()=>{
@@ -24,6 +24,9 @@ test('post photos retry signing instead of silently becoming placeholders',()=>{
 
 test('all primary profile and discovery surfaces use resilient post media',()=>{
  for(const source of [account,home,explore,profile])assert.match(source,/PostMediaImage/);
- assert.match(account,/signedPostMediaBatch\(posts\.slice\(0,18\)/);
- assert.match(profile,/signedPostMediaBatch\(content\.map/);
+ assert.match(account,/signedPostMediaResilient\(posts\.slice\(0,18\)/);
+ assert.match(account,/post\.post_media\?\.some\(media=>media\.media_type==='IMAGE'\)/);
+ assert.match(account,/Photo unavailable · tap to retry/);
+ assert.match(profile,/signedPostMediaResilient\(content\.map/);
+ assert.match(media,/signedPostMediaBatch\(postIds,\{force:true,strict:false\},options\?\.onPartialFailure\)/);
 });

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
+import {useCustomerRouteHost} from '@/lib/customer-pager';
 import { supabase } from '@/lib/supabase';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
 
@@ -12,7 +13,8 @@ type ActivityKind = 'request' | 'quote' | 'booking' | 'order';
 type Item = { key:string; kind:ActivityKind; label:string; status:string; detail:string; route:ActivityRoute; created_at:string };
 const statusLabel=(value:string|null|undefined)=>(value??'PENDING').replaceAll('_',' ');
 
-export default function Activity(){
+export default function Activity(){const hosted=useCustomerRouteHost();return hosted?null:<ActivityScreen/>}
+export function ActivityScreen(){
  const {colors}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const s=useMemo(()=>createStyles(colors,desktop),[colors,desktop]);
  const [items,setItems]=useState<Item[]>([]);const itemsRef=useRef<Item[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [hasLoaded,setHasLoaded]=useState(false);const [error,setError]=useState('');const [warning,setWarning]=useState('');const busyRef=useRef(false);
  function commitItems(next:Item[]){itemsRef.current=next;setItems(next)}

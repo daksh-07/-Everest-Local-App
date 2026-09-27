@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,Alert,Animated,Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent} from 'react-native';
+import {ActivityIndicator,Alert,Animated,Image,Keyboard,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {router,useLocalSearchParams} from 'expo-router';
+import {router,useGlobalSearchParams} from 'expo-router';
 import {SafeAreaView,useSafeAreaInsets} from 'react-native-safe-area-context';
 import {conversations,messages,sendMessage} from '@/lib/messaging';
 import {currentUser} from '@/lib/marketplace';
@@ -18,6 +18,9 @@ import {MOTION,ease,useReducedMotion} from '@/lib/motion';
 import {useVisualViewport} from '@/lib/visual-viewport';
 import {installChatWebRuntimeStyles} from '@/lib/chat-web-runtime';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
+import {useCustomerPager,useCustomerRouteHost} from '@/lib/customer-pager';
+import {Gesture,GestureDetector} from 'react-native-gesture-handler';
+import Reanimated,{runOnJS,useAnimatedStyle,useSharedValue,withSpring} from 'react-native-reanimated';
 
 type MarketConversation={id:string;customer_id:string;business_id:string;request_id?:string|null;booking_id?:string|null;quote_id?:string|null;created_at:string;context_type?:'GENERAL'|'PRODUCT'|'SERVICE';product_id?:string|null;service_id?:string|null;context_title?:string|null;counterpart_name?:string;logo_url?:string|null};
 type MarketMessage={id:string;sender_id:string;body:string;created_at:string;read_at?:string|null;is_automated?:boolean;automation_source?:'FAQ'|'EVEREST_AI'|null};
@@ -55,10 +58,12 @@ function scrollThreadToEndAfterLayout(ref:React.MutableRefObject<ScrollView|null
  }
 }
 
-export default function Messages(){
+export default function Messages(){const hosted=useCustomerRouteHost();return hosted?null:<MessagesScreen/>}
+export function MessagesScreen(){
+ const pager=useCustomerPager();
  const {colors:c}=useAppTheme();
  const insets=useSafeAreaInsets();
- const params=useLocalSearchParams<{personalId?:string;marketId?:string}>();
+ const params=useGlobalSearchParams<{personalId?:string;marketId?:string;conversationId?:string}>();
  const [tab,setTab]=useState<'CHATS'|'REQUESTS'>('CHATS');
  const [marketFilter,setMarketFilter]=useState<'ALL'|'PRODUCT'|'SERVICE'>('ALL');
  const [isBusinessUser,setIsBusinessUser]=useState(false);
@@ -68,6 +73,7 @@ export default function Messages(){
  const [market,setMarket]=useState<MarketConversation[]>([]);
  const [selectedPersonal,setSelectedPersonal]=useState<PersonalConversation|null>(null);
  const [selectedMarket,setSelectedMarket]=useState<MarketConversation|null>(null);
+ useEffect(()=>{pager?.setThreadOpen(Boolean(selectedPersonal||selectedMarket))},[pager,selectedPersonal,selectedMarket]);
  const [personalThread,setPersonalThread]=useState<PersonalMessage[]>([]);
  const [marketThread,setMarketThread]=useState<MarketMessage[]>([]);
  const [hasOlder,setHasOlder]=useState(false);
@@ -75,6 +81,7 @@ export default function Messages(){
  const [draft,setDraft]=useState('');
  const [userId,setUserId]=useState('');
  const [loading,setLoading]=useState(true);
+ const lastHomeLoad=useRef(0);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [actionTarget,setActionTarget]=useState<MessageActionTarget|null>(null);
@@ -94,10 +101,13 @@ export default function Messages(){
  const threadRef=useRef<ScrollView|null>(null);
  const initialScrollRef=useRef(true);
  const keyboardOpen=Platform.OS==='web'&&visualViewport.keyboardInset>80;
- const composerBottomInset=keyboardOpen?0:insets.bottom;
+ const [nativeKeyboardOpen,setNativeKeyboardOpen]=useState(false);
+ useEffect(()=>{if(Platform.OS==='web')return;const show=Keyboard.addListener(Platform.OS==='ios'?'keyboardWillShow':'keyboardDidShow',()=>setNativeKeyboardOpen(true));const hide=Keyboard.addListener(Platform.OS==='ios'?'keyboardWillHide':'keyboardDidHide',()=>setNativeKeyboardOpen(false));return()=>{show.remove();hide.remove()}},[]);
+ const composerBottomInset=keyboardOpen||nativeKeyboardOpen?0:insets.bottom;
  const chatRootStyle={flex:1,minHeight:0,width:'100%',overflow:'hidden',backgroundColor:c.canvas} as const;
 
  async function loadHome(silent=false){
+  lastHomeLoad.current=Date.now();
   if(!silent)setLoading(true);
   if(!silent)setError('');
   try{
@@ -120,7 +130,7 @@ export default function Messages(){
     const found=[...p,...r].find(x=>x.id===requested);
     if(found){setSelectedPersonal(found);setTab(found.status==='REQUEST'&&found.initiated_by!==user?.id?'REQUESTS':'CHATS')}
    }
-   const requestedMarket=typeof params.marketId==='string'?params.marketId:'';
+   const requestedMarket=typeof params.marketId==='string'?params.marketId:typeof params.conversationId==='string'?params.conversationId:'';
    if(requestedMarket&&!selectedMarket){const found=rows.find(x=>x.id===requestedMarket);if(found)setSelectedMarket({...found,counterpart_name:names[found.business_id]?.name??'Business conversation',logo_url:names[found.business_id]?.logo_url??null})}
   }catch{if(!silent)setError('Messages could not be loaded.')}
   finally{if(!silent)setLoading(false)}
@@ -153,21 +163,23 @@ export default function Messages(){
 
  useEffect(()=>{void loadHome()},[]);
  useEffect(()=>{
-  const timer=setInterval(()=>{if(!selectedPersonal&&!selectedMarket)void loadHome(true)},8000);
+  if(pager&&pager.selected!==4)return;
+  if(Date.now()-lastHomeLoad.current>12_000)void loadHome(true);
+  const timer=setInterval(()=>{if(!selectedPersonal&&!selectedMarket)void loadHome(true)},12000);
   return()=>clearInterval(timer);
- },[selectedPersonal,selectedMarket]);
+ },[selectedPersonal,selectedMarket,pager?.selected]);
  useEffect(()=>{
-  if(!selectedPersonal)return;
+  if(!selectedPersonal||(pager&&pager.selected!==4))return;
   initialScrollRef.current=true;void refreshPersonalThread(selectedPersonal.id);
   const timer=setInterval(()=>void refreshPersonalThread(selectedPersonal.id,true),3000);
   return()=>clearInterval(timer);
- },[selectedPersonal?.id]);
+ },[selectedPersonal?.id,pager?.selected]);
  useEffect(()=>{
-  if(!selectedMarket)return;
+  if(!selectedMarket||(pager&&pager.selected!==4))return;
   void refreshMarketThread(selectedMarket.id);
   const timer=setInterval(()=>void refreshMarketThread(selectedMarket.id),4000);
   return()=>clearInterval(timer);
- },[selectedMarket?.id]);
+ },[selectedMarket?.id,pager?.selected]);
 
  useEffect(()=>{
   if(reducedMotion){tabFade.setValue(1);return}
@@ -324,11 +336,11 @@ export default function Messages(){
   const canCompose=selectedPersonal.status==='ACTIVE'||outgoingRequest;
   return <View nativeID="everest-chat-shell" style={chatRootStyle}><SafeAreaView edges={['top','left','right']} style={{flex:1,minHeight:0,backgroundColor:c.canvas}}>
    <ChatKeyboardFrame>
-    <View style={{minHeight:62,paddingHorizontal:14,paddingVertical:9,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'center',gap:10,backgroundColor:c.canvas}}>
+    <View style={{minHeight:72,paddingHorizontal:14,paddingVertical:10,flexDirection:'row',alignItems:'center',gap:12,backgroundColor:c.surface,shadowColor:'#000',shadowOpacity:.06,shadowRadius:12,shadowOffset:{width:0,height:4},zIndex:2}}>
      <Pressable accessibilityLabel="Back to messages" onPress={()=>{setSelectedPersonal(null);setPersonalThread([]);setReplying(null);setEditing(null);void loadHome(true)}} style={{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color={c.text}/></Pressable>
      <Pressable onPress={()=>router.push('/public-user?id='+selectedPersonal.other_user_id)} style={{flex:1,flexDirection:'row',alignItems:'center',gap:10}}>
-      {selectedPersonal.avatar_url?<Image source={{uri:selectedPersonal.avatar_url}} style={{width:40,height:40,borderRadius:20}}/>:<View style={{width:40,height:40,borderRadius:20,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:15,fontWeight:'900',color:c.text}}>{(selectedPersonal.display_name??'E')[0]?.toUpperCase()}</Text></View>}
-      <View style={{flex:1}}><Text numberOfLines={1} style={{fontSize:15,fontWeight:'900',color:c.text}}>{selectedPersonal.display_name??'Everest member'}</Text><Text style={{fontSize:10,color:c.muted,marginTop:2}}>{outgoingRequest?'Request pending':incomingRequest?'Message request':'Personal conversation'}</Text></View>
+      {selectedPersonal.avatar_url?<Image source={{uri:selectedPersonal.avatar_url}} style={{width:46,height:46,borderRadius:23}}/>:<View style={{width:46,height:46,borderRadius:23,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:17,fontWeight:'700',color:c.brand}}>{(selectedPersonal.display_name??'E')[0]?.toUpperCase()}</Text></View>}
+      <View style={{flex:1}}><Text numberOfLines={1} style={{fontSize:16,fontWeight:'800',letterSpacing:-.3,color:c.text}}>{selectedPersonal.display_name??'Everest member'}</Text><Text style={{fontSize:11,color:c.muted,marginTop:3}}>{outgoingRequest?'Request pending':incomingRequest?'Message request':'Everest conversation'}</Text></View>
      </Pressable>
      <Pressable accessibilityLabel="Conversation menu" onPress={()=>setHeaderMenu(true)} style={{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center'}}><Ionicons name="ellipsis-horizontal" size={21} color={c.text}/></Pressable>
     </View>
@@ -345,14 +357,15 @@ export default function Messages(){
       transitioningId={transitionMessageId}
       reducedMotion={reducedMotion}
       onRetry={retryMessage}
+      onReply={beginReply}
       onReachTop={()=>void loadOlder()}
       onNearBottomChange={value=>{nearBottomRef.current=value}}
       onInitialContent={()=>{if(initialScrollRef.current){initialScrollRef.current=false;threadRef.current?.scrollToEnd({animated:false})}}}
     />
 
-    {incomingRequest?<View style={{marginHorizontal:14,marginBottom:10,padding:14,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface}}>
-     <Text style={{fontSize:13,fontWeight:'900',color:c.text}}>{selectedPersonal.display_name??'This person'} wants to message you.</Text>
-     <Text style={{fontSize:11,lineHeight:17,color:c.muted,marginTop:4}}>Accept to continue the conversation. You can also decline, block or report.</Text>
+    {incomingRequest?<View style={{marginHorizontal:14,marginBottom:12,padding:18,borderRadius:20,backgroundColor:c.elevated}}>
+     <Text style={{fontSize:16,fontWeight:'800',color:c.text}}>{selectedPersonal.display_name??'This person'} wants to connect</Text>
+     <Text style={{fontSize:12,lineHeight:18,color:c.muted,marginTop:6}}>Accept to reply. You can decline or report a request at any time.</Text>
      <View style={{flexDirection:'row',gap:8,marginTop:12,flexWrap:'wrap'}}>
       <Pressable disabled={busy} onPress={()=>void acceptRequest()} style={{minHeight:40,paddingHorizontal:18,borderRadius:13,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>ACCEPT</Text></Pressable>
       <Pressable disabled={busy} onPress={()=>void declineRequest()} style={{minHeight:40,paddingHorizontal:18,borderRadius:13,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:9,fontWeight:'900',color:c.text}}>DECLINE</Text></Pressable>
@@ -378,10 +391,10 @@ export default function Messages(){
 
  if(selectedMarket)return <View nativeID="everest-chat-shell" style={chatRootStyle}><SafeAreaView edges={['top','left','right']} style={{flex:1,minHeight:0,backgroundColor:c.canvas}}>
   <ChatKeyboardFrame>
-   <View style={{minHeight:62,paddingHorizontal:14,paddingVertical:9,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'center',gap:10}}>
+   <View style={{minHeight:72,paddingHorizontal:14,paddingVertical:10,backgroundColor:c.surface,flexDirection:'row',alignItems:'center',gap:12,shadowColor:'#000',shadowOpacity:.06,shadowRadius:12,shadowOffset:{width:0,height:4},zIndex:2}}>
     <Pressable onPress={()=>{setSelectedMarket(null);setMarketThread([]);void loadHome(true)}} style={{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color={c.text}/></Pressable>
-    {selectedMarket.logo_url?<Image source={{uri:selectedMarket.logo_url}} style={{width:40,height:40,borderRadius:13}}/>:<View style={{width:40,height:40,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="business-outline" size={19} color={c.text}/></View>}
-    <View style={{flex:1}}><Text style={{fontSize:15,fontWeight:'900',color:c.text}}>{selectedMarket.counterpart_name}</Text><Text style={{fontSize:10,color:c.muted,marginTop:2}}>{selectedMarket.context_type==='PRODUCT'?'Product · '+(selectedMarket.context_title??'Enquiry'):selectedMarket.context_type==='SERVICE'?'Service · '+(selectedMarket.context_title??'Enquiry'):'Business enquiry / booking'}</Text></View>
+    {selectedMarket.logo_url?<Image source={{uri:selectedMarket.logo_url}} style={{width:46,height:46,borderRadius:16}}/>:<View style={{width:46,height:46,borderRadius:16,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="storefront-outline" size={22} color={c.brand}/></View>}
+    <View style={{flex:1}}><Text style={{fontSize:16,fontWeight:'800',letterSpacing:-.3,color:c.text}}>{selectedMarket.counterpart_name}</Text><Text numberOfLines={1} style={{fontSize:11,color:c.muted,marginTop:3}}>{selectedMarket.context_type==='PRODUCT'?'Product · '+(selectedMarket.context_title??'Enquiry'):selectedMarket.context_type==='SERVICE'?'Service · '+(selectedMarket.context_title??'Enquiry'):'Business conversation'}</Text></View>
    </View>
    {(selectedMarket.booking_id||selectedMarket.request_id||selectedMarket.context_type==='SERVICE')?<View style={{marginHorizontal:12,marginTop:8,paddingHorizontal:12,paddingVertical:9,borderRadius:12,backgroundColor:c.soft,borderWidth:1,borderColor:c.border,flexDirection:'row',gap:8,alignItems:'center'}}><Ionicons name="shield-checkmark-outline" size={17} color={c.brand}/><Text style={{flex:1,fontSize:10,lineHeight:15,color:c.text}}><Text style={{fontWeight:'900'}}>Keep service payments in Everest.</Text> Payments made outside Everest are not counted toward the booking balance or marketplace protection.</Text></View>:null}
    <MarketThread refValue={threadRef} items={marketThread} userId={userId} colors={c}/>
@@ -391,23 +404,17 @@ export default function Messages(){
  </SafeAreaView></View>;
 
  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
-  <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,paddingBottom:140,maxWidth:760,width:'100%',alignSelf:'center'}}>
-   <Text style={{fontSize:10,fontWeight:'900',letterSpacing:2,color:c.muted}}>EVEREST LOCAL</Text>
-   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12}}><Text style={{fontSize:30,fontWeight:'900',color:c.text,marginTop:5}}>Messages</Text><View style={{flexDirection:'row',gap:8}}>{isBusinessUser?<Pressable onPress={()=>router.push('/business-dm-automation')} style={{width:42,height:42,borderRadius:14,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'}} accessibilityLabel="DM automation settings"><Ionicons name="sparkles-outline" size={19} color={c.brand}/></Pressable>:null}<Pressable onPress={()=>router.push('/search?tab=PERSON')} style={{width:42,height:42,borderRadius:14,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}} accessibilityLabel="Start a new conversation"><Ionicons name="create-outline" size={19} color={c.onBrand}/></Pressable></View></View>
-   <MessagesSearch value={query} onChange={setQuery} colors={c} reducedMotion={reducedMotion}/>
-   <View style={{flexDirection:'row',gap:8,marginTop:14,marginBottom:14}}>
-    {(['CHATS','REQUESTS'] as const).map(x=><Pressable key={x} onPress={()=>{void haptic.selection();setTab(x)}} style={({pressed})=>({paddingHorizontal:15,paddingVertical:9,borderRadius:12,backgroundColor:tab===x?c.brand:c.surface,borderWidth:1,borderColor:tab===x?c.brand:c.border,opacity:pressed?.78:1,transform:[{scale:pressed?.97:1}]})}><Text style={{fontSize:9,fontWeight:'900',color:tab===x?c.onBrand:c.text}}>{x}{x==='REQUESTS'&&requests.length?' '+requests.length:''}</Text></Pressable>)}
-   </View>
+  <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:22,paddingTop:20,paddingBottom:150,maxWidth:760,width:'100%',alignSelf:'center'}}>
+   <View style={{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:12}}><View style={{flex:1}}><Text style={{fontSize:11,fontWeight:'700',letterSpacing:1.1,color:c.accent}}>YOUR EVEREST CIRCLE</Text><Text style={{fontSize:36,lineHeight:43,fontWeight:'800',letterSpacing:-1.7,color:c.text,marginTop:8}}>Messages</Text><Text style={{fontSize:13,lineHeight:19,color:c.muted,marginTop:5}}>Conversations, all in one place.</Text></View><View style={{flexDirection:'row',gap:9,paddingTop:17}}>{isBusinessUser?<Pressable onPress={()=>router.push('/business-dm-automation')} style={{width:44,height:44,borderRadius:22,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}} accessibilityLabel="DM automation settings"><Ionicons name="sparkles-outline" size={20} color={c.brand}/></Pressable>:null}<Pressable onPress={()=>router.push('/search?tab=PERSON')} style={{width:46,height:46,borderRadius:23,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}} accessibilityLabel="Start a new conversation"><Ionicons name="create-outline" size={22} color={c.onBrand}/></Pressable></View></View>
+   <MessagesSearch value={query} onChange={setQuery} colors={c}/>
+   <MessagesSegments tab={tab} setTab={setTab} count={requests.length} colors={c} reducedMotion={reducedMotion}/>
    {tab==='CHATS'&&market.some(x=>x.context_type==='PRODUCT'||x.context_type==='SERVICE')?<View style={{flexDirection:'row',gap:7,marginBottom:10,flexWrap:'wrap'}}>{(['ALL',...(market.some(x=>x.context_type==='PRODUCT')?['PRODUCT']:[]),...(market.some(x=>x.context_type==='SERVICE')?['SERVICE']:[])] as Array<'ALL'|'PRODUCT'|'SERVICE'>).map(x=><Pressable key={x} onPress={()=>setMarketFilter(x)} style={{paddingHorizontal:11,paddingVertical:7,borderRadius:10,backgroundColor:marketFilter===x?c.soft:'transparent',borderWidth:1,borderColor:marketFilter===x?c.brand:c.border}}><Text style={{fontSize:8,fontWeight:'900',color:c.text}}>{x==='ALL'?'ALL':x==='PRODUCT'?'PRODUCTS':'SERVICES'}</Text></Pressable>)}</View>:null}
    <Animated.View style={{opacity:tabFade}}>
    {loading?<ConversationSkeleton colors={c}/>:tab==='CHATS'?(
     chats.length?chats.map(row=><ConversationRow key={row.kind+row.id} row={row} colors={c} reducedMotion={reducedMotion} onAvatarPress={()=>{if(row.kind==='PERSONAL')router.push('/public-user?id='+row.conversation.other_user_id)}} onLongPress={()=>{if(row.kind==='PERSONAL'){void haptic.medium();setRowMenu(row)}}} onPress={()=>{if(row.kind==='PERSONAL')setSelectedPersonal(row.conversation);else setSelectedMarket(row.conversation)}}/>):<EmptyState title="No messages yet" copy="Your personal and business conversations will appear here." colors={c}/>
-   ):requestRows.length?requestRows.map(item=><Pressable key={item.id} onPress={()=>setSelectedPersonal(item)} style={({pressed})=>({paddingVertical:12,flexDirection:'row',alignItems:'center',gap:12,borderBottomWidth:1,borderBottomColor:c.border,opacity:pressed?.8:1})}>
-    {item.avatar_url?<Image source={{uri:item.avatar_url}} style={{width:48,height:48,borderRadius:24}}/>:<View style={{width:48,height:48,borderRadius:24,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:16,fontWeight:'900',color:c.text}}>{(item.display_name??'E')[0]?.toUpperCase()}</Text></View>}
-    <View style={{flex:1,minWidth:0}}><View style={{flexDirection:'row',justifyContent:'space-between',gap:10}}><Text numberOfLines={1} style={{fontSize:14,fontWeight:'900',color:c.text,flex:1}}>{item.display_name??'Everest member'}</Text><Text style={{fontSize:10,color:c.muted}}>{relativeTime(item.latest_message_at??item.updated_at)}</Text></View><Text numberOfLines={1} style={{fontSize:12,color:c.textSecondary,marginTop:4}}>{item.latest_message??'Message request'}</Text><Text style={{fontSize:9,fontWeight:'800',color:c.muted,marginTop:4}}>MESSAGE REQUEST</Text></View>
-   </Pressable>):<EmptyState title="No message requests" copy="New personal message requests will appear here." colors={c}/>}
+   ):requestRows.length?requestRows.map(item=><ConversationRow key={item.id} row={{kind:'PERSONAL',id:item.id,name:item.display_name??'Everest member',avatar:item.avatar_url,preview:item.latest_message??'Message request',at:item.latest_message_at??item.updated_at,unread:item.unread_count,pending:false,conversation:item}} colors={c} reducedMotion={reducedMotion} onPress={()=>setSelectedPersonal(item)} onAvatarPress={()=>router.push('/public-user?id='+item.other_user_id)} onLongPress={()=>{void haptic.medium();setRowMenu({kind:'PERSONAL',id:item.id,name:item.display_name??'Everest member',avatar:item.avatar_url,preview:item.latest_message??'Message request',at:item.latest_message_at??item.updated_at,unread:item.unread_count,pending:false,conversation:item})}}/>):<EmptyState title="No message requests" copy="New personal message requests will appear here." colors={c}/>}
    </Animated.View>
-   {error?<Text style={{fontSize:12,color:c.danger,marginTop:14}}>{error}</Text>:null}
+   {error?<Pressable accessibilityRole="button" onPress={()=>void loadHome()} style={{backgroundColor:c.soft,borderRadius:13,padding:14,marginTop:14}}><Text style={{fontSize:13,color:c.danger,fontWeight:'700'}}>{error} Tap to retry.</Text></Pressable>:null}
   </ScrollView>
   <CustomerTabBar active="/messages"/>
   <ConversationRowMenu row={rowMenu} colors={c} busy={busy} onClose={()=>setRowMenu(null)}
@@ -420,6 +427,16 @@ export default function Messages(){
  </SafeAreaView>;
 }
 
+function MessagesSegments({tab,setTab,count,colors:c,reducedMotion}:{tab:'CHATS'|'REQUESTS';setTab:(tab:'CHATS'|'REQUESTS')=>void;count:number;colors:ReturnType<typeof useAppTheme>['colors'];reducedMotion:boolean}){
+ const position=useRef(new Animated.Value(tab==='CHATS'?0:1)).current;
+ useEffect(()=>{if(reducedMotion){position.setValue(tab==='CHATS'?0:1);return}Animated.spring(position,{toValue:tab==='CHATS'?0:1,useNativeDriver:true,friction:9,tension:150}).start()},[position,reducedMotion,tab]);
+ const [width,setWidth]=useState(0);
+ return <View onLayout={event=>setWidth(event.nativeEvent.layout.width)} style={{height:48,marginTop:25,marginBottom:13,flexDirection:'row',borderBottomWidth:1,borderBottomColor:c.border}}>
+  {width?<Animated.View pointerEvents="none" style={{position:'absolute',left:0,bottom:-1,width:width/2,height:3,borderRadius:2,backgroundColor:c.brand,transform:[{translateX:position.interpolate({inputRange:[0,1],outputRange:[0,width/2]})}]}}/>:null}
+  {(['CHATS','REQUESTS'] as const).map(value=><Pressable key={value} accessibilityRole="tab" accessibilityState={{selected:tab===value}} onPress={()=>{if(tab!==value){void haptic.selection();setTab(value)}}} style={{width:'50%',height:'100%',alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:13,fontWeight:tab===value?'800':'600',color:tab===value?c.text:c.muted}}>{value==='CHATS'?'Chats':'Requests'}{value==='REQUESTS'&&count?'  '+count:''}</Text></Pressable>)}
+ </View>;
+}
+
 
 function ChatKeyboardFrame({children}:{children:React.ReactNode}){
  if(Platform.OS==='web')return <View style={{flex:1,minHeight:0,overflow:'hidden'}}>{children}</View>;
@@ -430,47 +447,39 @@ function ConversationRow({row,colors:c,reducedMotion,onPress,onAvatarPress,onLon
  const scale=useRef(new Animated.Value(1)).current;
  const animate=(to:number)=>{if(reducedMotion){scale.setValue(to);return}Animated.spring(scale,{toValue:to,useNativeDriver:true,...MOTION.spring}).start()};
  const webProps=Platform.OS==='web'?{dataSet:{everestConversationRow:'true'},onContextMenu:(event:{preventDefault?:()=>void})=>{event.preventDefault?.();onLongPress()}}:{};
- return <Animated.View {...webProps} style={{transform:[{scale}],borderBottomWidth:1,borderBottomColor:c.border}}>
-  <View style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:11}}>
-   <Pressable accessibilityLabel={row.kind==='PERSONAL'?'View '+row.name+' profile':'Business avatar'} disabled={row.kind!=='PERSONAL'} onPress={onAvatarPress} style={({pressed})=>({width:50,height:50,borderRadius:row.kind==='MARKET'?15:25,opacity:pressed?.76:1,transform:[{scale:pressed?.96:1}],overflow:'hidden'})}>
-    {row.avatar?<Image source={{uri:row.avatar}} style={{width:50,height:50,borderRadius:row.kind==='MARKET'?15:25}}/>:<View style={{width:50,height:50,borderRadius:row.kind==='MARKET'?15:25,backgroundColor:c.soft,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'}}>{row.kind==='MARKET'?<Ionicons name="business-outline" size={20} color={c.text}/>:<Text style={{fontSize:16,fontWeight:'900',letterSpacing:.2,color:c.text}}>{row.name.split(/\s+/).slice(0,2).map(part=>part[0]?.toUpperCase()).join('')||'E'}</Text>}</View>}
+ const context=row.kind==='MARKET'?(row.conversation.context_type==='PRODUCT'?'Product enquiry':row.conversation.context_type==='SERVICE'?'Service enquiry':'Business conversation'):row.conversation.status==='REQUEST'?(row.pending?'Request pending':'Message request'):null;
+ return <Animated.View {...webProps} style={{transform:[{scale}]}}>
+  <View style={{flexDirection:'row',alignItems:'center',gap:15,minHeight:82,paddingVertical:10}}>
+   <Pressable accessibilityLabel={row.kind==='PERSONAL'?'View '+row.name+' profile':'Business avatar'} disabled={row.kind!=='PERSONAL'} onPress={onAvatarPress} style={{width:58,height:58,borderRadius:row.kind==='MARKET'?19:29,overflow:'hidden',backgroundColor:c.elevated}}>
+    {row.avatar?<Image source={{uri:row.avatar}} style={{width:58,height:58,borderRadius:row.kind==='MARKET'?19:29}}/>:<View style={{width:58,height:58,alignItems:'center',justifyContent:'center'}}>{row.kind==='MARKET'?<Ionicons name="storefront-outline" size={23} color={c.brand}/>:<Text style={{fontSize:19,fontWeight:'700',color:c.brand}}>{row.name.split(/\s+/).slice(0,2).map(part=>part[0]?.toUpperCase()).join('')||'E'}</Text>}</View>}
+    {row.unread?<View style={{position:'absolute',right:1,top:1,width:10,height:10,borderRadius:5,backgroundColor:c.brand,borderWidth:2,borderColor:c.canvas}}/>:null}
    </Pressable>
-   <Pressable onPress={onPress} onLongPress={onLongPress} delayLongPress={300} onPressIn={()=>animate(.985)} onPressOut={()=>animate(1)} style={({pressed})=>({flex:1,minWidth:0,borderRadius:14,paddingVertical:3,paddingHorizontal:2,backgroundColor:pressed?c.soft:'transparent'})}>
-    <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-     <Text numberOfLines={1} style={{fontSize:14,fontWeight:row.unread?'900':'800',color:c.text,flex:1}}>{row.name}</Text>
-     <Text style={{fontSize:10,color:row.unread?c.text:c.muted}}>{relativeTime(row.at)}</Text>
-    </View>
-    <View style={{flexDirection:'row',alignItems:'center',gap:7,marginTop:4}}>
-     <Text numberOfLines={1} style={{fontSize:12,color:row.unread?c.text:c.muted,flex:1,fontWeight:row.unread?'700':'400'}}>{row.preview}</Text>
-     {row.unread?<View style={{minWidth:18,height:18,borderRadius:9,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',paddingHorizontal:5}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>{row.unread>99?'99+':row.unread}</Text></View>:null}
-    </View>
-    {row.pending?<View style={{alignSelf:'flex-start',marginTop:5,paddingHorizontal:7,paddingVertical:3,borderRadius:9,backgroundColor:c.soft,borderWidth:1,borderColor:c.border}}><Text style={{fontSize:8,fontWeight:'800',color:c.muted}}>Pending</Text></View>:row.kind==='MARKET'?<Text style={{fontSize:9,fontWeight:'800',color:c.muted,marginTop:4}}>BUSINESS</Text>:null}
+   <Pressable onPress={onPress} onLongPress={onLongPress} delayLongPress={310} onPressIn={()=>animate(.985)} onPressOut={()=>animate(1)} style={({pressed})=>({flex:1,minWidth:0,minHeight:62,justifyContent:'center',opacity:pressed?.76:1})}>
+    <View style={{flexDirection:'row',alignItems:'baseline',gap:9}}><Text numberOfLines={1} style={{fontSize:16,fontWeight:row.unread?'800':'700',letterSpacing:-.3,color:c.text,flex:1}}>{row.name}</Text><Text style={{fontSize:11,color:row.unread?c.brand:c.muted,fontWeight:row.unread?'700':'400'}}>{relativeTime(row.at)}</Text></View>
+    <View style={{flexDirection:'row',alignItems:'center',gap:8,marginTop:5}}><Text numberOfLines={1} style={{fontSize:13,color:row.unread?c.textSecondary:c.muted,flex:1,fontWeight:row.unread?'600':'400'}}>{row.preview}</Text>{row.unread?<View style={{minWidth:21,height:21,borderRadius:11,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',paddingHorizontal:5}}><Text style={{fontSize:10,fontWeight:'800',color:c.onBrand}}>{row.unread>99?'99+':row.unread}</Text></View>:null}</View>
+    {context?<Text numberOfLines={1} style={{fontSize:10,color:c.accent,marginTop:5,fontWeight:'600'}}>{context}</Text>:null}
    </Pressable>
   </View>
  </Animated.View>;
 }
 
-function MessagesSearch({value,onChange,colors:c,reducedMotion}:{value:string;onChange:(value:string)=>void;colors:ReturnType<typeof useAppTheme>['colors'];reducedMotion:boolean}){
+function MessagesSearch({value,onChange,colors:c}:{value:string;onChange:(value:string)=>void;colors:ReturnType<typeof useAppTheme>['colors']}){
  const [focused,setFocused]=useState(false);
- const focus=useRef(new Animated.Value(0)).current;
- useEffect(()=>{if(reducedMotion){focus.setValue(focused?1:0);return}Animated.timing(focus,{toValue:focused?1:0,duration:MOTION.fast,easing:ease,useNativeDriver:false}).start()},[focused,reducedMotion,focus]);
- const borderColor=focus.interpolate({inputRange:[0,1],outputRange:[c.border,c.brand]});
- const shadowOpacity=focus.interpolate({inputRange:[0,1],outputRange:[0,.12]});
- return <View nativeID="everest-messages-search-shell" style={{marginTop:18}}>
-  <Animated.View style={{minHeight:47,borderRadius:16,borderWidth:1,borderColor,backgroundColor:c.input,flexDirection:'row',alignItems:'center',paddingHorizontal:13,gap:9,shadowColor:'#000',shadowOffset:{width:0,height:5},shadowRadius:14,shadowOpacity}}>
-   <Ionicons name="search-outline" size={18} color={focused?c.textSecondary:c.muted}/>
-   <TextInput nativeID="everest-messages-search" value={value} onChangeText={onChange} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Search conversations" placeholderTextColor={c.muted} style={{flex:1,minHeight:45,color:c.text,fontSize:16,borderWidth:0}}/>
+ return <View nativeID="everest-messages-search-shell" style={{marginTop:27}}>
+  <View style={{minHeight:54,borderRadius:17,backgroundColor:focused?c.elevated:c.soft,flexDirection:'row',alignItems:'center',paddingHorizontal:17,gap:11}}>
+   <Ionicons name="search" size={20} color={focused?c.brand:c.muted}/>
+   <TextInput nativeID="everest-messages-search" value={value} onChangeText={onChange} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Search people and conversations" placeholderTextColor={c.muted} style={{flex:1,minHeight:52,color:c.text,fontSize:15,borderWidth:0}}/>
    {value?<Pressable accessibilityLabel="Clear search" onPress={()=>onChange('')} style={({pressed})=>({width:30,height:30,borderRadius:15,alignItems:'center',justifyContent:'center',opacity:pressed?.55:1})}><Ionicons name="close-circle" size={17} color={c.muted}/></Pressable>:null}
-  </Animated.View>
+  </View>
  </View>;
 }
 
 function EmptyState({title,copy,colors:c}:{title:string;copy:string;colors:ReturnType<typeof useAppTheme>['colors']}){
- return <View style={{paddingVertical:58,alignItems:'center'}}><View style={{width:52,height:52,borderRadius:26,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="chatbubbles-outline" size={22} color={c.text}/></View><Text style={{fontSize:17,fontWeight:'900',color:c.text,marginTop:14}}>{title}</Text><Text style={{fontSize:11,lineHeight:17,color:c.muted,marginTop:6,textAlign:'center',maxWidth:330}}>{copy}</Text><Pressable onPress={()=>router.push('/search?tab=PERSON')} style={{marginTop:16,minHeight:42,borderRadius:14,backgroundColor:c.brand,paddingHorizontal:16,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:9,fontWeight:'900',letterSpacing:.5,color:c.onBrand}}>START A CONVERSATION</Text></Pressable></View>;
+ return <View style={{paddingVertical:66,alignItems:'center'}}><View style={{width:76,height:76,borderRadius:38,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="chatbubble-ellipses-outline" size={31} color={c.brand}/></View><Text style={{fontSize:20,fontWeight:'800',letterSpacing:-.4,color:c.text,marginTop:21}}>{title}</Text><Text style={{fontSize:13,lineHeight:20,color:c.muted,marginTop:9,textAlign:'center',maxWidth:270}}>{copy}</Text><Pressable onPress={()=>router.push('/search?tab=PERSON')} style={{marginTop:22,minHeight:46,borderRadius:23,backgroundColor:c.brand,paddingHorizontal:22,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:12,fontWeight:'800',color:c.onBrand}}>Start a conversation</Text></Pressable></View>;
 }
 
 function ConversationSkeleton({colors:c}:{colors:ReturnType<typeof useAppTheme>['colors']}){
- return <View accessibilityLabel="Loading conversations" style={{paddingTop:2}}>{[0,1,2,3,4].map(index=><View key={index} style={{height:73,flexDirection:'row',alignItems:'center',gap:12,borderBottomWidth:1,borderBottomColor:c.border}}><View style={{width:50,height:50,borderRadius:25,backgroundColor:c.soft,opacity:.82}}/><View style={{flex:1,gap:9}}><View style={{height:11,width:index%2?'47%':'58%',borderRadius:6,backgroundColor:c.soft}}/><View style={{height:9,width:index%2?'72%':'84%',borderRadius:5,backgroundColor:c.soft,opacity:.72}}/></View><View style={{width:28,height:8,borderRadius:4,backgroundColor:c.soft,opacity:.65}}/></View>)}</View>;
+ return <View accessibilityLabel="Loading conversations" style={{paddingTop:2}}>{[0,1,2,3,4].map(index=><View key={index} style={{height:82,flexDirection:'row',alignItems:'center',gap:15}}><View style={{width:58,height:58,borderRadius:29,backgroundColor:c.soft,opacity:.82}}/><View style={{flex:1,gap:10}}><View style={{height:14,width:index%2?'45%':'59%',borderRadius:7,backgroundColor:c.soft}}/><View style={{height:10,width:index%2?'67%':'81%',borderRadius:5,backgroundColor:c.soft,opacity:.72}}/></View><View style={{width:31,height:8,borderRadius:4,backgroundColor:c.soft,opacity:.65}}/></View>)}</View>;
 }
 
 function MotionMessage({children,mine,selected,exiting,reducedMotion}:{children:React.ReactNode;mine:boolean;selected:boolean;exiting:boolean;reducedMotion:boolean}){
@@ -489,7 +498,7 @@ function MotionMessage({children,mine,selected,exiting,reducedMotion}:{children:
  return <Animated.View style={{opacity:selected?.08:Animated.multiply(enter,visibility),transform:[{translateX:enter.interpolate({inputRange:[0,1],outputRange:[mine?7:-7,0]})},{translateY:enter.interpolate({inputRange:[0,1],outputRange:[4,0]})},{scale:baseScale}]}}>{children}</Animated.View>;
 }
 
-function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,transitioningId,reducedMotion,onRetry,onReachTop,onNearBottomChange,onInitialContent}:{refValue:React.MutableRefObject<ScrollView|null>;items:PersonalMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onAction:(m:PersonalMessage,rect:MessageRect)=>void;selectedId:string|null;transitioningId:string|null;reducedMotion:boolean;onRetry:(m:PersonalMessage)=>void;onReachTop:()=>void;onNearBottomChange:(value:boolean)=>void;onInitialContent:()=>void}){
+function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,transitioningId,reducedMotion,onRetry,onReply,onReachTop,onNearBottomChange,onInitialContent}:{refValue:React.MutableRefObject<ScrollView|null>;items:PersonalMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onAction:(m:PersonalMessage,rect:MessageRect)=>void;selectedId:string|null;transitioningId:string|null;reducedMotion:boolean;onRetry:(m:PersonalMessage)=>void;onReply:(m:PersonalMessage)=>void;onReachTop:()=>void;onNearBottomChange:(value:boolean)=>void;onInitialContent:()=>void}){
  const noSelect=Platform.OS==='web'?({userSelect:'none',WebkitUserSelect:'none',WebkitTouchCallout:'none',touchAction:'manipulation'} as never):undefined;
  const messageRefs=useRef(new Map<string,View>());
  const openAction=(message:PersonalMessage)=>{
@@ -516,24 +525,35 @@ function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,tran
    const webProps=Platform.OS==='web'?{dataSet:{everestMessageBubble:'true'},onContextMenu:(event:{preventDefault?:()=>void})=>{event.preventDefault?.();openAction(m)}}:{};
    const radiusStyle=mine?{borderTopRightRadius:groupedPrev?8:18,borderBottomRightRadius:groupedNext?8:5}:{borderTopLeftRadius:groupedPrev?8:18,borderBottomLeftRadius:groupedNext?8:5};
    const meta=mine?(m.sending?'Sending':m.failed?'Failed · tap to retry':m.read_at?'Seen':'Sent'):'';
-   return <MotionMessage key={m.id} mine={mine} selected={selectedId===m.id} exiting={transitioningId===m.id} reducedMotion={reducedMotion}>
+   return <SwipeReplyBubble key={m.id} message={m} colors={c} reducedMotion={reducedMotion} onReply={onReply}><MotionMessage mine={mine} selected={selectedId===m.id} exiting={transitioningId===m.id} reducedMotion={reducedMotion}>
     {showDate?<View style={{alignItems:'center',marginVertical:10}}><Text selectable={false} style={[{fontSize:9,fontWeight:'900',letterSpacing:.8,color:c.muted},noSelect]}>{dateLabel(m.created_at)}</Text></View>:null}
     <View style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}>
-     <View style={{maxWidth:'76%'}}>
+     <View style={{maxWidth:'83%'}}>
       <Pressable {...webProps} onLongPress={()=>openAction(m)} delayLongPress={285} onPress={()=>{if(m.failed)onRetry(m)}} style={({pressed})=>[{opacity:pressed?.9:1,transform:[{scale:pressed?.992:1}]},noSelect]}>
-       <View ref={node=>{if(node)messageRefs.current.set(m.id,node);else messageRefs.current.delete(m.id)}} collapsable={false} style={[{backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:1,borderColor:c.border,borderRadius:18,paddingHorizontal:10,paddingVertical:7},radiusStyle]}>
+       <View ref={node=>{if(node)messageRefs.current.set(m.id,node);else messageRefs.current.delete(m.id)}} collapsable={false} style={[{backgroundColor:mine?c.brand:c.elevated,borderRadius:19,paddingHorizontal:15,paddingVertical:11},radiusStyle]}>
         {m.reply_to_message_id?<View style={{borderLeftWidth:2,borderLeftColor:mine?c.onBrand:c.brand,paddingLeft:7,marginBottom:5,opacity:.76}}><Text selectable={false} numberOfLines={2} style={[{fontSize:10,lineHeight:13,color:mine?c.onBrand:c.textSecondary},noSelect]}>{m.reply_preview??'Message unavailable'}</Text></View>:null}
-        <Text selectable={false} style={[{fontSize:15,lineHeight:20,color:mine?c.onBrand:c.text,fontStyle:m.deleted_for_everyone?'italic':'normal'},noSelect]}>{m.body}</Text>
+        <Text selectable={false} style={[{fontSize:15,lineHeight:22,color:mine?c.onBrand:c.text,fontStyle:m.deleted_for_everyone?'italic':'normal'},noSelect]}>{m.body}</Text>
         {m.edited_at&&!m.deleted_for_everyone?<Text selectable={false} style={[{fontSize:8,color:mine?c.onBrand:c.muted,opacity:.68,marginTop:2},noSelect]}>edited</Text>:null}
        </View>
-       {m.reactions.length?<View style={{alignSelf:mine?'flex-end':'flex-start',marginTop:-6,marginHorizontal:6,flexDirection:'row',gap:3,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,borderRadius:11,paddingHorizontal:6,paddingVertical:2,shadowColor:'#000',shadowOpacity:.08,shadowRadius:5}}>{m.reactions.map(r=><Text selectable={false} key={r.reaction} style={[{fontSize:10,color:c.text},noSelect]}>{r.reaction}{r.count>1?' '+r.count:''}</Text>)}</View>:null}
+       {m.reactions.length?<View style={{alignSelf:mine?'flex-end':'flex-start',marginTop:-5,marginHorizontal:7,flexDirection:'row',gap:5,backgroundColor:c.surface,borderRadius:13,paddingHorizontal:8,paddingVertical:4,shadowColor:'#000',shadowOpacity:.08,shadowRadius:5}}>{m.reactions.map(r=><Text selectable={false} key={r.reaction} style={[{fontSize:11,color:c.text},noSelect]}>{r.reaction}{r.count>1?' '+r.count:''}</Text>)}</View>:null}
       </Pressable>
      </View>
      {!groupedNext?<Text selectable={false} style={[{fontSize:8,color:m.failed?c.danger:c.muted,marginTop:3,marginHorizontal:4,fontWeight:m.failed?'800':'400'},noSelect]}>{timeOnly(m.created_at)}{meta?' · '+meta:''}</Text>:null}
     </View>
-   </MotionMessage>;
+   </MotionMessage></SwipeReplyBubble>;
   })}
  </ScrollView>;
+}
+
+function SwipeReplyBubble({message,colors:c,reducedMotion,onReply,children}:{message:PersonalMessage;colors:ReturnType<typeof useAppTheme>['colors'];reducedMotion:boolean;onReply:(m:PersonalMessage)=>void;children:React.ReactNode}){
+ const offset=useSharedValue(0);const crossed=useSharedValue(false);
+ const gesture=useMemo(()=>Gesture.Pan().enabled(!message.deleted_for_everyone&&Platform.OS!=='web').activeOffsetX([-15,15]).failOffsetY([-16,16])
+  .onUpdate(event=>{offset.value=Math.max(0,Math.min(72,event.translationX));if(offset.value>52&&!crossed.value){crossed.value=true;runOnJS(haptic.selection)()}else if(offset.value<40)crossed.value=false})
+  .onEnd(()=>{if(offset.value>52)runOnJS(onReply)(message);offset.value=withSpring(0,{damping:23,stiffness:310});crossed.value=false})
+  .onFinalize((_event,success)=>{if(!success){offset.value=withSpring(0,{damping:23,stiffness:310});crossed.value=false}}),[crossed,message,offset,onReply]);
+ const shift=useAnimatedStyle(()=>({transform:[{translateX:reducedMotion?0:offset.value}]}));
+ const icon=useAnimatedStyle(()=>({opacity:Math.min(1,offset.value/55),transform:[{scale:.8+.2*Math.min(1,offset.value/55)}]}));
+ return <View style={{position:'relative'}}><Reanimated.View pointerEvents="none" style={[{position:'absolute',left:14,top:'42%'},icon]}><Ionicons name="arrow-undo" size={19} color={c.brand}/></Reanimated.View><GestureDetector gesture={gesture}><Reanimated.View style={shift}>{children}</Reanimated.View></GestureDetector></View>;
 }
 
 function MarketThread({refValue,items,userId,colors:c}:{refValue:React.MutableRefObject<ScrollView|null>;items:MarketMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors']}){
@@ -544,23 +564,22 @@ function MarketThread({refValue,items,userId,colors:c}:{refValue:React.MutableRe
 
 export function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,reducedMotion,bottomInset,onFocus,cancelReply,cancelEdit}:{draft:string;setDraft:(v:string)=>void;busy:boolean;submit:()=>void;colors:ReturnType<typeof useAppTheme>['colors'];reply:PersonalMessage|null;edit:PersonalMessage|null;reducedMotion:boolean;bottomInset:number;onFocus:()=>void;cancelReply:()=>void;cancelEdit:()=>void}){
  const [focused,setFocused]=useState(false);
- const focus=useRef(new Animated.Value(0)).current;
  const active=useRef(new Animated.Value(draft.trim()?1:0)).current;
  const pressed=useRef(new Animated.Value(1)).current;
  const inputRef=useRef<TextInput|null>(null);
  useEffect(()=>installChatWebRuntimeStyles(c.brand,c.text),[c.brand,c.text]);
- useEffect(()=>{const to=focused?1:0;if(reducedMotion){focus.setValue(to);return}Animated.timing(focus,{toValue:to,duration:MOTION.standard,easing:ease,useNativeDriver:false}).start()},[focused,reducedMotion,focus]);
- useEffect(()=>{const to=draft.trim()?1:0;if(reducedMotion){active.setValue(to);return}Animated.spring(active,{toValue:to,useNativeDriver:true,...MOTION.spring}).start()},[draft,reducedMotion,active]);
+ const hasDraft=Boolean(draft.trim());
+ useEffect(()=>{const to=hasDraft?1:0;if(reducedMotion){active.setValue(to);return}Animated.spring(active,{toValue:to,useNativeDriver:true,...MOTION.spring}).start()},[hasDraft,reducedMotion,active]);
  const pressTo=(to:number)=>{if(reducedMotion){pressed.setValue(to);return}Animated.spring(pressed,{toValue:to,useNativeDriver:true,...MOTION.spring}).start()};
- return <View style={{backgroundColor:c.canvas,paddingHorizontal:9,paddingTop:5,paddingBottom:Math.max(5,bottomInset+5)}}>
-  {reply||edit?<View style={{marginHorizontal:4,marginBottom:5,paddingHorizontal:9,paddingVertical:6,borderRadius:11,backgroundColor:c.soft,flexDirection:'row',alignItems:'center',gap:8}}><View style={{flex:1}}><Text style={{fontSize:8,fontWeight:'900',color:c.muted}}>{edit?'EDITING MESSAGE':'REPLYING'}</Text><Text numberOfLines={1} style={{fontSize:10,color:c.text,marginTop:1}}>{edit?edit.body:reply?.body}</Text></View><Pressable onPress={edit?cancelEdit:cancelReply} style={{width:28,height:28,alignItems:'center',justifyContent:'center'}}><Ionicons name="close" size={17} color={c.muted}/></Pressable></View>:null}
+ return <View style={{backgroundColor:c.canvas,paddingHorizontal:14,paddingTop:11,paddingBottom:Math.max(9,bottomInset+8),shadowColor:'#000',shadowOpacity:.06,shadowRadius:16,shadowOffset:{width:0,height:-7}}}>
+  {reply||edit?<View style={{marginHorizontal:3,marginBottom:10,paddingHorizontal:12,paddingVertical:9,borderLeftWidth:3,borderLeftColor:c.brand,backgroundColor:c.soft,flexDirection:'row',alignItems:'center',gap:8}}><View style={{flex:1}}><Text style={{fontSize:10,fontWeight:'800',color:c.brand}}>{edit?'Editing message':'Replying'}</Text><Text numberOfLines={1} style={{fontSize:12,color:c.text,marginTop:3}}>{edit?edit.body:reply?.body}</Text></View><Pressable onPress={edit?cancelEdit:cancelReply} style={{width:30,height:30,alignItems:'center',justifyContent:'center'}}><Ionicons name="close" size={18} color={c.muted}/></Pressable></View>:null}
   <View nativeID="everest-composer-shell" style={{position:'relative',zIndex:20}} onTouchStart={()=>inputRef.current?.focus()}>
-   <Animated.View style={{minHeight:42,maxHeight:98,borderRadius:22,borderWidth:1,borderColor:focus.interpolate({inputRange:[0,1],outputRange:[c.border,c.brand]}),backgroundColor:c.input,flexDirection:'row',alignItems:'flex-end',paddingLeft:12,paddingRight:4,paddingVertical:3,shadowColor:'#000',shadowOffset:{width:0,height:5},shadowRadius:14,shadowOpacity:focus.interpolate({inputRange:[0,1],outputRange:[0,.13]}),transform:[{translateY:focus.interpolate({inputRange:[0,1],outputRange:[0,-1]})}]}}>
-    <TextInput ref={inputRef} nativeID="everest-message-composer" value={draft} onChangeText={setDraft} onFocus={()=>{setFocused(true);onFocus()}} onBlur={()=>setFocused(false)} placeholder="Message…" placeholderTextColor={focused?c.textSecondary:c.muted} multiline scrollEnabled showSoftInputOnFocus maxLength={5000} style={[{flex:1,minHeight:34,maxHeight:88,color:c.text,fontSize:16,lineHeight:20,paddingTop:7,paddingBottom:7,paddingHorizontal:0,textAlignVertical:'center',borderWidth:0},Platform.OS==='web'?({outlineStyle:'none',outlineWidth:0,outlineColor:'transparent',boxShadow:'none'} as never):null]}/>
+   <View style={{minHeight:52,maxHeight:124,borderRadius:25,backgroundColor:focused?c.elevated:c.soft,flexDirection:'row',alignItems:'flex-end',paddingLeft:17,paddingRight:6,paddingVertical:5}}>
+    <TextInput ref={inputRef} nativeID="everest-message-composer" value={draft} onChangeText={setDraft} onFocus={()=>{setFocused(true);onFocus()}} onBlur={()=>setFocused(false)} placeholder="Write a message…" placeholderTextColor={c.muted} multiline scrollEnabled showSoftInputOnFocus maxLength={5000} style={[{flex:1,minHeight:38,maxHeight:102,color:c.text,fontSize:16,lineHeight:21,paddingTop:8,paddingBottom:8,paddingHorizontal:0,textAlignVertical:'center',borderWidth:0},Platform.OS==='web'?({outlineStyle:'none',outlineWidth:0,outlineColor:'transparent',boxShadow:'none'} as never):null]}/>
     <Animated.View style={{opacity:active.interpolate({inputRange:[0,1],outputRange:[.42,1]}),transform:[{scale:Animated.multiply(active.interpolate({inputRange:[0,1],outputRange:[.9,1]}),pressed)}]}}>
-     <Pressable accessibilityLabel={edit?'Save edited message':'Send message'} disabled={busy||!draft.trim()} onPressIn={()=>pressTo(.92)} onPressOut={()=>pressTo(1)} onPress={()=>{void haptic.light();submit()}} style={{width:34,height:34,borderRadius:17,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:1}}>{busy?<ActivityIndicator size="small" color={c.onBrand}/>:<Ionicons name={edit?'checkmark':'arrow-up'} size={18} color={c.onBrand}/>}</Pressable>
+     <Pressable accessibilityLabel={edit?'Save edited message':'Send message'} disabled={busy||!draft.trim()} onPressIn={()=>pressTo(.92)} onPressOut={()=>pressTo(1)} onPress={()=>{void haptic.light();submit()}} style={{width:40,height:40,borderRadius:20,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:1}}>{busy?<ActivityIndicator size="small" color={c.onBrand}/>:<Ionicons name={edit?'checkmark':'arrow-up'} size={21} color={c.onBrand}/>}</Pressable>
     </Animated.View>
-   </Animated.View>
+   </View>
   </View>
  </View>;
 }
@@ -605,12 +624,12 @@ function MessageActionMenu({target,userId,colors:c,reducedMotion,onClose,onReply
  ].filter(Boolean) as Array<{key:string;icon:React.ComponentProps<typeof Ionicons>['name'];label:string;fn:()=>void}>;
  return <Modal transparent visible animationType="none" onRequestClose={onClose}>
   <Pressable nativeID="everest-message-action-overlay" onPress={onClose} style={{flex:1}}>
-   <Animated.View pointerEvents="none" style={{position:'absolute',top:0,right:0,bottom:0,left:0,backgroundColor:'#000',opacity:open.interpolate({inputRange:[0,1],outputRange:[0,.58]})}}/>
+   <Animated.View pointerEvents="none" style={{position:'absolute',top:0,right:0,bottom:0,left:0,backgroundColor:'#000',opacity:open.interpolate({inputRange:[0,1],outputRange:[0,.3]})}}/>
    {!message.deleted_for_everyone?<Animated.View style={{position:'absolute',left:cardLeft,top:reactionTop,width:cardWidth,height:reactionHeight,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[5,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.97,1]})}]}}>
-    <View style={{height:reactionHeight,flexDirection:'row',justifyContent:'space-between',alignItems:'center',backgroundColor:c.elevated,borderRadius:24,borderWidth:1,borderColor:c.border,paddingHorizontal:7,paddingVertical:5,shadowColor:'#000',shadowOpacity:.22,shadowRadius:16,shadowOffset:{width:0,height:8}}}>{REACTIONS.map(r=><Pressable key={r} accessibilityLabel={'React '+r} onPress={()=>{void haptic.light();onReact(message,r)}} style={({pressed})=>({width:38,height:38,borderRadius:19,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',transform:[{scale:pressed?1.13:1}],opacity:pressed?.84:1})}><Text selectable={false} style={{fontSize:19}}>{r}</Text></Pressable>)}</View>
+    <View style={{height:reactionHeight,flexDirection:'row',justifyContent:'space-between',alignItems:'center',backgroundColor:c.surface,borderRadius:24,paddingHorizontal:7,paddingVertical:5,shadowColor:'#000',shadowOpacity:.15,shadowRadius:14,shadowOffset:{width:0,height:7}}}>{REACTIONS.map(r=><Pressable key={r} accessibilityLabel={'React '+r} onPress={()=>{void haptic.light();onReact(message,r)}} style={({pressed})=>({width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center',transform:[{scale:pressed?1.07:1}],opacity:pressed?.84:1})}><Text selectable={false} style={{fontSize:19}}>{r}</Text></Pressable>)}</View>
    </Animated.View>:null}
    <Animated.View pointerEvents="box-none" style={{position:'absolute',left:bubbleLeft,top:bubbleTop,width:bubbleWidth,height:bubbleHeight,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[target.rect.y-bubbleTop,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.98,1.03]})}],shadowColor:'#000',shadowOpacity:.3,shadowRadius:18,shadowOffset:{width:0,height:10}}}>
-    <View style={{maxHeight:bubbleHeight,backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:1,borderColor:c.border,borderRadius:18,overflow:'hidden'}}>
+    <View style={{maxHeight:bubbleHeight,backgroundColor:mine?c.brand:c.elevated,borderRadius:19,overflow:'hidden'}}>
      <ScrollView scrollEnabled={target.rect.height>maxBubbleHeight} showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:10,paddingVertical:7}}>
       {message.reply_to_message_id?<View style={{borderLeftWidth:2,borderLeftColor:mine?c.onBrand:c.brand,paddingLeft:7,marginBottom:5,opacity:.76}}><Text selectable={false} numberOfLines={2} style={{fontSize:10,lineHeight:13,color:mine?c.onBrand:c.textSecondary}}>{message.reply_preview??'Message unavailable'}</Text></View>:null}
       <Text selectable={false} style={{fontSize:15,lineHeight:20,color:mine?c.onBrand:c.text,fontStyle:message.deleted_for_everyone?'italic':'normal'}}>{message.body}</Text>
@@ -622,7 +641,7 @@ function MessageActionMenu({target,userId,colors:c,reducedMotion,onClose,onReply
     <Text selectable={false} style={{fontSize:8,color:c.muted,textAlign:mine?'right':'left'}}>{timeOnly(message.created_at)}</Text>
    </Animated.View>
    <Animated.View style={{position:'absolute',left:cardLeft,top:actionTop,width:cardWidth,height:actionHeight,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[-4,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.98,1]})}]}}>
-    <View style={{height:actionHeight,alignSelf:mine?'flex-end':'flex-start',flexDirection:'row',backgroundColor:c.elevated,borderRadius:16,borderWidth:1,borderColor:c.border,padding:4,shadowColor:'#000',shadowOpacity:.18,shadowRadius:12,shadowOffset:{width:0,height:6}}}>
+    <View style={{height:actionHeight,alignSelf:mine?'flex-end':'flex-start',flexDirection:'row',backgroundColor:c.surface,borderRadius:16,padding:4,shadowColor:'#000',shadowOpacity:.14,shadowRadius:12,shadowOffset:{width:0,height:6}}}>
      {compactActions.map(action=><Pressable key={action.key} accessibilityLabel={action.label} onPress={()=>{void haptic.selection();action.fn()}} style={({pressed})=>({minWidth:48,height:44,paddingHorizontal:8,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.96:1}]})}><Ionicons name={action.icon} size={18} color={action.key==='report'?c.danger:c.text}/><Text selectable={false} style={{fontSize:8,fontWeight:'800',color:action.key==='report'?c.danger:c.muted,marginTop:2}}>{action.label}</Text></Pressable>)}
     </View>
    </Animated.View>
