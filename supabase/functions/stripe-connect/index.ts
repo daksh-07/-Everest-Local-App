@@ -40,37 +40,44 @@ Deno.serve(async req=>{
  if(req.method!=='POST')return json({error:'Method not allowed'},405);
 
  const url=Deno.env.get('SUPABASE_URL');
- const anon=Deno.env.get('SUPABASE_ANON_KEY');
  const service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
  const stripeKey=Deno.env.get('STRIPE_SECRET_KEY');
  const appUrl=Deno.env.get('APP_PUBLIC_URL');
- if(!url||!anon||!service||!stripeKey)return json({error:'Stripe Connect is not configured'},503);
+ if(!url||!service||!stripeKey)return json({error:'Stripe Connect is not configured'},503);
 
  const auth=req.headers.get('Authorization');
  if(!auth)return json({error:'Authentication required'},401);
+ const token=auth.replace(/^Bearer\\s+/i,'').trim();
+ if(!token)return json({error:'Authentication required'},401);
 
  const input=await req.json().catch(()=>null) as ConnectRequest|null;
  const action=(typeof input?.action==='string'?input.action.toLowerCase():'status') as ConnectAction;
  const businessId=typeof input?.business_id==='string'?input.business_id.trim():'';
  if(!businessId||!['status','onboard'].includes(action))return json({error:'Invalid request'},400);
 
- const userClient=createClient(url,anon,{global:{headers:{Authorization:auth}}});
- const admin=createClient(url,service);
- const {data:{user}}=await userClient.auth.getUser();
- if(!user)return json({error:'Invalid session'},401);
+ const admin=createClient(url,service,{auth:{autoRefreshToken:false,persistSession:false}});
+ const {data:{user},error:userError}=await admin.auth.getUser(token);
+ if(userError||!user){
+  console.log('stripe_connect_auth_failed',{businessId,action,reason:userError?.message??'user_missing'});
+  return json({error:'Invalid session'},401);
+ }
 
  const {data:membership,error:membershipError}=await admin.from('business_members')
   .select('member_role').eq('business_id',businessId).eq('user_id',user.id).maybeSingle();
- if(membershipError)return json({error:'Business access could not be verified'},500);
+ if(membershipError){
+  console.log('stripe_connect_access_failed',{businessId,action,stage:'membership',message:membershipError.message});
+  return json({error:'Business access could not be verified'},500);
+ }
  if(!membership)return json({error:'Business access is required'},403);
 
  const {data:business,error:businessError}=await admin.from('businesses')
   .select('id,name,description,email,status,verification_status,stripe_connected_account_id,stripe_connect_status')
   .eq('id',businessId).maybeSingle();
- if(businessError)return json({error:'Business could not be loaded'},500);
+ if(businessError){
+  console.log('stripe_connect_access_failed',{businessId,action,stage:'business',message:businessError.message});
+  return json({error:'Business could not be loaded'},500);
+ }
  if(!business)return json({error:'Business not found'},404);
-
- const stripe=new Stripe(stripeKey,{apiVersion:'2025-07-30.basil'});
 
  async function sync(account:Stripe.Account){
   const snapshot=connectSnapshot(account);
@@ -88,6 +95,7 @@ Deno.serve(async req=>{
  }
 
  try{
+  const stripe=new Stripe(stripeKey,{apiVersion:'2025-07-30.basil'});
   let connectedId=typeof business.stripe_connected_account_id==='string'?business.stripe_connected_account_id:'';
 
   if(connectedId){
@@ -149,6 +157,12 @@ Deno.serve(async req=>{
    return json({error:'Verify your business before setting up payouts'},409);
   }
 
+  if(!appUrl)return json({error:'APP_PUBLIC_URL is required for Stripe onboarding'},503);
+  const preflightBase=new URL(appUrl);
+  if(preflightBase.protocol!=='https:'&&preflightBase.hostname!=='localhost'&&preflightBase.hostname!=='127.0.0.1'){
+   return json({error:'APP_PUBLIC_URL must use HTTPS for Stripe onboarding'},503);
+  }
+
   if(!connectedId){
    const params:Stripe.AccountCreateParams={
     country:'AU',
@@ -174,11 +188,7 @@ Deno.serve(async req=>{
    await sync(account);
   }
 
-  if(!appUrl)return json({error:'APP_PUBLIC_URL is required for Stripe onboarding'},503);
-  const base=new URL(appUrl);
-  if(base.protocol!=='https:'&&base.hostname!=='localhost'&&base.hostname!=='127.0.0.1'){
-   return json({error:'APP_PUBLIC_URL must use HTTPS for Stripe onboarding'},503);
-  }
+  const base=preflightBase;
   const refreshUrl=new URL('/business-payouts',base);
   refreshUrl.searchParams.set('stripe','refresh');
   refreshUrl.searchParams.set('businessId',businessId);
@@ -198,10 +208,14 @@ Deno.serve(async req=>{
   if(!('deleted' in account&&account.deleted))await sync(account as Stripe.Account);
   return json({url:link.url,expires_at:link.expires_at,stripe_connected_account_id:connectedId});
  }catch(error){
-  console.error('stripe_connect_failed',{
+  const stripeError=error as {code?:string;type?:string;requestId?:string;raw?:{requestId?:string}};
+  console.log('stripe_connect_failed',{
    businessId,
    action,
    message:error instanceof Error?error.message:'unknown',
+   code:stripeError.code??null,
+   type:stripeError.type??null,
+   requestId:stripeError.requestId??stripeError.raw?.requestId??null,
   });
   return json({error:'Stripe payout setup could not be completed. Please try again.'},500);
  }
