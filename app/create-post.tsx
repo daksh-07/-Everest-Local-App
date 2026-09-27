@@ -9,6 +9,8 @@ import {uploadPostMedia} from '@/lib/request-post-media';
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {haptic} from '@/lib/haptics';
+import {MusicPicker} from '@/components/MusicPicker';
+import {setPostMusic,type MusicTrack} from '@/lib/social-expansion';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 
 type Identity={kind:'PERSONAL';id:string;name:string}|{kind:'BUSINESS';id:string;name:string;business:BusinessWorkspace};
@@ -35,7 +37,7 @@ export default function CreatePost(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const params=useLocalSearchParams<{intent?:string}>();
  const [identities,setIdentities]=useState<Identity[]>([]);const [identity,setIdentity]=useState<Identity|null>(null);
  const [caption,setCaption]=useState('');const [type,setType]=useState<PostType>('UPDATE');const [visibility,setVisibility]=useState<'PUBLIC'|'FOLLOWERS'>('PUBLIC');const [location,setLocation]=useState('');
- const [photos,setPhotos]=useState<ImagePicker.ImagePickerAsset[]>([]);const [services,setServices]=useState<Listing[]>([]);const [products,setProducts]=useState<Listing[]>([]);const [serviceId,setServiceId]=useState<string|null>(null);const [productId,setProductId]=useState<string|null>(null);
+ const [photos,setPhotos]=useState<ImagePicker.ImagePickerAsset[]>([]);const [music,setMusic]=useState<MusicTrack|null>(null);const [musicOpen,setMusicOpen]=useState(false);const [services,setServices]=useState<Listing[]>([]);const [products,setProducts]=useState<Listing[]>([]);const [serviceId,setServiceId]=useState<string|null>(null);const [productId,setProductId]=useState<string|null>(null);
  const [showDetails,setShowDetails]=useState(false);const [showServicePicker,setShowServicePicker]=useState(false);const [showProductPicker,setShowProductPicker]=useState(false);
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [progress,setProgress]=useState('');const [error,setError]=useState('');
 
@@ -85,6 +87,7 @@ export default function CreatePost(){
   try{
    const id=await createPost({businessId:identity.kind==='BUSINESS'?identity.id:undefined,caption,postType:type,visibility:identity.kind==='BUSINESS'?'PUBLIC':visibility,serviceId:identity.kind==='BUSINESS'?serviceId??undefined:undefined,productId:identity.kind==='BUSINESS'?productId??undefined:undefined,locationLabel:location||undefined});
    if(photos.length){setProgress(`Uploading 0/${photos.length}`);await uploadPostMedia(id,photos,(d,t)=>setProgress(`Uploading ${d}/${t}`));}
+   if(music)await setPostMusic(id,music.id,0);
    await haptic.success();router.replace('/social');
   }catch(e){void haptic.warning();setError(e instanceof Error?e.message:'Post could not be published.');}finally{setBusy(false);setProgress('');}
  }
@@ -136,6 +139,7 @@ export default function CreatePost(){
 
    <View style={s.addToPost}>
     <Text style={s.addTitle}>POST DETAILS</Text>
+    <Pressable onPress={()=>setMusicOpen(true)} style={s.detailRow}><View style={s.detailIcon}><Ionicons name="musical-notes-outline" size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.detailText}>{music?music.title:'Add Everest Music'}</Text>{music?<Text style={s.musicArtist}>{music.artist}</Text>:null}</View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
     <Pressable onPress={()=>setShowDetails(v=>!v)} style={s.detailRow}><View style={s.detailIcon}><Ionicons name="location-outline" size={19} color={colors.text}/></View><Text style={s.detailText}>{location||'Location'}</Text><Ionicons name={showDetails?'chevron-up':'chevron-down'} size={18} color={colors.muted}/></Pressable>
     {showDetails?<View style={s.detailPanel}><TextInput value={location} onChangeText={setLocation} maxLength={120} placeholder="Add suburb or area (optional)" placeholderTextColor={colors.muted} style={[s.input,Platform.OS==='web'&&({outlineStyle:'none'} as object)]}/>{identity?.kind==='PERSONAL'?<View style={s.visibilityRow}><Text style={s.detailLabel}>Audience</Text><Pressable onPress={()=>setVisibility(visibility==='PUBLIC'?'FOLLOWERS':'PUBLIC')} style={s.audience}><Ionicons name={visibility==='PUBLIC'?'globe-outline':'people-outline'} size={16} color={colors.text}/><Text style={s.audienceText}>{visibility==='PUBLIC'?'Public':'Connections'}</Text></Pressable></View>:null}</View>:null}
 
@@ -150,6 +154,7 @@ export default function CreatePost(){
    {identity?.kind==='PERSONAL'&&type==='EXPERIENCE'?<View style={s.afterWork}><Ionicons name="heart-circle-outline" size={23} color={colors.brand}/><View style={{flex:1}}><Text style={s.afterWorkTitle}>Share the result, not just a rating</Text><Text style={s.afterWorkCopy}>Tell the local community what was done and how it felt. Your formal business review remains separate.</Text></View></View>:null}
 
    {progress?<Text style={s.note}>{progress}</Text>:null}{error?<Text style={s.error}>{error}</Text>:null}
+   <MusicPicker visible={musicOpen} selected={music} onClose={()=>setMusicOpen(false)} onSelect={setMusic}/>
    <Pressable disabled={busy} onPress={()=>void publish()} style={[s.primary,busy&&s.dim]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<><Ionicons name="paper-plane-outline" size={18} color={colors.onBrand}/><Text style={s.primaryText}>PUBLISH POST</Text></>}</Pressable>
   </>}
  </ScrollView></SafeAreaView>;
