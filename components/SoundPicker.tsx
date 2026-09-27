@@ -75,10 +75,10 @@ export function SoundPicker({
   if(recorderState.isRecording){try{await recorder.stop();await setAudioModeAsync({allowsRecording:false,playsInSilentMode:true})}catch{void 0}}
   onClose();
  }
- const activeValue=tab==='VOICEOVER'&&onVoiceoverChange?voiceover:value;
+ const activeValue=tab==='VOICEOVER'&&onVoiceoverChange?voiceover:tab==='ORIGINAL'?null:value;
  const patch=(next:Partial<DraftSound>)=>{if(!activeValue)return;const updated=normalizeDraftSound({...activeValue,...next});if(tab==='VOICEOVER'&&onVoiceoverChange)onVoiceoverChange(updated);else onChange(updated)};
  const removeActive=()=>{previewPlayer.pause();if(tab==='VOICEOVER'&&onVoiceoverChange)onVoiceoverChange(null);else onChange(null);void haptic.selection()};
- const selectedLabel=activeValue?activeValue.title:(tab==='VOICEOVER'?'No voiceover':hasOriginalAudio&&originalVolume>0?'Original audio':'No added sound');
+ const selectedLabel=tab==='ORIGINAL'?'Original audio':activeValue?activeValue.title:(tab==='VOICEOVER'?'No voiceover':hasOriginalAudio&&originalVolume>0?'Original audio':'No added sound');
 
  return <Modal visible={visible} transparent animationType="slide" onRequestClose={()=>void close()}>
   <Pressable style={s.scrim} onPress={()=>void close()}/>
