@@ -53,7 +53,7 @@ export default function CreateClip(){
    if(sound)await publishDraftSound(createdId,sound);
    void haptic.success();router.replace(('/social?mode=clips&postId='+createdId) as never);
   }catch(e){
-   if(createdId){try{await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',createdId)}catch{}}
+   if(createdId){try{await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',createdId)}catch{void 0}}
    void haptic.warning();setError(e instanceof Error?e.message:'Clip could not be published.');
   }finally{setBusy(false)}
  }
