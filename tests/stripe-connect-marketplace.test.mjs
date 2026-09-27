@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const migration=fs.readFileSync('supabase/migrations/20260927180000_stripe_connect_marketplace_payouts.sql','utf8');
+const migration=fs.readFileSync('supabase/migrations/20260927081523_stripe_connect_marketplace_payouts.sql','utf8');
 const connect=fs.readFileSync('supabase/functions/stripe-connect/index.ts','utf8');
 const checkout=fs.readFileSync('supabase/functions/checkout/index.ts','utf8');
 const serviceCheckout=fs.readFileSync('supabase/functions/service-checkout/index.ts','utf8');
