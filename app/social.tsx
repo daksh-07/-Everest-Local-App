@@ -4,7 +4,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useLocalSearchParams} from 'expo-router';
 import {
-  addPostComment,getCommentEngagement,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,recordPostView,setPostCommentsEnabled,
+  addPostComment,getAccessiblePost,getCommentEngagement,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,recordPostView,setPostCommentsEnabled,
   toggleCommentLike,togglePostLike,toggleSavedPost,type CommentEngagement,type PostComment,type PostEngagement,type SocialPost
 } from '@/lib/social';
 import {signedPostMediaBatch} from '@/lib/request-post-media';
@@ -41,7 +41,7 @@ export default function Social(){
  const [error,setError]=useState('');const [locality,setLocality]=useState(()=>cachedFeed?.locality??'Near you');const [userId,setUserId]=useState<string|null>(()=>cachedFeed?.userId??null);
  const [commentPost,setCommentPost]=useState<FeedPost|null>(null);const [comments,setComments]=useState<PostComment[]>([]);const [commentText,setCommentText]=useState('');
  const [commentLikes,setCommentLikes]=useState<Record<string,CommentEngagement>>({});const [replyTo,setReplyTo]=useState<PostComment|null>(null);
- const [commentsBusy,setCommentsBusy]=useState(false);const [menuPost,setMenuPost]=useState<string|null>(null);const deepLinkOpened=useRef(false);
+ const [commentsBusy,setCommentsBusy]=useState(false);const [menuPost,setMenuPost]=useState<string|null>(null);const lastDeepLinkedPost=useRef<string|null>(null);
  const viewedPosts=useRef(new Set<string>());const listRef=useRef<FlatList<FeedPost>>(null);const scrollOffsets=useRef<Record<'POSTS'|'CLIPS',number>>({POSTS:0,CLIPS:0});
  const viewabilityConfig=useRef({itemVisiblePercentThreshold:60,minimumViewTime:900}).current;
  const onViewableItemsChanged=useRef(({viewableItems}:{viewableItems:ViewToken[]})=>{
@@ -70,7 +70,11 @@ export default function Social(){
     resolveCustomerLocality({requestIfUndetermined:false}).catch(()=>null)
    ]);
    const localityHint=loc?.suburb||loc?.city||undefined;
-   const items=await listPublicPosts({limit:40,offset:0,locality:localityHint});
+   let items=await listPublicPosts({limit:40,offset:0,locality:localityHint});
+   if(params.postId&&!items.some(item=>item.id===params.postId)){
+    const direct=await getAccessiblePost(params.postId).catch(()=>null);
+    if(direct&&(direct.content_format??'POST')==='POST')items=[direct,...items];
+   }
    const nextUserId=user?.id??null;const nextLocality=loc?(loc.suburb||loc.city||'Near you'):(cachedFeed?.locality??'Near you');
    setUserId(nextUserId);setLocality(nextLocality);
    const ids=items.map(x=>x.id);const businessIds=[...new Set(items.map(x=>x.business_id).filter((x):x is string=>Boolean(x)))];
@@ -88,7 +92,10 @@ export default function Social(){
    const verified=new Set((verifiedResult.data??[]).map(x=>x.post_id));
    const terms=loc?[loc.suburb,loc.city,loc.state].filter(Boolean).map(x=>String(x).toLowerCase()):[];
    const score=(p:SocialPost)=>terms.reduce((n,t)=>n+((p.location_label??'').toLowerCase().includes(t)?3:0),0);
-   const sorted=[...items].sort((a,b)=>Number(b.feed_score??score(b))-Number(a.feed_score??score(a))||new Date(b.created_at).getTime()-new Date(a.created_at).getTime());
+   const sorted=[...items].sort((a,b)=>{
+    if(params.postId){if(a.id===params.postId)return -1;if(b.id===params.postId)return 1;}
+    return Number(b.feed_score??score(b))-Number(a.feed_score??score(a))||new Date(b.created_at).getTime()-new Date(a.created_at).getTime();
+   });
    const nextPosts=sorted.map(x=>({...x,media:media[x.id]??[],verifiedWork:verified.has(x.id),businesses:x.business_id?businessMap[x.business_id]??null:null,profile:profileMap[x.author_id]??null,engagement:engagement[x.id]??emptyEngagement}));
    setPosts(nextPosts);feedCache={posts:nextPosts,locality:nextLocality,userId:nextUserId,at:Date.now()};
    nextPosts.slice(0,8).flatMap(x=>x.media??[]).slice(0,10).forEach(uri=>{void Image.prefetch(uri).catch(()=>{})});
@@ -124,17 +131,28 @@ export default function Social(){
     const cp=Object.fromEntries((clipProfiles.data??[]).map(x=>[x.id,x]));
     const cb=Object.fromEntries((clipBusinesses.data??[]).map(x=>[x.id,x]));
     const hydrated=clipRows.map(x=>({...x,media:[],verifiedWork:false,businesses:x.business_id?cb[x.business_id]??null:null,profile:cp[x.author_id]??null,engagement:clipEngagement[x.id]??emptyEngagement,music:x.music_track_id?musicMap[x.music_track_id]??null:null,musicUrl:x.music_track_id?musicUrls[x.music_track_id]??null:null,audioTracks:audioByPost[x.id]??[]}));
-    setClips(hydrated);
-    if(!activeClipId&&hydrated[0])setActiveClipId(hydrated[0].id);
+    const orderedClips=params.postId?[...hydrated].sort((a,b)=>a.id===params.postId?-1:b.id===params.postId?1:0):hydrated;
+    setClips(orderedClips);
+    if(!activeClipId&&orderedClips[0])setActiveClipId(orderedClips[0].id);
    }else setClips([]);
   }catch(e){setError(e instanceof Error?e.message:'Could not load Explore.');}
   finally{setLoading(false);setRefreshing(false);}
  },[]);
 
  useEffect(()=>{void load()},[load]);
- useEffect(()=>{if(params.mode==='clips')setMode('CLIPS')},[params.mode]);
+ useEffect(()=>{setMode(params.mode==='clips'?'CLIPS':'POSTS')},[params.mode]);
  useEffect(()=>{const timer=setTimeout(()=>listRef.current?.scrollToOffset({offset:scrollOffsets.current[mode],animated:false}),0);return()=>clearTimeout(timer)},[mode]);
- useEffect(()=>{if(deepLinkOpened.current||!params.postId)return;const target=(mode==='CLIPS'?clips:posts).find(p=>p.id===params.postId);if(!target)return;deepLinkOpened.current=true;void openComments(target)},[params.postId,posts,clips,mode]);
+ useEffect(()=>{
+  if(!params.postId||lastDeepLinkedPost.current===params.postId)return;
+  const list=mode==='CLIPS'?clips:posts;
+  const target=list.find(p=>p.id===params.postId);
+  if(!target)return;
+  lastDeepLinkedPost.current=params.postId;
+  const index=list.findIndex(p=>p.id===params.postId);
+  const timer=setTimeout(()=>{if(index>=0)listRef.current?.scrollToIndex({index,animated:false,viewPosition:0})},60);
+  if(params.commentId)void openComments(target);
+  return()=>clearTimeout(timer);
+ },[params.postId,params.commentId,posts,clips,mode]);
 
  const updateEngagement=(id:string,fn:(e:PostEngagement)=>PostEngagement)=>{setPosts(current=>current.map(p=>p.id===id?{...p,engagement:fn(p.engagement)}:p));setClips(current=>current.map(p=>p.id===id?{...p,engagement:fn(p.engagement)}:p));};
 
