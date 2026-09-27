@@ -3,7 +3,7 @@ import Stripe from 'https://esm.sh/stripe@18.5.0?target=deno';
 
 type StripeMetadata={
  order_id?:string;payment_kind?:string;service_payment_id?:string;booking_id?:string;business_id?:string;
- membership_id?:string;customer_id?:string;customer_package_id?:string;package_id?:string;
+ membership_id?:string;customer_id?:string;customer_package_id?:string;package_id?:string;promotion_id?:string;
 };
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
 
@@ -164,6 +164,32 @@ Deno.serve(async req=>{
    }
    if(subscription)await persistProSubscription(db,subscription,event.id,event.created,businessId);
    handledKind='everest_pro';
+  }else if(metadata.payment_kind==='post_promotion'){
+   const promotionId=String(metadata.promotion_id??'');
+   if(!promotionId)throw new Error('Missing post promotion metadata');
+   const success=event.type==='payment_intent.succeeded'||event.type==='checkout.session.completed';
+   const failure=event.type==='payment_intent.payment_failed'||event.type==='payment_intent.canceled'||event.type==='checkout.session.expired'||event.type==='checkout.session.async_payment_failed';
+   if(success){
+    if(event.type==='checkout.session.completed'&&(event.data.object as Stripe.Checkout.Session).payment_status!=='paid'){
+     // Deferred methods activate after payment_intent.succeeded.
+    }else{
+     const paymentObject=event.data.object as Stripe.Checkout.Session|Stripe.PaymentIntent;
+     const checkoutSessionId=event.type==='checkout.session.completed'?(paymentObject as Stripe.Checkout.Session).id:null;
+     const paymentIntentId=event.type==='payment_intent.succeeded'
+      ?(paymentObject as Stripe.PaymentIntent).id
+      :typeof (paymentObject as Stripe.Checkout.Session).payment_intent==='string'
+       ?(paymentObject as Stripe.Checkout.Session).payment_intent as string
+       :(paymentObject as Stripe.Checkout.Session).payment_intent?.id??null;
+     const {error}=await db.rpc('activate_post_promotion',{
+      p_promotion_id:promotionId,p_checkout_session_id:checkoutSessionId,p_payment_intent_id:paymentIntentId
+     });
+     if(error)throw error;
+    }
+   }else if(failure){
+    const {error}=await db.rpc('fail_post_promotion',{p_promotion_id:promotionId});
+    if(error)throw error;
+   }
+   handledKind='post_promotion';
   }else if(metadata.payment_kind==='business_package'){
    const customerPackageId=String(metadata.customer_package_id??'');
    if(!customerPackageId)throw new Error('Missing package purchase metadata');
@@ -228,7 +254,7 @@ Deno.serve(async req=>{
 
   const {error:auditError}=await db.from('audit_logs').insert({
    action:'stripe:'+event.id,entity_type:'stripe_event',entity_id:null,
-   metadata:{type:event.type,payment_kind:handledKind||metadata.payment_kind||null,business_id:metadata.business_id??null,membership_id:metadata.membership_id??null,customer_package_id:metadata.customer_package_id??null,order_id:metadata.order_id??null,service_payment_id:metadata.service_payment_id??null,booking_id:metadata.booking_id??null}
+   metadata:{type:event.type,payment_kind:handledKind||metadata.payment_kind||null,business_id:metadata.business_id??null,membership_id:metadata.membership_id??null,customer_package_id:metadata.customer_package_id??null,promotion_id:metadata.promotion_id??null,order_id:metadata.order_id??null,service_payment_id:metadata.service_payment_id??null,booking_id:metadata.booking_id??null}
   });
   if(auditError)throw auditError;
   const {error:finishError}=await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:true});
