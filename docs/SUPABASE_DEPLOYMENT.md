@@ -120,7 +120,9 @@ Record the exact operation, identity, expected result and actual result. Any une
 
 ## 7. Stripe test environment
 
-Keep the existing Everest Stripe platform account. Do not create or replace the platform account.
+Everest Local must use its own dedicated Stripe account with Stripe Connect enabled. Do not use the Everest Marketing Stripe account as the Connect platform. Before switching production secrets, confirm the new Everest Local Stripe account is available in live mode, complete Stripe Connect platform onboarding, create the required platform and connected-account webhooks, and then atomically replace the Stripe secrets in Supabase.
+
+During an account migration, keep the old platform webhook enabled only until the server secret is switched so in-flight legacy events are not dropped. The old account's Connect webhook should remain disabled once the dedicated Everest Local Connect account is being used.
 
 ### Marketplace payout model
 
