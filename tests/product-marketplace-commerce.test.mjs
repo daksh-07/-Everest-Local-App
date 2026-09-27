@@ -65,3 +65,21 @@ test('checkout never trusts a client price',()=>{
  assert.match(migration,/item\.unit_price:=coalesce\(item\.v_price,item\.sale_price,item\.price\)/);
  assert.match(migration,/for update/);
 });
+
+
+test('product gallery index follows the visible page and cart is always discoverable',()=>{
+ assert.match(product,/scrollEventThrottle={16}/);
+ assert.match(product,/onScroll={e=>{const next=clamp\(Math\.round\(e\.nativeEvent\.contentOffset\.x\/heroWidth\)/);
+ assert.match(product,/\{index\+1\} \/ \{media\.length\}/);
+ assert.match(product,/router\.push\('\/cart'\)/);
+ assert.match(product,/cartBadge/);
+ assert.match(product,/VIEW CART/);
+ assert.match(shop,/cartBadge/);
+ assert.match(cart,/Continue shopping/);
+});
+
+test('adding from a product increments an existing cart line instead of silently resetting it',()=>{
+ assert.match(product,/existing=current\.find/);
+ assert.match(product,/\(existing\?\.quantity\?\?0\)\+qty/);
+ assert.match(product,/setCartCount/);
+});
