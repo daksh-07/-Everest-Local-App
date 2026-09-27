@@ -17,6 +17,7 @@ const SAFE_MESSAGES = [
   'Selected service is not owned and active for this business.',
   'Invalid quote amounts.',
   'Conversation could not be opened.',
+  'Everest Local Stripe Connect is not activated yet. Complete Connect setup in the Stripe Dashboard, then try again.',
 ];
 
 export function userFacingError(error: unknown, fallback: string): string {
