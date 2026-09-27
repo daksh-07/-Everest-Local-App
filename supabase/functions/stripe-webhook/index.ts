@@ -124,9 +124,10 @@ Deno.serve(async req=>{
    const account=event.data.object as Stripe.Account;
    const snapshot=connectSnapshot(account);
    const businessId=String(account.metadata?.everest_business_id??'');
-   let update= db.from('businesses').update(snapshot);
-   update=businessId?update.eq('id',businessId):update.eq('stripe_connected_account_id',account.id);
-   const {data:rows,error}=await update.select('id');
+   const baseUpdate=db.from('businesses').update(snapshot);
+   const {data:rows,error}=businessId
+    ?await baseUpdate.eq('id',businessId).select('id')
+    :await baseUpdate.eq('stripe_connected_account_id',account.id).select('id');
    if(error)throw error;
    const ids=(rows??[]).map(row=>String(row.id));
    if(snapshot.stripe_connect_status!=='ACTIVE'&&ids.length){
