@@ -73,7 +73,7 @@ export function CustomerTabBar({active,hidden=false}:{active:Destination;hidden?
   onMoveShouldSetPanResponder:(_,g)=>!hidden&&Math.abs(g.dx)>10&&Math.abs(g.dx)>Math.abs(g.dy)*1.2,
   onPanResponderGrant:()=>{indicatorIndex.stopAnimation();dragStartIndex.current=activeIndex;lastPreview.current=activeIndex},
   onPanResponderMove:(_,g)=>{
-   const raw=dragStartIndex.current+(g.dx/itemWidth);
+   const raw=dragStartIndex.current-(g.dx/itemWidth);
    const clamped=Math.max(0,Math.min(items.length-1,raw));
    indicatorIndex.setValue(clamped);
    const next=Math.max(0,Math.min(items.length-1,Math.round(clamped)));
@@ -84,7 +84,7 @@ export function CustomerTabBar({active,hidden=false}:{active:Destination;hidden?
    if(distance<NAV_SOFT_DISTANCE&&velocity<NAV_SOFT_VELOCITY){
     setPreviewIndex(activeIndex);Animated.spring(indicatorIndex,{toValue:activeIndex,useNativeDriver:true,damping:19,stiffness:280,mass:.7}).start();return;
    }
-   const direction=g.dx>=0?1:-1;
+   const direction=g.dx<0?1:-1;
    const hard=distance>=NAV_HARD_DISTANCE||velocity>=NAV_HARD_VELOCITY;
    const target=Math.max(0,Math.min(items.length-1,dragStartIndex.current+direction*(hard?2:1)));
    setPreviewIndex(target);
