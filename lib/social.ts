@@ -131,8 +131,25 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
     const {data,error}=await supabase.rpc('list_discovery_feed',{
       p_limit:limit,p_offset:offset,p_locality:input.locality?.trim()||null
     });
-    if(error)throw new Error(error.message);
-    return (data??[]) as SocialPost[];
+    if(!error)return (data??[]) as SocialPost[];
+
+    const missingDiscoveryRpc=
+      error.code==='PGRST202'
+      || error.message?.includes('list_discovery_feed')
+      || error.details?.includes('list_discovery_feed');
+    if(!missingDiscoveryRpc)throw new Error(error.message);
+
+    // Keep Explore available during a temporary schema-cache or migration lag.
+    // RLS still governs which published public posts the caller can read.
+    const fallback=await supabase
+      .from('posts')
+      .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at')
+      .eq('status','PUBLISHED')
+      .eq('visibility','PUBLIC')
+      .order('created_at',{ascending:false})
+      .range(offset,offset+limit-1);
+    if(fallback.error)throw new Error(fallback.error.message);
+    return (fallback.data??[]) as SocialPost[];
   }
   const { data, error } = await supabase
     .from('posts')
