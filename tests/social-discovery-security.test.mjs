@@ -6,6 +6,7 @@ const migration=fs.readFileSync('supabase/migrations/20260925003000_universal_se
 const search=fs.readFileSync('app/search.tsx','utf8');
 const social=fs.readFileSync('lib/social.ts','utf8');
 const messages=fs.readFileSync('app/messages.tsx','utf8');
+const rlsHardening=fs.readFileSync('supabase/migrations/20260927133000_social_rls_advisor_hardening.sql','utf8');
 
 test('people use connections while business follow RPC remains separate',()=>{
  assert.match(migration,/create table if not exists public\.user_connections/);
@@ -61,4 +62,32 @@ test('universal search preserves the existing jobs entry point without client ta
  assert.match(search,/from\('service_requests'\)/);
  assert.match(search,/\.ilike\('service_requests\.description',pattern\)/);
  assert.match(search,/\.ilike\('description',pattern\)/);
+});
+
+
+test('followers-only business posts compare against the post business, not the follows row itself',()=>{
+ assert.match(rlsHardening,/f\.business_id=posts\.business_id/);
+ assert.doesNotMatch(rlsHardening,/f\.business_id=business_id(?:\s|\))/);
+ assert.match(rlsHardening,/b\.id=posts\.business_id/);
+});
+
+test('post media visibility delegates to the parent post RLS authority',()=>{
+ const mediaPolicy=rlsHardening.slice(rlsHardening.indexOf('create policy post_media_visible_read'),rlsHardening.indexOf('-- Avoid two permissive SELECT'));
+ assert.match(mediaPolicy,/from public\.posts p/);
+ assert.match(mediaPolicy,/p\.id=post_media\.post_id/);
+ assert.doesNotMatch(mediaPolicy,/auth\.uid\(\)/);
+});
+
+test('availability has one authenticated read policy and separate member writes',()=>{
+ assert.match(rlsHardening,/business_availability_public_read_anon/);
+ assert.match(rlsHardening,/business_availability_authenticated_read/);
+ assert.match(rlsHardening,/business_availability_member_insert/);
+ assert.match(rlsHardening,/business_availability_member_update/);
+ assert.match(rlsHardening,/business_availability_member_delete/);
+ assert.doesNotMatch(rlsHardening,/business_availability_member_write/);
+});
+
+test('booking payment summary is not anonymous executable',()=>{
+ assert.match(rlsHardening,/revoke all on function public\.service_booking_payment_summary\(uuid\) from public,anon/);
+ assert.match(rlsHardening,/grant execute on function public\.service_booking_payment_summary\(uuid\) to authenticated,service_role/);
 });
