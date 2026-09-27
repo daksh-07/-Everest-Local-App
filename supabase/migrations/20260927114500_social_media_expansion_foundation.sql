@@ -184,6 +184,51 @@ exception when duplicate_object then null; end $$;
 
 create index if not exists posts_format_created_idx on public.posts(content_format,status,created_at desc);
 
+alter table public.posts drop constraint if exists posts_check;
+alter table public.posts add constraint posts_check
+  check(caption is not null or service_id is not null or product_id is not null or content_format='CLIP');
+
+create or replace function public.publish_clip(
+  p_business_id uuid default null,
+  p_caption text default null,
+  p_visibility text default 'PUBLIC',
+  p_location_label text default null,
+  p_service_id uuid default null,
+  p_product_id uuid default null,
+  p_music_track_id uuid default null,
+  p_music_start_ms integer default 0
+) returns uuid
+language plpgsql
+security definer
+set search_path=''
+as $
+declare uid uuid:=auth.uid(); post_id uuid;
+begin
+  if uid is null then raise exception 'Authentication required'; end if;
+  if p_business_id is not null and not public.is_business_member(p_business_id) then raise exception 'Not authorized'; end if;
+  if p_visibility not in ('PUBLIC','FOLLOWERS') then raise exception 'Invalid visibility'; end if;
+  if p_music_track_id is not null and not exists(
+    select 1 from public.music_tracks m
+    where m.id=p_music_track_id and m.active
+      and (m.rights_start_at is null or m.rights_start_at<=now())
+      and (m.rights_end_at is null or m.rights_end_at>now())
+  ) then raise exception 'Music track unavailable'; end if;
+  insert into public.posts(
+    author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,
+    status,content_format,music_track_id,music_start_ms
+  ) values(
+    uid,p_business_id,nullif(trim(coalesce(p_caption,'')),''),
+    case when p_business_id is null then 'UPDATE' else 'COMPLETED_WORK' end,
+    case when p_business_id is null then p_visibility else 'PUBLIC' end,
+    p_service_id,p_product_id,nullif(trim(coalesce(p_location_label,'')),''),
+    'PUBLISHED','CLIP',p_music_track_id,greatest(0,coalesce(p_music_start_ms,0))
+  ) returning id into post_id;
+  return post_id;
+end
+$;
+revoke all on function public.publish_clip(uuid,text,text,text,uuid,uuid,uuid,integer) from public,anon;
+grant execute on function public.publish_clip(uuid,text,text,text,uuid,uuid,uuid,integer) to authenticated;
+
 create or replace function public.set_post_music(
   p_post_id uuid,p_music_track_id uuid,p_music_start_ms integer default 0,
   p_music_volume numeric default 0.75,p_original_volume numeric default 1
