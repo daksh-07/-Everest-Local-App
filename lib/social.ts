@@ -152,6 +152,7 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
       .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path')
       .eq('status','PUBLISHED')
       .eq('visibility','PUBLIC')
+      .eq('content_format','POST')
       .order('created_at',{ascending:false})
       .range(offset,offset+limit-1);
     if(fallback.error)throw new Error(fallback.error.message);
@@ -162,6 +163,7 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
     .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path')
     .eq('status', 'PUBLISHED')
     .eq('visibility', 'PUBLIC')
+    .eq('content_format','POST')
     .eq('business_id',input.businessId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
