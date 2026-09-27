@@ -79,6 +79,65 @@ async function platformActivationSnapshot(stripeKey:string){
  };
 }
 
+async function createV2MerchantAccount(stripeKey:string,business:{
+ id:string;
+ name:string;
+ description?:string|null;
+ email?:string|null;
+}){
+ const payload:Record<string,unknown>={
+  display_name:business.name,
+  identity:{country:'AU'},
+  configuration:{
+   merchant:{
+    capabilities:{
+     card_payments:{requested:true},
+    },
+   },
+  },
+  defaults:{
+   profile:{
+    doing_business_as:business.name,
+    product_description:business.description?.trim()||'Local products and services sold through Everest Local',
+   },
+   responsibilities:{
+    fees_collector:'stripe',
+    losses_collector:'stripe',
+   },
+  },
+  dashboard:'full',
+  metadata:{everest_business_id:business.id},
+  include:['configuration.merchant','identity','defaults'],
+ };
+ if(business.email)payload.contact_email=business.email;
+
+ const response=await fetch('https://api.stripe.com/v2/core/accounts',{
+  method:'POST',
+  headers:{
+   Authorization:`Bearer ${stripeKey}`,
+   'Content-Type':'application/json',
+   'Stripe-Version':'2026-07-29.dahlia',
+   'Idempotency-Key':`everest-connect-v2-${business.id}`,
+  },
+  body:JSON.stringify(payload),
+ });
+ const data=await response.json() as {
+  id?:string;
+  error?:{code?:string;message?:string;request_log_url?:string};
+ };
+ if(!response.ok||!data.id){
+  const error=new Error(data.error?.message??`Stripe Accounts v2 creation failed (${response.status})`) as Error&{
+   code?:string;
+   requestId?:string|null;
+  };
+  error.code=data.error?.code;
+  error.requestId=response.headers.get('request-id');
+  throw error;
+ }
+ console.log('stripe_connect_v2_account_created',{businessId:business.id,accountId:data.id});
+ return data.id;
+}
+
 async function ensureWebhookSecrets(stripe:Stripe,admin:ReturnType<typeof createClient>){
  const {data:stored,error:readError}=await admin.rpc('get_stripe_webhook_secrets');
  if(readError)throw readError;
@@ -257,28 +316,39 @@ Deno.serve(async req=>{
   await ensureWebhookSecrets(stripe,admin);
 
   if(!connectedId){
-   const params:Stripe.AccountCreateParams={
-    country:'AU',
-    email:business.email||undefined,
-    business_profile:{
-     name:business.name,
-     product_description:business.description?.trim()||'Local products and services sold through Everest Local',
-    },
-    capabilities:{
-     card_payments:{requested:true},
-     transfers:{requested:true},
-    },
-    controller:{
-     fees:{payer:'account'},
-     losses:{payments:'stripe'},
-     requirement_collection:'stripe',
-     stripe_dashboard:{type:'full'},
-    },
-    metadata:{everest_business_id:businessId},
-   };
-   const account=await stripe.accounts.create(params,{idempotencyKey:`everest-connect-${businessId}`});
-   connectedId=account.id;
-   await sync(account);
+   connectedId=await createV2MerchantAccount(stripeKey,{
+    id:businessId,
+    name:business.name,
+    description:business.description,
+    email:business.email,
+   });
+
+   // Accounts v2 uses the same acct_ identifiers and remains compatible with
+   // the Connect Account Links onboarding flow. Persist the id immediately so
+   // retries never create a second connected account.
+   const {error:bindError}=await admin.from('businesses').update({
+    stripe_connected_account_id:connectedId,
+    stripe_connect_status:'PENDING',
+    stripe_details_submitted:false,
+    stripe_charges_enabled:false,
+    stripe_payouts_enabled:false,
+    stripe_bank_connected:false,
+    stripe_requirements_due:[],
+    stripe_connect_fee_payer:'ACCOUNT',
+    stripe_connect_synced_at:new Date().toISOString(),
+   }).eq('id',businessId);
+   if(bindError)throw bindError;
+
+   try{
+    const created=await stripe.accounts.retrieve(connectedId);
+    if(!('deleted' in created&&created.deleted))await sync(created as Stripe.Account);
+   }catch(error){
+    console.log('stripe_connect_v1_snapshot_deferred',{
+     businessId,
+     connectedId,
+     message:error instanceof Error?error.message:'unknown',
+    });
+   }
   }
 
   const base=preflightBase;
@@ -314,8 +384,14 @@ Deno.serve(async req=>{
   if(message.includes("signed up for Connect")){
    return json({error:'Everest Local Stripe Connect is not activated yet. Complete Connect setup in the Stripe Dashboard, then try again.'},503);
   }
-  if(message.includes('must be activated in order to create accounts')){
-   return json({error:'The Everest Local Stripe account is not fully activated for live payments yet. Complete Stripe account activation, then try again.'},503);
+  if(message.includes('must be activated in order to create accounts')||stripeError.code==='account_create_activation_required'){
+   return json({error:'Everest Local Connect account creation is not active yet. Complete the live Connect platform setup, then try again.'},503);
+  }
+  if(stripeError.code==='connect_profile_not_submitted'){
+   return json({error:'Everest Local still needs the live Stripe Connect platform profile completed before businesses can onboard.'},503);
+  }
+  if(stripeError.code==='account_terms_of_service_not_accepted'){
+   return json({error:'Everest Local must accept the Stripe Connect platform terms before businesses can onboard.'},503);
   }
   if(stripeError.code==='permission_error'||message.toLowerCase().includes('permission')){
    return json({error:'The Everest Local Stripe server key is missing a required Stripe permission. Update the key permissions, then try again.'},503);
