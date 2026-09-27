@@ -178,3 +178,59 @@ export async function listClips(input:{limit?:number;offset?:number;locality?:st
  const byPost=Object.fromEntries((media.data??[]).map(x=>[x.post_id,signed[x.storage_path]??null]));
  return clips.map(x=>({...x,videoUrl:byPost[x.id]??null}));
 }
+
+
+export type StoryHighlight={
+ id:string;owner_id:string;business_id:string|null;title:string;cover_story_id:string|null;sort_order:number;created_at:string;coverUrl:string|null;
+};
+
+export async function listHighlights(input:{userId?:string;businessId?:string}):Promise<StoryHighlight[]>{
+ requireSupabaseConfig();
+ let query=supabase.from('story_highlights').select('id,owner_id,business_id,title,cover_story_id,sort_order,created_at').order('sort_order').order('created_at');
+ if(input.businessId)query=query.eq('business_id',input.businessId);
+ else if(input.userId)query=query.eq('owner_id',input.userId).is('business_id',null);
+ else{
+  const {data:{user}}=await supabase.auth.getUser();if(!user)return[];
+  query=query.eq('owner_id',user.id);
+ }
+ const {data,error}=await query;if(error)throw new Error(error.message);
+ const rows=(data??[]) as Omit<StoryHighlight,'coverUrl'>[];if(!rows.length)return[];
+ const ids=rows.map(x=>x.id);
+ const {data:items,error:itemError}=await supabase.from('story_highlight_items').select('highlight_id,story_id,sort_order').in('highlight_id',ids).order('sort_order');
+ if(itemError)throw new Error(itemError.message);
+ const firstStory:Record<string,string>={};
+ for(const row of items??[])if(!firstStory[row.highlight_id])firstStory[row.highlight_id]=row.story_id;
+ const storyIds=[...new Set(rows.map(x=>x.cover_story_id??firstStory[x.id]).filter((x):x is string=>Boolean(x)))];
+ if(!storyIds.length)return rows.map(x=>({...x,coverUrl:null}));
+ const {data:media,error:mediaError}=await supabase.from('story_media').select('story_id,storage_path,sort_order').in('story_id',storyIds).eq('media_type','IMAGE').order('sort_order');
+ if(mediaError)throw new Error(mediaError.message);
+ const firstMedia:Record<string,string>={};
+ for(const row of media??[])if(!firstMedia[row.story_id])firstMedia[row.story_id]=row.storage_path;
+ const signed=await signedMediaUrls('story-media',Object.values(firstMedia),3600);
+ return rows.map(row=>{const storyId=row.cover_story_id??firstStory[row.id];const path=storyId?firstMedia[storyId]:null;return{...row,coverUrl:path?signed[path]??null:null}});
+}
+
+export async function createHighlight(input:{title:string;businessId?:string;storyIds:string[]}):Promise<string>{
+ requireSupabaseConfig();
+ const {data:{user}}=await supabase.auth.getUser();if(!user)throw new Error('Authentication required.');
+ const title=input.title.trim();if(!title||title.length>40)throw new Error('Highlight title must be between 1 and 40 characters.');
+ const storyIds=[...new Set(input.storyIds)].slice(0,100);if(!storyIds.length)throw new Error('Choose at least one archived story.');
+ const {data,error}=await supabase.from('story_highlights').insert({owner_id:user.id,business_id:input.businessId??null,title,cover_story_id:storyIds[0]}).select('id').single();
+ if(error)throw new Error(userFacingError(error,'Highlight could not be created.'));
+ const items=storyIds.map((story_id,sort_order)=>({highlight_id:data.id,story_id,sort_order}));
+ const added=await supabase.from('story_highlight_items').insert(items);
+ if(added.error){await supabase.from('story_highlights').delete().eq('id',data.id).eq('owner_id',user.id);throw new Error(userFacingError(added.error,'Stories could not be added to the highlight.'))}
+ return data.id;
+}
+export async function deleteHighlight(highlightId:string){
+ requireSupabaseConfig();
+ const {data:{user}}=await supabase.auth.getUser();if(!user)throw new Error('Authentication required.');
+ const {error}=await supabase.from('story_highlights').delete().eq('id',highlightId).eq('owner_id',user.id);
+ if(error)throw new Error(userFacingError(error,'Highlight could not be deleted.'));
+}
+export async function deleteStory(storyId:string){
+ requireSupabaseConfig();
+ const {data:{user}}=await supabase.auth.getUser();if(!user)throw new Error('Authentication required.');
+ const {error}=await supabase.from('stories').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',storyId).eq('author_id',user.id);
+ if(error)throw new Error(userFacingError(error,'Story could not be deleted.'));
+}
