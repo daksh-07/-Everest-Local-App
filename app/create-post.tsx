@@ -10,7 +10,7 @@ import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {haptic} from '@/lib/haptics';
 import {SoundPicker} from '@/components/SoundPicker';
-import {publishDraftSound,setPhotoPostDuration,type DraftSound} from '@/lib/audio-studio';
+import {draftFromReusableSound,publishDraftSound,setPhotoPostDuration,type DraftSound} from '@/lib/audio-studio';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 
 type Identity={kind:'PERSONAL';id:string;name:string}|{kind:'BUSINESS';id:string;name:string;business:BusinessWorkspace};
@@ -34,7 +34,7 @@ const businessChoices:ComposerChoice[]=[
 ];
 
 export default function CreatePost(){
- const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const params=useLocalSearchParams<{intent?:string}>();
+ const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const params=useLocalSearchParams<{intent?:string;soundId?:string}>();
  const [identities,setIdentities]=useState<Identity[]>([]);const [identity,setIdentity]=useState<Identity|null>(null);
  const [caption,setCaption]=useState('');const [type,setType]=useState<PostType>('UPDATE');const [visibility,setVisibility]=useState<'PUBLIC'|'FOLLOWERS'>('PUBLIC');const [location,setLocation]=useState('');
  const [photos,setPhotos]=useState<ImagePicker.ImagePickerAsset[]>([]);const [sound,setSound]=useState<DraftSound|null>(null);const [soundOpen,setSoundOpen]=useState(false);const [photoDuration,setPhotoDuration]=useState<5000|10000|15000|30000>(10000);const [services,setServices]=useState<Listing[]>([]);const [products,setProducts]=useState<Listing[]>([]);const [serviceId,setServiceId]=useState<string|null>(null);const [productId,setProductId]=useState<string|null>(null);
@@ -57,6 +57,7 @@ export default function CreatePost(){
   ]);
   if(!active)return;if(!sr.error)setServices((sr.data??[]) as Listing[]);if(!pr.error)setProducts((pr.data??[]) as Listing[]);setVisibility('PUBLIC');
  })();return()=>{active=false}},[identity]);
+ useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active)setSound(next)}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Sound could not be loaded.')});return()=>{active=false}},[params.soundId]);
 
  const choices=identity?.kind==='BUSINESS'?businessChoices:personalChoices;
  const selectedChoice=choices.find(x=>x.type===type)??choices[0];
