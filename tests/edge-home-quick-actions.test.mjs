@@ -80,3 +80,10 @@ test('primary customer surfaces support progressive horizontal swipe navigation'
  assert.match(swipe,/useReducedMotion/);
  assert.match(swipe,/haptic\.medium\(\)|haptic\.selection\(\)/);
 });
+
+
+test('swipe direction matches mobile convention and bottom-nav gesture',()=>{
+ assert.match(swipe,/dx<0\?1:-1/);
+ assert.match(tabs,/g\.dx<0\?1:-1/);
+ assert.match(tabs,/dragStartIndex\.current-\(g\.dx\/itemWidth\)/);
+});
