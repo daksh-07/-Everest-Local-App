@@ -55,14 +55,19 @@ export async function signedPostMedia(postId:string){
 
 export async function signedPostMediaBatch(postIds:string[]){
  if(!postIds.length)return {} as Record<string,string[]>;
- const {data,error}=await supabase.from('post_media').select('post_id,storage_path,sort_order').in('post_id',postIds).order('sort_order');
+ const {data,error}=await supabase.from('post_media').select('post_id,storage_path,storage_bucket,sort_order').in('post_id',postIds).order('sort_order');
  if(error)return {} as Record<string,string[]>;
  const rows=data??[];
- const signed=await signedMediaUrls('post-media',rows.map(row=>row.storage_path),6*3600);
+ const photoPaths=rows.filter(row=>(row.storage_bucket??'post-media')==='post-media').map(row=>row.storage_path);
+ const clipPaths=rows.filter(row=>row.storage_bucket==='clip-media').map(row=>row.storage_path);
+ const [photos,clips]=await Promise.all([
+  signedMediaUrls('post-media',photoPaths,6*3600),
+  signedMediaUrls('clip-media',clipPaths,6*3600)
+ ]);
  const grouped:Record<string,string[]>={};
  for(const id of postIds)grouped[id]=[];
  for(const row of rows){
-  const url=signed[row.storage_path];
+  const url=(row.storage_bucket==='clip-media'?clips:photos)[row.storage_path];
   if(url)(grouped[row.post_id]??=[]).push(url);
  }
  return grouped;
