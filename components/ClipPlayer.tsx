@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {Animated,Pressable,StyleSheet,Text,View} from 'react-native';
+import {Animated,Pressable,StyleSheet,Text,View,type ViewStyle} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useEvent} from 'expo';
 import {VideoView,useVideoPlayer} from 'expo-video';
@@ -59,7 +59,7 @@ export function ClipPlayer({
 
  const fit=contentFit??(normalized.fit==='FIT'?'contain':'cover');
  const tint=normalized.filter==='WARM'?['#ff9b58',.12]:normalized.filter==='COOL'?['#6fa8ff',.12]:normalized.filter==='FADE'?['#f4eadc',.10]:normalized.filter==='GOLD'?['#d8aa60',.16]:normalized.filter==='NIGHT'?['#10243f',.24]:null;
- const textPos=normalized.text?.position==='TOP'?{top:'15%'}:normalized.text?.position==='BOTTOM'?{bottom:'17%'}:{top:'46%'};
+ const textPos:ViewStyle=normalized.text?.position==='TOP'?{top:'15%'}:normalized.text?.position==='BOTTOM'?{bottom:'17%'}:{top:'46%'};
 
  return <Pressable style={s.wrap} onPress={()=>{if(!active)return;if(player.playing)player.pause();else player.play()}}>
   <VideoView player={player} style={[s.video,normalized.mirror&&s.mirror]} contentFit={fit} nativeControls={false}/>
