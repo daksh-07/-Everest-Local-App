@@ -35,6 +35,51 @@ function connectSnapshot(account:Stripe.Account){
  };
 }
 
+const STRIPE_WEBHOOK_URL='https://bmwbljefnamvjnmuvkvv.supabase.co/functions/v1/stripe-webhook';
+const PLATFORM_WEBHOOK_EVENTS=[
+ 'checkout.session.completed','checkout.session.expired','checkout.session.async_payment_failed','checkout.session.async_payment_succeeded',
+ 'payment_intent.succeeded','payment_intent.payment_failed','payment_intent.canceled',
+ 'customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','customer.subscription.paused','customer.subscription.resumed',
+ 'invoice.paid','invoice.payment_succeeded','invoice.payment_failed','invoice.voided',
+];
+const CONNECT_WEBHOOK_EVENTS=[
+ 'account.updated','checkout.session.completed','checkout.session.expired','checkout.session.async_payment_failed',
+ 'payment_intent.succeeded','payment_intent.payment_failed','payment_intent.canceled',
+];
+
+async function ensureWebhookSecrets(stripe:Stripe,admin:ReturnType<typeof createClient>){
+ const {data:stored,error:readError}=await admin.rpc('get_stripe_webhook_secrets');
+ if(readError)throw readError;
+ const existing=(stored&&typeof stored==='object'?stored:{}) as {platform?:unknown;connect?:unknown};
+
+ if(typeof existing.platform!=='string'||!existing.platform.startsWith('whsec_')){
+  const endpoint=await stripe.webhookEndpoints.create({
+   url:STRIPE_WEBHOOK_URL,
+   description:'Everest Local production Stripe webhook',
+   enabled_events:PLATFORM_WEBHOOK_EVENTS,
+   metadata:{app:'everest_local',environment:'production',scope:'platform'},
+  } as unknown as Stripe.WebhookEndpointCreateParams);
+  if(!endpoint.secret)throw new Error('Stripe did not return the platform webhook signing secret');
+  const {error}=await admin.rpc('set_stripe_webhook_secret',{p_name:'STRIPE_WEBHOOK_SECRET',p_secret:endpoint.secret});
+  if(error)throw error;
+  console.log('stripe_platform_webhook_created',{id:endpoint.id,livemode:endpoint.livemode});
+ }
+
+ if(typeof existing.connect!=='string'||!existing.connect.startsWith('whsec_')){
+  const endpoint=await stripe.webhookEndpoints.create({
+   url:STRIPE_WEBHOOK_URL,
+   description:'Everest Local production Connect webhook',
+   connect:true,
+   enabled_events:CONNECT_WEBHOOK_EVENTS,
+   metadata:{app:'everest_local',environment:'production',scope:'connected_accounts'},
+  } as unknown as Stripe.WebhookEndpointCreateParams);
+  if(!endpoint.secret)throw new Error('Stripe did not return the Connect webhook signing secret');
+  const {error}=await admin.rpc('set_stripe_webhook_secret',{p_name:'STRIPE_CONNECT_WEBHOOK_SECRET',p_secret:endpoint.secret});
+  if(error)throw error;
+  console.log('stripe_connect_webhook_created',{id:endpoint.id,livemode:endpoint.livemode});
+ }
+}
+
 Deno.serve(async req=>{
  if(req.method==='OPTIONS')return new Response('ok',{headers:cors});
  if(req.method!=='POST')return json({error:'Method not allowed'},405);
@@ -163,6 +208,8 @@ Deno.serve(async req=>{
    return json({error:'APP_PUBLIC_URL must use HTTPS for Stripe onboarding'},503);
   }
 
+  await ensureWebhookSecrets(stripe,admin);
+
   if(!connectedId){
    const params:Stripe.AccountCreateParams={
     country:'AU',
@@ -220,6 +267,9 @@ Deno.serve(async req=>{
   });
   if(message.includes("signed up for Connect")){
    return json({error:'Everest Local Stripe Connect is not activated yet. Complete Connect setup in the Stripe Dashboard, then try again.'},503);
+  }
+  if(stripeError.code==='permission_error'||message.toLowerCase().includes('permission')){
+   return json({error:'The Everest Local Stripe server key is missing a required Stripe permission. Update the key permissions, then try again.'},503);
   }
   return json({error:'Stripe payout setup could not be completed. Please try again.'},500);
  }
