@@ -268,6 +268,9 @@ Deno.serve(async req=>{
   if(message.includes("signed up for Connect")){
    return json({error:'Everest Local Stripe Connect is not activated yet. Complete Connect setup in the Stripe Dashboard, then try again.'},503);
   }
+  if(message.includes('must be activated in order to create accounts')){
+   return json({error:'The Everest Local Stripe account is not fully activated for live payments yet. Complete Stripe account activation, then try again.'},503);
+  }
   if(stripeError.code==='permission_error'||message.toLowerCase().includes('permission')){
    return json({error:'The Everest Local Stripe server key is missing a required Stripe permission. Update the key permissions, then try again.'},503);
   }
