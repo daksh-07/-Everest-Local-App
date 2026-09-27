@@ -114,7 +114,7 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
  return <View style={styles.root}>
   <Animated.View {...pan.panHandlers} style={[styles.content,{transform:[{translateX:dragX},{scale}]}]}>{children}</Animated.View>
   {hint?<Animated.View pointerEvents="none" style={[styles.cue,hint.direction>0?styles.cueRight:styles.cueLeft,{opacity:cueOpacity,backgroundColor:colors.navigation,borderColor:colors.border}]}>
-   <Ionicons name={hint.hard?'play-forward':'chevron-forward'} size={15} color={colors.brand}/>
+   <Ionicons name={hint.direction>0?(hint.hard?'play-forward':'chevron-forward'):(hint.hard?'play-back':'chevron-back')} size={15} color={colors.brand}/>
    <View><Text style={[styles.cueKicker,{color:colors.muted}]}>{hint.hard?'SKIP TO':'SWIPE TO'}</Text><Text style={[styles.cueLabel,{color:colors.text}]}>{hint.label}</Text></View>
   </Animated.View>:null}
  </View>;
@@ -125,7 +125,7 @@ const styles=StyleSheet.create({
  content:{flex:1},
  cue:{position:'absolute',top:'44%',zIndex:6000,elevation:50,minHeight:46,maxWidth:150,borderWidth:1,borderRadius:18,paddingHorizontal:12,paddingVertical:8,flexDirection:'row',alignItems:'center',gap:8,shadowColor:'#000',shadowOpacity:.16,shadowRadius:14,shadowOffset:{width:0,height:7}},
  cueRight:{right:10},
- cueLeft:{left:10,transform:[{scaleX:-1}]},
+ cueLeft:{left:10},
  cueKicker:{fontSize:6.5,fontWeight:'900',letterSpacing:1},
  cueLabel:{fontSize:11,fontWeight:'900',marginTop:1},
 });
