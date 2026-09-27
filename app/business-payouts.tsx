@@ -103,7 +103,7 @@ export default function BusinessPayouts(){
 
     {business.verification_status!=='VERIFIED'?<View style={s.notice}><Ionicons name="shield-checkmark-outline" size={20} color={colors.brand}/><View style={{flex:1}}><Text style={s.noticeTitle}>Business verification first</Text><Text style={s.copy}>Complete Everest business verification before Stripe payout onboarding.</Text><Pressable onPress={()=>router.push('/business-verification')}><Text style={s.link}>OPEN VERIFICATION →</Text></Pressable></View></View>:null}
 
-    {!!status?.requirements_due.length?<View style={s.notice}><Ionicons name="alert-circle-outline" size={20} color={colors.brand}/><View style={{flex:1}}><Text style={s.noticeTitle}>Stripe needs more information</Text><Text style={s.copy}>Continue Stripe setup to complete the remaining verification or bank requirements.</Text></View></View>:null}
+    {status?.requirements_due.length?<View style={s.notice}><Ionicons name="alert-circle-outline" size={20} color={colors.brand}/><View style={{flex:1}}><Text style={s.noticeTitle}>Stripe needs more information</Text><Text style={s.copy}>Continue Stripe setup to complete the remaining verification or bank requirements.</Text></View></View>:null}
 
     <View style={s.info}>
      <View style={s.infoIcon}><Ionicons name="lock-closed-outline" size={18} color={colors.brand}/></View>
@@ -131,7 +131,7 @@ export default function BusinessPayouts(){
      <View style={s.badge}><Text style={s.badgeText}>{row.status.replaceAll('_',' ')}</Text></View>
     </View>):<View style={s.empty}><Ionicons name="receipt-outline" size={24} color={colors.muted}/><Text style={s.emptyTitle}>No Everest payments yet</Text><Text style={s.copy}>Paid orders and service payments will appear here.</Text></View>}
 
-    {!!error?<Text style={s.error}>{error}</Text>:null}
+    {error?<Text style={s.error}>{error}</Text>:null}
    </>}
   </ScrollView>
  </SafeAreaView>;
