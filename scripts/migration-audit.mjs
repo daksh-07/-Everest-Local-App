@@ -2,7 +2,8 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const root=join(process.cwd(),'supabase','migrations');
-const files=(await readdir(root)).filter(name=>/^(?:\d{3}|\d{14})_.+\.sql$/.test(name)).sort();
+const entries=await readdir(root,{withFileTypes:true});
+const files=entries.filter(entry=>entry.isFile()&&/^(?:\d{3}|\d{14})_.+\.sql$/.test(entry.name)).map(entry=>entry.name).sort();
 const legacy=files.filter(name=>/^\d{3}_.+\.sql$/.test(name));
 const timestamped=files.filter(name=>/^\d{14}_.+\.sql$/.test(name));
 const versions=legacy.map(name=>Number(name.slice(0,3)));
