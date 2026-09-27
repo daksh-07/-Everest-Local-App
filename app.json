@@ -43,7 +43,13 @@
           "calendarPermission": "Everest Local uses your calendar only when you choose to check availability or add confirmed Everest bookings."
         }
       ],
-      "expo-iap"
+      "expo-iap",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Everest Local uses your microphone only when you choose to record a voiceover or original sound."
+        }
+      ]
     ],
     "extra": {
       "supabaseUrl": "https://bmwbljefnamvjnmuvkvv.supabase.co",
