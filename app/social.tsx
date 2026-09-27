@@ -14,7 +14,9 @@ import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
 import {haptic} from '@/lib/haptics';
 import {ClipPlayer} from '@/components/ClipPlayer';
+import {PostSoundPlayer} from '@/components/PostSoundPlayer';
 import {listActiveStories,listClips,listEverestMusic,signedMusicUrl,type ClipEditManifest,type MusicTrack,type StoryCard} from '@/lib/social-expansion';
+import {listPostAudioTracks,type PublicAudioTrack} from '@/lib/audio-studio';
 
 type FeedPost=SocialPost&{
  media?:string[];
@@ -25,6 +27,7 @@ type FeedPost=SocialPost&{
  videoUrl?:string|null;
  music?:MusicTrack|null;musicUrl?:string|null;edit_manifest?:ClipEditManifest|null;
  music_track_id?:string|null;music_start_ms?:number;music_volume?:number;original_volume?:number;
+ audioTracks?:PublicAudioTrack[];photo_duration_ms?:number|null;
 };
 
 const emptyEngagement:PostEngagement={likeCount:0,commentCount:0,likedByMe:false,savedByMe:false};
@@ -94,7 +97,7 @@ export default function Social(){
     listActiveStories(40).catch(()=>[] as StoryCard[]),
     listClips({limit:24,offset:0,locality:localityHint}).catch(()=>[]),
     listEverestMusic().catch(()=>[] as MusicTrack[]),
-    ids.length?supabase.from('posts').select('id,music_track_id,music_start_ms').in('id',ids):Promise.resolve({data:[],error:null})
+    ids.length?supabase.from('posts').select('id,music_track_id,music_start_ms,music_volume,original_volume,photo_duration_ms').in('id',ids):Promise.resolve({data:[],error:null})
    ]);
    const musicMap=Object.fromEntries(musicRows.map(x=>[x.id,x]));
    const postMusicMap=Object.fromEntries((postMusicResult.data??[]).map(x=>[x.id,x]));
@@ -106,7 +109,8 @@ export default function Social(){
     const track=musicMap[id] as MusicTrack|undefined;if(!track)return[id,null] as const;
     return[id,await signedMusicUrl(track.storage_path).catch(()=>null)] as const;
    })));
-   setPosts(current=>current.map(post=>{const row=postMusicMap[post.id];const trackId=row?.music_track_id??post.music_track_id??null;return{...post,music:trackId?musicMap[trackId]??null:null,musicUrl:trackId?musicUrls[trackId]??null:null,music_track_id:trackId,music_start_ms:row?.music_start_ms??post.music_start_ms??0}}));
+   const audioByPost:Record<string,PublicAudioTrack[]>=await listPostAudioTracks([...ids,...clipRows.map(x=>x.id)]).catch(()=>({}));
+   setPosts(current=>current.map(post=>{const row=postMusicMap[post.id];const trackId=row?.music_track_id??post.music_track_id??null;return{...post,music:trackId?musicMap[trackId]??null:null,musicUrl:trackId?musicUrls[trackId]??null:null,music_track_id:trackId,music_start_ms:row?.music_start_ms??post.music_start_ms??0,music_volume:row?.music_volume??post.music_volume??.75,original_volume:row?.original_volume??post.original_volume??1,photo_duration_ms:row?.photo_duration_ms??post.photo_duration_ms??null,audioTracks:audioByPost[post.id]??[]}}));
    setStories(storyRows);
    if(clipRows.length){
     const clipIds=clipRows.map(x=>x.id);
@@ -119,7 +123,7 @@ export default function Social(){
     ]);
     const cp=Object.fromEntries((clipProfiles.data??[]).map(x=>[x.id,x]));
     const cb=Object.fromEntries((clipBusinesses.data??[]).map(x=>[x.id,x]));
-    const hydrated=clipRows.map(x=>({...x,media:[],verifiedWork:false,businesses:x.business_id?cb[x.business_id]??null:null,profile:cp[x.author_id]??null,engagement:clipEngagement[x.id]??emptyEngagement,music:x.music_track_id?musicMap[x.music_track_id]??null:null,musicUrl:x.music_track_id?musicUrls[x.music_track_id]??null:null}));
+    const hydrated=clipRows.map(x=>({...x,media:[],verifiedWork:false,businesses:x.business_id?cb[x.business_id]??null:null,profile:cp[x.author_id]??null,engagement:clipEngagement[x.id]??emptyEngagement,music:x.music_track_id?musicMap[x.music_track_id]??null:null,musicUrl:x.music_track_id?musicUrls[x.music_track_id]??null:null,audioTracks:audioByPost[x.id]??[]}));
     setClips(hydrated);
     if(!activeClipId&&hydrated[0])setActiveClipId(hydrated[0].id);
    }else setClips([]);
@@ -192,6 +196,7 @@ export default function Social(){
  }
  const mediaWidth=Math.min(width-24,720);const clipHeight=Math.min(Math.max(height-210,520),760);
  function switchMode(next:'POSTS'|'CLIPS'){if(next===mode)return;setMode(next);setActiveClipId(next==='CLIPS'?(clips[0]?.id??null):null);void haptic.selection()}
+ const audibleTrack=(post:FeedPost)=>post.audioTracks?.find(track=>!track.muted&&Boolean(track.url))??null;
 
  if(loading&&!posts.length)return <SafeAreaView style={s.safe}><ActivityIndicator style={{marginTop:100}}/></SafeAreaView>;
 
@@ -233,7 +238,7 @@ export default function Social(){
    ListEmptyComponent={<View style={s.empty}><Ionicons name={mode==='CLIPS'?'play-circle-outline':'images-outline'} size={34} color={colors.muted}/><Text style={s.emptyTitle}>{mode==='CLIPS'?'Clips are just getting started':'No posts yet'}</Text><Text style={s.emptyCopy}>{mode==='CLIPS'?'Share the first useful local clip.':'New public posts from people and businesses will appear here.'}</Text>{mode==='CLIPS'?<Pressable onPress={()=>router.push('/create-clip')} style={s.emptyCta}><Text style={s.emptyCtaText}>CREATE CLIP</Text></Pressable>:null}</View>}
    renderItem={({item})=>mode==='CLIPS'?<View style={s.clipCard}>
     <View style={[s.clipMedia,{height:clipHeight}]}>
-     {item.videoUrl?<ClipPlayer uri={item.videoUrl} active={activeClipId===item.id} edit={item.edit_manifest} musicUri={item.musicUrl??null} musicStartMs={item.music_start_ms??0} musicVolume={item.music_volume??.75} originalVolume={item.original_volume??1}/>:<View style={s.clipMissing}><Ionicons name="videocam-off-outline" size={30} color="#fff"/><Text style={s.clipMissingText}>Video unavailable</Text></View>}
+     {item.videoUrl?<ClipPlayer uri={item.videoUrl} active={activeClipId===item.id} edit={item.edit_manifest} musicUri={audibleTrack(item)?.url??item.musicUrl??null} musicStartMs={audibleTrack(item)?.startMs??item.music_start_ms??0} musicVolume={audibleTrack(item)?.volume??item.music_volume??.75} originalVolume={item.original_volume??1}/>:<View style={s.clipMissing}><Ionicons name="videocam-off-outline" size={30} color="#fff"/><Text style={s.clipMissingText}>Video unavailable</Text></View>}
      <View style={s.clipTop}><View style={s.clipLocal}><Ionicons name="location-outline" size={13} color="#fff"/><Text numberOfLines={1} style={s.clipLocalText}>{item.location_label||'Everest Local'}</Text></View>{item.is_promoted?<View style={s.clipPromoted}><Text style={s.clipPromotedText}>PROMOTED</Text></View>:null}</View>
      <View style={s.clipSide}>
       <Pressable onPress={()=>void like(item)} style={s.clipAction}><Ionicons name={item.engagement.likedByMe?'heart':'heart-outline'} size={27} color={item.engagement.likedByMe?'#ff8c8c':'#fff'}/><Text style={s.clipActionText}>{item.engagement.likeCount}</Text></Pressable>
@@ -244,7 +249,7 @@ export default function Social(){
      <View style={s.clipBottom}>
       <Pressable onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))} style={s.clipAuthor}><View style={s.clipAvatar}>{(item.businesses?.logo_url||item.profile?.avatar_url)?<Image source={{uri:item.businesses?.logo_url??item.profile?.avatar_url??''}} style={s.clipAvatarImage}/>:<Ionicons name={item.business_id?'business':'person'} size={17} color="#fff"/>}</View><Text numberOfLines={1} style={s.clipName}>{item.businesses?.name??item.profile?.display_name??'Everest member'}</Text></Pressable>
       {item.caption?<Text numberOfLines={3} style={s.clipCaption}>{item.caption}</Text>:null}
-      {item.music?<View style={s.clipMusic}><Ionicons name="musical-note" size={13} color="#fff"/><Text numberOfLines={1} style={s.clipMusicText}>{item.music.title} — {item.music.artist}</Text></View>:null}
+      {audibleTrack(item)?<View style={s.clipMusic}><Ionicons name={audibleTrack(item)?.source==='VOICEOVER'?'mic':'musical-note'} size={13} color="#fff"/><Text numberOfLines={1} style={s.clipMusicText}>{audibleTrack(item)?.title}{audibleTrack(item)?.artist?' — '+audibleTrack(item)?.artist:''}</Text></View>:item.music?<View style={s.clipMusic}><Ionicons name="musical-note" size={13} color="#fff"/><Text numberOfLines={1} style={s.clipMusicText}>{item.music.title} — {item.music.artist}</Text></View>:null}
       {(item.service_id||item.product_id)?<View style={s.clipCommerce}>{item.service_id?<Pressable onPress={()=>router.push('/request?serviceId='+item.service_id)} style={s.clipCommerceButton}><Text style={s.clipCommerceText}>View service</Text></Pressable>:null}{item.product_id?<Pressable onPress={()=>router.push('/product?id='+item.product_id)} style={s.clipCommerceButton}><Text style={s.clipCommerceText}>View product</Text></Pressable>:null}</View>:null}
      </View>
     </View>
@@ -267,7 +272,7 @@ export default function Social(){
     {item.media?.length?<View style={s.mediaWrap}>{item.media.slice(0,1).map(uri=><Image key={uri} source={{uri}} resizeMode="cover" style={[s.media,{width:mediaWidth,height:Math.min(mediaWidth*1.05,650)}]}/>)}
       {item.media.length>1?<View style={s.mediaCount}><Text style={s.mediaCountText}>1/{item.media.length}</Text></View>:null}
     </View>:null}
-    {item.music?<View style={s.postMusic}><Ionicons name="musical-note" size={13} color={colors.accent}/><Text numberOfLines={1} style={s.postMusicText}>{item.music.title} — {item.music.artist}</Text></View>:null}
+    {audibleTrack(item)?<PostSoundPlayer track={audibleTrack(item)!} photoDurationMs={item.photo_duration_ms}/>:item.music?<View style={s.postMusic}><Ionicons name="musical-note" size={13} color={colors.accent}/><Text numberOfLines={1} style={s.postMusicText}>{item.music.title} — {item.music.artist}</Text></View>:null}
     <View style={s.actions}>
      <View style={s.leftActions}>
       <Pressable onPress={()=>void like(item)} style={s.action}><Ionicons name={item.engagement.likedByMe?'heart':'heart-outline'} size={26} color={item.engagement.likedByMe?colors.danger:colors.text}/></Pressable>
