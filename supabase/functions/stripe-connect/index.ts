@@ -140,12 +140,19 @@ Deno.serve(async req=>{
  }
 
  const {data:membership,error:membershipError}=await admin.from('business_members')
-  .select('member_role').eq('business_id',businessId).eq('user_id',user.id).maybeSingle();
+  .select('member_role,status').eq('business_id',businessId).eq('user_id',user.id).maybeSingle();
  if(membershipError){
   console.log('stripe_connect_access_failed',{businessId,action,stage:'membership',message:membershipError.message});
   return json({error:'Business access could not be verified'},500);
  }
- if(!membership)return json({error:'Business access is required'},403);
+ if(!membership||membership.status!=='ACTIVE')return json({error:'Active business access is required'},403);
+
+ // Bank account ownership is intentionally non-delegable. Finance/admin roles may reconcile
+ // payout state, but only the legal business owner can initiate or continue Stripe onboarding.
+ const role=String(membership.member_role??'').toUpperCase();
+ const canViewFinancials=['OWNER','ADMIN','FINANCE'].includes(role);
+ if(!canViewFinancials)return json({error:'Financial access is required'},403);
+ if(action==='onboard'&&role!=='OWNER')return json({error:'Only the business owner can manage the payout account'},403);
 
  const {data:business,error:businessError}=await admin.from('businesses')
   .select('id,name,description,email,status,verification_status,stripe_connected_account_id,stripe_connect_status')
@@ -161,7 +168,6 @@ Deno.serve(async req=>{
   const {error}=await admin.from('businesses').update(snapshot).eq('id',businessId);
   if(error)throw error;
 
-  // If Stripe later restricts the account, stop new paid commitments immediately.
   if(snapshot.stripe_connect_status!=='ACTIVE'){
    await Promise.all([
     admin.from('services').update({active:false,updated_at:new Date().toISOString()}).eq('business_id',businessId).eq('active',true),
@@ -304,14 +310,10 @@ Deno.serve(async req=>{
   const stripeError=error as {code?:string;type?:string;requestId?:string;raw?:{requestId?:string}};
   const message=error instanceof Error?error.message:'unknown';
   console.log('stripe_connect_failed',{
-   businessId,
-   action,
-   message,
-   code:stripeError.code??null,
-   type:stripeError.type??null,
+   businessId,action,message,code:stripeError.code??null,type:stripeError.type??null,
    requestId:stripeError.requestId??stripeError.raw?.requestId??null,
   });
-  if(message.includes("signed up for Connect")){
+  if(message.includes('signed up for Connect')){
    return json({error:'Everest Local Stripe Connect is not activated yet. Complete Connect setup in the Stripe Dashboard, then try again.'},503);
   }
   if(message.includes('must be activated in order to create accounts')){
