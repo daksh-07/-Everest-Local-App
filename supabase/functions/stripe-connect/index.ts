@@ -138,7 +138,9 @@ async function createV2MerchantAccount(stripeKey:string,business:{
  return data.id;
 }
 
-async function ensureWebhookSecrets(stripe:Stripe,admin:ReturnType<typeof createClient>){
+type WebhookRpcClient={rpc:(fn:string,args?:Record<string,unknown>)=>PromiseLike<{data:unknown;error:unknown}>};
+
+async function ensureWebhookSecrets(stripe:Stripe,admin:WebhookRpcClient){
  const {data:stored,error:readError}=await admin.rpc('get_stripe_webhook_secrets');
  if(readError)throw readError;
  const existing=(stored&&typeof stored==='object'?stored:{}) as {platform?:unknown;connect?:unknown};
@@ -205,6 +207,13 @@ Deno.serve(async req=>{
   return json({error:'Business access could not be verified'},500);
  }
  if(!membership)return json({error:'Business access is required'},403);
+
+ // Payout ownership is deliberately non-delegable. Finance/admin roles may inspect
+ // payout readiness, but only the legal business owner can start or continue onboarding.
+ const role=String(membership.member_role??'').toUpperCase();
+ const canViewFinancials=['OWNER','ADMIN','FINANCE'].includes(role);
+ if(!canViewFinancials)return json({error:'Financial access is required'},403);
+ if(action==='onboard'&&role!=='OWNER')return json({error:'Only the business owner can manage the payout account'},403);
 
  const {data:business,error:businessError}=await admin.from('businesses')
   .select('id,name,description,email,status,verification_status,stripe_connected_account_id,stripe_connect_status')
@@ -313,7 +322,7 @@ Deno.serve(async req=>{
    return json({error:'APP_PUBLIC_URL must use HTTPS for Stripe onboarding'},503);
   }
 
-  await ensureWebhookSecrets(stripe,admin);
+  await ensureWebhookSecrets(stripe,admin as unknown as WebhookRpcClient);
 
   if(!connectedId){
    connectedId=await createV2MerchantAccount(stripeKey,{

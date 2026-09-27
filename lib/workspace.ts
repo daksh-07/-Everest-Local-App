@@ -6,12 +6,18 @@ import {retryRead} from './resilience';
 export type AppMode='CUSTOMER'|'BUSINESS';
 export type BusinessWorkspace={
   id:string;name:string;logo_url:string|null;status:string;verification_status:string;
-  member_role:'OWNER'|'ADMIN'|'MANAGER'|'STAFF'|string;suburb:string|null;city:string|null;state:string|null;
+  member_role:'OWNER'|'ADMIN'|'OPERATIONS_MANAGER'|'DISPATCHER'|'FINANCE'|'CRM_SALES'|'TEAM_LEADER'|'TECHNICIAN'|'CONTRACTOR'|'READ_ONLY'|'MANAGER'|'STAFF'|string;
+  member_status?:string;suburb:string|null;city:string|null;state:string|null;
+  can_view_team?:boolean;can_manage_team?:boolean;can_assign_jobs?:boolean;can_view_all_jobs?:boolean;
+  can_view_crm?:boolean;can_manage_crm?:boolean;can_view_inbox?:boolean;
+  can_view_finance?:boolean;can_manage_finance?:boolean;can_manage_payouts?:boolean;
+  can_manage_catalog?:boolean;can_view_orders?:boolean;can_manage_orders?:boolean;can_manage_settings?:boolean;
 };
 export type WorkspaceContext={mode:AppMode;active_business_id:string|null;businesses:BusinessWorkspace[]};
 
 const MODE_KEY='everest.app_mode';
 const BUSINESS_KEY='everest.active_business_id';
+const WORKFORCE_ROLES=new Set(['TEAM_LEADER','TECHNICIAN','CONTRACTOR','STAFF']);
 
 async function readLocal(key:string){
   try{
@@ -24,6 +30,16 @@ async function writeLocal(key:string,value:string|null){
     if(Platform.OS==='web'){if(typeof window==='undefined')return;if(value===null)window.localStorage.removeItem(key);else window.localStorage.setItem(key,value);return;}
     if(value===null)await SecureStore.deleteItemAsync(key);else await SecureStore.setItemAsync(key,value);
   }catch{return;}
+}
+
+export function isWorkforceWorkspace(business:BusinessWorkspace){
+  return WORKFORCE_ROLES.has(String(business.member_role).toUpperCase())&&!business.can_view_all_jobs&&!business.can_view_crm&&!business.can_view_finance;
+}
+export function businessHomeRoute(business:BusinessWorkspace){
+  const role=String(business.member_role).toUpperCase();
+  if(role==='FINANCE')return'/business-control' as const;
+  if(role==='READ_ONLY')return'/business-operations' as const;
+  return isWorkforceWorkspace(business)?'/business-my-work' as const:'/business-today' as const;
 }
 
 export async function getWorkspaceContext():Promise<WorkspaceContext>{
