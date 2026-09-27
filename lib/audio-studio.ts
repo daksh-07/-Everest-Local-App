@@ -167,6 +167,13 @@ export async function publishDraftSound(postId:string,input:DraftSound):Promise<
   if(uploadedPath)await supabase.storage.from('user-audio').remove([uploadedPath]).catch(()=>undefined);
   throw new Error(userFacingError(attached.error,'Sound could not be attached.'));
  }
+ if(sound.source==='LICENSED_MUSIC'&&sound.musicTrackId){
+  const legacy=await supabase.rpc('set_post_music',{
+   p_post_id:postId,p_music_track_id:sound.musicTrackId,p_music_start_ms:sound.startMs,
+   p_music_volume:sound.volume,p_original_volume:1
+  });
+  if(legacy.error)throw new Error(userFacingError(legacy.error,'Licensed music could not be attached.'));
+ }
  return assetId;
 }
 
