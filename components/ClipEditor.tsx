@@ -23,9 +23,9 @@ const time=(ms:number)=>{const total=Math.max(0,Math.round(ms/100)/10);const m=M
 const percent=(value:number):DimensionValue=>(`${Math.max(0,Math.min(100,value))}%` as `${number}%`);
 
 export function ClipEditor({
- visible,uri,durationMs,initial,sound,onOpenSound,onClose,onDone
+ visible,uri,durationMs,initial,sound,voiceover,onOpenSound,onClose,onDone
 }:{
- visible:boolean;uri:string;durationMs:number|null|undefined;initial:ClipEditManifest;sound:DraftSound|null;
+ visible:boolean;uri:string;durationMs:number|null|undefined;initial:ClipEditManifest;sound:DraftSound|null;voiceover:DraftSound|null;
  onOpenSound:()=>void;onClose:()=>void;onDone:(edit:ClipEditManifest)=>void;
 }){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {height,width}=useWindowDimensions();
@@ -54,7 +54,7 @@ export function ClipEditor({
    </View>
 
    <View style={[s.preview,{height:previewH,width:previewW}]}>
-    <ClipPlayer key={uri} uri={uri} active={visible} edit={draft} musicUri={sound?.previewUri??null} musicStartMs={sound?.startMs??draft.musicStartMs} musicEndMs={sound?.endMs} musicVolume={sound?.muted?0:(sound?.volume??draft.musicVolume)} musicFadeInMs={sound?.fadeInMs} musicFadeOutMs={sound?.fadeOutMs} originalVolume={draft.originalVolume}/>
+    <ClipPlayer key={uri} uri={uri} active={visible} edit={draft} audioBeds={[sound,voiceover].filter((item):item is DraftSound=>Boolean(item?.previewUri)).map(item=>({id:item.source,uri:item.previewUri!,startMs:item.startMs,endMs:item.endMs,volume:item.muted?0:item.volume,fadeInMs:item.fadeInMs,fadeOutMs:item.fadeOutMs}))} originalVolume={draft.originalVolume}/>
     <View pointerEvents="none" style={s.previewHint}><Ionicons name="play" size={11} color="#fff"/><Text style={s.previewHintText}>Tap video to play or pause</Text></View>
    </View>
 
@@ -79,7 +79,7 @@ export function ClipEditor({
     {tool==='SOUND'?<>
      <View style={s.panelHead}><View><Text style={s.panelTitle}>Sound</Text><Text style={s.panelCopy}>Use original audio, licensed music, your own audio file, or record a voiceover.</Text></View></View>
      <Pressable onPress={onOpenSound} style={s.musicCard}><View style={s.musicIcon}><Ionicons name={sound?.source==='VOICEOVER'?'mic':sound?.source==='USER_UPLOAD'?'cloud-upload':'musical-notes'} size={21} color={colors.brand}/></View><View style={{flex:1}}><Text style={s.musicTitle}>{sound?sound.title:'Add sound'}</Text><Text style={s.musicArtist}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase()):'Music · Original · Upload · Voiceover'}</Text></View><Ionicons name="chevron-forward" size={19} color={colors.muted}/></Pressable>
-     {sound?<View style={s.offsetCard}><View><Text style={s.timeLabel}>SOUND START</Text><Text style={s.timeValue}>{time(sound.startMs)}</Text></View><View><Text style={s.timeLabel}>VOLUME</Text><Text style={s.timeValue}>{sound.muted?'Muted':Math.round(sound.volume*100)+'%'}</Text></View></View>:null}
+     {(sound||voiceover)?<View style={s.offsetCard}><View><Text style={s.timeLabel}>BACKGROUND</Text><Text numberOfLines={1} style={s.timeValue}>{sound?sound.title:'None'}</Text></View><View><Text style={s.timeLabel}>VOICEOVER</Text><Text numberOfLines={1} style={s.timeValue}>{voiceover?'Added':'None'}</Text></View></View>:null}
     </>:null}
 
     {tool==='TEXT'?<>
