@@ -18,6 +18,7 @@ const SAFE_MESSAGES = [
   'Invalid quote amounts.',
   'Conversation could not be opened.',
   'Everest Local Stripe Connect is not activated yet. Complete Connect setup in the Stripe Dashboard, then try again.',
+  'The Everest Local Stripe account is not fully activated for live payments yet. Complete Stripe account activation, then try again.',
 ];
 
 export function userFacingError(error: unknown, fallback: string): string {
