@@ -6,6 +6,7 @@ const html=fs.readFileSync('app/+html.tsx','utf8');
 const layout=fs.readFileSync('app/_layout.tsx','utf8');
 const home=fs.readFileSync('app/index.tsx','utf8');
 const tabs=fs.readFileSync('components/CustomerTabBar.tsx','utf8');
+const swipe=fs.readFileSync('components/GlobalSwipeNavigator.tsx','utf8');
 const quick=fs.readFileSync('lib/quick-actions.ts','utf8');
 const manifest=JSON.parse(fs.readFileSync('public/manifest.json','utf8'));
 const app=JSON.parse(fs.readFileSync('app.json','utf8'));
@@ -66,4 +67,16 @@ test('native quick actions use four iOS-safe routes and preserve auth continuati
 test('manifest shortcuts are progressive enhancement only',()=>{
  assert.equal(manifest.shortcuts.length,4);
  assert.deepEqual(manifest.shortcuts.map(x=>x.url),['/request','/messages','/search','/assistant']);
+});
+
+
+test('primary customer surfaces support progressive horizontal swipe navigation',()=>{
+ assert.match(layout,/GlobalSwipeNavigator/);
+ assert.match(swipe,/Home[\s\S]*Posts[\s\S]*Clips[\s\S]*My Everest[\s\S]*Messages[\s\S]*Account/);
+ assert.match(swipe,/SOFT_DISTANCE=42/);
+ assert.match(swipe,/HARD_DISTANCE=138/);
+ assert.match(swipe,/hard\?2:1/);
+ assert.match(swipe,/x>y\*1\.35/);
+ assert.match(swipe,/useReducedMotion/);
+ assert.match(swipe,/haptic\.medium\(\)|haptic\.selection\(\)/);
 });
