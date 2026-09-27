@@ -803,7 +803,7 @@ export default function Request() {
                           {location.suburb ? (
                             <Pressable
                               accessibilityRole="button"
-                              onPress={confirmLocation}
+                              onPress={() => void confirmLocation()}
                               style={s.outlineSmall}
                             >
                               <Text style={s.outlineText}>
@@ -869,19 +869,21 @@ export default function Request() {
                         ) : null}
                       </>
                     ) : (
-                      <View style={s.locationPrivacy}>
-                        <Ionicons name="shield-checkmark-outline" size={17} color={colors.accent}/>
-                        <Text style={s.locationPrivacyText}>Everest uses the precise pin for matching and ETA. Businesses see distance/ETA while deciding; the exact service address is reserved for the selected booking.</Text>
-                      </View>
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={() =>
-                          setLocation((v) => ({ ...v, confirmed: false }))
-                        }
-                        style={s.textButton}
-                      >
-                        <Text style={s.textButtonText}>CHANGE LOCATION</Text>
-                      </Pressable>
+                      <>
+                        <View style={s.locationPrivacy}>
+                          <Ionicons name="shield-checkmark-outline" size={17} color={colors.accent}/>
+                          <Text style={s.locationPrivacyText}>Everest uses the precise pin for matching and ETA. Businesses see distance/ETA while deciding; the exact service address is reserved for the selected booking.</Text>
+                        </View>
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() =>
+                            setLocation((v) => ({ ...v, confirmed: false }))
+                          }
+                          style={s.textButton}
+                        >
+                          <Text style={s.textButtonText}>CHANGE LOCATION</Text>
+                        </Pressable>
+                      </>
                     )}
                   </View>
                 ) : (
