@@ -24,6 +24,12 @@ export interface SocialPost {
   collaborator_count?: number;
   collaborator_labels?: string[];
   feed_score?: number;
+  content_format?: 'POST'|'CLIP';
+  music_track_id?: string|null;
+  music_start_ms?: number;
+  music_volume?: number;
+  original_volume?: number;
+  cover_storage_path?: string|null;
 }
 
 export interface PublicProfile {
@@ -143,7 +149,7 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
     // RLS still governs which published public posts the caller can read.
     const fallback=await supabase
       .from('posts')
-      .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at')
+      .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path')
       .eq('status','PUBLISHED')
       .eq('visibility','PUBLIC')
       .order('created_at',{ascending:false})
@@ -153,7 +159,7 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
   }
   const { data, error } = await supabase
     .from('posts')
-    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at')
+    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path')
     .eq('status', 'PUBLISHED')
     .eq('visibility', 'PUBLIC')
     .eq('business_id',input.businessId)
@@ -163,11 +169,16 @@ export async function listPublicPosts(input: { limit?: number; offset?: number; 
   return (data ?? []) as SocialPost[];
 }
 
-export async function deletePost(postId: string): Promise<void> {
+async function setOwnPostStatus(postId:string,status:'PUBLISHED'|'HIDDEN'|'REMOVED'):Promise<void>{
   requireSupabaseConfig();
-  const { error } = await supabase.from('posts').update({ status: 'REMOVED', updated_at: new Date().toISOString() }).eq('id', postId);
-  if (error) throw new Error(error.message);
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user)throw new Error('Sign in to manage your posts.');
+  const {error}=await supabase.from('posts').update({status,updated_at:new Date().toISOString()}).eq('id',postId).eq('author_id',user.id);
+  if(error)throw new Error(error.message);
 }
+export async function archivePost(postId:string):Promise<void>{return setOwnPostStatus(postId,'HIDDEN')}
+export async function restorePost(postId:string):Promise<void>{return setOwnPostStatus(postId,'PUBLISHED')}
+export async function deletePost(postId:string):Promise<void>{return setOwnPostStatus(postId,'REMOVED')}
 
 export async function updatePostCaption(postId:string,caption:string):Promise<void>{
   requireSupabaseConfig();
@@ -346,7 +357,7 @@ export async function listMyPosts(limit=24):Promise<SocialPost[]>{
   const {data:{user}}=await supabase.auth.getUser();
   if(!user)return [];
   const {data,error}=await supabase.from('posts')
-    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at')
+    .select('id,author_id,business_id,caption,post_type,visibility,service_id,product_id,location_label,status,comments_enabled,created_at,updated_at,content_format,music_track_id,music_start_ms,music_volume,original_volume,cover_storage_path')
     .eq('author_id',user.id)
     .neq('status','REMOVED')
     .order('created_at',{ascending:false})
