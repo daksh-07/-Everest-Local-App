@@ -129,20 +129,34 @@ export default function Home(){
   const {data:{user}}=await supabase.auth.getUser();
   const businessQuery=supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').limit(8);
   if(!user){
-   const [biz,feed]=await Promise.all([businessQuery,listPublicPosts({limit:4})]);
-   if(active){setBusinesses((biz.data??[]) as BusinessPreview[]);setPosts(feed)}
+   const [biz,feed,shop]=await Promise.all([
+    businessQuery,
+    listPublicPosts({limit:4}),
+    searchShop({limit:8,offset:0}).catch(()=>[] as ShopProduct[])
+   ]);
+   if(active){
+    setBusinesses((biz.data??[]) as BusinessPreview[]);
+    setPosts(feed);
+    setPostMedia(await signedPostMediaBatch(feed.map(post=>post.id)).catch(()=>({} as Record<string,string[]>)));
+    const signed=await signedProductMediaBatch(shop.map(product=>product.primary_image_path),6*3600).catch(()=>({} as Record<string,string|null>));
+    setProducts(shop.map(product=>({...product,imageUrl:product.primary_image_path?signed[product.primary_image_path]??null:null})));
+   }
    if(active)void refreshLocality(true);
    return;
   }
   const {getWorkspaceContext}=await import('@/lib/workspace');const workspace=await getWorkspaceContext();if(!active)return;if(workspace.mode==='BUSINESS'&&workspace.active_business_id){router.replace('/business-today');return;}
-  const [profile,biz,feed,notifications,booking,request]=await Promise.all([
-   supabase.from('profiles').select('full_name,avatar_url,suburb,city,state,country').eq('id',user.id).maybeSingle(),businessQuery,listPublicPosts({limit:4}),
+  const [profile,biz,feed,shop,notifications,booking,request]=await Promise.all([
+   supabase.from('profiles').select('full_name,avatar_url,suburb,city,state,country').eq('id',user.id).maybeSingle(),businessQuery,listPublicPosts({limit:4}),searchShop({limit:8,offset:0}).catch(()=>[] as ShopProduct[]),
    supabase.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',user.id).is('read_at',null),
    supabase.from('bookings').select('id,status,scheduled_date,scheduled_time').eq('customer_id',user.id).in('status',['REQUESTED','PENDING_PAYMENT','CONFIRMED','UPCOMING']).order('created_at',{ascending:false}).limit(1).maybeSingle(),
    supabase.from('service_requests').select('id,status,description').eq('customer_id',user.id).in('status',['OPEN','MATCHING','QUOTING','BOOKED']).order('created_at',{ascending:false}).limit(1).maybeSingle(),
   ]);
   if(!active)return;const p=profile.data;setName(p?.full_name??'');setAvatar(p?.avatar_url??null);setSuburb(p?.suburb||p?.city||'Set location');
-  setBusinesses(((biz.data??[]) as BusinessPreview[]).sort((a,b)=>Number(Boolean(p?.suburb)&&a.suburb===p?.suburb)-Number(Boolean(p?.suburb)&&b.suburb===p?.suburb)));setPosts(feed);setUnread(notifications.count??0);
+  setBusinesses(((biz.data??[]) as BusinessPreview[]).sort((a,b)=>Number(Boolean(p?.suburb)&&a.suburb===p?.suburb)-Number(Boolean(p?.suburb)&&b.suburb===p?.suburb)));
+  setPosts(feed);setUnread(notifications.count??0);
+  setPostMedia(await signedPostMediaBatch(feed.map(post=>post.id)).catch(()=>({} as Record<string,string[]>)));
+  const initialSigned=await signedProductMediaBatch(shop.map(product=>product.primary_image_path),6*3600).catch(()=>({} as Record<string,string|null>));
+  setProducts(shop.map(product=>({...product,imageUrl:product.primary_image_path?initialSigned[product.primary_image_path]??null:null})));
   if(booking.data){const b=booking.data;setContext({kind:'booking',title:'Upcoming booking',detail:b.scheduled_date?b.scheduled_date+(b.scheduled_time?' · '+String(b.scheduled_time).slice(0,5):''):b.status.replaceAll('_',' '),route:'/bookings'})}
   else if(request.data)setContext({kind:'request',title:'Active request',detail:String(request.data.description||request.data.status),route:'/requests'});
 
@@ -158,7 +172,7 @@ export default function Home(){
  const classic=experience.mode==='CLASSIC';const pulse=experience.mode==='PULSE';
 
  return <View style={s.root}><SafeAreaView edges={['top','left','right']} style={s.safe}>
-  <ScrollView showsVerticalScrollIndicator={false} scrollEventThrottle={16} onScroll={e=>{const y=Math.max(0,e.nativeEvent.contentOffset.y);const delta=y-lastScrollY.current;if(y<24)setNavHidden(false);else if(delta>8)setNavHidden(true);else if(delta<-6)setNavHidden(false);lastScrollY.current=y}} contentContainerStyle={[s.page,{paddingHorizontal:desktop?28:experience.tokens.spacing.screen}]}>
+  <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void refreshHome()} tintColor={c.accent} colors={[c.accent]}/>} scrollEventThrottle={16} onScroll={e=>{const y=Math.max(0,e.nativeEvent.contentOffset.y);const delta=y-lastScrollY.current;if(y<24)setNavHidden(false);else if(delta>8)setNavHidden(true);else if(delta<-6)setNavHidden(false);lastScrollY.current=y}} contentContainerStyle={[s.page,{paddingHorizontal:desktop?28:experience.tokens.spacing.screen}]}>
    <Animated.View style={appear}>
     <View style={s.topbar}><View style={{flex:1}}><Text style={s.brand}>EVEREST LOCAL</Text><Pressable onPress={()=>void refreshLocality(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityLabel="Update your location"><Ionicons name={locating?'locate':'location-outline'} size={13} color={c.muted}/><Text style={s.place}>{locating?'Finding you…':suburb}</Text><Ionicons name="chevron-down" size={11} color={c.muted}/></Pressable></View>
      <Pressable onPress={()=>go('/notifications')} style={({pressed})=>[s.iconButton,pressed&&s.press]} accessibilityLabel="Notifications"><Ionicons name="notifications-outline" size={20} color={c.text}/>{unread>0?<View style={s.dot}/>:null}</Pressable>
