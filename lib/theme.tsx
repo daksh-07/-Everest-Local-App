@@ -7,10 +7,10 @@ export type ThemeColors={canvas:string;surface:string;elevated:string;text:strin
 export type AppTheme={preference:ThemePreference;isDark:boolean;colors:ThemeColors;setPreference:(value:ThemePreference)=>Promise<void>;ready:boolean};
 
 const STORAGE_KEY='everest-local-theme';
-// Alpine green gives primary actions stronger contrast and trust; champagne remains the
-// premium accent. Both palettes meet the product's black/beige identity without looking muted.
-const light:ThemeColors={canvas:'#f6f5f1',surface:'#ffffff',elevated:'#fbfaf7',text:'#101513',textSecondary:'#4f5954',muted:'#737b77',border:'#deded7',soft:'#ecefe9',input:'#ffffff',danger:'#ad352e',success:'#216b4b',overlay:'rgba(11,18,15,.52)',navigation:'#fbfaf7',brand:'#195b43',onBrand:'#ffffff',accent:'#9a7540',accentSoft:'#f2eadc',info:'#315f8a'};
-const dark:ThemeColors={canvas:'#090d0b',surface:'#131816',elevated:'#191f1c',text:'#f5f2eb',textSecondary:'#c7cec9',muted:'#98a29d',border:'#303a35',soft:'#202a25',input:'#171d1a',danger:'#f1a39b',success:'#9bd5b8',overlay:'rgba(0,0,0,.76)',navigation:'#0f1412',brand:'#d8c3a5',onBrand:'#17130d',accent:'#d8c3a5',accentSoft:'#29241d',info:'#9fc2e5'};
+// Everest uses warm neutral surfaces and champagne for brand emphasis.
+// Green is reserved for semantic status such as live, available and success.
+const light:ThemeColors={canvas:'#F7F5F0',surface:'#FFFEFB',elevated:'#F2EEE7',text:'#121411',textSecondary:'#626861',muted:'#81867F',border:'#DDD9D0',soft:'#EFECE5',input:'#FFFEFB',danger:'#A9433C',success:'#176B4D',overlay:'rgba(18,20,17,.48)',navigation:'#FFFEFB',brand:'#C6A26B',onBrand:'#121411',accent:'#9C753E',accentSoft:'#E8DCC8',info:'#315F8A'};
+const dark:ThemeColors={canvas:'#070B09',surface:'#101512',elevated:'#151B17',text:'#F5F1E9',textSecondary:'#C5CAC5',muted:'#959D97',border:'#29312C',soft:'#1D241F',input:'#121814',danger:'#F1A39B',success:'#6FC39B',overlay:'rgba(0,0,0,.76)',navigation:'#0D120F',brand:'#D8BE96',onBrand:'#17130D',accent:'#D8BE96',accentSoft:'#29231C',info:'#9FC2E5'};
 const ThemeContext=createContext<AppTheme|null>(null);
 
 function valid(value:string|null):value is ThemePreference{return value==='SYSTEM'||value==='LIGHT'||value==='DARK'}
