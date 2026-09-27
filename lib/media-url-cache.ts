@@ -20,23 +20,23 @@ function remember(bucket:string,path:string,url:string,expires:number){
  return url;
 }
 
-export async function signedMediaUrl(bucket:string,path:string|null|undefined,expires=3600){
+export async function signedMediaUrl(bucket:string,path:string|null|undefined,expires=3600,force=false){
  if(!path)return null;
  if(/^https?:\/\//i.test(path))return path;
- const cached=cachedMediaUrl(bucket,path);
+ const cached=force?null:cachedMediaUrl(bucket,path);
  if(cached)return cached;
  const {data,error}=await supabase.storage.from(bucket).createSignedUrl(path,expires);
  if(error||!data?.signedUrl)return null;
  return remember(bucket,path,data.signedUrl,expires);
 }
 
-export async function signedMediaUrls(bucket:string,paths:(string|null|undefined)[],expires=3600){
+export async function signedMediaUrls(bucket:string,paths:(string|null|undefined)[],expires=3600,force=false){
  const result:Record<string,string|null>={};
  const missing:string[]=[];
  for(const raw of paths){
   if(!raw)continue;
   if(/^https?:\/\//i.test(raw)){result[raw]=raw;continue}
-  const cached=cachedMediaUrl(bucket,raw);
+  const cached=force?null:cachedMediaUrl(bucket,raw);
   if(cached)result[raw]=cached;
   else if(!missing.includes(raw))missing.push(raw);
  }

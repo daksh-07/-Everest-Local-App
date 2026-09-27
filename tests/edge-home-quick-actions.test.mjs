@@ -76,14 +76,16 @@ test('primary customer surfaces support progressive horizontal swipe navigation'
  assert.match(swipe,/SOFT_DISTANCE=42/);
  assert.match(swipe,/HARD_DISTANCE=138/);
  assert.match(swipe,/hard\?2:1/);
- assert.match(swipe,/x>y\*1\.35/);
+ assert.match(swipe,/activeOffsetX\(\[-HORIZONTAL_ACTIVATION,HORIZONTAL_ACTIVATION\]\)/);
+ assert.match(swipe,/failOffsetY\(\[-VERTICAL_FAILURE,VERTICAL_FAILURE\]\)/);
+ assert.match(swipe,/react-native-reanimated/);
  assert.match(swipe,/useReducedMotion/);
  assert.match(swipe,/haptic\.medium\(\)|haptic\.selection\(\)/);
 });
 
 
 test('swipe direction matches mobile convention and bottom-nav gesture',()=>{
- assert.match(swipe,/dx<0\?1:-1/);
- assert.match(tabs,/g\.dx<0\?1:-1/);
- assert.match(tabs,/dragStartIndex\.current-\(g\.dx\/itemWidth\)/);
+ assert.match(swipe,/translationX<0\?1:-1/);
+ assert.match(tabs,/event\.translationX<0\?1:-1/);
+ assert.match(tabs,/startIndex\.value-\(event\.translationX\/itemWidth\)/);
 });

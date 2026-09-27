@@ -48,21 +48,21 @@ export async function uploadPostMedia(postId:string,assets:ImagePicker.ImagePick
   return paths;
  }catch(e){if(paths.length)await supabase.storage.from('post-media').remove(paths);throw e;}
 }
-export async function signedPostMedia(postId:string){
- const map=await signedPostMediaBatch([postId]);
+export async function signedPostMedia(postId:string,options?:{force?:boolean;strict?:boolean}){
+ const map=await signedPostMediaBatch([postId],options);
  return map[postId]??[];
 }
 
-export async function signedPostMediaBatch(postIds:string[]){
+export async function signedPostMediaBatch(postIds:string[],options?:{force?:boolean;strict?:boolean}){
  if(!postIds.length)return {} as Record<string,string[]>;
  const {data,error}=await supabase.from('post_media').select('post_id,storage_path,storage_bucket,sort_order').in('post_id',postIds).order('sort_order');
- if(error)return {} as Record<string,string[]>;
+ if(error){if(options?.strict)throw error;return {} as Record<string,string[]>}
  const rows=data??[];
  const photoPaths=rows.filter(row=>(row.storage_bucket??'post-media')==='post-media').map(row=>row.storage_path);
  const clipPaths=rows.filter(row=>row.storage_bucket==='clip-media').map(row=>row.storage_path);
  const [photos,clips]=await Promise.all([
-  signedMediaUrls('post-media',photoPaths,6*3600),
-  signedMediaUrls('clip-media',clipPaths,6*3600)
+  signedMediaUrls('post-media',photoPaths,6*3600,options?.force),
+  signedMediaUrls('clip-media',clipPaths,6*3600,options?.force)
  ]);
  const grouped:Record<string,string[]>={};
  for(const id of postIds)grouped[id]=[];
@@ -70,5 +70,6 @@ export async function signedPostMediaBatch(postIds:string[]){
   const url=(row.storage_bucket==='clip-media'?clips:photos)[row.storage_path];
   if(url)(grouped[row.post_id]??=[]).push(url);
  }
+ if(options?.strict&&rows.some(row=>!(row.storage_bucket==='clip-media'?clips:photos)[row.storage_path]))throw new Error('One or more post photos could not be securely loaded.');
  return grouped;
 }

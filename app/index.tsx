@@ -5,6 +5,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
+import {PostMediaImage} from '@/components/PostMediaImage';
 import {AmbientEdge} from '@/components/AmbientEdge';
 import {haptic} from '@/lib/haptics';
 import {MOTION,ease,useReducedMotion} from '@/lib/motion';
@@ -45,6 +46,7 @@ export default function Home(){
  const {colors:c}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const s=useMemo(()=>styles(c,desktop),[c,desktop]);const osReducedMotion=useReducedMotion();const reduced=osReducedMotion||experience.mode==='CLASSIC';
  const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Set location');
  const [unread,setUnread]=useState(0);const [businesses,setBusinesses]=useState<BusinessPreview[]>([]);const [products,setProducts]=useState<ProductPreview[]>([]);const [posts,setPosts]=useState<SocialPost[]>([]);const [postMedia,setPostMedia]=useState<Record<string,string[]>>({});
+ const [mediaWarning,setMediaWarning]=useState('');
  const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [locating,setLocating]=useState(false);const [navHidden,setNavHidden]=useState(false);const [menuOpen,setMenuOpen]=useState(false);
  const enter=useRef(new Animated.Value(reduced?1:0)).current;const lastScrollY=useRef(0);
 
@@ -52,6 +54,10 @@ export default function Home(){
   if(!value.trim())return[] as BusinessPreview[];
   const {data}=await supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').ilike(field,value.trim()).limit(8);
   return (data??[]) as BusinessPreview[];
+ }
+ async function signPostPhotos(rows:SocialPost[]){
+  try{setPostMedia(await signedPostMediaBatch(rows.map(post=>post.id),{strict:true}));setMediaWarning('')}
+  catch{setPostMedia({});setMediaWarning('Some community photos could not be loaded. Pull to refresh and retry.')}
  }
  async function loadNearby(locality:Pick<CustomerLocality,'suburb'|'city'|'state'>){
   const merged=new Map<string,BusinessPreview>();
@@ -74,7 +80,7 @@ export default function Home(){
   const localFeed=feed.filter(p=>postScore(p)>0).sort((a,b)=>postScore(b)-postScore(a));
   const nextPosts=(localFeed.length?localFeed:feed).slice(0,4);
   setPosts(nextPosts);
-  setPostMedia(await signedPostMediaBatch(nextPosts.map(post=>post.id)).catch(()=>({} as Record<string,string[]>)));
+  await signPostPhotos(nextPosts);
 
   const productScore=(product:ShopProduct)=>{
    const label=[product.suburb,product.city,product.state].filter(Boolean).join(' ').toLowerCase();
@@ -111,7 +117,7 @@ export default function Home(){
     ]);
     setBusinesses((biz.data??[]) as BusinessPreview[]);
     setPosts(feed);
-    setPostMedia(await signedPostMediaBatch(feed.map(post=>post.id)).catch(()=>({} as Record<string,string[]>)));
+    await signPostPhotos(feed);
     const signed=await signedProductMediaBatch(shop.map(product=>product.primary_image_path),6*3600).catch(()=>({} as Record<string,string|null>));
     setProducts(shop.map(product=>({...product,imageUrl:product.primary_image_path?signed[product.primary_image_path]??null:null})));
    }
@@ -147,7 +153,7 @@ export default function Home(){
    if(active){
     setBusinesses((biz.data??[]) as BusinessPreview[]);
     setPosts(feed);
-    setPostMedia(await signedPostMediaBatch(feed.map(post=>post.id)).catch(()=>({} as Record<string,string[]>)));
+    await signPostPhotos(feed);
     const signed=await signedProductMediaBatch(shop.map(product=>product.primary_image_path),6*3600).catch(()=>({} as Record<string,string|null>));
     setProducts(shop.map(product=>({...product,imageUrl:product.primary_image_path?signed[product.primary_image_path]??null:null})));
    }
@@ -164,7 +170,7 @@ export default function Home(){
   if(!active)return;const p=profile.data;setName(p?.full_name??'');setAvatar(p?.avatar_url??null);setSuburb(p?.suburb||p?.city||'Set location');
   setBusinesses(((biz.data??[]) as BusinessPreview[]).sort((a,b)=>Number(Boolean(p?.suburb)&&a.suburb===p?.suburb)-Number(Boolean(p?.suburb)&&b.suburb===p?.suburb)));
   setPosts(feed);setUnread(notifications.count??0);
-  setPostMedia(await signedPostMediaBatch(feed.map(post=>post.id)).catch(()=>({} as Record<string,string[]>)));
+  await signPostPhotos(feed);
   const initialSigned=await signedProductMediaBatch(shop.map(product=>product.primary_image_path),6*3600).catch(()=>({} as Record<string,string|null>));
   setProducts(shop.map(product=>({...product,imageUrl:product.primary_image_path?initialSigned[product.primary_image_path]??null:null})));
   if(booking.data){const b=booking.data;setContext({kind:'booking',title:'Upcoming booking',detail:b.scheduled_date?b.scheduled_date+(b.scheduled_time?' · '+String(b.scheduled_time).slice(0,5):''):b.status.replaceAll('_',' '),route:'/bookings'})}
@@ -216,10 +222,11 @@ export default function Home(){
      </View>
      </View>
     </View></View>
+    {mediaWarning?<View style={{marginTop:14,minHeight:44,borderRadius:14,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:9}}><Ionicons name="image-outline" size={17} color={c.danger}/><Text style={{flex:1,fontSize:11,lineHeight:16,color:c.textSecondary}}>{mediaWarning}</Text></View>:null}
     <View style={s.sectionHeader}><View><SectionTitle title="Near you" compact/><Text style={s.localityCaption}>{suburb==='Set location'?'Turn on location to personalise Everest':`Around ${suburb}`}</Text></View><View style={s.sectionLinks}><Pressable onPress={()=>go('/available-now')}><Text style={s.availableLink}>Available now</Text></Pressable><Pressable onPress={()=>go('/search?tab=BUSINESS')}><Text style={s.seeAll}>See all</Text></Pressable></View></View>
     {loading?<BusinessSkeleton colors={c}/>:businesses.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.businessRow}>{businesses.map(b=><Pressable key={b.id} onPress={()=>go('/business-profile?id='+b.id)} style={({pressed})=>[s.businessCard,pressed&&s.cardPressed]}>{b.logo_url?<Image source={{uri:b.logo_url}} style={s.businessImage}/>:<View style={s.businessFallback}><Ionicons name="business-outline" size={24} color={c.brand}/></View>}<View style={s.businessBody}><View style={s.businessTitleRow}><Text numberOfLines={1} style={s.businessName}>{b.name}</Text>{b.verification_status==='VERIFIED'?<Ionicons name="checkmark-circle" size={14} color={c.brand}/>:null}</View><Text numberOfLines={1} style={s.businessMeta}>{[b.suburb,b.city,b.state].filter(Boolean).join(', ')||'Local business'}</Text></View></Pressable>)}</ScrollView>:<Pressable onPress={()=>go('/search?tab=BUSINESS')} style={s.emptyLine}><Text style={s.emptyText}>Explore local businesses on Everest</Text><Ionicons name="arrow-forward" size={17} color={c.muted}/></Pressable>}
     {products.length?<><View style={s.sectionHeader}><View><SectionTitle title="Shop nearby" compact/><Text style={s.localityCaption}>Products from local businesses</Text></View><Pressable onPress={()=>go('/shop')}><Text style={s.seeAll}>See all</Text></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.productRow}>{products.map(product=><Pressable key={product.id} onPress={()=>go('/product?id='+product.id)} style={({pressed})=>[s.productCard,pressed&&s.cardPressed]}>{product.imageUrl?<Image source={{uri:product.imageUrl}} style={s.productImage}/>:<View style={s.productFallback}><Ionicons name="bag-handle-outline" size={24} color={c.accent}/></View>}<View style={s.productBody}><Text numberOfLines={2} style={s.productName}>{product.name}</Text><Text style={s.productPrice}>{currency(product.sale_price??product.price)}</Text><Text numberOfLines={1} style={s.productMeta}>{product.business_name}{product.suburb?' · '+product.suburb:''}</Text></View></Pressable>)}</ScrollView></>:null}
-    {posts.length?<><View style={s.sectionHeader}><SectionTitle title="From around Everest" compact/><Pressable onPress={()=>go('/social')}><Text style={s.seeAll}>Open discovery</Text></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.postRow}>{posts.map(p=>{const image=postMedia[p.id]?.[0];return <Pressable key={p.id} onPress={()=>go('/social?postId='+p.id)} style={({pressed})=>[s.postCard,pressed&&s.cardPressed]}>{image?<Image source={{uri:image}} style={s.postImage}/>:null}<View style={s.postBody}><Text style={s.postType}>{p.post_type.replaceAll('_',' ')}</Text><Text numberOfLines={3} style={s.postCopy}>{p.caption||'New activity on Everest'}</Text><Text style={s.postDate}>{new Date(p.created_at).toLocaleDateString()}</Text></View></Pressable>})}</ScrollView></>:null}
+    {posts.length?<><View style={s.sectionHeader}><SectionTitle title="From around Everest" compact/><Pressable onPress={()=>go('/social')}><Text style={s.seeAll}>Open discovery</Text></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.postRow}>{posts.map(p=>{const image=postMedia[p.id]?.[0];return <Pressable key={p.id} onPress={()=>go('/social?postId='+p.id)} style={({pressed})=>[s.postCard,pressed&&s.cardPressed]}>{image?<PostMediaImage postId={p.id} uri={image} style={s.postImage}/>:null}<View style={s.postBody}><Text style={s.postType}>{p.post_type.replaceAll('_',' ')}</Text><Text numberOfLines={3} style={s.postCopy}>{p.caption||'New activity on Everest'}</Text><Text style={s.postDate}>{new Date(p.created_at).toLocaleDateString()}</Text></View></Pressable>})}</ScrollView></>:null}
     <View style={s.sectionHeader}><SectionTitle title="Browse categories" compact/><Pressable onPress={()=>go('/search?tab=SERVICE')}><Text style={s.seeAll}>Explore</Text></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.categoryRow}>{categories.map(([label,icon,q])=><Pressable key={label} onPress={()=>go('/search?q='+encodeURIComponent(q)+'&tab=SERVICE')} style={({pressed})=>[s.category,pressed&&s.cardPressed]}><View style={s.categoryIcon}><Ionicons name={icon} size={20} color={c.brand}/></View><Text style={s.categoryText}>{label}</Text></Pressable>)}</ScrollView>
    </Animated.View><View style={{height:118}}/>
   </ScrollView><CustomerTabBar active="/" hidden={navHidden}/>

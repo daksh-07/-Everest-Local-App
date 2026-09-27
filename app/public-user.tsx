@@ -27,6 +27,8 @@ import {
 } from '@/lib/connections';
 import {useAppTheme} from '@/lib/theme';
 import {listHighlights,websiteLabel,type StoryHighlight} from '@/lib/social-expansion';
+import {signedPostMediaBatch} from '@/lib/request-post-media';
+import {PostMediaImage} from '@/components/PostMediaImage';
 
 function initialsFor(name:string|null){
   const parts=(name??'').trim().split(/\s+/).filter(Boolean);
@@ -54,6 +56,7 @@ export default function PublicUser(){
 
   const [p,setP]=useState<PublicUserProfile|null>(null);
   const [posts,setPosts]=useState<Awaited<ReturnType<typeof publicPostsForUser>>>([]);
+  const [postMedia,setPostMedia]=useState<Record<string,string[]>>({});
   const [highlights,setHighlights]=useState<StoryHighlight[]>([]);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
@@ -75,6 +78,8 @@ export default function PublicUser(){
       setP(profile);
       setPosts(content);
       setHighlights(highlightRows);
+      try{setPostMedia(await signedPostMediaBatch(content.map(item=>item.id),{strict:true}))}
+      catch{setPostMedia({});setError('Some post photos could not be loaded. Tap a photo area to retry.')}
     }catch(e){
       setError(e instanceof Error?e.message:'Profile could not be loaded.');
     }finally{
@@ -537,14 +542,7 @@ export default function PublicUser(){
                       {item.caption||postTypeLabel(item.post_type)}
                     </Text>
 
-                    {Array.isArray(item.post_media)&&item.post_media.length>0?(
-                      <View style={{marginTop:14,borderRadius:16,backgroundColor:c.input,minHeight:92,alignItems:'center',justifyContent:'center',padding:16}}>
-                        <Ionicons name="images-outline" size={22} color={c.muted}/>
-                        <Text style={{fontSize:11,color:c.muted,marginTop:7}}>
-                          {item.post_media.length} media item{item.post_media.length===1?'':'s'}
-                        </Text>
-                      </View>
-                    ):null}
+                    {postMedia[item.id]?.[0]?<View style={{marginTop:14,borderRadius:16,overflow:'hidden'}}><PostMediaImage postId={item.id} uri={postMedia[item.id][0]} style={{width:'100%',height:260,backgroundColor:c.soft}}/>{postMedia[item.id].length>1?<View style={{position:'absolute',right:10,top:10,paddingHorizontal:8,paddingVertical:4,borderRadius:12,backgroundColor:'rgba(0,0,0,.6)'}}><Text style={{fontSize:9,fontWeight:'900',color:'#fff'}}>1/{postMedia[item.id].length}</Text></View>:null}</View>:Array.isArray(item.post_media)&&item.post_media.length>0?<Pressable onPress={()=>void signedPostMediaBatch([item.id],{force:true,strict:true}).then(urls=>setPostMedia(current=>({...current,...urls}))).catch(()=>setError('This post photo is still unavailable. Please try again.'))} style={{marginTop:14,borderRadius:16,backgroundColor:c.input,minHeight:92,alignItems:'center',justifyContent:'center',padding:16}}><Ionicons name="image-outline" size={22} color={c.muted}/><Text style={{fontSize:11,color:c.muted,marginTop:7}}>Photo unavailable · tap to retry</Text></Pressable>:null}
 
                     {index<posts.length-1?null:null}
                   </View>

@@ -15,6 +15,7 @@ import {CustomerTabBar} from '@/components/CustomerTabBar';
 import {haptic} from '@/lib/haptics';
 import {ClipPlayer} from '@/components/ClipPlayer';
 import {PostSoundPlayer} from '@/components/PostSoundPlayer';
+import {PostMediaImage} from '@/components/PostMediaImage';
 import {listActiveStories,listClips,listEverestMusic,signedMusicUrl,type ClipEditManifest,type MusicTrack,type StoryCard} from '@/lib/social-expansion';
 import {listPostAudioTracks,type PublicAudioTrack} from '@/lib/audio-studio';
 
@@ -84,7 +85,7 @@ export default function Social(){
     authorIds.length?supabase.from('public_profiles').select('id,display_name,avatar_url').in('id',authorIds):Promise.resolve({data:[],error:null}),
     ids.length?supabase.from('verified_work_posts').select('post_id').in('post_id',ids):Promise.resolve({data:[],error:null}),
     getPostEngagement(ids),
-    signedPostMediaBatch(ids)
+    signedPostMediaBatch(ids,{strict:true}).catch(()=>{setError('Some post photos could not be loaded. Pull to refresh and retry.');return {} as Record<string,string[]>})
    ]);
    if(businessResult.error)throw businessResult.error;if(profileResult.error)throw profileResult.error;if(verifiedResult.error)throw verifiedResult.error;
    const businessMap=Object.fromEntries((businessResult.data??[]).map(x=>[x.id,x]));
@@ -288,7 +289,7 @@ export default function Social(){
       {item.author_id===userId?<Pressable onPress={()=>void toggleComments(item)} style={s.menuItem}><Ionicons name={item.comments_enabled?'chatbubble-outline':'chatbubble-ellipses-outline'} size={17} color={colors.text}/><Text style={s.menuText}>{item.comments_enabled?'Turn comments off':'Turn comments on'}</Text></Pressable>:null}
       <Pressable onPress={()=>void share(item)} style={s.menuItem}><Ionicons name="share-outline" size={17} color={colors.text}/><Text style={s.menuText}>Share post</Text></Pressable>
     </View>:null}
-    {item.media?.length?<View style={s.mediaWrap}>{item.media.slice(0,1).map(uri=><Image key={uri} source={{uri}} resizeMode="cover" style={[s.media,{width:mediaWidth,height:Math.min(mediaWidth*1.05,650)}]}/>)}
+    {item.media?.length?<View style={s.mediaWrap}>{item.media.slice(0,1).map((uri,index)=><PostMediaImage key={uri} postId={item.id} uri={uri} index={index} style={[s.media,{width:mediaWidth,height:Math.min(mediaWidth*1.05,650)}]}/>)}
       {item.media.length>1?<View style={s.mediaCount}><Text style={s.mediaCountText}>1/{item.media.length}</Text></View>:null}
     </View>:null}
     {audibleTracks(item).length?<PostSoundPlayer tracks={audibleTracks(item)} photoDurationMs={item.photo_duration_ms} onOpenSound={track=>router.push(('/sound?id='+track.audioAssetId) as never)}/>:item.music?<View style={s.postMusic}><Ionicons name="musical-note" size={13} color={colors.accent}/><Text numberOfLines={1} style={s.postMusicText}>{item.music.title} — {item.music.artist}</Text></View>:null}

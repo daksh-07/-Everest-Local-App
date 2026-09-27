@@ -1,15 +1,19 @@
 import {Ionicons} from '@expo/vector-icons';
 import {useGlobalSearchParams,usePathname,useRouter} from 'expo-router';
 import {type ReactNode,useCallback,useMemo,useRef,useState} from 'react';
-import {Animated,PanResponder,StyleSheet,Text,View,useWindowDimensions} from 'react-native';
+import {Platform,StyleSheet,Text,View,useWindowDimensions} from 'react-native';
+import {Gesture,GestureDetector} from 'react-native-gesture-handler';
+import Animated,{cancelAnimation,runOnJS,useAnimatedStyle,useSharedValue,withSpring,withTiming} from 'react-native-reanimated';
 import {haptic} from '@/lib/haptics';
-import {ease,useReducedMotion} from '@/lib/motion';
+import {useReducedMotion} from '@/lib/motion';
 import {useAppTheme} from '@/lib/theme';
 
 const SOFT_DISTANCE=42;
 const HARD_DISTANCE=138;
-const SOFT_VELOCITY=.38;
-const HARD_VELOCITY=1.15;
+const SOFT_VELOCITY=380;
+const HARD_VELOCITY=1150;
+const HORIZONTAL_ACTIVATION=18;
+const VERTICAL_FAILURE=14;
 
 const pages=[
  {key:'home',label:'Home',href:'/'},
@@ -42,77 +46,74 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
  const {colors}=useAppTheme();
  const reducedMotion=useReducedMotion();
  const pageIndex=currentPageIndex(pathname,mode);
- const dragX=useRef(new Animated.Value(0)).current;
- const cueOpacity=useRef(new Animated.Value(0)).current;
- const navigating=useRef(false);
- const hintKey=useRef('');
+ const dragX=useSharedValue(0);
+ const cueOpacity=useSharedValue(0);
+ const navigating=useSharedValue(false);
+ const previewIndex=useSharedValue(pageIndex);
+ const hapticIndex=useRef(pageIndex);
  const [hint,setHint]=useState<SwipeHint>(null);
 
- const reset=useCallback(()=>{
-  hintKey.current='';setHint(null);
-  if(reducedMotion){dragX.setValue(0);cueOpacity.setValue(0);return}
-  Animated.parallel([
-   Animated.spring(dragX,{toValue:0,useNativeDriver:true,damping:20,stiffness:280,mass:.7}),
-   Animated.timing(cueOpacity,{toValue:0,duration:100,useNativeDriver:true})
-  ]).start();
- },[cueOpacity,dragX,reducedMotion]);
-
- const updateHint=useCallback((dx:number)=>{
-  if(pageIndex<0)return;
-  const direction:(-1|1)=dx<0?1:-1;
-  const hard=Math.abs(dx)>=HARD_DISTANCE;
+ const resetHint=useCallback(()=>setHint(null),[]);
+ const preview=useCallback((targetIndex:number,direction:-1|1,hard:boolean)=>{
+  const target=pageAt(targetIndex);
+  setHint(target?{direction,label:target.label,hard}:null);
+  if(target&&targetIndex!==hapticIndex.current){hapticIndex.current=targetIndex;void haptic.selection()}
+ },[]);
+ const completeNavigation=useCallback((direction:-1|1,hard:boolean)=>{
   const immediate=pageAt(pageIndex+direction);
   const target=pageAt(pageIndex+direction*(hard?2:1))??immediate;
-  if(!target){hintKey.current='';setHint(null);cueOpacity.setValue(0);return}
-  const key=direction+':'+target.key+':'+String(hard);
-  if(hintKey.current!==key){hintKey.current=key;setHint({direction,label:target.label,hard})}
-  cueOpacity.setValue(Math.min(1,Math.max(0,(Math.abs(dx)-18)/56)));
- },[cueOpacity,pageIndex]);
+  if(!target){setHint(null);return}
+  if(hard)void haptic.medium();
+  router.replace(target.href as never);
+  setHint(null);
+ },[pageIndex,router]);
 
- const navigate=useCallback((direction:-1|1,hard:boolean)=>{
-  const immediate=pageAt(pageIndex+direction);
-  const target=pageAt(pageIndex+direction*(hard?2:1))??immediate;
-  if(!target){reset();return}
-  navigating.current=true;
-  void (hard?haptic.medium():haptic.selection());
-  const finish=()=>{
-   router.replace(target.href as never);
-   hintKey.current='';setHint(null);cueOpacity.setValue(0);
-   if(reducedMotion){dragX.setValue(0);navigating.current=false;return}
-   dragX.setValue(direction*Math.min(width*.045,18));
-   Animated.spring(dragX,{toValue:0,useNativeDriver:true,damping:19,stiffness:270,mass:.72}).start(()=>{navigating.current=false});
-  };
-  if(reducedMotion){finish();return}
-  Animated.timing(dragX,{toValue:-direction*Math.min(width*.14,58),duration:120,easing:ease,useNativeDriver:true}).start(finish);
- },[cueOpacity,dragX,pageIndex,reducedMotion,reset,router,width]);
-
- const pan=useMemo(()=>PanResponder.create({
-  onMoveShouldSetPanResponder:(_,gesture)=>{
-   if(pageIndex<0||navigating.current)return false;
-   const x=Math.abs(gesture.dx),y=Math.abs(gesture.dy);
-   return x>16&&x>y*1.35;
-  },
-  onPanResponderGrant:()=>{dragX.stopAnimation();cueOpacity.stopAnimation()},
-  onPanResponderMove:(_,gesture)=>{
-   if(navigating.current)return;
-   const resisted=Math.max(-46,Math.min(46,gesture.dx*.16));
-   dragX.setValue(resisted);updateHint(gesture.dx);
-  },
-  onPanResponderRelease:(_,gesture)=>{
-   if(navigating.current)return;
-   const distance=Math.abs(gesture.dx),velocity=Math.abs(gesture.vx);
-   if(distance<SOFT_DISTANCE&&velocity<SOFT_VELOCITY){reset();return}
-   const direction:(-1|1)=gesture.dx<0?1:-1;
+ const gesture=useMemo(()=>Gesture.Pan()
+  .enabled(pageIndex>=0)
+  .activeOffsetX([-HORIZONTAL_ACTIVATION,HORIZONTAL_ACTIVATION])
+  .failOffsetY([-VERTICAL_FAILURE,VERTICAL_FAILURE])
+  .onBegin(()=>{cancelAnimation(dragX);cancelAnimation(cueOpacity);navigating.value=false;previewIndex.value=pageIndex})
+  .onUpdate(event=>{
+   if(navigating.value)return;
+   const direction:(-1|1)=event.translationX<0?1:-1;
+   const hard=Math.abs(event.translationX)>=HARD_DISTANCE;
+   const immediateIndex=pageIndex+direction;
+   const hasTarget=immediateIndex>=0&&immediateIndex<pages.length;
+   const resisted=event.translationX*.34;
+   dragX.value=hasTarget?Math.max(-width*.22,Math.min(width*.22,resisted)):Math.max(-18,Math.min(18,resisted*.28));
+   cueOpacity.value=hasTarget?Math.min(1,Math.max(0,(Math.abs(event.translationX)-18)/70)):0;
+   const hardIndex=pageIndex+direction*2;
+   const targetIndex=hard&&hardIndex>=0&&hardIndex<pages.length?hardIndex:hasTarget?immediateIndex:pageIndex;
+   if(targetIndex!==previewIndex.value){previewIndex.value=targetIndex;runOnJS(preview)(targetIndex,direction,hard)}
+  })
+  .onEnd(event=>{
+   const distance=Math.abs(event.translationX),velocity=Math.abs(event.velocityX);
+   if(distance<SOFT_DISTANCE&&velocity<SOFT_VELOCITY){
+    dragX.value=withSpring(0,{damping:22,stiffness:300,mass:.72});
+    cueOpacity.value=withTiming(0,{duration:90});
+    runOnJS(resetHint)();return;
+   }
+   const direction:(-1|1)=event.translationX<0?1:-1;
+   if(pageIndex+direction<0||pageIndex+direction>=pages.length){
+    dragX.value=withSpring(0,{damping:22,stiffness:300,mass:.72});cueOpacity.value=withTiming(0,{duration:90});runOnJS(resetHint)();return;
+   }
    const hard=distance>=HARD_DISTANCE||velocity>=HARD_VELOCITY;
-   navigate(direction,hard);
-  },
-  onPanResponderTerminate:reset,
-  onPanResponderTerminationRequest:()=>true,
- }),[cueOpacity,dragX,navigate,pageIndex,reset,updateHint]);
+   navigating.value=true;
+   dragX.value=withTiming(-direction*Math.min(width*.18,72),{duration:reducedMotion?0:120},finished=>{
+    if(finished)runOnJS(completeNavigation)(direction,hard);
+    dragX.value=0;cueOpacity.value=0;navigating.value=false;
+   });
+  })
+  .onFinalize((_event,success)=>{
+   if(!success&&!navigating.value){dragX.value=withSpring(0,{damping:22,stiffness:300,mass:.72});cueOpacity.value=withTiming(0,{duration:90});runOnJS(resetHint)()}
+  }),[completeNavigation,cueOpacity,dragX,navigating,pageIndex,preview,previewIndex,reducedMotion,resetHint,width]);
+
+ const contentStyle=useAnimatedStyle(()=>({transform:[{translateX:reducedMotion?0:dragX.value}]}),[reducedMotion]);
+ const cueStyle=useAnimatedStyle(()=>({opacity:cueOpacity.value,transform:[{translateX:dragX.value*.08},{scale:.96+cueOpacity.value*.04}]}));
 
  return <View style={styles.root}>
-  <Animated.View {...pan.panHandlers} style={[styles.content,{transform:[{translateX:dragX}]}]}>{children}</Animated.View>
-  {hint?<Animated.View pointerEvents="none" style={[styles.cue,hint.direction>0?styles.cueRight:styles.cueLeft,{opacity:cueOpacity,backgroundColor:colors.navigation,borderColor:colors.border}]}>
+  <GestureDetector gesture={gesture}><Animated.View style={[styles.content,contentStyle]}>{children}</Animated.View></GestureDetector>
+  {hint?<Animated.View pointerEvents="none" style={[styles.cue,hint.direction>0?styles.cueRight:styles.cueLeft,cueStyle,{backgroundColor:colors.navigation,borderColor:colors.border}]}>
    <Ionicons name={hint.direction>0?(hint.hard?'play-forward':'chevron-forward'):(hint.hard?'play-back':'chevron-back')} size={15} color={colors.brand}/>
    <View><Text style={[styles.cueKicker,{color:colors.muted}]}>{hint.hard?'SKIP TO':'SWIPE TO'}</Text><Text style={[styles.cueLabel,{color:colors.text}]}>{hint.label}</Text></View>
   </Animated.View>:null}
@@ -120,11 +121,7 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
 }
 
 const styles=StyleSheet.create({
- root:{flex:1},
- content:{flex:1},
+ root:{flex:1,overflow:Platform.OS==='web'?'hidden':'visible'},content:{flex:1},
  cue:{position:'absolute',top:'44%',zIndex:6000,elevation:50,minHeight:46,maxWidth:150,borderWidth:1,borderRadius:18,paddingHorizontal:12,paddingVertical:8,flexDirection:'row',alignItems:'center',gap:8,shadowColor:'#000',shadowOpacity:.16,shadowRadius:14,shadowOffset:{width:0,height:7}},
- cueRight:{right:10},
- cueLeft:{left:10},
- cueKicker:{fontSize:6.5,fontWeight:'900',letterSpacing:1},
- cueLabel:{fontSize:11,fontWeight:'900',marginTop:1},
+ cueRight:{right:10},cueLeft:{left:10},cueKicker:{fontSize:6.5,fontWeight:'900',letterSpacing:1},cueLabel:{fontSize:11,fontWeight:'900',marginTop:1},
 });
