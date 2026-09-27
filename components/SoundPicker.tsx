@@ -79,6 +79,7 @@ export function SoundPicker({
  const patch=(next:Partial<DraftSound>)=>{if(!activeValue)return;const updated=normalizeDraftSound({...activeValue,...next});if(tab==='VOICEOVER'&&onVoiceoverChange)onVoiceoverChange(updated);else onChange(updated)};
  const removeActive=()=>{previewPlayer.pause();if(tab==='VOICEOVER'&&onVoiceoverChange)onVoiceoverChange(null);else onChange(null);void haptic.selection()};
  const selectedLabel=tab==='ORIGINAL'?'Original audio':activeValue?activeValue.title:(tab==='VOICEOVER'?'No voiceover':hasOriginalAudio&&originalVolume>0?'Original audio':'No added sound');
+ const activeEnd=activeValue?(activeValue.endMs??activeValue.durationMs):null;
 
  return <Modal visible={visible} transparent animationType="slide" onRequestClose={()=>void close()}>
   <Pressable style={s.scrim} onPress={()=>void close()}/>
@@ -132,6 +133,7 @@ export function SoundPicker({
     {activeValue?<View style={s.controls}>
      <Text style={s.controlsTitle}>{tab==='VOICEOVER'?'VOICEOVER CONTROLS':'SOUND CONTROLS'}</Text>
      <View style={s.controlRow}><View style={{flex:1}}><Text style={s.controlLabel}>Start point</Text><Text style={s.controlValue}>{seconds(activeValue.startMs)}</Text></View><Pressable onPress={()=>patch({startMs:Math.max(0,activeValue.startMs-5000)})} style={s.step}><Text style={s.stepText}>−5s</Text></Pressable><Pressable onPress={()=>patch({startMs:activeValue.startMs+5000})} style={s.step}><Text style={s.stepText}>+5s</Text></Pressable></View>
+     {activeEnd!=null?<View style={s.controlRow}><View style={{flex:1}}><Text style={s.controlLabel}>End point</Text><Text style={s.controlValue}>{seconds(activeEnd)}</Text></View><Pressable onPress={()=>patch({endMs:Math.max(activeValue.startMs+100,activeEnd-5000)})} style={s.step}><Text style={s.stepText}>−5s</Text></Pressable><Pressable onPress={()=>patch({endMs:Math.min(activeValue.durationMs??900000,activeEnd+5000)})} style={s.step}><Text style={s.stepText}>+5s</Text></Pressable></View>:null}
      <Text style={s.label}>VOLUME</Text><View style={s.choiceRow}>{volumeChoices.filter(v=>v>0).map(v=><Pressable key={v} onPress={()=>patch({volume:v,muted:false})} style={[s.choice,Math.abs(activeValue.volume-v)<.01&&!activeValue.muted&&s.choiceActive]}><Text style={[s.choiceText,Math.abs(activeValue.volume-v)<.01&&!activeValue.muted&&s.choiceTextActive]}>{Math.round(v*100)}%</Text></Pressable>)}<Pressable onPress={()=>patch({muted:!activeValue.muted})} style={[s.choice,activeValue.muted&&s.choiceActive]}><Text style={[s.choiceText,activeValue.muted&&s.choiceTextActive]}>Mute</Text></Pressable></View>
      <Text style={s.label}>FADE</Text><View style={s.choiceRow}><Pressable onPress={()=>patch({fadeInMs:activeValue.fadeInMs?0:1000})} style={[s.choice,activeValue.fadeInMs>0&&s.choiceActive]}><Text style={[s.choiceText,activeValue.fadeInMs>0&&s.choiceTextActive]}>Fade in</Text></Pressable><Pressable onPress={()=>patch({fadeOutMs:activeValue.fadeOutMs?0:1000})} style={[s.choice,activeValue.fadeOutMs>0&&s.choiceActive]}><Text style={[s.choiceText,activeValue.fadeOutMs>0&&s.choiceTextActive]}>Fade out</Text></Pressable></View>
     </View>:null}
