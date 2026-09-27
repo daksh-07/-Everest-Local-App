@@ -415,20 +415,27 @@ as $$
      and (
        s.author_id=auth.uid()
        or public.is_admin()
-       or exists(
-         select 1
-         from public.story_highlight_items hi
-         join public.story_highlights h on h.id=hi.highlight_id
-         where hi.story_id=s.id
-           and (
-             (h.business_id is not null and exists(
-               select 1 from public.businesses b
-               where b.id=h.business_id and b.status='ACTIVE' and b.verification_status='VERIFIED'
-             ))
-             or (h.business_id is null and exists(
-               select 1 from public.public_profiles pp where pp.id=h.owner_id and pp.visibility='PUBLIC'
-             ))
-           )
+       or (
+         (auth.uid() is null or not exists(
+           select 1 from public.user_blocks ub
+           where (ub.blocker_id=auth.uid() and ub.blocked_id=s.author_id)
+              or (ub.blocked_id=auth.uid() and ub.blocker_id=s.author_id)
+         ))
+         and exists(
+           select 1
+           from public.story_highlight_items hi
+           join public.story_highlights h on h.id=hi.highlight_id
+           where hi.story_id=s.id
+             and (
+               (h.business_id is not null and exists(
+                 select 1 from public.businesses b
+                 where b.id=h.business_id and b.status='ACTIVE' and b.verification_status='VERIFIED'
+               ))
+               or (h.business_id is null and exists(
+                 select 1 from public.public_profiles pp where pp.id=h.owner_id and pp.visibility='PUBLIC'
+               ))
+             )
+         )
        )
        or (
          s.status='ACTIVE' and s.expires_at>now()
@@ -492,12 +499,17 @@ drop policy if exists story_highlights_read on public.story_highlights;
 create policy story_highlights_read on public.story_highlights for select to anon,authenticated
 using(
  owner_id=auth.uid() or public.is_admin()
- or (business_id is not null and exists(
-   select 1 from public.businesses b where b.id=business_id and b.status='ACTIVE' and b.verification_status='VERIFIED'
- ))
- or (business_id is null and exists(
-   select 1 from public.public_profiles pp where pp.id=owner_id and pp.visibility='PUBLIC'
- ))
+ or (
+   (auth.uid() is null or not public.users_blocked(auth.uid(),owner_id))
+   and (
+     (business_id is not null and exists(
+       select 1 from public.businesses b where b.id=business_id and b.status='ACTIVE' and b.verification_status='VERIFIED'
+     ))
+     or (business_id is null and exists(
+       select 1 from public.public_profiles pp where pp.id=owner_id and pp.visibility='PUBLIC'
+     ))
+   )
+ )
 );
 drop policy if exists story_highlights_owner_insert on public.story_highlights;
 create policy story_highlights_owner_insert on public.story_highlights for insert to authenticated
