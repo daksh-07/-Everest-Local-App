@@ -17,9 +17,11 @@ import {
 import {signedPostMedia} from '@/lib/request-post-media';
 import {haptic} from '@/lib/haptics';
 
-type AccountRoute='/requests'|'/quotes'|'/bookings'|'/orders'|'/messages'|'/reviews'|'/notifications'|'/settings'|'/saved'|'/create-post';
+type AccountRoute='/requests'|'/quotes'|'/bookings'|'/orders'|'/messages'|'/reviews'|'/notifications'|'/settings'|'/saved'|'/create'|'/archive'|'/highlights';
 type PostCard={post:SocialPost;insight:MyPostInsight;cover:string|null};
 const links:ReadonlyArray<{label:string;route:AccountRoute;icon:keyof typeof Ionicons.glyphMap;copy:string}>=[
+ {label:'Archive',route:'/archive',icon:'archive-outline',copy:'Private Posts, Stories and Clips'},
+ {label:'Highlights',route:'/highlights',icon:'albums-outline',copy:'Curate permanent profile collections'},
  {label:'Requests',route:'/requests',icon:'clipboard-outline',copy:'Jobs you have posted'},
  {label:'Quotes',route:'/quotes',icon:'document-text-outline',copy:'Compare business offers'},
  {label:'Bookings',route:'/bookings',icon:'calendar-outline',copy:'Upcoming and completed work'},
@@ -121,7 +123,7 @@ export default function Account(){
      <Text style={s.name}>{profile.full_name||'Everest Local account'}</Text>
      <Text style={s.copy}>{[profile.suburb,profile.city].filter(Boolean).join(', ')||'Your Everest profile'}</Text>
      <View style={s.roles}><View style={s.roleDot}/><Text style={s.rolesText}>{access?.is_business_member?'Customer + Business':'Customer'}{driverActive?' + Delivery Driver':''}</Text></View>
-     <View style={s.heroActions}><Pressable onPress={()=>router.push('/edit-profile')} style={s.secondaryAction}><Ionicons name="create-outline" size={16} color={colors.text}/><Text style={s.secondaryText}>Edit profile</Text></Pressable><Pressable onPress={()=>router.push('/create-post')} style={s.primaryAction}><Ionicons name="add" size={18} color={colors.onBrand}/><Text style={s.primaryText}>Create post</Text></Pressable></View>
+     <View style={s.heroActions}><Pressable onPress={()=>router.push('/edit-profile')} style={s.secondaryAction}><Ionicons name="create-outline" size={16} color={colors.text}/><Text style={s.secondaryText}>Edit profile</Text></Pressable><Pressable onPress={()=>router.push('/create')} style={s.primaryAction}><Ionicons name="add" size={18} color={colors.onBrand}/><Text style={s.primaryText}>Create post</Text></Pressable></View>
     </View>
 
     <View style={s.stats}>
