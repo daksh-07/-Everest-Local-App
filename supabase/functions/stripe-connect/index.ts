@@ -206,6 +206,13 @@ Deno.serve(async req=>{
  }
  if(!membership)return json({error:'Business access is required'},403);
 
+ // Payout ownership is deliberately non-delegable. Finance/admin roles may inspect
+ // payout readiness, but only the legal business owner can start or continue onboarding.
+ const role=String(membership.member_role??'').toUpperCase();
+ const canViewFinancials=['OWNER','ADMIN','FINANCE'].includes(role);
+ if(!canViewFinancials)return json({error:'Financial access is required'},403);
+ if(action==='onboard'&&role!=='OWNER')return json({error:'Only the business owner can manage the payout account'},403);
+
  const {data:business,error:businessError}=await admin.from('businesses')
   .select('id,name,description,email,status,verification_status,stripe_connected_account_id,stripe_connect_status')
   .eq('id',businessId).maybeSingle();
