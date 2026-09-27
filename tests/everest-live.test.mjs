@@ -77,6 +77,16 @@ test('Live UI has no fake provider markers or random marketplace counts',()=>{
  assert.match(screen,/state\?\.quote_count/);
 });
 
+test('Live search visibly animates while preserving real map data',()=>{
+ assert.match(screen,/LiveSearchingOverlay/);
+ assert.match(screen,/Animated\.loop/);
+ assert.match(screen,/ActivityIndicator/);
+ assert.match(screen,/Scanning nearby businesses/);
+ assert.match(nativeMap,/Ionicons name="navigate"/);
+ assert.match(nativeMap,/Circle center=/);
+ assert.doesNotMatch(screen,/Math\.random|simulated provider|fake marker/i);
+});
+
 test('security keeps service functions restricted and RLS-backed',()=>{
  for(const fn of ['start_everest_live','expand_everest_live','cancel_everest_live','view_live_opportunity','get_everest_live_state'])assert.match(migration,new RegExp(`revoke all on function public\\.${fn}`));
  assert.doesNotMatch(screen,/service_role|SUPABASE_SERVICE/);
