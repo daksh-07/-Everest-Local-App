@@ -1,13 +1,16 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 // Production deployment retry 2026-09-26
-import {Animated,Image,Pressable,ScrollView,StyleSheet,Text,useWindowDimensions,View} from 'react-native';
+import {Animated,Image,Pressable,RefreshControl,ScrollView,StyleSheet,Text,useWindowDimensions,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
+import {AmbientEdge} from '@/components/AmbientEdge';
 import {haptic} from '@/lib/haptics';
 import {MOTION,ease,useReducedMotion} from '@/lib/motion';
 import {listPublicPosts,type SocialPost} from '@/lib/social';
+import {signedPostMediaBatch} from '@/lib/request-post-media';
+import {searchShop,signedProductMediaBatch,type ShopProduct} from '@/lib/product-commerce';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {ui} from '@/lib/ui';
@@ -17,27 +20,22 @@ import {useExperience} from '@/lib/experience';
 
 type IconName=keyof typeof Ionicons.glyphMap;
 type BusinessPreview={id:string;name:string;logo_url:string|null;verification_status:string;suburb:string|null;city:string|null;state:string|null};
+type ProductPreview=ShopProduct&{imageUrl:string|null};
 type ContextCard={kind:'booking'|'request';title:string;detail:string;route:'/bookings'|'/requests'};
 const categories:ReadonlyArray<readonly[string,IconName,string]>=[
  ['Car','car-outline','Car'],['Home','home-outline','Home'],['Cleaning','sparkles-outline','Cleaning'],['Beauty','cut-outline','Beauty'],
  ['Trades','construct-outline','Trades'],['Garden','leaf-outline','Gardening'],['Events','calendar-outline','Events'],['Professional','briefcase-outline','Professional'],
 ];
-const actions:ReadonlyArray<{label:string;subtitle:string;icon:IconName;route:string}>=[
- {label:'Find Services',subtitle:'Browse local professionals',icon:'construct-outline',route:'/search?tab=SERVICE'},
- {label:'Shop Local',subtitle:'Products from local businesses',icon:'bag-handle-outline',route:'/shop'},
- {label:'Ask Everest',subtitle:'Get help finding the right local option',icon:'sparkles-outline',route:'/assistant'},
- {label:'Local Feed',subtitle:'See what is happening nearby',icon:'people-outline',route:'/social'},
-];
-
 function greeting(){const h=new Date().getHours();return h<12?'Good morning':h<18?'Good afternoon':'Good evening'}
 function initials(name:string){return name.trim().split(/\s+/).slice(0,2).map(v=>v[0]?.toUpperCase()).join('')||'EL'}
+function currency(value:number){return String.fromCharCode(36)+Number(value).toFixed(2)}
 
 export default function Home(){
  const experience=useExperience();
  const {colors:c}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const s=useMemo(()=>styles(c,desktop),[c,desktop]);const osReducedMotion=useReducedMotion();const reduced=osReducedMotion||experience.mode==='CLASSIC';
  const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Set location');
- const [unread,setUnread]=useState(0);const [businesses,setBusinesses]=useState<BusinessPreview[]>([]);const [posts,setPosts]=useState<SocialPost[]>([]);
- const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);const [locating,setLocating]=useState(false);const [navHidden,setNavHidden]=useState(false);
+ const [unread,setUnread]=useState(0);const [businesses,setBusinesses]=useState<BusinessPreview[]>([]);const [products,setProducts]=useState<ProductPreview[]>([]);const [posts,setPosts]=useState<SocialPost[]>([]);const [postMedia,setPostMedia]=useState<Record<string,string[]>>({});
+ const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [locating,setLocating]=useState(false);const [navHidden,setNavHidden]=useState(false);
  const enter=useRef(new Animated.Value(reduced?1:0)).current;const lastScrollY=useRef(0);
 
  async function businessMatches(field:'suburb'|'city'|'state',value:string){
