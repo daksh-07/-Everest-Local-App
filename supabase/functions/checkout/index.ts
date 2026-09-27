@@ -103,7 +103,7 @@ Deno.serve(async req=>{
    provider_net_before_stripe_fees:String(fee.provider_net),
    fee_policy_version:fee.fee_policy_version,
   };
-  const paymentIntentData:Stripe.Checkout.SessionCreateParams.PaymentIntentData={
+  const paymentIntentData={
    metadata:paymentMetadata,
    ...(applicationFeeCents>0?{application_fee_amount:applicationFeeCents}:{}),
   };
