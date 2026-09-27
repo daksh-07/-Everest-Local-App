@@ -20,7 +20,7 @@ export default function CreateClip(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const params=useLocalSearchParams<{soundId?:string}>();
  const [identities,setIdentities]=useState<Identity[]>([]);const [identity,setIdentity]=useState<Identity|null>(null);
  const [asset,setAsset]=useState<ImagePicker.ImagePickerAsset|null>(null);const [caption,setCaption]=useState('');const [location,setLocation]=useState('');
- const [visibility,setVisibility]=useState<'PUBLIC'|'FOLLOWERS'>('PUBLIC');const [sound,setSound]=useState<DraftSound|null>(null);const [soundOpen,setSoundOpen]=useState(false);
+ const [visibility,setVisibility]=useState<'PUBLIC'|'FOLLOWERS'>('PUBLIC');const [sound,setSound]=useState<DraftSound|null>(null);const [voiceover,setVoiceover]=useState<DraftSound|null>(null);const [soundOpen,setSoundOpen]=useState(false);
  const [edit,setEdit]=useState<ClipEditManifest>(()=>normalizeClipEditManifest({}));const [editorOpen,setEditorOpen]=useState(false);
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
 
@@ -52,6 +52,7 @@ export default function CreateClip(){
     musicStartMs:sound?.startMs??0,musicVolume:sound?.volume??.75,originalVolume:syncedEdit.originalVolume,editManifest:syncedEdit
    });
    if(sound)await publishDraftSound(createdId,sound);
+   if(voiceover)await publishDraftSound(createdId,voiceover);
    void haptic.success();router.replace(('/social?mode=clips&postId='+createdId) as never);
   }catch(e){
    if(createdId){try{await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',createdId)}catch{void 0}}
@@ -66,22 +67,22 @@ export default function CreateClip(){
     <Text style={s.label}>POSTING AS</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.rail}>{identities.map(item=>{const active=item.id===identity?.id&&item.kind===identity?.kind;return <Pressable key={item.kind+item.id} onPress={()=>{setIdentity(item);if(item.kind==='BUSINESS')setVisibility('PUBLIC')}} style={[s.identity,active&&s.identityActive]}><Ionicons name={item.kind==='BUSINESS'?'business-outline':'person-outline'} size={16} color={active?colors.onBrand:colors.text}/><Text style={[s.identityText,active&&{color:colors.onBrand}]}>{item.kind==='PERSONAL'?'My profile':item.name}</Text></Pressable>})}</ScrollView>
 
     {asset?<View style={s.preview}>
-      <ClipPlayer key={asset.uri} uri={asset.uri} active edit={edit} musicUri={sound?.previewUri??null} musicStartMs={sound?.startMs??0} musicEndMs={sound?.endMs} musicVolume={sound?.muted?0:(sound?.volume??.75)} musicFadeInMs={sound?.fadeInMs} musicFadeOutMs={sound?.fadeOutMs} originalVolume={edit.originalVolume}/>
+      <ClipPlayer key={asset.uri} uri={asset.uri} active edit={edit} audioBeds={[sound,voiceover].filter((item):item is DraftSound=>Boolean(item?.previewUri)).map(item=>({id:item.source,uri:item.previewUri!,startMs:item.startMs,endMs:item.endMs,volume:item.muted?0:item.volume,fadeInMs:item.fadeInMs,fadeOutMs:item.fadeOutMs}))} originalVolume={edit.originalVolume}/>
       <Pressable onPress={()=>setEditorOpen(true)} style={s.editPill}><Ionicons name="options-outline" size={16} color="#111"/><Text style={s.editPillText}>EDIT CLIP</Text></Pressable>
      </View>:<Pressable onPress={()=>void pick()} style={s.preview}><View style={s.empty}><View style={s.emptyIcon}><Ionicons name="videocam-outline" size={31} color={colors.brand}/></View><Text style={s.emptyTitle}>Choose a video</Text><Text style={s.emptyCopy}>Pick a clip up to 90 seconds. The editor opens automatically so you can trim, add sound, text, filters, effects and more.</Text><View style={s.chooseButton}><Text style={s.chooseButtonText}>CHOOSE VIDEO</Text></View></View></Pressable>}
 
     {asset?<View style={s.clipActions}><Pressable onPress={()=>setEditorOpen(true)} style={s.editButton}><Ionicons name="sparkles-outline" size={16} color={colors.onBrand}/><Text style={s.editButtonText}>Edit video</Text></Pressable><Pressable onPress={()=>void pick()} style={s.replace}><Ionicons name="repeat-outline" size={16} color={colors.text}/><Text style={s.replaceText}>Replace</Text></Pressable></View>:null}
 
     <TextInput value={caption} onChangeText={setCaption} multiline maxLength={2200} placeholder="Write a caption…" placeholderTextColor={colors.muted} style={s.caption}/>
-    <Pressable onPress={()=>setSoundOpen(true)} style={s.option}><View style={s.optionIcon}><Ionicons name={sound?.source==='VOICEOVER'?'mic-outline':sound?.source==='USER_UPLOAD'?'cloud-upload-outline':'musical-notes-outline'} size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.optionTitle}>{sound?sound.title:'Add sound'}</Text><Text style={s.optionCopy}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase()):'Music · Original audio · Upload · Voiceover'}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
+    <Pressable onPress={()=>setSoundOpen(true)} style={s.option}><View style={s.optionIcon}><Ionicons name={sound?.source==='USER_UPLOAD'?'cloud-upload-outline':'musical-notes-outline'} size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.optionTitle}>{sound?sound.title:voiceover?'Voiceover added':'Add sound'}</Text><Text style={s.optionCopy}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase())+(voiceover?' · voiceover also added':''):(voiceover?'Voiceover · tap to add music or upload':'Music · Original audio · Upload · Voiceover')}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
     <View style={s.option}><View style={s.optionIcon}><Ionicons name="location-outline" size={19} color={colors.text}/></View><TextInput value={location} onChangeText={setLocation} placeholder="Location (optional)" placeholderTextColor={colors.muted} style={s.optionInput}/></View>
     {identity?.kind==='PERSONAL'?<Pressable onPress={()=>setVisibility(v=>v==='PUBLIC'?'FOLLOWERS':'PUBLIC')} style={s.option}><View style={s.optionIcon}><Ionicons name={visibility==='PUBLIC'?'globe-outline':'people-outline'} size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.optionTitle}>{visibility==='PUBLIC'?'Public clip':'Connections only'}</Text><Text style={s.optionCopy}>Tap to change audience</Text></View></Pressable>:null}
     {error?<Text style={s.error}>{error}</Text>:null}
     <Pressable disabled={busy||!asset} onPress={()=>void publish()} style={[s.primary,(busy||!asset)&&{opacity:.45}]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<><Ionicons name="play" size={17} color={colors.onBrand}/><Text style={s.primaryText}>PUBLISH CLIP</Text></>}</Pressable>
    </>}
   </ScrollView>
-  {asset?<ClipEditor visible={editorOpen} uri={asset.uri} durationMs={asset.duration} initial={edit} sound={sound} onOpenSound={()=>setSoundOpen(true)} onClose={()=>setEditorOpen(false)} onDone={next=>{setEdit(next);setEditorOpen(false)}}/>:null}
-  <SoundPicker visible={soundOpen} value={sound} onChange={next=>{setSound(next);if(next)setEdit(current=>normalizeClipEditManifest({...current,musicStartMs:next.startMs,musicVolume:next.volume},asset?.duration))}} onClose={()=>setSoundOpen(false)} hasOriginalAudio={Boolean(asset)} originalVolume={edit.originalVolume} onOriginalVolumeChange={value=>setEdit(current=>normalizeClipEditManifest({...current,originalVolume:value},asset?.duration))}/>
+  {asset?<ClipEditor visible={editorOpen} uri={asset.uri} durationMs={asset.duration} initial={edit} sound={sound} voiceover={voiceover} onOpenSound={()=>setSoundOpen(true)} onClose={()=>setEditorOpen(false)} onDone={next=>{setEdit(next);setEditorOpen(false)}}/>:null}
+  <SoundPicker visible={soundOpen} value={sound} onChange={next=>{setSound(next);if(next)setEdit(current=>normalizeClipEditManifest({...current,musicStartMs:next.startMs,musicVolume:next.volume},asset?.duration))}} voiceover={voiceover} onVoiceoverChange={setVoiceover} onClose={()=>setSoundOpen(false)} hasOriginalAudio={Boolean(asset)} originalVolume={edit.originalVolume} onOriginalVolumeChange={value=>setEdit(current=>normalizeClipEditManifest({...current,originalVolume:value},asset?.duration))}/>
  </SafeAreaView>;
 }
 const styles=(c:ThemeColors)=>StyleSheet.create({
