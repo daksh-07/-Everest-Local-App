@@ -7,6 +7,7 @@ import {useAudioPlayer} from 'expo-audio';
 import {normalizeClipEditManifest,type ClipEditManifest} from '@/lib/social-expansion';
 
 let sessionMuted=true;
+export type ClipAudioBed={id?:string;uri:string;startMs:number;endMs?:number|null;volume:number;fadeInMs?:number;fadeOutMs?:number};
 
 function MusicBed({uri,active,muted,startMs,endMs,volume,fadeInMs,fadeOutMs,restartToken}:{uri:string;active:boolean;muted:boolean;startMs:number;endMs?:number|null;volume:number;fadeInMs?:number;fadeOutMs?:number;restartToken:number}){
  const player=useAudioPlayer(null);
@@ -31,10 +32,10 @@ function MusicBed({uri,active,muted,startMs,endMs,volume,fadeInMs,fadeOutMs,rest
 }
 
 export function ClipPlayer({
- uri,active,loop=true,showSoundControl=true,contentFit,edit,musicUri=null,musicStartMs,musicEndMs,musicVolume,musicFadeInMs,musicFadeOutMs,originalVolume
+ uri,active,loop=true,showSoundControl=true,contentFit,edit,audioBeds,musicUri=null,musicStartMs,musicEndMs,musicVolume,musicFadeInMs,musicFadeOutMs,originalVolume
 }:{
  uri:string;active:boolean;loop?:boolean;showSoundControl?:boolean;contentFit?:'cover'|'contain'|'fill';
- edit?:Partial<ClipEditManifest>|null;musicUri?:string|null;musicStartMs?:number;musicEndMs?:number|null;musicVolume?:number;musicFadeInMs?:number;musicFadeOutMs?:number;originalVolume?:number;
+ edit?:Partial<ClipEditManifest>|null;audioBeds?:ClipAudioBed[];musicUri?:string|null;musicStartMs?:number;musicEndMs?:number|null;musicVolume?:number;musicFadeInMs?:number;musicFadeOutMs?:number;originalVolume?:number;
 }){
  const normalized=useMemo(()=>normalizeClipEditManifest(edit),[edit]);
  const startSec=Math.max(0,normalized.trimStartMs)/1000;
@@ -42,6 +43,7 @@ export function ClipPlayer({
  const sourceVolume=originalVolume??normalized.originalVolume;
  const bedVolume=musicVolume??normalized.musicVolume;
  const bedStart=musicStartMs??normalized.musicStartMs;
+ const resolvedBeds:ClipAudioBed[]=audioBeds?.length?audioBeds:(musicUri?[{uri:musicUri,startMs:bedStart,endMs:musicEndMs,volume:bedVolume,fadeInMs:musicFadeInMs,fadeOutMs:musicFadeOutMs}]:[]);
  const [muted,setMuted]=useState(sessionMuted);const [restartToken,setRestartToken]=useState(0);
  const effectPulse=useRef(new Animated.Value(0)).current;
  const player=useVideoPlayer(uri,p=>{
@@ -78,7 +80,7 @@ export function ClipPlayer({
 
  return <Pressable style={s.wrap} onPress={()=>{if(!active)return;if(player.playing)player.pause();else player.play()}}>
   <VideoView player={player} style={[s.video,normalized.mirror&&s.mirror]} contentFit={fit} nativeControls={false}/>
-  {musicUri?<MusicBed uri={musicUri} active={active&&isPlaying} muted={muted} startMs={bedStart} endMs={musicEndMs} volume={bedVolume} fadeInMs={musicFadeInMs} fadeOutMs={musicFadeOutMs} restartToken={restartToken}/>:null}
+  {resolvedBeds.map((bed,index)=><MusicBed key={bed.id??bed.uri+'-'+index} uri={bed.uri} active={active&&isPlaying} muted={muted} startMs={bed.startMs} endMs={bed.endMs} volume={bed.volume} fadeInMs={bed.fadeInMs} fadeOutMs={bed.fadeOutMs} restartToken={restartToken}/>)} 
   {tint?<View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:String(tint[0]),opacity:Number(tint[1])}]}/>:null}
   {normalized.effect==='FOCUS'?<View pointerEvents="none" style={s.focus}/>:null}
   {normalized.effect==='PULSE'||normalized.effect==='FLASH'?<Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:normalized.effect==='FLASH'?'#fff':'#000',opacity:effectPulse.interpolate({inputRange:[0,1],outputRange:[0,normalized.effect==='FLASH'?.34:.16]})}]}/>:null}
