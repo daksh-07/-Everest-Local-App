@@ -58,7 +58,7 @@ export default function CreatePost(){
   ]);
   if(!active)return;if(!sr.error)setServices((sr.data??[]) as Listing[]);if(!pr.error)setProducts((pr.data??[]) as Listing[]);setVisibility('PUBLIC');
  })();return()=>{active=false}},[identity]);
- useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active)setSound(next)}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Sound could not be loaded.')});return()=>{active=false}},[params.soundId]);
+ useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active){if(next.source==='VOICEOVER')setVoiceover(next);else setSound(next)}}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Sound could not be loaded.')});return()=>{active=false}},[params.soundId]);
 
  const choices=identity?.kind==='BUSINESS'?businessChoices:personalChoices;
  const selectedChoice=choices.find(x=>x.type===type)??choices[0];
@@ -85,7 +85,7 @@ export default function CreatePost(){
  async function publish(){
   if(!identity||busy)return;
   if(!caption.trim()&&!photos.length&&!serviceId&&!productId){setError('Add a note, photo, service or product before publishing.');return;}
-  if(sound&&!photos.length){setError('Add at least one photo before adding sound to a post.');return;}
+  if((sound||voiceover)&&!photos.length){setError('Add at least one photo before adding sound to a post.');return;}
   if(sound?.source==='USER_UPLOAD'&&!sound.rightsConfirmed){setError('Confirm that you own or have permission to use the uploaded audio.');return;}
   setBusy(true);setError('');void haptic.medium();let createdId:string|null=null;
   try{
