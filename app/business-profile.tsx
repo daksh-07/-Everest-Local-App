@@ -10,7 +10,7 @@ import {signedProductMedia} from '@/lib/product-commerce';
 import {approveMembership,buyPackage,createPublicMembershipEnrollment,intervalLabel,listPublicMembershipPlans,listPublicPackages,type BusinessPackage,type MembershipPlan} from '@/lib/growth';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
 import {getOrCreateBusinessInquiry} from '@/lib/messaging';
-import {websiteLabel} from '@/lib/social-expansion';
+import {listHighlights,websiteLabel,type StoryHighlight} from '@/lib/social-expansion';
 
 type Business = { id:string; name:string; description:string|null; logo_url:string|null; cover_url:string|null; verification_status:string; suburb:string|null; city:string|null; state:string|null; opening_hours:Record<string,unknown>|null; phone:string|null; email:string|null; website_url:string|null };
 type Service = { id:string; name:string; description:string|null; base_price:number|null; duration_minutes:number|null; delivery_mode:'LOCAL'|'REMOTE'|'BOTH'; service_booking_settings:{instant_booking_enabled:boolean}|{instant_booking_enabled:boolean}[]|null };
@@ -31,6 +31,7 @@ export default function BusinessProfile() {
   const [following,setFollowing]=useState(false);
   const [followers,setFollowers]=useState(0);
   const [posts,setPosts]=useState<SocialPost[]>([]);
+  const [highlights,setHighlights]=useState<StoryHighlight[]>([]);
   const [membershipPlans,setMembershipPlans]=useState<MembershipPlan[]>([]);
   const [packages,setPackages]=useState<BusinessPackage[]>([]);
   const [followBusy,setFollowBusy]=useState(false);
@@ -71,11 +72,13 @@ export default function BusinessProfile() {
         isFollowing({ businessId: id }),
         getFollowCounts({ businessId: id }),
         listPublicPosts({ businessId: id, limit: 10 }),
+        listHighlights({businessId:id}),
       ]);
       if(socialResults[0].status==='fulfilled')setSaved(socialResults[0].value);
       if(socialResults[1].status==='fulfilled')setFollowing(socialResults[1].value);
       if(socialResults[2].status==='fulfilled')setFollowers(socialResults[2].value.follower_count);
       if(socialResults[3].status==='fulfilled')setPosts(socialResults[3].value);
+      if(socialResults[4].status==='fulfilled')setHighlights(socialResults[4].value);
       if(socialResults.some(result=>result.status==='rejected'))setWarning('Some community details could not be refreshed. The business information shown is still available.');
       const growthResults=await Promise.allSettled([listPublicMembershipPlans(id),listPublicPackages(id)]);
       if(growthResults[0].status==='fulfilled')setMembershipPlans(growthResults[0].value);else setMembershipPlans([]);
@@ -112,6 +115,7 @@ export default function BusinessProfile() {
     {!!warning&&<Text style={s.warning}>{warning}</Text>}{!!error&&<Text style={s.error}>{error}</Text>}{!!message&&<Text style={s.message}>{message}</Text>}
     {business.description&&<Text style={s.copy}>{business.description}</Text>}
     {business.website_url?<Pressable onPress={()=>void Linking.openURL(business.website_url!)} style={s.website}><Ionicons name="globe-outline" size={15} color={colors.accent}/><Text numberOfLines={1} style={s.websiteText}>{websiteLabel(business.website_url)}</Text><Ionicons name="open-outline" size={14} color={colors.muted}/></Pressable>:null}
+    {highlights.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.highlightRail}>{highlights.map(item=><View key={item.id} style={s.highlightItem}><View style={s.highlightCover}>{item.coverUrl?<Image source={{uri:item.coverUrl}} style={s.highlightImage}/>:<Ionicons name="sparkles-outline" size={21} color={colors.accent}/>}</View><Text numberOfLines={2} style={s.highlightName}>{item.title}</Text></View>)}</ScrollView>:null}
     <View style={s.actions}><Pressable style={s.actionPrimary} onPress={()=>router.push('/request')}><Text style={s.actionPrimaryText}>POST REQUEST</Text></Pressable><Pressable style={s.actionSecondary} onPress={()=>router.push('/search?tab=SERVICES')}><Text style={s.actionSecondaryText}>VIEW SERVICES</Text></Pressable></View>
     <Text style={s.heading}>Services</Text>
     {services.length?services.map(item=>{const raw=item.service_booking_settings;const instant=Array.isArray(raw)?raw[0]?.instant_booking_enabled:raw?.instant_booking_enabled;return <Pressable accessibilityRole="button" accessibilityLabel={`${instant?'Instant book or request a quote for':'Request a quote for'} ${item.name}`} onPress={()=>router.push(instant?`/instant-book?serviceId=${item.id}&name=${encodeURIComponent(item.name)}`:`/request?serviceId=${item.id}`)} key={item.id} style={s.card}><View style={s.cardHeader}><Text style={s.cardTitle}>{item.name}</Text><Ionicons name="chevron-forward" size={17} color={colors.muted}/></View>{item.description&&<Text style={s.meta}>{item.description}</Text>}<Text style={s.price}>{item.delivery_mode==='REMOTE'?'🖥 Remote':item.delivery_mode==='BOTH'?'📍 Local + 🖥 Remote':'📍 Local'}{item.base_price!=null?` · From ${Number(item.base_price).toFixed(2)} AUD`:' · Quote required'}{item.duration_minutes? ` · ${item.duration_minutes} min`:''}</Text><Text style={[s.cardCta,instant&&{color:colors.brand}]}>{instant?'INSTANT BOOK':'REQUEST QUOTE'}</Text><Pressable disabled={!!growthBusy} onPress={(e)=>{e.stopPropagation();void askAboutService(item)}} style={s.askService}><Ionicons name="chatbubble-ellipses-outline" size={15} color={colors.brand}/><Text style={s.askServiceText}>{growthBusy==='ask:'+item.id?'OPENING…':'ASK ABOUT THIS SERVICE'}</Text></Pressable></Pressable>}):<View style={s.emptyInline}><Text style={s.meta}>No active services listed.</Text></View>}
