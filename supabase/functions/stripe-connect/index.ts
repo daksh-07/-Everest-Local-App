@@ -47,6 +47,38 @@ const CONNECT_WEBHOOK_EVENTS=[
  'payment_intent.succeeded','payment_intent.payment_failed','payment_intent.canceled',
 ];
 
+async function platformActivationSnapshot(stripeKey:string){
+ const response=await fetch('https://api.stripe.com/v1/account',{
+  headers:{Authorization:`Bearer ${stripeKey}`},
+ });
+ const account=await response.json() as {
+  id?:string;
+  charges_enabled?:boolean;
+  payouts_enabled?:boolean;
+  details_submitted?:boolean;
+  requirements?:{
+   currently_due?:string[];
+   past_due?:string[];
+   eventually_due?:string[];
+   disabled_reason?:string|null;
+   pending_verification?:string[];
+  };
+  error?:{message?:string};
+ };
+ if(!response.ok)throw new Error(`Stripe platform status failed (${response.status}): ${account.error?.message??'unknown'}`);
+ return {
+  id:account.id??null,
+  charges_enabled:Boolean(account.charges_enabled),
+  payouts_enabled:Boolean(account.payouts_enabled),
+  details_submitted:Boolean(account.details_submitted),
+  currently_due:account.requirements?.currently_due??[],
+  past_due:account.requirements?.past_due??[],
+  eventually_due:account.requirements?.eventually_due??[],
+  pending_verification:account.requirements?.pending_verification??[],
+  disabled_reason:account.requirements?.disabled_reason??null,
+ };
+}
+
 async function ensureWebhookSecrets(stripe:Stripe,admin:ReturnType<typeof createClient>){
  const {data:stored,error:readError}=await admin.rpc('get_stripe_webhook_secrets');
  if(readError)throw readError;
@@ -141,6 +173,20 @@ Deno.serve(async req=>{
 
  try{
   const stripe=new Stripe(stripeKey,{apiVersion:'2025-07-30.basil'});
+  const platform=await platformActivationSnapshot(stripeKey);
+  console.log('stripe_platform_activation_status',{
+   businessId,
+   action,
+   platform_account_id:platform.id,
+   charges_enabled:platform.charges_enabled,
+   payouts_enabled:platform.payouts_enabled,
+   details_submitted:platform.details_submitted,
+   currently_due:platform.currently_due,
+   past_due:platform.past_due,
+   eventually_due:platform.eventually_due,
+   pending_verification:platform.pending_verification,
+   disabled_reason:platform.disabled_reason,
+  });
   let connectedId=typeof business.stripe_connected_account_id==='string'?business.stripe_connected_account_id:'';
 
   if(connectedId){
