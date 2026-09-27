@@ -14,7 +14,7 @@ import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
 import {haptic} from '@/lib/haptics';
 import {ClipPlayer} from '@/components/ClipPlayer';
-import {listActiveStories,listClips,listEverestMusic,type MusicTrack,type StoryCard} from '@/lib/social-expansion';
+import {listActiveStories,listClips,listEverestMusic,signedMusicUrl,type ClipEditManifest,type MusicTrack,type StoryCard} from '@/lib/social-expansion';
 
 type FeedPost=SocialPost&{
  media?:string[];
@@ -23,7 +23,8 @@ type FeedPost=SocialPost&{
  profile?:{display_name:string|null;avatar_url:string|null}|null;
  engagement:PostEngagement;
  videoUrl?:string|null;
- music?:MusicTrack|null;
+ music?:MusicTrack|null;musicUrl?:string|null;edit_manifest?:ClipEditManifest|null;
+ music_track_id?:string|null;music_start_ms?:number;music_volume?:number;original_volume?:number;
 };
 
 const emptyEngagement:PostEngagement={likeCount:0,commentCount:0,likedByMe:false,savedByMe:false};
@@ -97,7 +98,15 @@ export default function Social(){
    ]);
    const musicMap=Object.fromEntries(musicRows.map(x=>[x.id,x]));
    const postMusicMap=Object.fromEntries((postMusicResult.data??[]).map(x=>[x.id,x]));
-   setPosts(current=>current.map(post=>({...post,music:postMusicMap[post.id]?.music_track_id?musicMap[postMusicMap[post.id].music_track_id]??null:null,music_track_id:postMusicMap[post.id]?.music_track_id??post.music_track_id??null,music_start_ms:postMusicMap[post.id]?.music_start_ms??post.music_start_ms??0})));
+   const usedMusicIds=[...new Set([
+    ...clipRows.map(x=>x.music_track_id).filter((x):x is string=>Boolean(x)),
+    ...(postMusicResult.data??[]).map(x=>x.music_track_id).filter((x):x is string=>Boolean(x))
+   ])];
+   const musicUrls=Object.fromEntries(await Promise.all(usedMusicIds.map(async id=>{
+    const track=musicMap[id] as MusicTrack|undefined;if(!track)return[id,null] as const;
+    return[id,await signedMusicUrl(track.storage_path).catch(()=>null)] as const;
+   })));
+   setPosts(current=>current.map(post=>{const row=postMusicMap[post.id];const trackId=row?.music_track_id??post.music_track_id??null;return{...post,music:trackId?musicMap[trackId]??null:null,musicUrl:trackId?musicUrls[trackId]??null:null,music_track_id:trackId,music_start_ms:row?.music_start_ms??post.music_start_ms??0}}));
    setStories(storyRows);
    if(clipRows.length){
     const clipIds=clipRows.map(x=>x.id);
@@ -110,7 +119,7 @@ export default function Social(){
     ]);
     const cp=Object.fromEntries((clipProfiles.data??[]).map(x=>[x.id,x]));
     const cb=Object.fromEntries((clipBusinesses.data??[]).map(x=>[x.id,x]));
-    const hydrated=clipRows.map(x=>({...x,media:[],verifiedWork:false,businesses:x.business_id?cb[x.business_id]??null:null,profile:cp[x.author_id]??null,engagement:clipEngagement[x.id]??emptyEngagement,music:x.music_track_id?musicMap[x.music_track_id]??null:null}));
+    const hydrated=clipRows.map(x=>({...x,media:[],verifiedWork:false,businesses:x.business_id?cb[x.business_id]??null:null,profile:cp[x.author_id]??null,engagement:clipEngagement[x.id]??emptyEngagement,music:x.music_track_id?musicMap[x.music_track_id]??null:null,musicUrl:x.music_track_id?musicUrls[x.music_track_id]??null:null}));
     setClips(hydrated);
     if(!activeClipId&&hydrated[0])setActiveClipId(hydrated[0].id);
    }else setClips([]);
@@ -224,7 +233,7 @@ export default function Social(){
    ListEmptyComponent={<View style={s.empty}><Ionicons name={mode==='CLIPS'?'play-circle-outline':'images-outline'} size={34} color={colors.muted}/><Text style={s.emptyTitle}>{mode==='CLIPS'?'Clips are just getting started':'No posts yet'}</Text><Text style={s.emptyCopy}>{mode==='CLIPS'?'Share the first useful local clip.':'New public posts from people and businesses will appear here.'}</Text>{mode==='CLIPS'?<Pressable onPress={()=>router.push('/create-clip')} style={s.emptyCta}><Text style={s.emptyCtaText}>CREATE CLIP</Text></Pressable>:null}</View>}
    renderItem={({item})=>mode==='CLIPS'?<View style={s.clipCard}>
     <View style={[s.clipMedia,{height:clipHeight}]}>
-     {item.videoUrl?<ClipPlayer uri={item.videoUrl} active={activeClipId===item.id}/>:<View style={s.clipMissing}><Ionicons name="videocam-off-outline" size={30} color="#fff"/><Text style={s.clipMissingText}>Video unavailable</Text></View>}
+     {item.videoUrl?<ClipPlayer uri={item.videoUrl} active={activeClipId===item.id} edit={item.edit_manifest} musicUri={item.musicUrl??null} musicStartMs={item.music_start_ms??0} musicVolume={item.music_volume??.75} originalVolume={item.original_volume??1}/>:<View style={s.clipMissing}><Ionicons name="videocam-off-outline" size={30} color="#fff"/><Text style={s.clipMissingText}>Video unavailable</Text></View>}
      <View style={s.clipTop}><View style={s.clipLocal}><Ionicons name="location-outline" size={13} color="#fff"/><Text numberOfLines={1} style={s.clipLocalText}>{item.location_label||'Everest Local'}</Text></View>{item.is_promoted?<View style={s.clipPromoted}><Text style={s.clipPromotedText}>PROMOTED</Text></View>:null}</View>
      <View style={s.clipSide}>
       <Pressable onPress={()=>void like(item)} style={s.clipAction}><Ionicons name={item.engagement.likedByMe?'heart':'heart-outline'} size={27} color={item.engagement.likedByMe?'#ff8c8c':'#fff'}/><Text style={s.clipActionText}>{item.engagement.likeCount}</Text></Pressable>
