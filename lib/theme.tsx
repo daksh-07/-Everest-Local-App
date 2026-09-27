@@ -5,6 +5,12 @@ import * as SecureStore from 'expo-secure-store';
 export type ThemePreference='SYSTEM'|'LIGHT'|'DARK';
 export type ThemeColors={canvas:string;surface:string;elevated:string;text:string;textSecondary:string;muted:string;border:string;soft:string;input:string;danger:string;success:string;overlay:string;navigation:string;brand:string;onBrand:string;accent:string;accentSoft:string;info:string};
 export type AppTheme={preference:ThemePreference;isDark:boolean;colors:ThemeColors;setPreference:(value:ThemePreference)=>Promise<void>;ready:boolean};
+export const uiTokens={
+  space:{xxs:4,xs:8,sm:12,md:16,lg:20,xl:24,xxl:32,section:40},
+  radius:{sm:10,md:14,lg:20,xl:24,pill:999},
+  control:{compact:44,standard:48,large:52},
+  typography:{caption:10,small:12,body:14,title:20,display:31},
+} as const;
 
 const STORAGE_KEY='everest-local-theme';
 // Everest uses warm neutral surfaces and champagne for brand emphasis.
