@@ -147,7 +147,7 @@ export function BusinessOpportunityAlert(){
     <Text style={[s.meta,{color:colors.muted}]}>Requested {r?.requested_arrival_window?.replaceAll('_',' ').toLowerCase()||when}</Text>
     {r?.budget!=null?<Text style={[s.meta,{color:colors.muted}]}>{'Budget $'+Number(r.budget).toFixed(0)}</Text>:null}
    </View>
-   <Text style={[s.note,{color:colors.muted}]}>Interested opens a fast quote. It does not confirm a booking, and the customer’s exact address stays private until booking.</Text>
+   <Text style={[s.note,{color:colors.muted}]}>Interested opens a fast quote. It does not confirm a booking, and the customer’s exact address stays private until booking. The request stays in Opportunities if you ignore it.</Text>
    <View style={s.actions}>
     <Pressable onPress={()=>void decline()} style={[s.secondary,{borderColor:colors.border}]}><Text style={[s.secondaryText,{color:colors.text}]}>PASS</Text></Pressable>
     <Pressable onPress={view} style={[s.primary,{backgroundColor:colors.brand}]}><Text style={[s.primaryText,{color:colors.onBrand}]}>INTERESTED</Text></Pressable>
