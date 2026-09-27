@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Animated,PanResponder,Pressable,StyleSheet,View } from 'react-native';
-import { useEffect,useMemo,useRef,useState } from 'react';
+import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ui } from '@/lib/ui';
 import { useAppTheme } from '@/lib/theme';
@@ -28,8 +28,6 @@ function CustomerTabItem({item,selected,colors,t}:{item:(typeof items)[number];s
  const scale=progress.interpolate({inputRange:[0,1],outputRange:[1,.98]});
  const iconScale=progress.interpolate({inputRange:[0,1],outputRange:[1,1.12]});
  const iconY=progress.interpolate({inputRange:[0,1],outputRange:[0,-2]});
- const indicatorScale=progress.interpolate({inputRange:[0,1],outputRange:[.35,1]});
- const indicatorOpacity=progress;
  const labelY=progress.interpolate({inputRange:[0,1],outputRange:[0,-1]});
  return <Pressable
   accessibilityRole="tab"
@@ -66,11 +64,11 @@ export function CustomerTabBar({active,hidden=false}:{active:Destination;hidden?
  },[activeIndex,indicatorIndex]);
  useEffect(()=>{Animated.spring(visibility,{toValue:hidden?0:1,useNativeDriver:true,damping:22,stiffness:260,mass:.72}).start()},[hidden,visibility]);
 
- const navigateIndex=(index:number)=>{
+ const navigateIndex=useCallback((index:number)=>{
   const clamped=Math.max(0,Math.min(items.length-1,index));
   const target=items[clamped];if(!target||target.route===active)return;
   void haptic.selection();router.replace(target.route);
- };
+ },[active]);
  const pan=useMemo(()=>PanResponder.create({
   onMoveShouldSetPanResponder:(_,g)=>!hidden&&Math.abs(g.dx)>10&&Math.abs(g.dx)>Math.abs(g.dy)*1.2,
   onPanResponderGrant:()=>{indicatorIndex.stopAnimation();dragStartIndex.current=activeIndex;lastPreview.current=activeIndex},
@@ -94,7 +92,7 @@ export function CustomerTabBar({active,hidden=false}:{active:Destination;hidden?
    if(hard)void haptic.medium();
   },
   onPanResponderTerminate:()=>{setPreviewIndex(activeIndex);Animated.spring(indicatorIndex,{toValue:activeIndex,useNativeDriver:true,damping:19,stiffness:280,mass:.7}).start()},
- }),[activeIndex,hidden,indicatorIndex,itemWidth]);
+ }),[activeIndex,hidden,indicatorIndex,itemWidth,navigateIndex]);
 
  const bottom=Math.max(10,insets.bottom?insets.bottom+4:14);
  const bubbleX=Animated.add(Animated.multiply(indicatorIndex,itemWidth),6+(itemWidth-48)/2);
