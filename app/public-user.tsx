@@ -407,12 +407,12 @@ export default function PublicUser(){
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:12,paddingRight:12}}>
                     {highlights.map(item=>(
-                      <View key={item.id} style={{width:76,alignItems:'center'}}>
+                      <Pressable key={item.id} onPress={()=>router.push(('/highlight?id='+item.id) as never)} style={{width:76,alignItems:'center'}}>
                         <View style={{width:64,height:64,borderRadius:32,borderWidth:2,borderColor:c.accent,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',overflow:'hidden',padding:2}}>
                           {item.coverUrl?<Image source={{uri:item.coverUrl}} style={{width:56,height:56,borderRadius:28}}/>:<Ionicons name="sparkles-outline" size={21} color={c.accent}/>}
                         </View>
                         <Text numberOfLines={2} style={{fontSize:10,fontWeight:'800',color:c.text,textAlign:'center',marginTop:6}}>{item.title}</Text>
-                      </View>
+                      </Pressable>
                     ))}
                   </ScrollView>
                 </View>
