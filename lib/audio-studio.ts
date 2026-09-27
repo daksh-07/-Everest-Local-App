@@ -191,7 +191,7 @@ export async function listPostAudioTracks(postIds:string[]):Promise<Record<strin
  const assetMap=Object.fromEntries((assets??[]).map(x=>[x.id,x]));
  const byBucket:Record<string,string[]>={};
  for(const a of assets??[])(byBucket[a.storage_bucket]??=[]).push(a.storage_path);
- const signedByBucket:Record<string,Record<string,string>>={};
+ const signedByBucket:Record<string,Record<string,string|null>>={};
  await Promise.all(Object.entries(byBucket).map(async([bucket,paths])=>{
   signedByBucket[bucket]=await signedMediaUrls(bucket,paths,6*3600).catch(()=>({}));
  }));
