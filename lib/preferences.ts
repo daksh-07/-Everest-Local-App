@@ -5,11 +5,14 @@ export type NotificationPreferences={quote_updates:boolean;booking_updates:boole
 export const defaultNotificationPreferences:NotificationPreferences={quote_updates:true,booking_updates:true,message_updates:true,order_updates:true,delivery_updates:true,business_opportunities:true,marketing_updates:false};
 
 function clean(value:string,max:number){const normalized=value.trim().replace(/\s+/g,' ');return normalized?normalized.slice(0,max):null}
-export async function updateMyProfile(input:{fullName:string;bio:string;phone:string;suburb:string;city:string;state:string;visibility:ProfileVisibility}){
+export async function updateMyProfile(input:{fullName:string;bio:string;phone:string;suburb:string;city:string;state:string;visibility:ProfileVisibility;website?:string}){
  requireSupabaseConfig();const fullName=clean(input.fullName,80);if(!fullName||fullName.length<2)throw new Error('Enter a name between 2 and 80 characters.');
  const phone=clean(input.phone,30);if(phone&&!/^[+()\d\s.-]{7,30}$/.test(phone))throw new Error('Enter a valid phone number.');
  const {data,error}=await supabase.rpc('update_my_profile_settings',{p_full_name:fullName,p_bio:clean(input.bio,300),p_phone:phone,p_suburb:clean(input.suburb,80),p_city:clean(input.city,80),p_state:clean(input.state,80),p_visibility:input.visibility});
  if(error||data!==true)throw new Error('Your profile could not be saved. Please try again.');
+ const website=clean(input.website??'',500);
+ const websiteResult=await supabase.rpc('set_my_profile_website',{p_website_url:website});
+ if(websiteResult.error||websiteResult.data!==true)throw new Error('Your website could not be saved. Please try again.');
 }
 export async function getProfileVisibility():Promise<ProfileVisibility>{requireSupabaseConfig();const {data:{user},error:userError}=await supabase.auth.getUser();if(userError||!user)throw new Error('Please sign in again.');const {data,error}=await supabase.from('public_profiles').select('visibility').eq('id',user.id).maybeSingle();if(error)throw new Error('Profile privacy could not be loaded.');return data?.visibility==='PRIVATE'?'PRIVATE':'PUBLIC'}
 export async function getNotificationPreferences():Promise<NotificationPreferences>{requireSupabaseConfig();const {data,error}=await supabase.rpc('get_my_notification_preferences');if(error)throw new Error('Notification preferences could not be loaded.');return {...defaultNotificationPreferences,...(data as Partial<NotificationPreferences>|null)}}
