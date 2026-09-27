@@ -8,20 +8,33 @@ import {normalizeClipEditManifest,type ClipEditManifest} from '@/lib/social-expa
 
 let sessionMuted=true;
 
-function MusicBed({uri,active,muted,startMs,volume,restartToken}:{uri:string;active:boolean;muted:boolean;startMs:number;volume:number;restartToken:number}){
+function MusicBed({uri,active,muted,startMs,endMs,volume,fadeInMs,fadeOutMs,restartToken}:{uri:string;active:boolean;muted:boolean;startMs:number;endMs?:number|null;volume:number;fadeInMs?:number;fadeOutMs?:number;restartToken:number}){
  const player=useAudioPlayer(null);
- useEffect(()=>{player.pause();player.replace(uri);player.loop=true;player.volume=muted?0:volume;void player.seekTo(Math.max(0,startMs)/1000);if(active)player.play();return()=>player.pause()},[uri,player]);
- useEffect(()=>{player.volume=muted?0:volume},[muted,volume,player]);
+ const baseVolume=Math.max(0,Math.min(1,volume));
+ useEffect(()=>{player.pause();player.replace(uri);player.loop=endMs==null;player.volume=muted?0:baseVolume;void player.seekTo(Math.max(0,startMs)/1000);if(active)player.play();return()=>player.pause()},[uri,player,endMs,startMs,active,muted,baseVolume]);
+ useEffect(()=>{player.volume=muted?0:baseVolume},[muted,baseVolume,player]);
  useEffect(()=>{if(active)player.play();else player.pause()},[active,player]);
  useEffect(()=>{if(!active)return;void player.seekTo(Math.max(0,startMs)/1000).then(()=>player.play())},[active,startMs,restartToken,player]);
+ useEffect(()=>{
+  if(!active)return;
+  const timer=setInterval(()=>{
+   const now=player.currentTime*1000;
+   if(endMs!=null&&now>=endMs){void player.seekTo(Math.max(0,startMs)/1000).then(()=>player.play());return}
+   let gain=baseVolume;
+   if(fadeInMs&&fadeInMs>0)gain*=Math.max(0,Math.min(1,(now-startMs)/fadeInMs));
+   if(endMs!=null&&fadeOutMs&&fadeOutMs>0)gain*=Math.max(0,Math.min(1,(endMs-now)/fadeOutMs));
+   player.volume=muted?0:gain;
+  },100);
+  return()=>clearInterval(timer);
+ },[active,player,startMs,endMs,fadeInMs,fadeOutMs,baseVolume,muted]);
  return null;
 }
 
 export function ClipPlayer({
- uri,active,loop=true,showSoundControl=true,contentFit,edit,musicUri=null,musicStartMs,musicVolume,originalVolume
+ uri,active,loop=true,showSoundControl=true,contentFit,edit,musicUri=null,musicStartMs,musicEndMs,musicVolume,musicFadeInMs,musicFadeOutMs,originalVolume
 }:{
  uri:string;active:boolean;loop?:boolean;showSoundControl?:boolean;contentFit?:'cover'|'contain'|'fill';
- edit?:Partial<ClipEditManifest>|null;musicUri?:string|null;musicStartMs?:number;musicVolume?:number;originalVolume?:number;
+ edit?:Partial<ClipEditManifest>|null;musicUri?:string|null;musicStartMs?:number;musicEndMs?:number|null;musicVolume?:number;musicFadeInMs?:number;musicFadeOutMs?:number;originalVolume?:number;
 }){
  const normalized=useMemo(()=>normalizeClipEditManifest(edit),[edit]);
  const startSec=Math.max(0,normalized.trimStartMs)/1000;
@@ -65,7 +78,7 @@ export function ClipPlayer({
 
  return <Pressable style={s.wrap} onPress={()=>{if(!active)return;if(player.playing)player.pause();else player.play()}}>
   <VideoView player={player} style={[s.video,normalized.mirror&&s.mirror]} contentFit={fit} nativeControls={false}/>
-  {musicUri?<MusicBed uri={musicUri} active={active&&isPlaying} muted={muted} startMs={bedStart} volume={bedVolume} restartToken={restartToken}/>:null}
+  {musicUri?<MusicBed uri={musicUri} active={active&&isPlaying} muted={muted} startMs={bedStart} endMs={musicEndMs} volume={bedVolume} fadeInMs={musicFadeInMs} fadeOutMs={musicFadeOutMs} restartToken={restartToken}/>:null}
   {tint?<View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:String(tint[0]),opacity:Number(tint[1])}]}/>:null}
   {normalized.effect==='FOCUS'?<View pointerEvents="none" style={s.focus}/>:null}
   {normalized.effect==='PULSE'||normalized.effect==='FLASH'?<Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:normalized.effect==='FLASH'?'#fff':'#000',opacity:effectPulse.interpolate({inputRange:[0,1],outputRange:[0,normalized.effect==='FLASH'?.34:.16]})}]}/>:null}
