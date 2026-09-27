@@ -10,11 +10,13 @@ export function AmbientEdge({
  borderRadius=18,
  style,
  tone='neutral',
+ continuous=false,
 }:{
  children:ReactNode;
  borderRadius?:number;
  style?:StyleProp<ViewStyle>;
  tone?:AmbientEdgeTone;
+ continuous?:boolean;
 }){
  const {colors}=useAppTheme();
  const reduced=useReducedMotion();
@@ -25,19 +27,20 @@ export function AmbientEdge({
   progress.stopAnimation();
   progress.setValue(0);
   if(reduced)return;
-  const loop=Animated.loop(Animated.sequence([
-   Animated.delay(1300),
-   Animated.timing(progress,{
-    toValue:1,
-    duration:9200,
-    easing:Easing.linear,
-    useNativeDriver:true,
-   }),
-   Animated.delay(1300),
-  ]));
+  const sweep=Animated.timing(progress,{
+   toValue:1,
+   duration:continuous?7800:9200,
+   easing:Easing.linear,
+   useNativeDriver:true,
+  });
+  const loop=Animated.loop(
+   continuous
+    ? sweep
+    : Animated.sequence([Animated.delay(1300),sweep,Animated.delay(1300)])
+  );
   loop.start();
   return()=>loop.stop();
- },[progress,reduced]);
+ },[continuous,progress,reduced]);
 
  const onLayout=(event:LayoutChangeEvent)=>{
   const {width,height}=event.nativeEvent.layout;
