@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useRef} from 'react';
 import {StyleSheet,Text,View} from 'react-native';
-import MapView,{Circle,Marker,type Region} from 'react-native-maps';
+import MapView,{Circle,Marker,type MapStyleElement,type Region} from 'react-native-maps';
 import {Ionicons} from '@expo/vector-icons';
 import {type LiveMapPoint} from '@/lib/everest-live';
 import {useAppTheme} from '@/lib/theme';
@@ -28,7 +28,7 @@ const s=StyleSheet.create({
  you:{width:46,height:46,borderRadius:23,borderWidth:4,alignItems:'center',justifyContent:'center',shadowColor:'#000',shadowOpacity:.24,shadowRadius:10,elevation:8},
  business:{width:32,height:32,borderRadius:16,borderWidth:3,alignItems:'center',justifyContent:'center',shadowColor:'#000',shadowOpacity:.18,shadowRadius:7,elevation:5}
 });
-const darkMapStyle=[
+const darkMapStyle:MapStyleElement[]=[
  {elementType:'geometry',stylers:[{color:'#18221e'}]},
  {elementType:'labels.text.fill',stylers:[{color:'#aeb8b2'}]},
  {elementType:'labels.text.stroke',stylers:[{color:'#18221e'}]},
@@ -39,4 +39,4 @@ const darkMapStyle=[
  {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#35443c'}]},
  {featureType:'transit',elementType:'labels',stylers:[{visibility:'off'}]},
  {featureType:'water',elementType:'geometry',stylers:[{color:'#0d1715'}]}
-] as const;
+];
