@@ -106,6 +106,7 @@ export function SoundPicker({
 
     {tab==='ORIGINAL'?<View style={s.section}>
      <View style={s.sectionIcon}><Ionicons name="volume-high-outline" size={24} color={colors.brand}/></View><Text style={s.sectionTitle}>Original clip audio</Text><Text style={s.sectionCopy}>Keep the sound recorded with the video, lower it under music, or mute it completely.</Text>
+     <Pressable onPress={()=>{onChange(null);onOriginalVolumeChange?.(1);previewPlayer.pause();void haptic.selection()}} style={s.bigAction}><Ionicons name="volume-high" size={18} color={colors.onBrand}/><Text style={s.bigActionText}>USE ORIGINAL ONLY</Text></Pressable>
      <Text style={s.label}>ORIGINAL VOLUME</Text><View style={s.choiceRow}>{volumeChoices.map(v=><Pressable key={v} onPress={()=>{onOriginalVolumeChange?.(v);void haptic.selection()}} style={[s.choice,Math.abs(originalVolume-v)<.01&&s.choiceActive]}><Text style={[s.choiceText,Math.abs(originalVolume-v)<.01&&s.choiceTextActive]}>{v===0?'Mute':Math.round(v*100)+'%'}</Text></Pressable>)}</View>
     </View>:null}
 
