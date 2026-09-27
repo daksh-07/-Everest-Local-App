@@ -13,6 +13,8 @@ import {resolveCustomerLocality} from '@/lib/customer-location';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
 import {haptic} from '@/lib/haptics';
+import {ClipPlayer} from '@/components/ClipPlayer';
+import {listActiveStories,listClips,listEverestMusic,type MusicTrack,type StoryCard} from '@/lib/social-expansion';
 
 type FeedPost=SocialPost&{
  media?:string[];
@@ -20,6 +22,8 @@ type FeedPost=SocialPost&{
  businesses?:{name:string;slug:string;logo_url:string|null;suburb:string|null;city:string|null;state:string|null}|null;
  profile?:{display_name:string|null;avatar_url:string|null}|null;
  engagement:PostEngagement;
+ videoUrl?:string|null;
+ music?:MusicTrack|null;
 };
 
 const emptyEngagement:PostEngagement={likeCount:0,commentCount:0,likedByMe:false,savedByMe:false};
@@ -27,9 +31,9 @@ const FEED_CACHE_MS=5*60_000;
 let feedCache:{posts:FeedPost[];locality:string;userId:string|null;at:number}|null=null;
 
 export default function Social(){
- const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {width}=useWindowDimensions();const params=useLocalSearchParams<{postId?:string;commentId?:string}>();
+ const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {width}=useWindowDimensions();const params=useLocalSearchParams<{postId?:string;commentId?:string;mode?:string}>();
  const cachedFeed=feedCache&&Date.now()-feedCache.at<FEED_CACHE_MS?feedCache:null;
- const [posts,setPosts]=useState<FeedPost[]>(()=>cachedFeed?.posts??[]);const [loading,setLoading]=useState(()=>!cachedFeed);const [refreshing,setRefreshing]=useState(false);
+ const [posts,setPosts]=useState<FeedPost[]>(()=>cachedFeed?.posts??[]);const [clips,setClips]=useState<FeedPost[]>([]);const [stories,setStories]=useState<StoryCard[]>([]);const [mode,setMode]=useState<'POSTS'|'CLIPS'>(()=>params.mode==='clips'?'CLIPS':'POSTS');const [activeClipId,setActiveClipId]=useState<string|null>(null);const [loading,setLoading]=useState(()=>!cachedFeed);const [refreshing,setRefreshing]=useState(false);
  const [error,setError]=useState('');const [locality,setLocality]=useState(()=>cachedFeed?.locality??'Near you');const [userId,setUserId]=useState<string|null>(()=>cachedFeed?.userId??null);
  const [commentPost,setCommentPost]=useState<FeedPost|null>(null);const [comments,setComments]=useState<PostComment[]>([]);const [commentText,setCommentText]=useState('');
  const [commentLikes,setCommentLikes]=useState<Record<string,CommentEngagement>>({});const [replyTo,setReplyTo]=useState<PostComment|null>(null);
@@ -42,6 +46,15 @@ export default function Social(){
    if(!item?.id||viewedPosts.current.has(item.id))continue;
    viewedPosts.current.add(item.id);
    void recordPostView(item.id).catch(()=>undefined);
+  }
+ }).current;
+ const onClipViewableItemsChanged=useRef(({viewableItems}:{viewableItems:ViewToken[]})=>{
+  const active=(viewableItems.find(token=>token.isViewable)?.item as FeedPost|undefined)?.id??null;
+  setActiveClipId(active);
+  for(const token of viewableItems){
+   const item=token.item as FeedPost|undefined;
+   if(!item?.id||viewedPosts.current.has(item.id))continue;
+   viewedPosts.current.add(item.id);void recordPostView(item.id).catch(()=>undefined);
   }
  }).current;
 
