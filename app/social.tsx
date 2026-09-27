@@ -7,7 +7,7 @@ import {
   addPostComment,getCommentEngagement,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,recordPostView,setPostCommentsEnabled,
   toggleCommentLike,togglePostLike,toggleSavedPost,type CommentEngagement,type PostComment,type PostEngagement,type SocialPost
 } from '@/lib/social';
-import {signedPostMedia} from '@/lib/request-post-media';
+import {signedPostMediaBatch} from '@/lib/request-post-media';
 import {supabase} from '@/lib/supabase';
 import {resolveCustomerLocality} from '@/lib/customer-location';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
@@ -23,11 +23,14 @@ type FeedPost=SocialPost&{
 };
 
 const emptyEngagement:PostEngagement={likeCount:0,commentCount:0,likedByMe:false,savedByMe:false};
+const FEED_CACHE_MS=5*60_000;
+let feedCache:{posts:FeedPost[];locality:string;userId:string|null;at:number}|null=null;
 
 export default function Social(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {width}=useWindowDimensions();const params=useLocalSearchParams<{postId?:string;commentId?:string}>();
- const [posts,setPosts]=useState<FeedPost[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);
- const [error,setError]=useState('');const [locality,setLocality]=useState('Near you');const [userId,setUserId]=useState<string|null>(null);
+ const cachedFeed=feedCache&&Date.now()-feedCache.at<FEED_CACHE_MS?feedCache:null;
+ const [posts,setPosts]=useState<FeedPost[]>(()=>cachedFeed?.posts??[]);const [loading,setLoading]=useState(()=>!cachedFeed);const [refreshing,setRefreshing]=useState(false);
+ const [error,setError]=useState('');const [locality,setLocality]=useState(()=>cachedFeed?.locality??'Near you');const [userId,setUserId]=useState<string|null>(()=>cachedFeed?.userId??null);
  const [commentPost,setCommentPost]=useState<FeedPost|null>(null);const [comments,setComments]=useState<PostComment[]>([]);const [commentText,setCommentText]=useState('');
  const [commentLikes,setCommentLikes]=useState<Record<string,CommentEngagement>>({});const [replyTo,setReplyTo]=useState<PostComment|null>(null);
  const [commentsBusy,setCommentsBusy]=useState(false);const [menuPost,setMenuPost]=useState<string|null>(null);const deepLinkOpened=useRef(false);
@@ -51,24 +54,27 @@ export default function Social(){
    ]);
    const localityHint=loc?.suburb||loc?.city||undefined;
    const items=await listPublicPosts({limit:40,offset:0,locality:localityHint});
-   setUserId(user?.id??null);if(loc)setLocality(loc.suburb||loc.city||'Near you');
+   const nextUserId=user?.id??null;const nextLocality=loc?(loc.suburb||loc.city||'Near you'):(cachedFeed?.locality??'Near you');
+   setUserId(nextUserId);setLocality(nextLocality);
    const ids=items.map(x=>x.id);const businessIds=[...new Set(items.map(x=>x.business_id).filter((x):x is string=>Boolean(x)))];
    const authorIds=[...new Set(items.map(x=>x.author_id))];
-   const [businessResult,profileResult,verifiedResult,engagement]=await Promise.all([
+   const [businessResult,profileResult,verifiedResult,engagement,media]=await Promise.all([
     businessIds.length?supabase.from('businesses').select('id,name,slug,logo_url,suburb,city,state').in('id',businessIds):Promise.resolve({data:[],error:null}),
     authorIds.length?supabase.from('public_profiles').select('id,display_name,avatar_url').in('id',authorIds):Promise.resolve({data:[],error:null}),
     ids.length?supabase.from('verified_work_posts').select('post_id').in('post_id',ids):Promise.resolve({data:[],error:null}),
-    getPostEngagement(ids)
+    getPostEngagement(ids),
+    signedPostMediaBatch(ids)
    ]);
    if(businessResult.error)throw businessResult.error;if(profileResult.error)throw profileResult.error;if(verifiedResult.error)throw verifiedResult.error;
    const businessMap=Object.fromEntries((businessResult.data??[]).map(x=>[x.id,x]));
    const profileMap=Object.fromEntries((profileResult.data??[]).map(x=>[x.id,x]));
    const verified=new Set((verifiedResult.data??[]).map(x=>x.post_id));
-   const mediaPairs=await Promise.all(items.map(async x=>[x.id,await signedPostMedia(x.id)] as const));const media=Object.fromEntries(mediaPairs);
    const terms=loc?[loc.suburb,loc.city,loc.state].filter(Boolean).map(x=>String(x).toLowerCase()):[];
    const score=(p:SocialPost)=>terms.reduce((n,t)=>n+((p.location_label??'').toLowerCase().includes(t)?3:0),0);
    const sorted=[...items].sort((a,b)=>Number(b.feed_score??score(b))-Number(a.feed_score??score(a))||new Date(b.created_at).getTime()-new Date(a.created_at).getTime());
-   setPosts(sorted.map(x=>({...x,media:media[x.id]??[],verifiedWork:verified.has(x.id),businesses:x.business_id?businessMap[x.business_id]??null:null,profile:profileMap[x.author_id]??null,engagement:engagement[x.id]??emptyEngagement})));
+   const nextPosts=sorted.map(x=>({...x,media:media[x.id]??[],verifiedWork:verified.has(x.id),businesses:x.business_id?businessMap[x.business_id]??null:null,profile:profileMap[x.author_id]??null,engagement:engagement[x.id]??emptyEngagement}));
+   setPosts(nextPosts);feedCache={posts:nextPosts,locality:nextLocality,userId:nextUserId,at:Date.now()};
+   nextPosts.slice(0,8).flatMap(x=>x.media??[]).slice(0,10).forEach(uri=>{void Image.prefetch(uri).catch(()=>{})});
   }catch(e){setError(e instanceof Error?e.message:'Could not load Explore.');}
   finally{setLoading(false);setRefreshing(false);}
  },[]);
@@ -142,6 +148,10 @@ export default function Social(){
   <FlatList
    data={posts}
    keyExtractor={x=>x.id}
+   initialNumToRender={4}
+   maxToRenderPerBatch={5}
+   windowSize={5}
+   updateCellsBatchingPeriod={40}
    contentContainerStyle={s.page}
    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{setRefreshing(true);void load()}}/>}
    onViewableItemsChanged={onViewableItemsChanged}
