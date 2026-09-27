@@ -16,7 +16,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import * as Location from "expo-location";
 import { ServicePicker } from "@/components/ServicePicker";
 import { useReducedMotion } from "@/lib/motion";
 import { DateTimeField } from "@/components/DateTimeField";
@@ -37,17 +36,21 @@ import {
 } from "@/lib/taxonomy";
 import { type ThemeColors, useAppTheme } from "@/lib/theme";
 import { startEverestLive, type LiveArrivalWindow } from "@/lib/everest-live";
+import { geocodeServiceAddress, resolveCustomerServiceLocation, serviceAddressLabel } from "@/lib/customer-location";
 
 type LocationValue = {
+  addressLine1: string;
   suburb: string;
   city: string;
   state: string;
+  postalCode: string;
+  country: string;
+  formattedAddress: string;
   latitude?: number;
   longitude?: number;
   accuracy?: number;
   source: LocationSource;
   confirmed: boolean;
-  geocoder?: "DEVICE" | "OSM";
 };
 type BudgetChoice =
   "NONE" | "UNDER_100" | "100_250" | "250_500" | "500_PLUS" | "CUSTOM";
@@ -71,47 +74,6 @@ function nextSaturday() {
 }
 function timeValue(d: Date) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
-async function reverseGeocodeWebFallback(latitude: number, longitude: number) {
-  try {
-    const params = new URLSearchParams({
-      format: "jsonv2",
-      lat: String(latitude),
-      lon: String(longitude),
-      zoom: "16",
-      addressdetails: "1",
-    });
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?${params.toString()}`,
-      { headers: { Accept: "application/json" } },
-    );
-    if (!response.ok) return null;
-    const payload = (await response.json()) as {
-      address?: Record<string, string | undefined>;
-    };
-    const address = payload.address ?? {};
-    const suburb = (
-      address.suburb ||
-      address.neighbourhood ||
-      address.quarter ||
-      address.city_district ||
-      address.town ||
-      address.village ||
-      ""
-    ).trim();
-    const city = (
-      address.city ||
-      address.town ||
-      address.municipality ||
-      address.county ||
-      suburb
-    ).trim();
-    const state = (address.state || address.state_district || "").trim();
-    return suburb && city && state ? { suburb, city, state } : null;
-  } catch {
-    return null;
-  }
 }
 
 export default function Request() {
@@ -150,9 +112,13 @@ export default function Request() {
   const [selectedDefinition, setSelectedDefinition] =
     useState<ServiceDefinition | null>(null);
   const [location, setLocation] = useState<LocationValue>({
+    addressLine1: "",
     suburb: "",
     city: "",
     state: "",
+    postalCode: "",
+    country: "Australia",
+    formattedAddress: "",
     source: "MANUAL",
     confirmed: false,
   });
@@ -255,9 +221,11 @@ export default function Request() {
         if (!active) return;
         if (profileResult?.suburb && profileResult.city && profileResult.state)
           setLocation(current=>current.suburb||current.city||current.state?current:({
+            ...current,
             suburb: profileResult.suburb ?? "",
             city: profileResult.city ?? "",
             state: profileResult.state ?? "",
+            country: "Australia",
             source: "PROFILE",
             confirmed: false,
           }));
@@ -291,87 +259,88 @@ export default function Request() {
     setLocating(true);
     setError("");
     try {
-      const permission = await Location.requestForegroundPermissionsAsync();
-      if (permission.status !== "granted")
-        throw new Error(
-          "Location permission was not granted. You can enter the suburb manually.",
-        );
-      const current = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      let named: { suburb: string; city: string; state: string } | null = null;
-      let geocoder: "DEVICE" | "OSM" = "DEVICE";
-      try {
-        const places = await Location.reverseGeocodeAsync({
-          latitude: current.coords.latitude,
-          longitude: current.coords.longitude,
-        });
-        const place = places[0];
-        if (place) {
-          const suburb = (
-            place.district ||
-            place.subregion ||
-            place.city ||
-            ""
-          ).trim();
-          const city = (place.city || place.subregion || suburb).trim();
-          const state = (place.region || "").trim();
-          if (suburb && city && state) named = { suburb, city, state };
-        }
-      } catch {
-        /* Web/PWA fallback below handles reverse-geocode failures. */
-      }
-      if (!named && Platform.OS === "web") {
-        named = await reverseGeocodeWebFallback(
-          current.coords.latitude,
-          current.coords.longitude,
-        );
-        if (named) geocoder = "OSM";
-      }
-      if (!named)
-        throw new Error(
-          "We found your position but could not name the area. Enter it manually.",
-        );
+      const precise = await resolveCustomerServiceLocation();
+      if (!precise)
+        throw new Error("Precise location is unavailable. Enter the service address manually.");
       setLocation({
-        ...named,
-        latitude: current.coords.latitude,
-        longitude: current.coords.longitude,
-        accuracy: current.coords.accuracy ?? undefined,
+        addressLine1: precise.addressLine1,
+        suburb: precise.suburb,
+        city: precise.city,
+        state: precise.state,
+        postalCode: precise.postalCode,
+        country: precise.country || "Australia",
+        formattedAddress: precise.formattedAddress,
+        latitude: precise.latitude,
+        longitude: precise.longitude,
+        accuracy: precise.accuracy ?? undefined,
         source: "DEVICE",
         confirmed: false,
-        geocoder,
       });
     } catch (e) {
       setError(
         e instanceof Error
           ? e.message
-          : "Location is unavailable. Enter your suburb manually.",
+          : "Precise location is unavailable. Enter the service address manually.",
       );
     } finally {
       setLocating(false);
     }
   }
-  function confirmLocation() {
+
+  async function confirmLocation() {
     if (
+      !location.addressLine1.trim() ||
       !location.suburb.trim() ||
-      !location.city.trim() ||
       !location.state.trim()
     ) {
-      setError("Add suburb, city and state first.");
+      setError("Add the street address, suburb and state first.");
       return;
     }
-    setLocation((v) => ({
-      ...v,
-      source:
-        v.source === "DEVICE" || v.source === "PROFILE" ? v.source : "MANUAL",
-      confirmed: true,
-    }));
+    if (locating) return;
+    setLocating(true);
     setError("");
+    try {
+      let next=location;
+      if (next.latitude == null || next.longitude == null) {
+        const geocoded=await geocodeServiceAddress({
+          addressLine1:next.addressLine1,
+          suburb:next.suburb,
+          city:next.city||next.suburb,
+          state:next.state,
+          postalCode:next.postalCode,
+          country:next.country||"Australia",
+        });
+        if(!geocoded)throw new Error("We could not locate that exact address. Check the street address and try again.");
+        next={
+          addressLine1:geocoded.addressLine1||next.addressLine1,
+          suburb:geocoded.suburb||next.suburb,
+          city:geocoded.city||next.city||next.suburb,
+          state:geocoded.state||next.state,
+          postalCode:geocoded.postalCode||next.postalCode,
+          country:geocoded.country||next.country||"Australia",
+          formattedAddress:geocoded.formattedAddress,
+          latitude:geocoded.latitude,
+          longitude:geocoded.longitude,
+          accuracy:geocoded.accuracy??undefined,
+          source:next.source==="DEVICE"?"DEVICE":"MANUAL",
+          confirmed:true,
+        };
+      } else {
+        next={...next,formattedAddress:next.formattedAddress||[next.addressLine1,next.suburb,next.city,next.state,next.postalCode].filter(Boolean).join(", "),confirmed:true};
+      }
+      setLocation(next);
+    } catch(e) {
+      setError(e instanceof Error?e.message:"The service address could not be confirmed.");
+    } finally {
+      setLocating(false);
+    }
   }
-  function setManual(field: "suburb" | "city" | "state", value: string) {
+
+  function setManual(field: "addressLine1" | "suburb" | "city" | "state" | "postalCode", value: string) {
     setLocation((v) => ({
       ...v,
       [field]: value,
+      formattedAddress: "",
       latitude: undefined,
       longitude: undefined,
       accuracy: undefined,
@@ -445,9 +414,15 @@ export default function Request() {
         return false;
       }
     }
-    if (stage === 2 && effectiveMode === "LOCAL" && !location.confirmed) {
-      setError("Confirm the service location before continuing.");
-      return false;
+    if (stage === 2 && effectiveMode === "LOCAL") {
+      if (!location.addressLine1.trim()) {
+        setError("Add the exact service address before continuing.");
+        return false;
+      }
+      if (!location.confirmed || location.latitude == null || location.longitude == null) {
+        setError("Confirm the precise service location before continuing.");
+        return false;
+      }
     }
     if (stage === 3) {
       if (timing === "EXACT_TIME" && !exactTime) {
@@ -512,6 +487,13 @@ export default function Request() {
         suburb: effectiveMode === "LOCAL" ? location.suburb : undefined,
         city: effectiveMode === "LOCAL" ? location.city : undefined,
         state: effectiveMode === "LOCAL" ? location.state : undefined,
+        country: effectiveMode === "LOCAL" ? location.country : undefined,
+        addressLine1: effectiveMode === "LOCAL" ? location.addressLine1 : undefined,
+        postalCode: effectiveMode === "LOCAL" ? location.postalCode : undefined,
+        serviceAddressLabel: effectiveMode === "LOCAL" ? serviceAddressLabel({
+          addressLine1:location.addressLine1,suburb:location.suburb,city:location.city,state:location.state,
+          postalCode:location.postalCode,country:location.country,formattedAddress:location.formattedAddress,
+        }) : undefined,
         latitude: effectiveMode === "LOCAL" ? location.latitude : undefined,
         longitude: effectiveMode === "LOCAL" ? location.longitude : undefined,
         locationAccuracyM:
@@ -767,7 +749,7 @@ export default function Request() {
                 <Text style={s.copy}>
                   {effectiveMode === "REMOTE"
                     ? "This service can be delivered online."
-                    : "Choose the area where the work will take place."}
+                    : "Use the exact address where the business should arrive. Everest uses it for distance, matching and ETA."}
                 </Text>
                 {effectiveMode === "LOCAL" ? (
                   <View>
@@ -780,16 +762,15 @@ export default function Request() {
                         />
                         <View style={{ flex: 1 }}>
                           <Text style={s.locationName}>
-                            {location.suburb}, {location.state}
+                            {location.formattedAddress || [location.addressLine1,location.suburb,location.state,location.postalCode].filter(Boolean).join(", ")}
                           </Text>
                           <Text style={s.meta}>
                             {location.source === "DEVICE"
-                              ? location.geocoder === "OSM"
-                                ? "Based on your device location · © OpenStreetMap contributors"
-                                : "Based on your device location"
+                              ? "Precise device location"
                               : location.source === "PROFILE"
-                                ? "From your profile"
-                                : "Entered manually"}
+                                ? "Area from your profile — add the street address below"
+                                : "Exact address entered manually"}
+                            {location.accuracy!=null?` · ±${Math.max(1,Math.round(location.accuracy))} m`:""}
                           </Text>
                         </View>
                         {location.confirmed ? (
@@ -816,22 +797,31 @@ export default function Request() {
                               color={colors.onBrand}
                             />
                             <Text style={s.primaryText}>
-                              {locating ? "LOCATING…" : "USE MY LOCATION"}
+                              {locating ? "LOCATING…" : "USE PRECISE LOCATION"}
                             </Text>
                           </Pressable>
                           {location.suburb ? (
                             <Pressable
                               accessibilityRole="button"
-                              onPress={confirmLocation}
+                              onPress={() => void confirmLocation()}
                               style={s.outlineSmall}
                             >
                               <Text style={s.outlineText}>
-                                USE THIS LOCATION
+                                CONFIRM THIS ADDRESS
                               </Text>
                             </Pressable>
                           ) : null}
                         </View>
-                        <Text style={s.or}>OR CHANGE MANUALLY</Text>
+                        <Text style={s.or}>OR ENTER THE SERVICE ADDRESS</Text>
+                        <TextInput
+                          value={location.addressLine1}
+                          onChangeText={(v) => setManual("addressLine1", v)}
+                          accessibilityLabel="Street address"
+                          placeholder="Street address (for example 12 Railway St)"
+                          placeholderTextColor={colors.muted}
+                          autoCapitalize="words"
+                          style={s.input}
+                        />
                         <TextInput
                           value={location.suburb}
                           onChangeText={(v) => setManual("suburb", v)}
@@ -857,27 +847,43 @@ export default function Request() {
                             placeholderTextColor={colors.muted}
                             style={[s.input, { flex: 1 }]}
                           />
+                          <TextInput
+                            value={location.postalCode}
+                            onChangeText={(v) => setManual("postalCode", v)}
+                            accessibilityLabel="Postcode"
+                            placeholder="Postcode"
+                            keyboardType="number-pad"
+                            placeholderTextColor={colors.muted}
+                            style={[s.input, { flex: 1 }]}
+                          />
                         </View>
-                        {location.suburb && location.city && location.state ? (
+                        {location.addressLine1 && location.suburb && location.state ? (
                           <Pressable
                             accessibilityRole="button"
-                            onPress={confirmLocation}
+                            disabled={locating}
+                            onPress={() => void confirmLocation()}
                             style={s.outline}
                           >
-                            <Text style={s.outlineText}>CONFIRM LOCATION</Text>
+                            <Text style={s.outlineText}>{locating?"LOCATING ADDRESS…":"CONFIRM PRECISE ADDRESS"}</Text>
                           </Pressable>
                         ) : null}
                       </>
                     ) : (
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={() =>
-                          setLocation((v) => ({ ...v, confirmed: false }))
-                        }
-                        style={s.textButton}
-                      >
-                        <Text style={s.textButtonText}>CHANGE LOCATION</Text>
-                      </Pressable>
+                      <>
+                        <View style={s.locationPrivacy}>
+                          <Ionicons name="shield-checkmark-outline" size={17} color={colors.accent}/>
+                          <Text style={s.locationPrivacyText}>Everest uses the precise pin for matching and ETA. Businesses see distance/ETA while deciding; the exact service address is reserved for the selected booking.</Text>
+                        </View>
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() =>
+                            setLocation((v) => ({ ...v, confirmed: false }))
+                          }
+                          style={s.textButton}
+                        >
+                          <Text style={s.textButtonText}>CHANGE LOCATION</Text>
+                        </Pressable>
+                      </>
                     )}
                   </View>
                 ) : (
@@ -1115,7 +1121,7 @@ export default function Request() {
                   value={
                     effectiveMode === "REMOTE"
                       ? "Remote / online"
-                      : `${location.suburb}, ${location.city}, ${location.state}`
+                      : serviceAddressLabel({addressLine1:location.addressLine1,suburb:location.suburb,city:location.city,state:location.state,postalCode:location.postalCode,country:location.country,formattedAddress:location.formattedAddress})
                   }
                   onPress={() => setStep(2)}
                   colors={colors}
@@ -1441,7 +1447,9 @@ const styles = (c: ThemeColors) =>
       alignItems: "center",
       gap: 10,
     },
-    locationName: { fontSize: 15, fontWeight: "900", color: c.text },
+    locationName: { fontSize: 15, lineHeight: 20, fontWeight: "900", color: c.text },
+    locationPrivacy:{marginTop:10,borderRadius:14,backgroundColor:c.soft,padding:12,flexDirection:"row",gap:8,alignItems:"flex-start"},
+    locationPrivacyText:{flex:1,fontSize:10,lineHeight:16,color:c.textSecondary},
     meta: { fontSize: 11, lineHeight: 17, color: c.muted, marginTop: 3 },
     row: { flexDirection: "column", gap: 9, marginTop: 9 },
     primarySmall: {

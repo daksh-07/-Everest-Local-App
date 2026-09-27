@@ -5,6 +5,7 @@ import {URL} from 'node:url';
 
 const read=(p)=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const request=read('app/request.tsx');
+const customerLocation=read('lib/customer-location.ts');
 const post=read('app/create-post.tsx');
 const quotes=read('app/quotes.tsx');
 const leads=read('app/business-leads.tsx');
@@ -15,8 +16,9 @@ const pkg=JSON.parse(read('package.json'));
 test('request UX removes typed date/time and Sydney hardcode',()=>{
  assert.doesNotMatch(request,/YYYY-MM-DD|HH:MM/);
  assert.doesNotMatch(request,/city\s*:\s*['"]Sydney['"]|state\s*:\s*['"]NSW['"]/);
- assert.match(request,/requestForegroundPermissionsAsync/);
- assert.match(request,/reverseGeocodeAsync/);
+ assert.match(request,/resolveCustomerServiceLocation/);
+ assert.match(customerLocation,/requestForegroundPermissionsAsync/);
+ assert.match(customerLocation,/reverseGeocodeAsync/);
  assert.match(request,/DateTimeField/);
  assert.match(request,/As soon as possible/);
  assert.match(request,/Morning/);
