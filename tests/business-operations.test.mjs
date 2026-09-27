@@ -23,7 +23,7 @@ const control=read('app/business-control.tsx');
 const stripe=read('supabase/functions/stripe-connect/index.ts');
 
 test('businesses stay the organization root while staff structure is additive',()=>{
- for(const table of ['business_locations','business_staff_invitations','business_member_permission_overrides','business_teams','business_team_members','business_member_skills','business_staff_shifts','business_job_assignments','business_job_events']){
+ for(const table of ['business_locations','business_staff_invitations','business_member_permission_overrides','business_teams','business_team_members','business_member_skills','business_staff_shifts','business_job_assignments','business_job_events','booking_job_records','booking_job_checklist_items']){
   assert.match(migration,new RegExp('create table if not exists public\\.'+table));
  }
  assert.match(migration,/alter table public\.business_members[\s\S]*status text not null default 'ACTIVE'/);
@@ -73,7 +73,7 @@ test('worker job transitions are constrained and synchronize authoritative booki
 test('Everest Live provider acceptance bridges into the employee work queue',()=>{
  assert.match(migration,/function private\.sync_service_dispatch_business_assignment/);
  assert.match(migration,/service_dispatch_business_assignment_sync/);
- assert.match(migration,/join public\.service_provider_profiles spp/);
+ assert.match(migration,/join public\.bookings b on b\.id=sda\.booking_id/);\n assert.doesNotMatch(migration,/service_provider_profiles/);
  assert.match(migration,/join public\.business_members bm/);
  assert.match(work,/getMyAssignedJobs/);
 });

@@ -178,9 +178,9 @@ set search_path=''
 as $$
 declare v_business_id uuid; v_status text;
 begin
- select spp.business_id into v_business_id
- from public.service_provider_profiles spp
- where spp.provider_id=new.provider_id;
+ select b.business_id into v_business_id
+ from public.bookings b
+ where b.id=new.booking_id;
  if v_business_id is null then return new; end if;
  if not exists(
    select 1 from public.business_members bm
@@ -224,12 +224,12 @@ for each row execute function private.sync_service_dispatch_business_assignment(
 insert into public.business_job_assignments(
   business_id,booking_id,assigned_user_id,status,accepted_at,started_at,completed_at
 )
-select spp.business_id,sda.booking_id,sda.provider_id,
+select b.business_id,sda.booking_id,sda.provider_id,
        case when sda.completed_at is not null then 'COMPLETED' when sda.started_at is not null then 'IN_PROGRESS' else 'ACCEPTED' end,
        coalesce(sda.created_at,now()),sda.started_at,sda.completed_at
 from public.service_dispatch_assignments sda
-join public.service_provider_profiles spp on spp.provider_id=sda.provider_id
-join public.business_members bm on bm.business_id=spp.business_id and bm.user_id=sda.provider_id and bm.status='ACTIVE'
+join public.bookings b on b.id=sda.booking_id
+join public.business_members bm on bm.business_id=b.business_id and bm.user_id=sda.provider_id and bm.status='ACTIVE'
 where not exists(select 1 from public.business_job_assignments a where a.booking_id=sda.booking_id and a.status not in ('DECLINED','CANCELLED'))
 on conflict do nothing;
 

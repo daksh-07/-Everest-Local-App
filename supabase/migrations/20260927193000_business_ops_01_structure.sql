@@ -220,6 +220,43 @@ create table if not exists public.business_job_events (
 create index if not exists business_job_events_job_idx
   on public.business_job_events(business_id,booking_id,crm_booking_id,created_at desc);
 
+-- Job portal records are prerequisites for assignment-aware worker progress.
+-- They are created here because some production environments predate the customer portal migration.
+create table if not exists public.booking_job_records (
+  booking_id uuid primary key references public.bookings(id) on delete cascade,
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  customer_id uuid not null references auth.users(id) on delete cascade,
+  arrival_status text not null default 'NOT_STARTED'
+    check (arrival_status in ('NOT_STARTED','ON_MY_WAY','ARRIVED','IN_PROGRESS','COMPLETED')),
+  arrival_eta timestamptz,
+  completion_summary text check (completion_summary is null or char_length(completion_summary) <= 2000),
+  started_at timestamptz,
+  completed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create table if not exists public.booking_job_checklist_items (
+  id uuid primary key default gen_random_uuid(),
+  booking_id uuid not null references public.booking_job_records(booking_id) on delete cascade,
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  label text not null check (char_length(trim(label)) between 1 and 160),
+  is_complete boolean not null default false,
+  position integer not null default 0 check (position >= 0),
+  completed_at timestamptz,
+  completed_by uuid references auth.users(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists booking_job_records_business_idx on public.booking_job_records(business_id,updated_at desc);
+create index if not exists booking_job_records_customer_idx on public.booking_job_records(customer_id,updated_at desc);
+create index if not exists booking_job_checklist_booking_idx on public.booking_job_checklist_items(booking_id,position,created_at);
+alter table public.booking_job_records enable row level security;
+alter table public.booking_job_checklist_items enable row level security;
+revoke insert,update,delete on public.booking_job_records from anon,authenticated;
+revoke insert,update,delete on public.booking_job_checklist_items from anon,authenticated;
+grant select on public.booking_job_records to authenticated;
+grant select on public.booking_job_checklist_items to authenticated;
+
 -- Backfill a primary branch from the existing business address without changing the public profile.
 insert into public.business_locations(
   business_id,name,address_line,suburb,city,state,postcode,country,latitude,longitude,is_primary,created_by
