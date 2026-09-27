@@ -2,6 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import {Platform} from 'react-native';
 import {supabase} from './supabase';
 import {userFacingError} from './errors';
+import {signedMediaUrls} from './media-url-cache';
 
 const ALLOWED=['image/jpeg','image/png','image/webp','image/heic','image/heif'];
 async function assetBody(asset:ImagePicker.ImagePickerAsset){
@@ -21,7 +22,7 @@ export async function uploadRequestMedia(requestId:string,assets:ImagePicker.Ima
   for(let i=0;i<Math.min(assets.length,10);i++){
    const {mime,ext,body}=await assetBody(assets[i]);
    const path=`${user.id}/${requestId}/${Date.now()}-${i}-${Math.random().toString(36).slice(2)}.${ext}`;
-   const {error}=await supabase.storage.from('request-media').upload(path,body,{contentType:mime,upsert:false});
+   const {error}=await supabase.storage.from('request-media').upload(path,body,{contentType:mime,cacheControl:'86400',upsert:false});
    if(error)throw new Error(userFacingError(error,'Request photo upload failed.'));
    paths.push(path);onProgress?.(i+1,Math.min(assets.length,10));
   }
@@ -37,7 +38,7 @@ export async function uploadPostMedia(postId:string,assets:ImagePicker.ImagePick
   for(let i=0;i<Math.min(assets.length,10);i++){
    const {mime,ext,body}=await assetBody(assets[i]);
    const path=`${user.id}/${postId}/${Date.now()}-${i}-${Math.random().toString(36).slice(2)}.${ext}`;
-   const {error}=await supabase.storage.from('post-media').upload(path,body,{contentType:mime,upsert:false});
+   const {error}=await supabase.storage.from('post-media').upload(path,body,{contentType:mime,cacheControl:'86400',upsert:false});
    if(error)throw new Error(userFacingError(error,'Post image upload failed.'));
    paths.push(path);
    const {error:rowError}=await supabase.from('post_media').insert({post_id:postId,media_type:'IMAGE',storage_path:path,sort_order:i});
@@ -48,11 +49,21 @@ export async function uploadPostMedia(postId:string,assets:ImagePicker.ImagePick
  }catch(e){if(paths.length)await supabase.storage.from('post-media').remove(paths);throw e;}
 }
 export async function signedPostMedia(postId:string){
- const {data,error}=await supabase.from('post_media').select('id,storage_path,sort_order').eq('post_id',postId).order('sort_order');
- if(error)return[];
- const rows=await Promise.all((data??[]).map(async row=>{
-  const {data:signed}=await supabase.storage.from('post-media').createSignedUrl(row.storage_path,3600);
-  return signed?.signedUrl??null;
- }));
- return rows.filter((v):v is string=>Boolean(v));
+ const map=await signedPostMediaBatch([postId]);
+ return map[postId]??[];
+}
+
+export async function signedPostMediaBatch(postIds:string[]){
+ if(!postIds.length)return {} as Record<string,string[]>;
+ const {data,error}=await supabase.from('post_media').select('post_id,storage_path,sort_order').in('post_id',postIds).order('sort_order');
+ if(error)return {} as Record<string,string[]>;
+ const rows=data??[];
+ const signed=await signedMediaUrls('post-media',rows.map(row=>row.storage_path),6*3600);
+ const grouped:Record<string,string[]>={};
+ for(const id of postIds)grouped[id]=[];
+ for(const row of rows){
+  const url=signed[row.storage_path];
+  if(url)(grouped[row.post_id]??=[]).push(url);
+ }
+ return grouped;
 }
