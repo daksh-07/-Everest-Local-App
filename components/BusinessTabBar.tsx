@@ -31,7 +31,6 @@ const managementItems:ReadonlyArray<Item>=[
 ];
 const workItems:ReadonlyArray<Item>=[
  {route:'/business-my-work',label:'Work',icon:'briefcase-outline',activeIcon:'briefcase'},
- {route:'/business-jobs',label:'Jobs',icon:'construct-outline',activeIcon:'construct'},
  {route:'/business-inbox',label:'Inbox',icon:'chatbubbles-outline',activeIcon:'chatbubbles'},
  {route:'/business-operations',label:'Team',icon:'people-outline',activeIcon:'people'},
  {route:'/business-control',label:'Business',icon:'storefront-outline',activeIcon:'storefront'},
@@ -40,8 +39,8 @@ const workItems:ReadonlyArray<Item>=[
 function itemsFor(business:BusinessWorkspace|null):ReadonlyArray<Item>{
  if(!business)return managementItems;
  if(isWorkforceWorkspace(business)||!business.can_view_crm){
-  if(String(business.member_role).toUpperCase()==='FINANCE')return [workItems[4]];
-  if(String(business.member_role).toUpperCase()==='READ_ONLY')return [workItems[3],workItems[4]];
+  if(String(business.member_role).toUpperCase()==='FINANCE')return [workItems[3]];
+  if(String(business.member_role).toUpperCase()==='READ_ONLY')return [workItems[2],workItems[3]];
   return workItems;
  }
  return managementItems;
