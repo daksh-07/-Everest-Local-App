@@ -92,7 +92,7 @@ export default function CreatePost(){
    if(sound){setProgress('Adding sound…');await publishDraftSound(createdId,sound);await setPhotoPostDuration(createdId,photoDuration);}
    await haptic.success();router.replace('/social');
   }catch(e){
-   if(createdId){try{await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',createdId)}catch{}}
+   if(createdId){try{await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',createdId)}catch{void 0}}
    void haptic.warning();setError(e instanceof Error?e.message:'Post could not be published.');
   }finally{setBusy(false);setProgress('');}
  }
