@@ -1,8 +1,9 @@
-import {useEffect,useMemo,useState} from 'react';
-import {ActivityIndicator,Image,Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
+import {useCallback,useEffect,useMemo,useState} from 'react';
+import {ActivityIndicator,Image,Linking,Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
+import {useFocusEffect} from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import type {Profile} from '@/lib/types';
 import type {AccessContext} from '@/lib/access';
@@ -41,6 +42,13 @@ function compact(value:number){
  if(value>=1000)return (value/1000).toFixed(value>=10000?0:1)+'K';
  return String(value);
 }
+function websiteLabel(value:string){
+ return value.trim().replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/$/,'');
+}
+function websiteHref(value:string){
+ const clean=value.trim();
+ return /^https:\/\//i.test(clean)?clean:'https://'+clean.replace(/^http:\/\//i,'');
+}
 
 export default function Account(){
  const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
@@ -75,6 +83,21 @@ export default function Account(){
   finally{setLoading(false);}
  }
  useEffect(()=>{void load()},[]);
+ useFocusEffect(useCallback(()=>{
+  let active=true;
+  void (async()=>{
+   try{
+    const {supabase,supabaseConfigured}=await import('@/lib/supabase');
+    if(!supabaseConfigured)return;
+    const {data:{user}}=await supabase.auth.getUser();
+    if(!user)return;
+    const {getProfile}=await import('@/lib/marketplace');
+    const latest=await getProfile();
+    if(active&&latest)setProfile(latest);
+   }catch(e){if(active)setError(userFacingError(e,'Your latest profile details could not be refreshed.'))}
+  })();
+  return()=>{active=false};
+ },[]));
 
  async function chooseAvatar(){
   if(!profile||uploadingAvatar)return;setError('');setUploadingAvatar(true);
@@ -102,6 +125,11 @@ export default function Account(){
   finally{setCollabBusy('');}
  }
  async function logout(){try{const {signOut}=await import('@/lib/auth');await signOut();setProfile(null);router.replace('/')}catch{setError('Could not sign out. Please try again.')}}
+ async function openWebsite(){
+  if(!profile?.website_url)return;
+  try{void haptic.selection();await Linking.openURL(websiteHref(profile.website_url))}
+  catch{setError('That website could not be opened. Check the address in Edit profile.')}
+ }
 
  const businessReady=access?.is_verified_business===true;
  const businessPending=access?.is_business_member===true&&!businessReady;
@@ -123,6 +151,14 @@ export default function Account(){
      <Text style={s.name}>{profile.full_name||'Everest Local account'}</Text>
      <Text style={s.copy}>{[profile.suburb,profile.city].filter(Boolean).join(', ')||'Your Everest profile'}</Text>
      <View style={s.roles}><View style={s.roleDot}/><Text style={s.rolesText}>{access?.is_business_member?'Customer + Business':'Customer'}{driverActive?' + Delivery Driver':''}</Text></View>
+     {profile.bio||profile.website_url?<View style={s.identityPanel}>
+      {profile.bio?<Text style={s.bioText}>{profile.bio}</Text>:null}
+      {profile.website_url?<Pressable accessibilityRole="link" accessibilityLabel={'Open '+websiteLabel(profile.website_url)} onPress={()=>void openWebsite()} style={[s.websiteCard,profile.bio?{marginTop:12}:null]}>
+       <View style={s.websiteIcon}><Ionicons name="globe-outline" size={17} color={colors.brand}/></View>
+       <View style={{flex:1,minWidth:0}}><Text style={s.websiteKicker}>WEBSITE</Text><Text numberOfLines={1} style={s.websiteText}>{websiteLabel(profile.website_url)}</Text></View>
+       <View style={s.websiteOpen}><Ionicons name="open-outline" size={15} color={colors.text}/></View>
+      </Pressable>:null}
+     </View>:null}
      <View style={s.heroActions}><Pressable onPress={()=>router.push('/edit-profile')} style={s.secondaryAction}><Ionicons name="create-outline" size={16} color={colors.text}/><Text style={s.secondaryText}>Edit profile</Text></Pressable><Pressable onPress={()=>router.push('/create')} style={s.primaryAction}><Ionicons name="add" size={18} color={colors.onBrand}/><Text style={s.primaryText}>Create post</Text></Pressable></View>
     </View>
 
@@ -178,7 +214,15 @@ const createStyles=(c:ThemeColors)=>StyleSheet.create({
  top:{height:62,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},eyebrow:{fontSize:9,fontWeight:'900',letterSpacing:1.8,color:c.accent},topTitle:{fontSize:29,fontWeight:'900',letterSpacing:-.7,color:c.text,marginTop:1},topAction:{width:44,height:44,borderRadius:22,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},
  profile:{marginTop:10,backgroundColor:c.elevated,borderRadius:28,padding:22,alignItems:'center',borderWidth:1,borderColor:c.border,overflow:'hidden'},profileGlow:{position:'absolute',top:-80,right:-50,width:180,height:180,borderRadius:90,backgroundColor:c.soft,opacity:.75},
  avatarWrap:{width:94,height:94,borderRadius:47,position:'relative',overflow:'hidden',borderWidth:3,borderColor:c.canvas},avatar:{width:'100%',height:'100%',borderRadius:47,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},avatarImage:{width:'100%',height:'100%',borderRadius:47},avatarBusy:{...StyleSheet.absoluteFillObject,backgroundColor:c.overlay,alignItems:'center',justifyContent:'center'},photoActions:{flexDirection:'row',alignItems:'center',gap:6,marginTop:12},photoButton:{height:34,borderRadius:17,backgroundColor:c.brand,paddingHorizontal:12,flexDirection:'row',alignItems:'center',gap:6},photoButtonText:{fontSize:8,fontWeight:'900',letterSpacing:.5,color:c.onBrand},removePhoto:{height:34,paddingHorizontal:9,alignItems:'center',justifyContent:'center'},removePhotoText:{color:c.muted,fontSize:8,fontWeight:'900',letterSpacing:.5},
- name:{color:c.text,fontSize:25,fontWeight:'900',marginTop:13,textAlign:'center'},copy:{color:c.muted,fontSize:12,lineHeight:18,textAlign:'center',marginTop:4},roles:{marginTop:10,borderRadius:14,backgroundColor:c.soft,paddingHorizontal:10,paddingVertical:6,flexDirection:'row',alignItems:'center',gap:6},roleDot:{width:6,height:6,borderRadius:3,backgroundColor:c.brand},rolesText:{fontSize:9,fontWeight:'900',letterSpacing:.4,color:c.text},heroActions:{width:'100%',flexDirection:'row',gap:9,marginTop:18},secondaryAction:{flex:1,minHeight:47,borderRadius:15,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:6},secondaryText:{fontSize:10,fontWeight:'900',color:c.text},primaryAction:{flex:1,minHeight:47,borderRadius:15,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:6,paddingHorizontal:14},primaryText:{fontSize:10,fontWeight:'900',letterSpacing:.4,color:c.onBrand},
+ name:{color:c.text,fontSize:25,fontWeight:'900',marginTop:13,textAlign:'center'},copy:{color:c.muted,fontSize:12,lineHeight:18,textAlign:'center',marginTop:4},roles:{marginTop:10,borderRadius:14,backgroundColor:c.soft,paddingHorizontal:10,paddingVertical:6,flexDirection:'row',alignItems:'center',gap:6},roleDot:{width:6,height:6,borderRadius:3,backgroundColor:c.brand},rolesText:{fontSize:9,fontWeight:'900',letterSpacing:.4,color:c.text},
+ identityPanel:{width:'100%',marginTop:14,borderRadius:19,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:14},
+ bioText:{fontSize:12,lineHeight:19,fontWeight:'600',color:c.text,textAlign:'center'},
+ websiteCard:{minHeight:49,borderRadius:15,backgroundColor:c.soft,paddingHorizontal:10,paddingVertical:8,flexDirection:'row',alignItems:'center',gap:9},
+ websiteIcon:{width:34,height:34,borderRadius:12,backgroundColor:c.elevated,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:c.border},
+ websiteKicker:{fontSize:7,fontWeight:'900',letterSpacing:1.05,color:c.muted},
+ websiteText:{fontSize:11,fontWeight:'900',color:c.brand,marginTop:2},
+ websiteOpen:{width:30,height:30,borderRadius:10,backgroundColor:c.elevated,alignItems:'center',justifyContent:'center'},
+ heroActions:{width:'100%',flexDirection:'row',gap:9,marginTop:18},secondaryAction:{flex:1,minHeight:47,borderRadius:15,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:6},secondaryText:{fontSize:10,fontWeight:'900',color:c.text},primaryAction:{flex:1,minHeight:47,borderRadius:15,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:6,paddingHorizontal:14},primaryText:{fontSize:10,fontWeight:'900',letterSpacing:.4,color:c.onBrand},
  stats:{minHeight:84,borderRadius:22,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,marginTop:12,flexDirection:'row',alignItems:'center',justifyContent:'space-around',paddingHorizontal:8},stat:{flex:1,alignItems:'center'},statValue:{fontSize:20,fontWeight:'900',color:c.text},statLabel:{fontSize:7,fontWeight:'900',letterSpacing:1.1,color:c.muted,marginTop:4},statDivider:{width:1,height:34,backgroundColor:c.border},
  sectionBlock:{marginTop:27},sectionHead:{flexDirection:'row',alignItems:'flex-end',justifyContent:'space-between',marginBottom:10},sectionEyebrow:{fontSize:8,fontWeight:'900',letterSpacing:1.6,color:c.accent,marginBottom:4},section:{fontSize:22,fontWeight:'900',letterSpacing:-.4,color:c.text,marginBottom:10},countPill:{minWidth:28,height:28,borderRadius:14,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:9},countPillText:{fontSize:10,fontWeight:'900',color:c.onBrand},miniAdd:{width:38,height:38,borderRadius:19,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center',marginBottom:7},
  collabCard:{borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:14,flexDirection:'row',gap:11,marginBottom:9},collabIcon:{width:42,height:42,borderRadius:15,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},collabTitle:{fontSize:14,fontWeight:'900',color:c.text},collabCopy:{fontSize:10,lineHeight:16,color:c.muted,marginTop:3},collabActions:{flexDirection:'row',gap:8,marginTop:11},decline:{height:38,borderRadius:12,borderWidth:1,borderColor:c.border,paddingHorizontal:14,alignItems:'center',justifyContent:'center'},declineText:{fontSize:9,fontWeight:'900',color:c.text},accept:{height:38,borderRadius:12,backgroundColor:c.brand,paddingHorizontal:14,alignItems:'center',justifyContent:'center'},acceptText:{fontSize:9,fontWeight:'900',color:c.onBrand},
