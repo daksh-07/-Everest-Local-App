@@ -393,7 +393,10 @@ Deno.serve(async req=>{
   if(stripeError.code==='account_terms_of_service_not_accepted'){
    return json({error:'Everest Local must accept the Stripe Connect platform terms before businesses can onboard.'},503);
   }
-  if(stripeError.code==='permission_error'||message.toLowerCase().includes('permission')){
+  if(message.includes("v2_account_storer_write")){
+   return json({error:'Stripe key permission required: enable V2 Account Storer Write for the Everest Local Production Backend key, then try again.'},503);
+  }
+  if(stripeError.code==='permission_error'||stripeError.code==='forbidden'||message.toLowerCase().includes('permission')){
    return json({error:'The Everest Local Stripe server key is missing a required Stripe permission. Update the key permissions, then try again.'},503);
   }
   return json({error:'Stripe payout setup could not be completed. Please try again.'},500);
