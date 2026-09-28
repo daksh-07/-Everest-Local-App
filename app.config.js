@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports, no-undef */
 const fs=require('node:fs');
 
 module.exports=({config})=>{
