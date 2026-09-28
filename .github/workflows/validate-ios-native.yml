@@ -1,16 +1,35 @@
-name: Validate iOS Native Configuration
+name: Validate Native Store Builds
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'app.json'
+      - 'app.config.js'
+      - 'eas.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'assets/**'
+      - 'app/_layout.tsx'
+      - 'app/business-upgrade.tsx'
+      - 'lib/push-notifications.native.ts'
+      - 'scripts/validate-store-build-env.mjs'
+      - 'tests/native-store-release.test.mjs'
+      - '.github/workflows/validate-ios-native.yml'
   pull_request:
     branches: [main]
     paths:
       - 'app.json'
+      - 'app.config.js'
       - 'eas.json'
-      - 'app/_layout.tsx'
-      - 'app/auth.tsx'
-      - 'lib/quick-actions.ts'
       - 'package.json'
       - 'package-lock.json'
+      - 'assets/**'
+      - 'app/_layout.tsx'
+      - 'app/business-upgrade.tsx'
+      - 'lib/push-notifications.native.ts'
+      - 'scripts/validate-store-build-env.mjs'
+      - 'tests/native-store-release.test.mjs'
       - '.github/workflows/validate-ios-native.yml'
 
 permissions:
@@ -18,7 +37,9 @@ permissions:
 
 jobs:
   ios-config:
+    name: iOS App Store native gate
     runs-on: macos-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -29,9 +50,51 @@ jobs:
         run: npx expo config --type public
       - name: Generate iOS native project
         run: npx expo prebuild --platform ios --no-install --clean
-      - name: Verify Everest bundle and quick action module
+      - name: Verify App Store native configuration
+        shell: bash
         run: |
+          set -euo pipefail
           test -d ios
           grep -R "com.everestlocal.app" ios >/dev/null
-          test -d node_modules/expo-quick-actions
+          grep -R "everestlocal" ios >/dev/null
+          entitlements="$(find ios -name '*.entitlements' -type f | head -n 1)"
+          test -n "$entitlements"
+          /usr/libexec/PlistBuddy -c "Print :aps-environment" "$entitlements" | grep -qx "production"
+          grep -R "TARGETED_DEVICE_FAMILY = 1;" ios/*.xcodeproj/project.pbxproj >/dev/null
+          find ios -path '*AppIcon.appiconset*' -type f | grep -q .
+          node -e "const p=require('./node_modules/expo-notifications/package.json'); if(!p.version.startsWith('0.32.')) process.exit(1)"
           node -e "const p=require('./node_modules/expo-quick-actions/package.json'); if(p.version!=='6.0.0') process.exit(1)"
+
+  android-config:
+    name: Android Play Store native gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: npm ci --no-audit --no-fund
+      - name: Resolve Expo app config
+        run: npx expo config --type public
+      - name: Generate Android native project
+        run: npx expo prebuild --platform android --no-install --clean
+      - name: Verify Play Store native configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d android
+          grep -R "com.everestlocal.app" android/app/build.gradle android/app/src/main/AndroidManifest.xml >/dev/null
+          grep -R "android.permission.POST_NOTIFICATIONS" android/app/src/main/AndroidManifest.xml >/dev/null
+          test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          find android/app/src/main/res -iname '*notification*' -type f | grep -q .
+      - name: Compile release Android App Bundle
+        working-directory: android
+        run: ./gradlew :app:bundleRelease --no-daemon --stacktrace
+      - name: Verify AAB output
+        run: test -f android/app/build/outputs/bundle/release/app-release.aab

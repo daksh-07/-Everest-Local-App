@@ -55,7 +55,11 @@ export async function registerBusinessPushNotifications(){
 
   const projectId=Constants.easConfig?.projectId
     ??(Constants.expoConfig?.extra?.eas as {projectId?:string}|undefined)?.projectId;
-  const expoToken=(await Notifications.getExpoPushTokenAsync(projectId?{projectId}:undefined)).data;
+  if(!projectId){
+   if(typeof console!=='undefined')console.warn('[Everest push registration] Missing EAS project id.');
+   return false;
+  }
+  const expoToken=(await Notifications.getExpoPushTokenAsync({projectId})).data;
   if(!expoToken)return false;
 
   const {error}=await supabase.rpc('register_my_push_token',{

@@ -10,7 +10,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.everestlocal.app",
       "backgroundColor": "#0b0b0b",
-      "infoPlist": {}
+      "infoPlist": {},
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.everestlocal.app"

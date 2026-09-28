@@ -34,10 +34,11 @@ export default function BusinessUpgrade(){
  useEffect(()=>{if(params.subscription==='success')void load()},[params.subscription,load]);
 
  const active=hasEverestPro(subscription);
+ const nativeStore=Platform.OS==='ios'||Platform.OS==='android';
  const appleIapEnabled=Platform.OS==='ios'&&process.env.EXPO_PUBLIC_ENABLE_APPLE_IAP==='true';
 
  async function billing(){
-  if(!businessId)return;
+  if(!businessId||nativeStore)return;
   setWorking(true);setError('');
   try{
    if(active)await openEverestProPortal(businessId);
@@ -72,6 +73,8 @@ export default function BusinessUpgrade(){
     {params.subscription==='cancelled'?<View style={st.notice}><Ionicons name="information-circle-outline" size={18} color={colors.brand}/><Text style={st.noticeText}>Checkout was cancelled. No subscription change was made.</Text></View>:null}
     {appleIapEnabled?
      <AppleSubscriptionControls businessId={businessId} active={active} provider={subscription?.billing_provider??'STRIPE'} onActivated={()=>void load()}/>
+     :nativeStore?
+     <View style={st.notice}><Ionicons name="phone-portrait-outline" size={18} color={colors.brand}/><Text style={st.noticeText}>{active?'Your existing Everest Pro access remains active. Subscription management is not offered through this store build.':'Everest Pro purchasing is not offered through this store build yet. Core marketplace and business tools remain available.'}</Text></View>
      :
      <Pressable disabled={working} onPress={()=>void billing()} style={[st.primary,working&&{opacity:.65}]}>
       {working?<ActivityIndicator color={colors.onBrand}/>:<><Text style={st.primaryText}>{active?'MANAGE SUBSCRIPTION':'START EVEREST PRO SUBSCRIPTION'}</Text><Ionicons name="arrow-forward" size={15} color={colors.onBrand}/></>}
