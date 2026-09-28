@@ -1,5 +1,7 @@
 import { supabase, requireSupabaseConfig } from './supabase';
 
+export type PostReportReason='SPAM'|'HARASSMENT'|'HATE_OR_ABUSE'|'SEXUAL_CONTENT'|'VIOLENCE'|'SCAM'|'INAPPROPRIATE'|'OTHER';
+
 export type PostType =
   | 'UPDATE' | 'COMPLETED_WORK' | 'BEFORE_AFTER' | 'PROMOTION'
   | 'ANNOUNCEMENT' | 'OFFER' | 'AVAILABILITY' | 'TIP'
@@ -129,6 +131,17 @@ export async function createPost(input: {
   });
   if (error) throw new Error(error.message);
   return data as string;
+}
+
+export async function reportPost(postId:string,reason:PostReportReason,details?:string):Promise<string>{
+  requireSupabaseConfig();
+  const {data,error}=await supabase.rpc('report_post',{
+    p_post_id:postId,
+    p_reason:reason,
+    p_details:details?.trim()||null,
+  });
+  if(error)throw new Error(error.message||'Post could not be reported.');
+  return String(data);
 }
 
 export async function listPublicPosts(input: { limit?: number; offset?: number; businessId?: string; locality?: string } = {}): Promise<SocialPost[]> {

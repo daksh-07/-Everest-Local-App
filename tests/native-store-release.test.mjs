@@ -72,6 +72,15 @@ test('Android native map and FCM config come only from release environment',()=>
  assert.match(validator,/FCM/i);
 });
 
+test('App Store CI requires Xcode 26 and iOS 26 SDK or newer',()=>{
+ assert.match(workflow,/xcodebuild -version/);
+ assert.match(workflow,/xcode_major/);
+ assert.match(workflow,/test "\$\{xcode_major\}" -ge 26/);
+ assert.match(workflow,/xcrun --sdk iphoneos --show-sdk-version/);
+ assert.match(workflow,/ios_sdk_major/);
+ assert.match(workflow,/test "\$\{ios_sdk_major\}" -ge 26/);
+});
+
 test('CI prebuilds both platforms and compiles a release Android bundle',()=>{
  assert.match(workflow,/expo prebuild --platform ios/);
  assert.match(workflow,/expo prebuild --platform android/);
