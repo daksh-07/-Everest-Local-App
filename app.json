@@ -21,9 +21,9 @@
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "monochromeImage": "./assets/notification-icon.png",
         "backgroundColor": "#151513"
-      }
+      },
+      "icon": "./assets/icon.png"
     },
     "web": {
       "bundler": "metro",
@@ -64,7 +64,6 @@
         "expo-notifications",
         {
           "defaultChannel": "everest-live",
-          "icon": "./assets/notification-icon.png",
           "color": "#E6C890",
           "mode": "production",
           "enableBackgroundRemoteNotifications": false
