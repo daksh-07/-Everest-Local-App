@@ -46,6 +46,16 @@ jobs:
         with:
           node-version: 24
       - run: npm ci --no-audit --no-fund
+      - name: Verify App Store toolchain
+        shell: bash
+        run: |
+          set -euxo pipefail
+          xcode_version="$(xcodebuild -version | awk 'NR==1 {print $2}')"
+          xcode_major="${xcode_version%%.*}"
+          test "${xcode_major}" -ge 26
+          ios_sdk="$(xcrun --sdk iphoneos --show-sdk-version)"
+          ios_sdk_major="${ios_sdk%%.*}"
+          test "${ios_sdk_major}" -ge 26
       - name: Resolve Expo app config
         run: npx expo config --type public
       - name: Generate iOS native project

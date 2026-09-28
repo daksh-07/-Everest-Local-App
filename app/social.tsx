@@ -1,12 +1,12 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,FlatList,Image,Modal,Pressable,RefreshControl,Share,StyleSheet,Text,TextInput,View,useWindowDimensions,type ViewToken} from 'react-native';
+import {ActivityIndicator,Alert,FlatList,Image,Modal,Pressable,RefreshControl,Share,StyleSheet,Text,TextInput,View,useWindowDimensions,type ViewToken} from 'react-native';
 import {PagerAwareScrollView as ScrollView} from '@/components/PagerAwareScrollView';
 import {Ionicons} from '@expo/vector-icons';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useGlobalSearchParams} from 'expo-router';
 import {
   addPostComment,getAccessiblePost,getCommentEngagement,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,recordPostView,setPostCommentsEnabled,
-  toggleCommentLike,togglePostLike,toggleSavedPost,type CommentEngagement,type PostComment,type PostEngagement,type SocialPost
+  reportPost,toggleCommentLike,togglePostLike,toggleSavedPost,type CommentEngagement,type PostComment,type PostEngagement,type PostReportReason,type SocialPost
 } from '@/lib/social';
 import {signedPostMediaResilient} from '@/lib/request-post-media';
 import {supabase} from '@/lib/supabase';
@@ -189,6 +189,24 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  async function share(post:FeedPost){
   await Share.share({message:[post.caption||'See this post on Everest Local',post.location_label?('📍 '+post.location_label):''].filter(Boolean).join('\n')});
  }
+ async function submitReport(post:FeedPost,reason:PostReportReason){
+  setMenuPost(null);
+  try{
+   await reportPost(post.id,reason);
+   void haptic.success();
+   Alert.alert('Report received','Thanks. Everest will review this content.');
+  }catch(e){setError(e instanceof Error?e.message:'This post could not be reported.')}
+ }
+ function report(post:FeedPost){
+  if(post.author_id===userId)return;
+  if(!userId){setMenuPost(null);router.push('/auth');return;}
+  Alert.alert('Report content','Choose the reason that best describes the problem.',[
+   {text:'Spam or scam',onPress:()=>void submitReport(post,'SPAM')},
+   {text:'Harassment or abuse',onPress:()=>void submitReport(post,'HATE_OR_ABUSE')},
+   {text:'Inappropriate content',onPress:()=>void submitReport(post,'INAPPROPRIATE')},
+   {text:'Cancel',style:'cancel'},
+  ]);
+ }
  async function openComments(post:FeedPost){
   setCommentPost(post);setCommentsBusy(true);setComments([]);setCommentLikes({});setCommentText('');setReplyTo(null);
   try{
@@ -284,6 +302,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
       <Pressable onPress={()=>void openComments(item)} style={s.clipAction}><Ionicons name="chatbubble-outline" size={25} color="#fff"/><Text style={s.clipActionText}>{item.engagement.commentCount}</Text></Pressable>
       <Pressable onPress={()=>void save(item)} style={s.clipAction}><Ionicons name={item.engagement.savedByMe?'bookmark':'bookmark-outline'} size={25} color="#fff"/></Pressable>
       <Pressable onPress={()=>void share(item)} style={s.clipAction}><Ionicons name="paper-plane-outline" size={25} color="#fff"/></Pressable>
+      {item.author_id!==userId?<Pressable accessibilityLabel="Report clip" onPress={()=>report(item)} style={s.clipAction}><Ionicons name="flag-outline" size={24} color="#fff"/></Pressable>:null}
      </View>
      <View style={s.clipBottom}>
       <Pressable onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))} style={s.clipAuthor}><View style={s.clipAvatar}>{(item.businesses?.logo_url||item.profile?.avatar_url)?<Image source={{uri:item.businesses?.logo_url??item.profile?.avatar_url??''}} style={s.clipAvatarImage}/>:<Ionicons name={item.business_id?'business':'person'} size={17} color="#fff"/>}</View><Text numberOfLines={1} style={s.clipName}>{item.businesses?.name??item.profile?.display_name??'Everest member'}</Text></Pressable>
@@ -307,6 +326,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
     {menuPost===item.id?<View style={s.menu}>
       {item.author_id===userId?<Pressable onPress={()=>void toggleComments(item)} style={s.menuItem}><Ionicons name={item.comments_enabled?'chatbubble-outline':'chatbubble-ellipses-outline'} size={17} color={colors.text}/><Text style={s.menuText}>{item.comments_enabled?'Turn comments off':'Turn comments on'}</Text></Pressable>:null}
       <Pressable onPress={()=>void share(item)} style={s.menuItem}><Ionicons name="share-outline" size={17} color={colors.text}/><Text style={s.menuText}>Share post</Text></Pressable>
+      {item.author_id!==userId?<Pressable accessibilityLabel="Report post" onPress={()=>report(item)} style={s.menuItem}><Ionicons name="flag-outline" size={17} color={colors.danger}/><Text style={[s.menuText,{color:colors.danger}]}>Report post</Text></Pressable>:null}
     </View>:null}
     {item.media?.length?<View style={s.mediaWrap}>{item.media.slice(0,1).map((uri,index)=><PostMediaImage key={uri} postId={item.id} uri={uri} index={index} style={[s.media,{width:mediaWidth,height:Math.min(mediaWidth*1.05,650)}]}/>)}
       {item.media.length>1?<View style={s.mediaCount}><Text style={s.mediaCountText}>1/{item.media.length}</Text></View>:null}
