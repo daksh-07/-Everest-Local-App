@@ -103,5 +103,5 @@ test('calendar aggregates CRM bookings, Everest bookings, tasks and blocked time
 });
 
 test('reports and stale-deal views use recorded values rather than fabricated forecasts',()=>{
- assert.match(command,/CRM performance/);assert.match(command,/No probability or revenue is inferred when it is missing/);assert.match(command,/Lead sources/);assert.match(command,/STALE/);assert.match(today,/No activity for 3\+ days and no next task/);
+ assert.match(command,/CRM performance/);assert.match(command,/No probability or revenue is inferred when it is missing/);assert.match(command,/Lead sources/);assert.match(command,/STALE/);assert.match(today,/Pipeline stays separate from operations/);
 });
