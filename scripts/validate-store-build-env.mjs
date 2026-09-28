@@ -12,7 +12,7 @@ if(platform==='android'){
 
   if(!googleServices)failures.push('GOOGLE_SERVICES_JSON (or ./google-services.json) is required for Android FCM registration.');
   else if(!fs.existsSync(googleServices))failures.push('GOOGLE_SERVICES_JSON points to a file that does not exist on the EAS worker.');
-  if(!mapsKey)failures.push('EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY is required for the native Android map.');
+  if(!mapsKey)failures.push('EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY is required for the native Google Maps Android SDK.');
 }
 if(failures.length){
   console.error('\nEverest Local production build blocked:\n- '+failures.join('\n- ')+'\n');

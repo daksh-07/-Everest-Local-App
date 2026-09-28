@@ -21,7 +21,8 @@
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#151513"
+        "backgroundColor": "#151513",
+        "monochromeImage": "./assets/notification-icon.png"
       },
       "icon": "./assets/icon.png"
     },
@@ -66,7 +67,8 @@
           "defaultChannel": "everest-live",
           "color": "#E6C890",
           "mode": "production",
-          "enableBackgroundRemoteNotifications": false
+          "enableBackgroundRemoteNotifications": false,
+          "icon": "./assets/notification-icon.png"
         }
       ]
     ],
