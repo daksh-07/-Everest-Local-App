@@ -12,6 +12,7 @@ import {ExperienceProvider} from '@/lib/experience';
 import {GlobalSwipeNavigator} from '@/components/GlobalSwipeNavigator';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {configureEverestQuickActions,quickActionHref,QuickActions,storePendingQuickActionRoute} from '@/lib/quick-actions';
+import {clearPushBadge,getInitialPushHref,registerBusinessPushNotifications,subscribeToPushResponses} from '@/lib/push-notifications';
 
 const protectedRoutes = new Set([
   '/account','/activity','/memberships','/assistant','/request','/everest-live','/requests','/quotes','/bookings','/booking','/orders','/cart','/messages','/reviews','/notifications','/settings','/edit-profile','/appearance','/notification-settings','/help','/create','/create-post','/create-story','/create-clip','/sound','/archive','/highlights','/business-profile-edit',
@@ -36,6 +37,7 @@ function ThemedRootLayout() {
   const pathname=usePathname();const nav=useRouter();
   const theme=useAppTheme();
   const initialQuickActionHandled=useRef(false);
+  const initialPushHandled=useRef(false);
   const [authInitialized,setAuthInitialized]=useState(false);const [supabaseConfigured,setSupabaseConfigured]=useState(false);const [sessionUserId,setSessionUserId]=useState<string|null>(null);const [access,setAccess]=useState<AccessContext|null>(null);const [startupError,setStartupError]=useState('');const [retryNonce,setRetryNonce]=useState(0);
   useEffect(()=>{let active=true;let unsubscribe:(()=>void)|undefined;let refreshVersion=0;
     async function load(){try{
@@ -62,6 +64,30 @@ function ThemedRootLayout() {
     const sub=QuickActions.addListener(action=>{void routeAction(action)});
     return()=>sub.remove();
   },[nav,sessionUserId]);
+
+  useEffect(()=>{
+    if(Platform.OS==='web')return;
+    let active=true;
+    const routePush=async(href:string|null)=>{
+      if(!active||!href)return;
+      await clearPushBadge();
+      if(!sessionUserId){await storePendingQuickActionRoute(href);nav.replace('/auth');return;}
+      nav.push(href as never);
+    };
+    if(!initialPushHandled.current){
+      initialPushHandled.current=true;
+      void getInitialPushHref().then(routePush);
+    }
+    const sub=subscribeToPushResponses(href=>{void routePush(href)});
+    return()=>{active=false;sub.remove()};
+  },[nav,sessionUserId]);
+
+  useEffect(()=>{
+    if(Platform.OS==='web'||!sessionUserId||!access?.is_business_member)return;
+    const businessSurface=pathname.startsWith('/business')||pathname==='/opportunities';
+    if(!businessSurface)return;
+    void registerBusinessPushNotifications();
+  },[pathname,sessionUserId,access?.is_business_member]);
 
   useEffect(()=>{if(!authInitialized||!supabaseConfigured||startupError)return;
     const needsAuth=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
