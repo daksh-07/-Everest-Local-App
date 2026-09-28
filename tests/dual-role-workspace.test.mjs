@@ -35,8 +35,9 @@ test('workspace architecture preserves customer and business modes',()=>{
  assert.match(workspace,/businesses:BusinessWorkspace\[\]/);
 });
 
-test('business navigation is operationally distinct',()=>{
- for(const label of ['Today','CRM','Calendar','Inbox','Business']) assert.match(tabbar,new RegExp("label:'"+label+"'"));
+test('business navigation is operationally distinct and job-first',()=>{
+ for(const label of ['Today','Jobs','Schedule','Inbox','Business']) assert.match(tabbar,new RegExp("label:'"+label+"'"));
+ assert.doesNotMatch(tabbar,/label:'CRM'/);
 });
 
 test('business surfaces scope queries to active business',()=>{
