@@ -24,7 +24,7 @@ type IconName=keyof typeof Ionicons.glyphMap;
 type Item={route:PrimaryRoute;label:string;icon:IconName;activeIcon:IconName};
 const managementItems:ReadonlyArray<Item>=[
  {route:'/business-today',label:'Today',icon:'today-outline',activeIcon:'today'},
- {route:'/business-crm',label:'CRM',icon:'layers-outline',activeIcon:'layers'},
+ {route:'/business-jobs',label:'Jobs',icon:'briefcase-outline',activeIcon:'briefcase'},
  {route:'/business-calendar',label:'Calendar',icon:'calendar-outline',activeIcon:'calendar'},
  {route:'/business-inbox',label:'Inbox',icon:'chatbubbles-outline',activeIcon:'chatbubbles'},
  {route:'/business-control',label:'Business',icon:'storefront-outline',activeIcon:'storefront'},
@@ -47,6 +47,7 @@ function itemsFor(business:BusinessWorkspace|null):ReadonlyArray<Item>{
 }
 function primaryFor(active:BusinessActiveRoute,items:ReadonlyArray<Item>):PrimaryRoute{
  const routes=new Set(items.map(x=>x.route));
+ if(active==='/business-crm'&&!routes.has('/business-crm'))return'/business-control';
  if(['/business-leads','/business-customers','/business-customer','/business-deal','/business-crm-quote','/business-crm-booking'].includes(active))return routes.has('/business-crm')?'/business-crm':'/business-control';
  if(active==='/business-job')return routes.has('/business-jobs')?'/business-jobs':routes.has('/business-calendar')?'/business-calendar':'/business-my-work';
  if(active==='/business-availability'||active==='/business-orders')return'/business-control';

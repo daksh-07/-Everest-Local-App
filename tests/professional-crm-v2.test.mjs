@@ -15,6 +15,7 @@ const booking=read('app/business-crm-booking.tsx');
 const calendar=read('app/business-calendar.tsx');
 const today=read('app/business-today.tsx');
 const tabs=read('components/BusinessTabBar.tsx');
+const businessControl=read('app/business-control.tsx');
 
 const loopTables=['crm_pipelines','crm_pipeline_stages','crm_opportunities','crm_tags','crm_contact_tags','crm_quotes','crm_quote_items','crm_bookings'];
 test('professional CRM tables are tenant isolated and anon is revoked',()=>{
@@ -83,9 +84,11 @@ test('contact merge preserves dependent CRM objects and archives the secondary r
  assert.match(slice,/merged_into_id=p.id/);assert.match(slice,/CONTACT_MERGED/);assert.match(slice,/linked to different Everest users/);
 });
 
-test('business navigation is now Today, CRM, Calendar, Inbox, Business',()=>{
- for(const label of ['Today','CRM','Calendar','Inbox','Business'])assert.match(tabs,new RegExp("label:'"+label+"'"));
- assert.doesNotMatch(tabs,/label:'Leads'/);assert.doesNotMatch(tabs,/label:'Customers'/);assert.doesNotMatch(tabs,/label:'Jobs'/);
+test('business navigation is work-first while CRM remains a separate workspace',()=>{
+ for(const label of ['Today','Jobs','Calendar','Inbox','Business'])assert.match(tabs,new RegExp("label:'"+label+"'"));
+ assert.doesNotMatch(tabs,/label:'Leads'/);assert.doesNotMatch(tabs,/label:'Customers'/);assert.doesNotMatch(tabs,/route:'\/business-crm',label:'CRM'/);
+ assert.match(businessControl,/SALES & CRM/);assert.match(businessControl,/CRM workspace/);
+ assert.match(today,/TODAY’S WORK/);assert.match(today,/OPEN JOBS/);assert.match(today,/SALES & CRM/);
 });
 
 test('Customer 360 is a tabbed record instead of one giant sales-state page',()=>{
