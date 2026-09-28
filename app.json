@@ -7,16 +7,23 @@
     "userInterfaceStyle": "automatic",
     "scheme": "everestlocal",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.everestlocal.app",
-      "backgroundColor": "#0b0b0b",
+      "backgroundColor": "#151513",
       "infoPlist": {},
       "config": {
         "usesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.everestlocal.app"
+      "package": "com.everestlocal.app",
+      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/notification-icon.png",
+        "backgroundColor": "#151513"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -56,7 +63,11 @@
       [
         "expo-notifications",
         {
-          "defaultChannel": "everest-live"
+          "defaultChannel": "everest-live",
+          "icon": "./assets/notification-icon.png",
+          "color": "#E6C890",
+          "mode": "production",
+          "enableBackgroundRemoteNotifications": false
         }
       ]
     ],
@@ -64,6 +75,12 @@
       "supabaseUrl": "https://bmwbljefnamvjnmuvkvv.supabase.co",
       "supabaseAnonKey": "sb_publishable_evkp_gHdu3ucFI82P8VLCw_vCjR2M2S"
     },
-    "backgroundColor": "#0b0b0b"
+    "backgroundColor": "#151513",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#151513"
+    }
   }
 }
