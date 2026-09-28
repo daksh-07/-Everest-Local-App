@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const read=p=>fs.readFileSync(p,'utf8');
-const migration=read('supabase/migrations/20260928223500_business_push_notifications.sql');
+const migration=read('supabase/migrations/20260928123830_business_push_notifications.sql');
 const edge=read('supabase/functions/dispatch-push/index.ts');
 const native=read('lib/push-notifications.native.ts');
 const layout=read('app/_layout.tsx');
