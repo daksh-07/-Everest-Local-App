@@ -9,7 +9,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.everestlocal.app",
-      "backgroundColor": "#0b0b0b",
+      "backgroundColor": "#151513",
       "infoPlist": {},
       "config": {
         "usesNonExemptEncryption": false
@@ -21,7 +21,7 @@
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0b0b0b",
+        "backgroundColor": "#151513",
         "monochromeImage": "./assets/notification-icon.png"
       },
       "icon": "./assets/icon.png",
@@ -79,12 +79,12 @@
       "supabaseUrl": "https://bmwbljefnamvjnmuvkvv.supabase.co",
       "supabaseAnonKey": "sb_publishable_evkp_gHdu3ucFI82P8VLCw_vCjR2M2S"
     },
-    "backgroundColor": "#0b0b0b",
+    "backgroundColor": "#151513",
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0b0b0b"
+      "backgroundColor": "#151513"
     }
   }
 }
