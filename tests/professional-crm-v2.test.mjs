@@ -58,7 +58,7 @@ test('pipeline has ordered terminal stages and stage transitions are audited',()
 });
 
 test('tasks are typed, date-time based and surfaced by Today',()=>{
- assert.match(migration,/CALL','EMAIL','MESSAGE','FOLLOW_UP','APPOINTMENT','GENERAL/);assert.match(migration,/crm_create_task/);assert.match(deal,/CrmDateTimeField/);assert.match(calendar,/CrmDateTimeField/);assert.match(today,/Overdue/);assert.doesNotMatch(deal,/placeholder="YYYY|placeholder="Date/i);
+ assert.match(migration,/CALL','EMAIL','MESSAGE','FOLLOW_UP','APPOINTMENT','GENERAL/);assert.match(migration,/crm_create_task/);assert.match(deal,/CrmDateTimeField/);assert.match(calendar,/CrmDateTimeField/);assert.match(today,/overdue follow-ups/i);assert.doesNotMatch(deal,/placeholder="YYYY|placeholder="Date/i);
 });
 
 test('professional quotes calculate totals server-side and do not fake delivery',()=>{
@@ -83,9 +83,13 @@ test('contact merge preserves dependent CRM objects and archives the secondary r
  assert.match(slice,/merged_into_id=p.id/);assert.match(slice,/CONTACT_MERGED/);assert.match(slice,/linked to different Everest users/);
 });
 
-test('business navigation is now Today, CRM, Calendar, Inbox, Business',()=>{
- for(const label of ['Today','CRM','Calendar','Inbox','Business'])assert.match(tabs,new RegExp("label:'"+label+"'"));
- assert.doesNotMatch(tabs,/label:'Leads'/);assert.doesNotMatch(tabs,/label:'Customers'/);assert.doesNotMatch(tabs,/label:'Jobs'/);
+test('business navigation prioritises work and keeps CRM secondary',()=>{
+ for(const label of ['Today','Jobs','Schedule','Inbox','Business'])assert.match(tabs,new RegExp("label:'"+label+"'"));
+ assert.doesNotMatch(tabs,/label:'CRM'/);
+ assert.match(today,/TODAY'S WORK/);
+ assert.match(today,/INCOMING WORK/);
+ assert.match(today,/SALES & CRM/);
+ assert.match(today,/Pipeline stays separate from operations/);
 });
 
 test('Customer 360 is a tabbed record instead of one giant sales-state page',()=>{
@@ -99,5 +103,5 @@ test('calendar aggregates CRM bookings, Everest bookings, tasks and blocked time
 });
 
 test('reports and stale-deal views use recorded values rather than fabricated forecasts',()=>{
- assert.match(command,/CRM performance/);assert.match(command,/No probability or revenue is inferred when it is missing/);assert.match(command,/Lead sources/);assert.match(command,/STALE/);assert.match(today,/No activity for 3\+ days and no next task/);
+ assert.match(command,/CRM performance/);assert.match(command,/No probability or revenue is inferred when it is missing/);assert.match(command,/Lead sources/);assert.match(command,/STALE/);assert.match(today,/Pipeline stays separate from operations/);
 });

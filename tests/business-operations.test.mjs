@@ -19,6 +19,7 @@ const tabbar=read('components/BusinessTabBar.tsx');
 const switcher=read('components/ModeSwitcher.tsx');
 const command=read('app/business-operations.tsx');
 const work=read('app/business-my-work.tsx');
+const jobs=read('app/business-jobs.tsx');
 const control=read('app/business-control.tsx');
 const stripe=read('supabase/functions/stripe-connect/index.ts');
 const inviteEmail=read('supabase/functions/business-invite-email/index.ts');
@@ -127,6 +128,15 @@ test('workspace capabilities route field staff into My Work instead of owner das
  assert.match(tabbar,/business-my-work/);
  assert.match(tabbar,/business-operations/);
  assert.match(work,/Only work assigned to you or your crew appears here/);
+});
+
+test('owner job queue is work-first and field workers cannot use the all-jobs surface',()=>{
+ for(const label of ["'TODAY'","'UPCOMING'","'ACTIVE'","'COMPLETED'"])assert.match(jobs,new RegExp(label));
+ assert.match(jobs,/if\(!current\.can_view_all_jobs\)/);
+ assert.match(jobs,/router\.replace\('\/business-my-work'\)/);
+ assert.match(jobs,/Booked work lives here/);
+ assert.match(jobs,/business-leads/);
+ assert.match(migration,/bookings_participant_access[\s\S]*JOB_VIEW_ALL[\s\S]*can_operate_business_booking/);
 });
 
 test('operations UI provides team, dispatch, locations and crews without a second business account',()=>{

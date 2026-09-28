@@ -17,8 +17,8 @@ import {clearPushBadge,getInitialPushHref,registerBusinessPushNotifications,subs
 const protectedRoutes = new Set([
   '/account','/activity','/memberships','/assistant','/request','/everest-live','/requests','/quotes','/bookings','/booking','/orders','/cart','/messages','/reviews','/notifications','/settings','/edit-profile','/appearance','/notification-settings','/help','/create','/create-post','/create-story','/create-clip','/sound','/archive','/highlights','/business-profile-edit',
 ]);
-const businessApplicationRoutes = new Set(['/business','/business-onboarding','/business-dashboard','/business-verification','/business-today','/business-control']);
-const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities','/business-leads','/business-jobs','/business-job','/business-inbox','/business-crm','/business-calendar','/business-integrations','/business-calendar-integrations','/business-automations','/business-growth']);
+const businessApplicationRoutes = new Set(['/business','/business-onboarding','/business-dashboard','/business-verification','/business-today','/business-control','/business-profile-edit','/business-upgrade']);
+const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities','/business-leads','/business-jobs','/business-job','/business-my-work','/business-operations','/business-inbox','/business-crm','/business-crm-booking','/business-crm-quote','/business-customer','/business-customers','/business-deal','/business-calendar','/business-availability','/business-integrations','/business-calendar-integrations','/business-automations','/business-dm-automation','/business-growth','/business-growth-p1','/business-payouts']);
 const adminRoutes = new Set(['/admin','/admin-operations','/driver-verification']);
 const deliveryRoutes = new Set(['/delivery','/driver-dashboard']);
 const driverApplicationRoutes = new Set(['/driver-onboarding']);

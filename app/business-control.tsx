@@ -48,18 +48,20 @@ export default function BusinessControl(){
  ];
  const operationsRows:Row[]=[
   {label:'My work',icon:'briefcase-outline',route:'/business-my-work',show:true,note:'Jobs assigned to you or your crew'},
+  {label:'All jobs',icon:'construct-outline',route:'/business-jobs',show:Boolean(business?.can_view_all_jobs),note:'Upcoming, active and completed work'},
+  {label:'Calendar',icon:'calendar-outline',route:'/business-calendar',show:Boolean(business?.can_view_crm||business?.can_view_all_jobs),note:'Schedule jobs and see availability'},
+  {label:'Everest marketplace leads',icon:'pulse-outline',route:'/business-leads',show:Boolean(business?.can_view_crm||business?.can_assign_jobs),note:'New customer work released to this business'},
   {label:'Team & operations',icon:'git-network-outline',route:'/business-operations',show:Boolean(business?.can_view_team),note:'People, crews, locations and dispatch'},
-  {label:'All jobs',icon:'construct-outline',route:'/business-jobs',show:Boolean(business?.can_view_all_jobs)},
-  {label:'CRM workspace',icon:'layers-outline',route:'/business-crm',show:Boolean(business?.can_view_crm)},
-  {label:'Growth',icon:'trending-up-outline',route:'/business-growth',show:Boolean(business?.can_manage_crm)},
-  {label:'Offers & retention',icon:'gift-outline',route:'/business-growth-p1',show:Boolean(business?.can_manage_crm)},
-  {label:'Contacts',icon:'people-outline',route:'/business-customers',show:Boolean(business?.can_view_crm)},
-  {label:'Calendar',icon:'calendar-outline',route:'/business-calendar',show:Boolean(business?.can_view_crm||business?.can_view_all_jobs)},
-  {label:'Automations',icon:'flash-outline',route:'/business-automations',show:Boolean(business?.can_manage_crm)},
-  {label:'Integrations',icon:'extension-puzzle-outline',route:'/business-integrations',show:Boolean(business?.can_manage_crm)},
-  {label:'Everest marketplace leads',icon:'pulse-outline',route:'/business-leads',show:Boolean(business?.can_view_crm||business?.can_assign_jobs)},
   {label:'Customer orders',icon:'bag-handle-outline',route:'/business-orders',show:Boolean(business?.can_view_orders)},
   {label:'Availability',icon:'radio-outline',route:'/business-availability',show:Boolean(business?.can_assign_jobs||business?.can_manage_settings)},
+ ];
+ const crmRows:Row[]=[
+  {label:'CRM workspace',icon:'layers-outline',route:'/business-crm',show:Boolean(business?.can_view_crm),note:'Deals, tasks, quotes and customer pipeline'},
+  {label:'Customers',icon:'people-outline',route:'/business-customers',show:Boolean(business?.can_view_crm)},
+  {label:'Growth',icon:'trending-up-outline',route:'/business-growth',show:Boolean(business?.can_manage_crm)},
+  {label:'Offers & retention',icon:'gift-outline',route:'/business-growth-p1',show:Boolean(business?.can_manage_crm)},
+  {label:'Automations',icon:'flash-outline',route:'/business-automations',show:Boolean(business?.can_manage_crm)},
+  {label:'Integrations',icon:'extension-puzzle-outline',route:'/business-integrations',show:Boolean(business?.can_manage_crm)},
  ];
  const moneyRows:Row[]=[
   {label:'Payments & payouts',icon:'wallet-outline',route:'/business-payouts',show:Boolean(business?.can_view_finance),note:business?.can_manage_payouts?'Owner payout controls':'Financial visibility'},
@@ -78,7 +80,8 @@ export default function BusinessControl(){
    {!verified&&business?.can_manage_settings?<View style={st.restricted}><Text style={st.restrictedTitle}>Setup in progress</Text><Text style={st.copy}>Verification is {business.verification_status.toLowerCase()}. Marketplace operations stay restricted until the business is verified.</Text><Pressable onPress={()=>router.push('/business-verification')} style={st.verify}><Text style={st.verifyText}>OPEN VERIFICATION</Text></Pressable></View>:null}
    {business?.can_view_finance&&(finance.pendingPayouts>0||finance.paidAmount>0)&&<View style={st.finance}><View style={st.sectionHead}><Text style={st.sectionLabel}>FINANCE</Text><Ionicons name="lock-closed-outline" size={15} color={colors.muted}/></View><View style={st.financeRow}>{finance.pendingPayouts>0&&<View><Text style={st.money}>${finance.pendingAmount.toFixed(2)}</Text><Text style={st.moneyLabel}>Pending payouts</Text></View>}{finance.paidAmount>0&&<View><Text style={st.money}>${finance.paidAmount.toFixed(2)}</Text><Text style={st.moneyLabel}>Recorded paid payouts</Text></View>}</View></View>}
    {(business?.can_manage_catalog||business?.can_view_orders)&&<View style={st.stats}>{business?.can_manage_catalog?<><View><Text style={st.statN}>{finance.services}</Text><Text style={st.statL}>Services</Text></View><View><Text style={st.statN}>{finance.products}</Text><Text style={st.statL}>Products</Text></View></>:null}{business?.can_view_orders?<View><Text style={st.statN}>{finance.orders}</Text><Text style={st.statL}>Orders</Text></View>:null}</View>}
-   <Section label="OPERATIONS" rows={operationsRows} verified={verified} colors={colors}/>
+   <Section label="WORK & OPERATIONS" rows={operationsRows} verified={verified} colors={colors}/>
+   {crmRows.some(x=>x.show)?<Section label="SALES & CRM" rows={crmRows} verified={verified} colors={colors}/>:null}
    {moneyRows.some(x=>x.show)?<Section label="MONEY" rows={moneyRows} verified={verified} colors={colors}/>:null}
    {publicRows.some(x=>x.show)?<Section label="PUBLIC BUSINESS" rows={publicRows} verified={verified} colors={colors}/>:null}
    <Section label="TRUST & SETTINGS" rows={trustRows} verified={verified} colors={colors}/>
