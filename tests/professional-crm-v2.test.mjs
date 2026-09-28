@@ -83,9 +83,13 @@ test('contact merge preserves dependent CRM objects and archives the secondary r
  assert.match(slice,/merged_into_id=p.id/);assert.match(slice,/CONTACT_MERGED/);assert.match(slice,/linked to different Everest users/);
 });
 
-test('business navigation is now Today, CRM, Calendar, Inbox, Business',()=>{
- for(const label of ['Today','CRM','Calendar','Inbox','Business'])assert.match(tabs,new RegExp("label:'"+label+"'"));
- assert.doesNotMatch(tabs,/label:'Leads'/);assert.doesNotMatch(tabs,/label:'Customers'/);assert.doesNotMatch(tabs,/label:'Jobs'/);
+test('business navigation prioritises work and keeps CRM secondary',()=>{
+ for(const label of ['Today','Jobs','Schedule','Inbox','Business'])assert.match(tabs,new RegExp("label:'"+label+"'"));
+ assert.doesNotMatch(tabs,/label:'CRM'/);
+ assert.match(today,/TODAY'S WORK/);
+ assert.match(today,/INCOMING WORK/);
+ assert.match(today,/SALES & CRM/);
+ assert.match(today,/Pipeline stays separate from operations/);
 });
 
 test('Customer 360 is a tabbed record instead of one giant sales-state page',()=>{

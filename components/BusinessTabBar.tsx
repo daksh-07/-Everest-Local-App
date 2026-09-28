@@ -22,10 +22,11 @@ export type BusinessActiveRoute=
 
 type IconName=keyof typeof Ionicons.glyphMap;
 type Item={route:PrimaryRoute;label:string;icon:IconName;activeIcon:IconName};
-const managementItems:ReadonlyArray<Item>=[
+
+const ownerItems:ReadonlyArray<Item>=[
  {route:'/business-today',label:'Today',icon:'today-outline',activeIcon:'today'},
- {route:'/business-crm',label:'CRM',icon:'layers-outline',activeIcon:'layers'},
- {route:'/business-calendar',label:'Calendar',icon:'calendar-outline',activeIcon:'calendar'},
+ {route:'/business-jobs',label:'Jobs',icon:'briefcase-outline',activeIcon:'briefcase'},
+ {route:'/business-calendar',label:'Schedule',icon:'calendar-outline',activeIcon:'calendar'},
  {route:'/business-inbox',label:'Inbox',icon:'chatbubbles-outline',activeIcon:'chatbubbles'},
  {route:'/business-control',label:'Business',icon:'storefront-outline',activeIcon:'storefront'},
 ];
@@ -37,21 +38,27 @@ const workItems:ReadonlyArray<Item>=[
 ];
 
 function itemsFor(business:BusinessWorkspace|null):ReadonlyArray<Item>{
- if(!business)return managementItems;
- if(isWorkforceWorkspace(business)||!business.can_view_crm){
-  if(String(business.member_role).toUpperCase()==='FINANCE')return [workItems[3]];
-  if(String(business.member_role).toUpperCase()==='READ_ONLY')return [workItems[2],workItems[3]];
-  return workItems;
- }
- return managementItems;
+ if(!business)return ownerItems;
+ const role=String(business.member_role).toUpperCase();
+ if(role==='FINANCE')return [ownerItems[4]];
+ if(role==='READ_ONLY')return [workItems[2],workItems[3]];
+ if(isWorkforceWorkspace(business))return workItems;
+ const items:Item[]=[ownerItems[0]];
+ if(business.can_view_all_jobs)items.push(ownerItems[1]);
+ if(business.can_view_all_jobs||business.can_view_crm)items.push(ownerItems[2]);
+ if(business.can_view_inbox!==false)items.push(ownerItems[3]);
+ items.push(ownerItems[4]);
+ return items;
 }
 function primaryFor(active:BusinessActiveRoute,items:ReadonlyArray<Item>):PrimaryRoute{
  const routes=new Set(items.map(x=>x.route));
- if(['/business-leads','/business-customers','/business-customer','/business-deal','/business-crm-quote','/business-crm-booking'].includes(active))return routes.has('/business-crm')?'/business-crm':'/business-control';
+ if(['/business-crm','/business-customers','/business-customer','/business-deal','/business-crm-quote','/business-crm-booking'].includes(active))return'/business-control';
+ if(active==='/business-leads')return routes.has('/business-today')?'/business-today':'/business-control';
  if(active==='/business-job')return routes.has('/business-jobs')?'/business-jobs':routes.has('/business-calendar')?'/business-calendar':'/business-my-work';
  if(active==='/business-availability'||active==='/business-orders')return'/business-control';
  if(active==='/business-operations'&&!routes.has('/business-operations'))return'/business-control';
  if(active==='/business-my-work'&&!routes.has('/business-my-work'))return routes.has('/business-today')?'/business-today':'/business-control';
+ if(!routes.has(active as PrimaryRoute))return routes.has('/business-today')?'/business-today':'/business-control';
  return active as PrimaryRoute;
 }
 
