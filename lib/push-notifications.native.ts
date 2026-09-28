@@ -88,5 +88,5 @@ export async function getInitialPushHref(){
 }
 
 export async function clearPushBadge(){
- try{await Notifications.setBadgeCountAsync(0)}catch{}
+ try{await Notifications.setBadgeCountAsync(0)}catch{return}
 }
