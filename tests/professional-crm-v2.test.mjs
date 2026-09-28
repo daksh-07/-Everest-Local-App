@@ -58,7 +58,7 @@ test('pipeline has ordered terminal stages and stage transitions are audited',()
 });
 
 test('tasks are typed, date-time based and surfaced by Today',()=>{
- assert.match(migration,/CALL','EMAIL','MESSAGE','FOLLOW_UP','APPOINTMENT','GENERAL/);assert.match(migration,/crm_create_task/);assert.match(deal,/CrmDateTimeField/);assert.match(calendar,/CrmDateTimeField/);assert.match(today,/Overdue/);assert.doesNotMatch(deal,/placeholder="YYYY|placeholder="Date/i);
+ assert.match(migration,/CALL','EMAIL','MESSAGE','FOLLOW_UP','APPOINTMENT','GENERAL/);assert.match(migration,/crm_create_task/);assert.match(deal,/CrmDateTimeField/);assert.match(calendar,/CrmDateTimeField/);assert.match(today,/overdue follow-ups/i);assert.doesNotMatch(deal,/placeholder="YYYY|placeholder="Date/i);
 });
 
 test('professional quotes calculate totals server-side and do not fake delivery',()=>{

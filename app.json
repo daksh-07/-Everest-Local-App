@@ -24,7 +24,10 @@
         "backgroundColor": "#0b0b0b",
         "monochromeImage": "./assets/notification-icon.png"
       },
-      "icon": "./assets/icon.png"
+      "icon": "./assets/icon.png",
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "bundler": "metro",

@@ -60,7 +60,7 @@ jobs:
           entitlements="$(find ios -name '*.entitlements' -type f | head -n 1)"
           test -n "$entitlements"
           /usr/libexec/PlistBuddy -c "Print :aps-environment" "$entitlements" | grep -qx "production"
-          grep -R "TARGETED_DEVICE_FAMILY = 1;" ios/*.xcodeproj/project.pbxproj >/dev/null
+          grep -E 'TARGETED_DEVICE_FAMILY = "?1"?;' ios/*.xcodeproj/project.pbxproj >/dev/null
           find ios -path '*AppIcon.appiconset*' -type f -print
           find ios -path '*AppIcon.appiconset*' -type f | grep -q .
           node -e "const p=require('./node_modules/expo-notifications/package.json'); if(!p.version.startsWith('0.32.')) process.exit(1)"
