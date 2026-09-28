@@ -49,6 +49,12 @@
         {
           "microphonePermission": "Everest Local uses your microphone only when you choose to record a voiceover or original sound."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "everest-live"
+        }
       ]
     ],
     "extra": {
