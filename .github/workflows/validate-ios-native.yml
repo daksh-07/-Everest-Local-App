@@ -53,7 +53,7 @@ jobs:
       - name: Verify App Store native configuration
         shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           test -d ios
           grep -R "com.everestlocal.app" ios >/dev/null
           grep -R "everestlocal" ios >/dev/null
@@ -61,6 +61,7 @@ jobs:
           test -n "$entitlements"
           /usr/libexec/PlistBuddy -c "Print :aps-environment" "$entitlements" | grep -qx "production"
           grep -R "TARGETED_DEVICE_FAMILY = 1;" ios/*.xcodeproj/project.pbxproj >/dev/null
+          find ios -path '*AppIcon.appiconset*' -type f -print
           find ios -path '*AppIcon.appiconset*' -type f | grep -q .
           node -e "const p=require('./node_modules/expo-notifications/package.json'); if(!p.version.startsWith('0.32.')) process.exit(1)"
           node -e "const p=require('./node_modules/expo-quick-actions/package.json'); if(p.version!=='6.0.0') process.exit(1)"
@@ -86,12 +87,13 @@ jobs:
       - name: Verify Play Store native configuration
         shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           test -d android
           grep -R "com.everestlocal.app" android/app/build.gradle android/app/src/main/AndroidManifest.xml >/dev/null
           grep -R "android.permission.POST_NOTIFICATIONS" android/app/src/main/AndroidManifest.xml >/dev/null
           test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          find android/app/src/main/res -maxdepth 3 -type f | sort
           find android/app/src/main/res -iname '*notification*' -type f | grep -q .
       - name: Compile release Android App Bundle
         working-directory: android
