@@ -90,7 +90,6 @@ jobs:
           set -euxo pipefail
           test -d android
           grep -R "com.everestlocal.app" android/app/build.gradle android/app/src/main/AndroidManifest.xml >/dev/null
-          grep -R "android.permission.POST_NOTIFICATIONS" android/app/src/main/AndroidManifest.xml >/dev/null
           test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
           find android/app/src/main/res -maxdepth 3 -type f | sort
@@ -98,5 +97,12 @@ jobs:
       - name: Compile release Android App Bundle
         working-directory: android
         run: ./gradlew :app:bundleRelease --no-daemon --stacktrace
-      - name: Verify AAB output
-        run: test -f android/app/build/outputs/bundle/release/app-release.aab
+      - name: Verify merged Play manifest and AAB
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test -f android/app/build/outputs/bundle/release/app-release.aab
+          merged_manifest="$(find android/app/build/intermediates -path '*release*' -name AndroidManifest.xml -type f | while read -r file; do grep -q 'android.permission.POST_NOTIFICATIONS' "$file" && { echo "$file"; break; }; done)"
+          test -n "$merged_manifest"
+          grep -q 'android.permission.POST_NOTIFICATIONS' "$merged_manifest"
+          grep -q 'com.everestlocal.app' "$merged_manifest"

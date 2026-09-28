@@ -38,7 +38,7 @@ test('duplicate detection warns and does not silently merge',()=>{
 test('Customer 360 is tabbed and separates contacts from sales objects',()=>{
  assert.match(customer,/CUSTOMER 360/);for(const label of ['OVERVIEW','TIMELINE','DEALS','QUOTES','BOOKINGS','PAYMENTS','NOTES','TASKS'])assert.match(customer,new RegExp(label));
  assert.match(customer,/listCrmOpportunities/);assert.match(customer,/listCrmQuotes/);assert.match(customer,/listCrmBookings/);assert.match(customer,/crm_notes/);assert.match(customer,/from\('bookings'\).*customer_id/s);assert.match(customer,/from\('quotes'\).*customer_id/s);
- assert.match(tab,/CRM/);assert.match(tab,/Calendar/);
+ assert.match(tab,/label:'Jobs'/);assert.match(tab,/label:'Schedule'/);assert.doesNotMatch(tab,/label:'CRM'/);
 });
 
 test('verified completed-work provenance cannot be directly forged by authenticated clients',()=>{
