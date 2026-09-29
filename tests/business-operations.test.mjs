@@ -91,6 +91,16 @@ test('worker job transitions are constrained and synchronize authoritative booki
  assert.match(migration,/update public\.crm_bookings set status='COMPLETED'/);
 });
 
+test('employee work completion cannot bypass authoritative marketplace payment guards',()=>{
+ const hardening=read('supabase/migrations/20260930084000_restore_paid_order_and_job_integrity.sql');
+ const start=hardening.indexOf('create or replace function public.update_business_job_assignment_status');
+ const slice=hardening.slice(start);
+ assert.match(slice,/perform public\.update_booking_status\(a\.booking_id,'UPCOMING'\)/);
+ assert.match(slice,/perform public\.update_booking_status\(a\.booking_id,'IN_PROGRESS'\)/);
+ assert.match(slice,/perform public\.update_booking_status\(a\.booking_id,'COMPLETED'\)/);
+ assert.doesNotMatch(slice,/update public\.bookings set status='COMPLETED'/);
+});
+
 test('Everest Live provider acceptance bridges into the employee work queue',()=>{
  assert.match(migration,/function private\.sync_service_dispatch_business_assignment/);
  assert.match(migration,/service_dispatch_business_assignment_sync/);
