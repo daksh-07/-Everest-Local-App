@@ -43,6 +43,17 @@ test('latest booking lifecycle keeps Stripe authoritative and paid cancellations
  assert.match(guard,/Paid Everest bookings require support cancellation/);
 });
 
+test('paid booking lifecycle blocks stale checkout cancellation and unverified business mutation',()=>{
+ const guard=fs.readFileSync('supabase/migrations/20260929135000_harden_paid_booking_cancellation_race.sql','utf8');
+ assert.match(guard,/can_operate_business_booking/);
+ assert.match(guard,/biz\.status='ACTIVE' and biz\.verification_status='VERIFIED'/);
+ assert.match(guard,/provider_checkout_session_id/);
+ assert.match(guard,/sp\.status='PENDING'/);
+ assert.match(guard,/A payment checkout is still open/);
+ assert.match(guard,/p_next='CANCELLED'[\s\S]*paid>0/);
+ assert.match(guard,/p_next='COMPLETED' and balance_due>0/);
+});
+
 test('marketplace booking cannot complete with unpaid Everest balance',()=>{
  assert.match(migration,/p_next='COMPLETED' and balance_due>0/);
  assert.match(migration,/Outstanding Everest balance must be paid/);
