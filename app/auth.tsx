@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { AuthRolePicker } from '@/components/AuthRolePicker';
+import {useReducedMotion} from '@/lib/motion';
 import {consumePendingQuickActionRoute} from '@/lib/quick-actions';
 
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
@@ -202,7 +203,7 @@ async function routeAfterAuth(selectedIntent: AuthIntent) {
   if(Platform.OS==='web'&&typeof window!=='undefined'){
     const returnTo=window.localStorage.getItem('everest-auth-return-to');
     if(returnTo)window.localStorage.removeItem('everest-auth-return-to');
-    if(returnTo?.startsWith('/')){router.replace(returnTo as never);return}
+    if(returnTo?.startsWith('/')&&!returnTo.startsWith('//')&&!returnTo.includes('\\')){router.replace(returnTo as never);return}
   }
   const pending=await consumePendingQuickActionRoute();
   if(pending){router.replace(pending as never);return}
@@ -211,6 +212,7 @@ async function routeAfterAuth(selectedIntent: AuthIntent) {
 }
 
 export default function Auth() {
+  const reduced=useReducedMotion();
   const [mode, setMode] = useState<Mode>('login');
   const [intent, setIntent] = useState<AuthIntent | null>('CUSTOMER');
   const [name, setName] = useState('');
@@ -228,11 +230,12 @@ export default function Auth() {
   const entryY = useRef(new Animated.Value(12)).current;
 
   useEffect(() => {
-    Animated.parallel([
+    if(reduced){entryOpacity.setValue(1);entryY.setValue(0);return;}
+    const animation=Animated.parallel([
       Animated.timing(entryOpacity, { toValue: 1, duration: 360, useNativeDriver: true }),
       Animated.timing(entryY, { toValue: 0, duration: 360, useNativeDriver: true }),
-    ]).start();
-  }, [entryOpacity, entryY]);
+    ]);animation.start();return()=>animation.stop();
+  }, [entryOpacity, entryY, reduced]);
 
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
@@ -323,6 +326,7 @@ export default function Auth() {
   }, []);
 
   async function submit() {
+    if(busy||socialBusy)return;
     setError('');
     setNotice('');
     setBusy(true);
@@ -615,7 +619,7 @@ const s = StyleSheet.create({
   },
   brandTagline: {
     color: '#77736c',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     letterSpacing: 0.15,
   },
@@ -693,7 +697,7 @@ const s = StyleSheet.create({
   },
   socialNote: {
     color: '#8a8780',
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 17,
     textAlign: 'center',
     marginBottom: 23,
@@ -711,7 +715,7 @@ const s = StyleSheet.create({
   },
   or: {
     color: '#8b8881',
-    fontSize: 8,
+    fontSize: 12,
     fontWeight: '900',
     letterSpacing: 1,
   },
@@ -776,8 +780,8 @@ const s = StyleSheet.create({
   error: {
     flex: 1,
     color: '#8f2c25',
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
   },
   noticeBox: {
     minHeight: 42,
@@ -815,7 +819,7 @@ const s = StyleSheet.create({
   },
   primaryText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '900',
     letterSpacing: 0.9,
   },
@@ -833,7 +837,7 @@ const s = StyleSheet.create({
   },
   bottomLabel: {
     color: '#77736c',
-    fontSize: 12,
+    fontSize: 14,
   },
   bottomAction: {
     color: '#151515',
@@ -843,7 +847,7 @@ const s = StyleSheet.create({
   roleRequired: { color: '#77736c', fontSize: 12, lineHeight: 18, marginBottom: 10, textAlign: 'center' },
   footer: {
     color: '#aaa69e',
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1.3,
     textAlign: 'center',

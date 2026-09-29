@@ -112,7 +112,7 @@ function HistoryRow({
           </View>
           <View style={{flex:1}}>
             <Text numberOfLines={1} style={{fontSize:13,fontWeight:'800',color:c.text}}>{item.query}</Text>
-            <Text style={{fontSize:10,color:c.muted,marginTop:3}}>
+            <Text style={{fontSize:12,color:c.muted,marginTop:3}}>
               {historyLabel(item.tab)} · {formatHistoryTime(item.createdAt)}
             </Text>
           </View>
@@ -327,7 +327,7 @@ export default function Search(){
       >
         <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
           <View>
-            <Text style={{fontSize:10,fontWeight:'900',letterSpacing:2,color:c.muted}}>EVEREST LOCAL</Text>
+            <Text style={{fontSize:12,fontWeight:'900',letterSpacing:2,color:c.muted}}>EVEREST LOCAL</Text>
             <Text style={{fontSize:30,fontWeight:'900',color:c.text,marginTop:4}}>Search</Text>
           </View>
           <Pressable
@@ -376,7 +376,7 @@ export default function Search(){
                 backgroundColor:tab===x?c.brand:c.surface,
               }}
             >
-              <Text style={{fontSize:9,fontWeight:'900',color:tab===x?c.onBrand:c.text}}>{labels[x]}</Text>
+              <Text style={{fontSize:12,fontWeight:'900',color:tab===x?c.onBrand:c.text}}>{labels[x]}</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -388,7 +388,7 @@ export default function Search(){
               style={{height:42,paddingHorizontal:14,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
             >
               <Ionicons name="options-outline" size={16} color={c.text}/>
-              <Text style={{fontSize:9,fontWeight:'900',color:c.text}}>FILTER</Text>
+              <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>FILTER</Text>
               {photoOnly||sortMode!=='RELEVANCE'?<View style={{width:6,height:6,borderRadius:3,backgroundColor:c.brand}}/>:null}
             </Pressable>
             <Pressable
@@ -397,13 +397,13 @@ export default function Search(){
               style={{flex:1,height:42,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
             >
               <Ionicons name="bookmark-outline" size={16} color={c.text}/>
-              <Text style={{fontSize:9,fontWeight:'900',color:c.text}}>{savingSearch?'SAVING…':'SAVE THIS SEARCH'}</Text>
+              <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>{savingSearch?'SAVING…':'SAVE THIS SEARCH'}</Text>
             </Pressable>
           </View>
         ):null}
 
         {q.trim()&&tab==='PERSON'?(
-          <Text style={{fontSize:10,lineHeight:15,color:c.muted,marginTop:10,marginBottom:8}}>
+          <Text style={{fontSize:12,lineHeight:17,color:c.muted,marginTop:10,marginBottom:8}}>
             People only appear when their searchable profile matches your query.
           </Text>
         ):null}
@@ -413,11 +413,11 @@ export default function Search(){
             <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:12,marginBottom:10}}>
               <View>
                 <Text style={{fontSize:17,fontWeight:'900',color:c.text}}>Recent searches</Text>
-                <Text style={{fontSize:11,color:c.muted,marginTop:2}}>Up to 15 searches · swipe left to remove</Text>
+                <Text style={{fontSize:12,color:c.muted,marginTop:2}}>Up to 15 searches · swipe left to remove</Text>
               </View>
               {history.length?(
                 <Pressable onPress={()=>setManageHistory(value=>!value)} hitSlop={8}>
-                  <Text style={{fontSize:11,fontWeight:'800',color:c.text}}>{manageHistory?'Done':'Manage'}</Text>
+                  <Text style={{fontSize:12,fontWeight:'800',color:c.text}}>{manageHistory?'Done':'Manage'}</Text>
                 </Pressable>
               ):null}
             </View>
@@ -459,11 +459,11 @@ export default function Search(){
               </View>
               <View style={{flex:1}}>
                 <Text numberOfLines={2} style={{fontSize:14,fontWeight:'900',color:c.text}}>{job.description}</Text>
-                <Text style={{fontSize:11,lineHeight:16,color:c.muted,marginTop:3}}>
+                <Text style={{fontSize:12,lineHeight:17,color:c.muted,marginTop:3}}>
                   {[job.suburb,job.city,job.state].filter(Boolean).join(', ')||'Local job'}
                   {job.budget!=null?' · Budget $'+Number(job.budget).toFixed(0):''}
                 </Text>
-                <Text style={{fontSize:9,fontWeight:'900',color:c.brand,marginTop:5}}>JOB</Text>
+                <Text style={{fontSize:12,fontWeight:'900',color:c.brand,marginTop:5}}>JOB</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.muted}/>
             </Pressable>
@@ -489,8 +489,8 @@ export default function Search(){
               )}
               <View style={{flex:1}}>
                 <Text style={{fontSize:14,fontWeight:'900',color:c.text}}>{x.title}</Text>
-                <Text numberOfLines={2} style={{fontSize:11,lineHeight:16,color:c.muted,marginTop:3}}>{x.subtitle}</Text>
-                <Text style={{fontSize:9,fontWeight:'900',color:c.brand,marginTop:5}}>{x.kind==='PERSON'?'PERSON':x.kind}</Text>
+                <Text numberOfLines={2} style={{fontSize:12,lineHeight:17,color:c.muted,marginTop:3}}>{x.subtitle}</Text>
+                <Text style={{fontSize:12,fontWeight:'900',color:c.brand,marginTop:5}}>{x.kind==='PERSON'?'PERSON':x.kind}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.muted}/>
             </Pressable>
@@ -514,7 +514,7 @@ export default function Search(){
             </View>
             <View style={{flex:1}}>
               <Text style={{fontSize:13,fontWeight:'900',color:c.text}}>Can’t find what you’re looking for?</Text>
-              <Text style={{fontSize:11,color:c.muted,marginTop:3}}>Search businesses outside Everest</Text>
+              <Text style={{fontSize:12,color:c.muted,marginTop:3}}>Search businesses outside Everest</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={c.muted}/>
           </Pressable>
@@ -546,7 +546,7 @@ export default function Search(){
                 </View>
                 <View style={{flex:1,marginLeft:11}}>
                   <Text style={{fontSize:13,fontWeight:'800',color:c.text}}>{item.title}</Text>
-                  <Text style={{fontSize:10,color:c.muted,marginTop:2}}>{item.subtitle}</Text>
+                  <Text style={{fontSize:12,color:c.muted,marginTop:2}}>{item.subtitle}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={17} color={c.muted}/>
               </Pressable>
@@ -562,7 +562,7 @@ export default function Search(){
               </View>
               <View style={{flex:1,marginLeft:11}}>
                 <Text style={{fontSize:13,fontWeight:'800',color:c.danger}}>Delete all history</Text>
-                <Text style={{fontSize:10,color:c.muted,marginTop:2}}>Clear all recent searches on this device</Text>
+                <Text style={{fontSize:12,color:c.muted,marginTop:2}}>Clear all recent searches on this device</Text>
               </View>
             </Pressable>
           </Pressable>
@@ -579,10 +579,10 @@ export default function Search(){
             <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
               <View>
                 <Text style={{fontSize:19,fontWeight:'900',color:c.text}}>Filter search</Text>
-                <Text style={{fontSize:11,color:c.muted,marginTop:3}}>Narrow results without losing your query</Text>
+                <Text style={{fontSize:12,color:c.muted,marginTop:3}}>Narrow results without losing your query</Text>
               </View>
               <Pressable onPress={()=>{setPhotoOnly(false);setSortMode('RELEVANCE');setTab('TOP')}}>
-                <Text style={{fontSize:11,fontWeight:'800',color:c.text}}>Reset</Text>
+                <Text style={{fontSize:12,fontWeight:'800',color:c.text}}>Reset</Text>
               </Pressable>
             </View>
 
@@ -594,7 +594,7 @@ export default function Search(){
                   onPress={()=>setTab(x)}
                   style={{paddingHorizontal:12,paddingVertical:9,borderRadius:12,borderWidth:1,borderColor:tab===x?c.brand:c.border,backgroundColor:tab===x?c.brand:c.input}}
                 >
-                  <Text style={{fontSize:10,fontWeight:'900',color:tab===x?c.onBrand:c.text}}>{labels[x]}</Text>
+                  <Text style={{fontSize:12,fontWeight:'900',color:tab===x?c.onBrand:c.text}}>{labels[x]}</Text>
                 </Pressable>
               ))}
             </View>
@@ -610,7 +610,7 @@ export default function Search(){
               </View>
               <View style={{flex:1,marginLeft:11}}>
                 <Text style={{fontSize:13,fontWeight:'800',color:c.text}}>Only results with a photo or logo</Text>
-                <Text style={{fontSize:10,color:c.muted,marginTop:2}}>Useful for quickly finding established profiles</Text>
+                <Text style={{fontSize:12,color:c.muted,marginTop:2}}>Useful for quickly finding established profiles</Text>
               </View>
               <Ionicons name={photoOnly?'checkmark-circle':'ellipse-outline'} size={22} color={photoOnly?c.brand:c.muted}/>
             </Pressable>
@@ -627,7 +627,7 @@ export default function Search(){
                   onPress={()=>setSortMode(value)}
                   style={{flex:1,minHeight:48,borderRadius:14,borderWidth:1,borderColor:sortMode===value?c.brand:c.border,backgroundColor:sortMode===value?c.soft:c.input,alignItems:'center',justifyContent:'center',opacity:tab==='JOB'?0.45:1}}
                 >
-                  <Text style={{fontSize:11,fontWeight:'800',color:c.text}}>{label}</Text>
+                  <Text style={{fontSize:12,fontWeight:'800',color:c.text}}>{label}</Text>
                 </Pressable>
               ))}
             </View>

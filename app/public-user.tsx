@@ -337,17 +337,17 @@ export default function PublicUser(){
                   >
                     <View style={{alignItems:'center',minWidth:90}}>
                       <Text style={{fontSize:20,fontWeight:'900',color:c.text}}>{p.connection_count}</Text>
-                      <Text style={{fontSize:11,fontWeight:'700',color:c.muted,marginTop:2}}>Connections</Text>
+                      <Text style={{fontSize:12,fontWeight:'700',color:c.muted,marginTop:2}}>Connections</Text>
                     </View>
                     <View style={{width:1,height:32,backgroundColor:c.border}}/>
                     <View style={{alignItems:'center',minWidth:90}}>
                       <Text style={{fontSize:20,fontWeight:'900',color:c.text}}>{p.mutual_count}</Text>
-                      <Text style={{fontSize:11,fontWeight:'700',color:c.muted,marginTop:2}}>Mutual</Text>
+                      <Text style={{fontSize:12,fontWeight:'700',color:c.muted,marginTop:2}}>Mutual</Text>
                     </View>
                     <View style={{width:1,height:32,backgroundColor:c.border}}/>
                     <View style={{alignItems:'center',minWidth:90}}>
                       <Text style={{fontSize:20,fontWeight:'900',color:c.text}}>{posts.length}</Text>
-                      <Text style={{fontSize:11,fontWeight:'700',color:c.muted,marginTop:2}}>Posts</Text>
+                      <Text style={{fontSize:12,fontWeight:'700',color:c.muted,marginTop:2}}>Posts</Text>
                     </View>
                   </Pressable>
 
@@ -408,7 +408,7 @@ export default function PublicUser(){
                 <View style={{paddingHorizontal:20,marginTop:22}}>
                   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:11}}>
                     <Text style={{fontSize:17,fontWeight:'900',color:c.text}}>Highlights</Text>
-                    <Text style={{fontSize:10,color:c.muted}}>{highlights.length}</Text>
+                    <Text style={{fontSize:12,color:c.muted}}>{highlights.length}</Text>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:12,paddingRight:12}}>
                     {highlights.map(item=>(
@@ -416,7 +416,7 @@ export default function PublicUser(){
                         <View style={{width:64,height:64,borderRadius:32,borderWidth:2,borderColor:c.accent,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',overflow:'hidden',padding:2}}>
                           {item.coverUrl?<Image source={{uri:item.coverUrl}} style={{width:56,height:56,borderRadius:28}}/>:<Ionicons name="sparkles-outline" size={21} color={c.accent}/>}
                         </View>
-                        <Text numberOfLines={2} style={{fontSize:10,fontWeight:'800',color:c.text,textAlign:'center',marginTop:6}}>{item.title}</Text>
+                        <Text numberOfLines={2} style={{fontSize:12,fontWeight:'800',color:c.text,textAlign:'center',marginTop:6}}>{item.title}</Text>
                       </Pressable>
                     ))}
                   </ScrollView>
@@ -438,7 +438,7 @@ export default function PublicUser(){
                     <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
                       <View>
                         <Text style={{fontSize:15,fontWeight:'900',color:c.text}}>Send a message</Text>
-                        <Text style={{fontSize:11,color:c.muted,marginTop:2}}>Start a private conversation</Text>
+                        <Text style={{fontSize:12,color:c.muted,marginTop:2}}>Start a private conversation</Text>
                       </View>
                       <View style={{width:34,height:34,borderRadius:17,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}>
                         <Ionicons name="paper-plane-outline" size={17} color={c.text}/>
@@ -467,7 +467,7 @@ export default function PublicUser(){
                         }}
                       />
                       <View style={{paddingHorizontal:10,paddingBottom:10,flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-                        <Text style={{fontSize:10,color:c.muted}}>{message.length}/5000</Text>
+                        <Text style={{fontSize:12,color:c.muted}}>{message.length}/5000</Text>
                         <Pressable
                           disabled={busy||!message.trim()}
                           onPress={()=>void send()}
@@ -483,7 +483,7 @@ export default function PublicUser(){
                             opacity:busy||!message.trim()?0.42:pressed?0.84:1,
                           })}
                         >
-                          <Text style={{fontSize:11,fontWeight:'900',color:c.onBrand}}>Send</Text>
+                          <Text style={{fontSize:12,fontWeight:'900',color:c.onBrand}}>Send</Text>
                           <Ionicons name="arrow-up" size={15} color={c.onBrand}/>
                         </Pressable>
                       </View>
@@ -500,7 +500,7 @@ export default function PublicUser(){
                   </View>
                   {posts.length?(
                     <View style={{paddingHorizontal:9,paddingVertical:5,borderRadius:999,backgroundColor:c.soft}}>
-                      <Text style={{fontSize:11,fontWeight:'800',color:c.textSecondary}}>{posts.length}</Text>
+                      <Text style={{fontSize:12,fontWeight:'800',color:c.textSecondary}}>{posts.length}</Text>
                     </View>
                   ):null}
                 </View>
@@ -529,12 +529,12 @@ export default function PublicUser(){
                         <Text numberOfLines={1} style={{fontSize:13,fontWeight:'900',color:c.text}}>
                           {p.display_name??'Everest member'}
                         </Text>
-                        <Text style={{fontSize:10,color:c.muted,marginTop:2}}>
+                        <Text style={{fontSize:12,color:c.muted,marginTop:2}}>
                           {new Date(item.created_at).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}
                         </Text>
                       </View>
                       <View style={{paddingHorizontal:9,paddingVertical:6,borderRadius:999,backgroundColor:c.soft}}>
-                        <Text style={{fontSize:9,fontWeight:'900',color:c.textSecondary}}>{postTypeLabel(item.post_type)}</Text>
+                        <Text style={{fontSize:12,fontWeight:'900',color:c.textSecondary}}>{postTypeLabel(item.post_type)}</Text>
                       </View>
                     </View>
 
@@ -542,7 +542,7 @@ export default function PublicUser(){
                       {item.caption||postTypeLabel(item.post_type)}
                     </Text>
 
-                    {postMedia[item.id]?.[0]?<View style={{marginTop:14,borderRadius:16,overflow:'hidden'}}><PostMediaImage postId={item.id} uri={postMedia[item.id][0]} style={{width:'100%',height:260,backgroundColor:c.soft}}/>{postMedia[item.id].length>1?<View style={{position:'absolute',right:10,top:10,paddingHorizontal:8,paddingVertical:4,borderRadius:12,backgroundColor:'rgba(0,0,0,.6)'}}><Text style={{fontSize:9,fontWeight:'900',color:'#fff'}}>1/{postMedia[item.id].length}</Text></View>:null}</View>:Array.isArray(item.post_media)&&item.post_media.length>0?<Pressable onPress={()=>void signedPostMediaBatch([item.id],{force:true,strict:true}).then(urls=>setPostMedia(current=>({...current,...urls}))).catch(()=>setError('This post photo is still unavailable. Please try again.'))} style={{marginTop:14,borderRadius:16,backgroundColor:c.input,minHeight:92,alignItems:'center',justifyContent:'center',padding:16}}><Ionicons name="image-outline" size={22} color={c.muted}/><Text style={{fontSize:11,color:c.muted,marginTop:7}}>Photo unavailable · tap to retry</Text></Pressable>:null}
+                    {postMedia[item.id]?.[0]?<View style={{marginTop:14,borderRadius:16,overflow:'hidden'}}><PostMediaImage postId={item.id} uri={postMedia[item.id][0]} style={{width:'100%',height:260,backgroundColor:c.soft}}/>{postMedia[item.id].length>1?<View style={{position:'absolute',right:10,top:10,paddingHorizontal:8,paddingVertical:4,borderRadius:12,backgroundColor:'rgba(0,0,0,.6)'}}><Text style={{fontSize:12,fontWeight:'900',color:'#fff'}}>1/{postMedia[item.id].length}</Text></View>:null}</View>:Array.isArray(item.post_media)&&item.post_media.length>0?<Pressable onPress={()=>void signedPostMediaBatch([item.id],{force:true,strict:true}).then(urls=>setPostMedia(current=>({...current,...urls}))).catch(()=>setError('This post photo is still unavailable. Please try again.'))} style={{marginTop:14,borderRadius:16,backgroundColor:c.input,minHeight:92,alignItems:'center',justifyContent:'center',padding:16}}><Ionicons name="image-outline" size={22} color={c.muted}/><Text style={{fontSize:12,color:c.muted,marginTop:7}}>Photo unavailable · tap to retry</Text></Pressable>:null}
 
                     {index<posts.length-1?null:null}
                   </View>
@@ -616,7 +616,7 @@ export default function PublicUser(){
               </View>
               <View style={{flex:1,marginLeft:11}}>
                 <Text style={{fontSize:13,fontWeight:'800',color:c.text}}>Report profile</Text>
-                <Text style={{fontSize:10,color:c.muted,marginTop:2}}>Send this account to Everest for review</Text>
+                <Text style={{fontSize:12,color:c.muted,marginTop:2}}>Send this account to Everest for review</Text>
               </View>
               <Ionicons name="chevron-forward" size={17} color={c.muted}/>
             </Pressable>
@@ -637,7 +637,7 @@ export default function PublicUser(){
               </View>
               <View style={{flex:1,marginLeft:11}}>
                 <Text style={{fontSize:13,fontWeight:'800',color:c.danger}}>Block user</Text>
-                <Text style={{fontSize:10,color:c.muted,marginTop:2}}>Stop connections and messages from this person</Text>
+                <Text style={{fontSize:12,color:c.muted,marginTop:2}}>Stop connections and messages from this person</Text>
               </View>
               <Ionicons name="chevron-forward" size={17} color={c.muted}/>
             </Pressable>

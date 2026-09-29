@@ -58,7 +58,7 @@ test('customer sees real counts, realtime changes and reconnect recovery',()=>{
  assert.match(screen,/Promise\.allSettled/);
  assert.match(screen,/RefreshControl/);
  assert.match(screen,/refreshInFlight/);
- assert.match(screen,/RECONNECTING/);
+ assert.match(screen,/Reconnecting/);
  assert.match(screen,/AppState\.currentState==='active'/);
 });
 
@@ -81,7 +81,7 @@ test('Live search visibly animates while preserving real map data',()=>{
  assert.match(screen,/LiveSearchingOverlay/);
  assert.match(screen,/Animated\.loop/);
  assert.match(screen,/ActivityIndicator/);
- assert.match(screen,/Scanning nearby businesses/);
+ assert.match(screen,/presentation\.label/);
  assert.match(nativeMap,/Ionicons name="navigate"/);
  assert.match(nativeMap,/Circle center=/);
  assert.doesNotMatch(screen,/Math\.random|simulated provider|fake marker/i);

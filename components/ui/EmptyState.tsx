@@ -18,7 +18,7 @@ export function EmptyState({icon,title,description,actionLabel,onAction}:{icon:I
 const styles=StyleSheet.create({
   wrap:{paddingVertical:42,paddingHorizontal:20,alignItems:'center'},
   icon:{width:58,height:58,borderRadius:20,alignItems:'center',justifyContent:'center',marginBottom:14},
-  title:{fontSize:17,lineHeight:22,fontWeight:'900',textAlign:'center'},
-  copy:{maxWidth:360,fontSize:13,lineHeight:20,textAlign:'center',marginTop:7},
+  title:{fontSize:20,lineHeight:26,fontWeight:'700',textAlign:'center'},
+  copy:{maxWidth:360,fontSize:15,lineHeight:22,textAlign:'center',marginTop:7},
   action:{marginTop:18},
 });

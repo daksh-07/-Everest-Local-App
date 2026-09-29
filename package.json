@@ -35,7 +35,8 @@
     "postinstall": "node scripts/prepare-legacy-migration-aliases.mjs",
     "test:push-notifications": "node --test tests/push-notifications.test.mjs",
     "test:native-store": "node --test tests/native-store-release.test.mjs",
-    "eas-build-pre-install": "node scripts/validate-store-build-env.mjs"
+    "eas-build-pre-install": "node scripts/validate-store-build-env.mjs",
+    "test:ui-release": "node --experimental-strip-types --test tests/final-launch-ux.test.mjs tests/customer-pager-regression.test.mjs tests/provider-availability-security.test.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

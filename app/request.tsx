@@ -1270,7 +1270,7 @@ function Chip({
         justifyContent: "center",
       }}
     >
-      <Text style={{ fontSize: 10, fontWeight: "900", color: colors.text }}>
+      <Text style={{ fontSize: 12, fontWeight: "900", color: colors.text }}>
         {text}
       </Text>
     </Pressable>
@@ -1304,7 +1304,7 @@ function Review({
       <View style={{ flex: 1 }}>
         <Text
           style={{
-            fontSize: 9,
+            fontSize: 12,
             fontWeight: "900",
             letterSpacing: 1,
             color: colors.muted,
@@ -1324,7 +1324,7 @@ function Review({
           {value}
         </Text>
       </View>
-      <Text style={{ fontSize: 10, fontWeight: "900", color: colors.brand }}>
+      <Text style={{ fontSize: 12, fontWeight: "900", color: colors.brand }}>
         EDIT
       </Text>
     </Pressable>
@@ -1375,7 +1375,7 @@ const styles = (c: ThemeColors) =>
       marginTop: 10,
       marginBottom: 6,
     },
-    stepLabel: { fontSize: 11, fontWeight: "700" },
+    stepLabel: { fontSize: 14, fontWeight: "700" },
     top: {
       flexDirection: "row",
       alignItems: "center",
@@ -1404,7 +1404,7 @@ const styles = (c: ThemeColors) =>
       marginTop: 16,
     },
     eyebrow: {
-      fontSize: 8,
+      fontSize: 12,
       fontWeight: "900",
       letterSpacing: 1.2,
       color: c.muted,
@@ -1449,7 +1449,7 @@ const styles = (c: ThemeColors) =>
       marginTop: 20,
       marginBottom: 10,
     },
-    optional: { fontSize: 11, fontWeight: "600", color: c.muted },
+    optional: { fontSize: 12, fontWeight: "600", color: c.muted },
     locationCard: {
       borderWidth: 1,
       borderColor: c.border,
@@ -1462,8 +1462,8 @@ const styles = (c: ThemeColors) =>
     },
     locationName: { fontSize: 15, lineHeight: 20, fontWeight: "900", color: c.text },
     locationPrivacy:{marginTop:10,borderRadius:14,backgroundColor:c.soft,padding:12,flexDirection:"row",gap:8,alignItems:"flex-start"},
-    locationPrivacyText:{flex:1,fontSize:10,lineHeight:16,color:c.textSecondary},
-    meta: { fontSize: 11, lineHeight: 17, color: c.muted, marginTop: 3 },
+    locationPrivacyText:{flex:1,fontSize:12,lineHeight:17,color:c.textSecondary},
+    meta: { fontSize: 12, lineHeight: 17, color: c.muted, marginTop: 3 },
     row: { flexDirection: "column", gap: 9, marginTop: 9 },
     primarySmall: {
       minHeight: 46,
@@ -1487,7 +1487,7 @@ const styles = (c: ThemeColors) =>
       flex: 1,
     },
     or: {
-      fontSize: 8,
+      fontSize: 12,
       fontWeight: "900",
       letterSpacing: 1,
       color: c.muted,
@@ -1506,14 +1506,14 @@ const styles = (c: ThemeColors) =>
       marginTop: 11,
       paddingHorizontal: 14,
     },
-    outlineText: { fontSize: 11, fontWeight: "900", color: c.text },
+    outlineText: { fontSize: 12, fontWeight: "900", color: c.text },
     textButton: {
       alignSelf: "flex-start",
       minHeight: 44,
       justifyContent: "center",
       paddingVertical: 10,
     },
-    textButtonText: { fontSize: 10, fontWeight: "900", color: c.brand },
+    textButtonText: { fontSize: 14, fontWeight: "900", color: c.brand },
     remote: {
       borderWidth: 1,
       borderColor: c.border,
@@ -1574,7 +1574,7 @@ const styles = (c: ThemeColors) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    error: { fontSize: 12, lineHeight: 18, color: c.danger, marginTop: 13 },
+    error: { fontSize: 14, lineHeight: 20, color: c.danger, marginTop: 13 },
     footer: {
       flexDirection: "row",
       paddingHorizontal: 22,
@@ -1596,7 +1596,7 @@ const styles = (c: ThemeColors) =>
       paddingHorizontal: 18,
     },
     primaryText: {
-      fontSize: 12,
+      fontSize: 14,
       fontWeight: "900",
       letterSpacing: 0.6,
       color: c.onBrand,

@@ -44,14 +44,14 @@ export function AppButton({
     ]}
   >
     {busy?<ActivityIndicator size="small" color={palette.text}/>:icon?<Ionicons name={icon} size={18} color={palette.text}/>:null}
-    <Text numberOfLines={1} style={[styles.label,{color:palette.text}]}>{label}</Text>
+    <Text style={[styles.label,{color:palette.text}]}>{label}</Text>
   </Pressable>;
 }
 
 const styles=StyleSheet.create({
-  base:{minHeight:48,borderRadius:14,borderWidth:1,paddingHorizontal:18,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8},
+  base:{minHeight:48,borderRadius:14,borderWidth:1,paddingHorizontal:18,paddingVertical:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8},
   full:{width:'100%'},
-  label:{fontSize:12,lineHeight:16,fontWeight:'900',letterSpacing:.25},
+  label:{flexShrink:1,textAlign:'center',fontSize:15,lineHeight:21,fontWeight:'700'},
   disabled:{opacity:.46},
   pressed:{opacity:.78,transform:[{scale:.985}]},
 });

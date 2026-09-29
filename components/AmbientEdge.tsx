@@ -29,15 +29,11 @@ export function AmbientEdge({
   if(reduced)return;
   const sweep=Animated.timing(progress,{
    toValue:1,
-   duration:continuous?7800:9200,
+   duration:continuous?7800:1800,
    easing:Easing.linear,
    useNativeDriver:true,
   });
-  const loop=Animated.loop(
-   continuous
-    ? sweep
-    : Animated.sequence([Animated.delay(1300),sweep,Animated.delay(1300)])
-  );
+  const loop=continuous?Animated.loop(sweep):Animated.sequence([Animated.delay(300),sweep]);
   loop.start();
   return()=>loop.stop();
  },[continuous,progress,reduced]);

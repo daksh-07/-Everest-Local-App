@@ -453,7 +453,7 @@ const createStyles = (c: ThemeColors) =>
     brandTitle: { color: c.text, fontSize: 15, fontWeight: '800', letterSpacing: -0.2 },
     statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
     statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: c.brand },
-    statusText: { color: c.muted, fontSize: 10.5, fontWeight: '600' },
+    statusText: { color: c.muted, fontSize: 12, fontWeight: '600' },
 
     scrollContent: { paddingHorizontal: 18, paddingTop: 18, paddingBottom: 150 },
     emptyScroll: { flexGrow: 1, justifyContent: 'center' },
@@ -492,7 +492,7 @@ const createStyles = (c: ThemeColors) =>
     eyebrow: {
       textAlign: 'center',
       color: c.brand,
-      fontSize: 9.5,
+      fontSize: 12,
       fontWeight: '900',
       letterSpacing: 1.8,
       marginBottom: 10,
@@ -532,7 +532,7 @@ const createStyles = (c: ThemeColors) =>
       borderWidth: 1,
       borderColor: c.border,
     },
-    capabilityText: { color: c.textSecondary, fontSize: 11, fontWeight: '700' },
+    capabilityText: { color: c.textSecondary, fontSize: 12, fontWeight: '700' },
 
     starterGrid: {
       flexDirection: 'row',
@@ -594,7 +594,7 @@ const createStyles = (c: ThemeColors) =>
     assistantBubble: { flex: 1, maxWidth: '91%', paddingTop: 1 },
     assistantLabel: {
       color: c.muted,
-      fontSize: 9,
+      fontSize: 14,
       fontWeight: '900',
       letterSpacing: 1.35,
       marginBottom: 7,
@@ -626,7 +626,7 @@ const createStyles = (c: ThemeColors) =>
       borderWidth: 1,
       borderColor: c.border,
     },
-    actionText: { flex: 1, paddingRight: 12, color: c.text, fontSize: 12, fontWeight: '800' },
+    actionText: { flex: 1, paddingRight: 12, color: c.text, fontSize: 14, fontWeight: '800' },
 
     errorCard: {
       flexDirection: 'row',
@@ -646,9 +646,9 @@ const createStyles = (c: ThemeColors) =>
       backgroundColor: c.soft,
     },
     errorBody: { flex: 1 },
-    errorTitle: { color: c.text, fontSize: 12.5, fontWeight: '800' },
-    errorText: { color: c.textSecondary, fontSize: 11.5, lineHeight: 17, marginTop: 3 },
-    errorLink: { color: c.brand, fontSize: 11, fontWeight: '800', marginTop: 9 },
+    errorTitle: { color: c.text, fontSize: 14, fontWeight: '800' },
+    errorText: { color: c.textSecondary, fontSize: 14, lineHeight: 20, marginTop: 3 },
+    errorLink: { color: c.brand, fontSize: 14, fontWeight: '800', marginTop: 9 },
 
     composerShell: {
       paddingHorizontal: 14,
@@ -693,7 +693,7 @@ const createStyles = (c: ThemeColors) =>
     },
     sendPressed: { transform: [{ scale: 0.96 }] },
     sendDisabled: { opacity: 0.35 },
-    disclaimer: { textAlign: 'center', color: c.muted, fontSize: 9.5, marginTop: 7 },
+    disclaimer: { textAlign: 'center', color: c.muted, fontSize: 12, marginTop: 7 },
 
     pressed: { opacity: 0.72, transform: [{ scale: 0.99 }] },
     disabled: { opacity: 0.5 },
