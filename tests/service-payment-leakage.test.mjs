@@ -25,6 +25,18 @@ test('service commission is reserved once from the whole job across deposit and 
  assert.match(split,/fee_policy_version:='2026-09-v2'/);
 });
 
+test('marketplace quotes require active business authority and Stripe payout readiness',()=>{
+ const gate=fs.readFileSync('supabase/migrations/20260929140000_harden_marketplace_quote_payment_readiness.sql','utf8');
+ const leads=fs.readFileSync('app/business-leads.tsx','utf8');
+ assert.match(gate,/has_business_permission\(p_business_id,'JOB_UPDATE_ALL'\)/);
+ assert.match(gate,/has_business_permission\(p_business_id,'CRM_MANAGE'\)/);
+ assert.match(gate,/is_business_payment_ready\(p_business_id\)/);
+ assert.match(gate,/is_business_payment_ready\(q\.business_id\)/);
+ assert.match(gate,/calculate_service_platform_fee\(p_total\)/);
+ assert.match(gate,/greatest\(round\(p_deposit,2\),v_minimum_deposit\)/);
+ assert.match(leads,/amount<=0/);
+});
+
 test('service checkout supports deposit then remaining balance',()=>{
  assert.match(migration,/payment_kind in \('DEPOSIT','BALANCE'\)/);
  assert.match(migration,/next_kind:='BALANCE'/);
