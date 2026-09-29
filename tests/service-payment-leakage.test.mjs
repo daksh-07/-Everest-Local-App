@@ -33,6 +33,16 @@ test('service checkout supports deposit then remaining balance',()=>{
  assert.match(checkout,/service_payment_stage/);
 });
 
+test('latest booking lifecycle keeps Stripe authoritative and paid cancellations reconciled',()=>{
+ const guard=fs.readFileSync('supabase/migrations/20260929134500_restore_marketplace_booking_payment_guards.sql','utf8');
+ assert.match(guard,/can_operate_business_booking/);
+ assert.match(guard,/b\.status='PENDING_PAYMENT'[\s\S]*p_next='CONFIRMED'[\s\S]*paid<=0/);
+ assert.match(guard,/Marketplace payment must be confirmed by Stripe/);
+ assert.match(guard,/p_next='COMPLETED' and balance_due>0/);
+ assert.match(guard,/p_next='CANCELLED' and paid>0/);
+ assert.match(guard,/Paid Everest bookings require support cancellation/);
+});
+
 test('marketplace booking cannot complete with unpaid Everest balance',()=>{
  assert.match(migration,/p_next='COMPLETED' and balance_due>0/);
  assert.match(migration,/Outstanding Everest balance must be paid/);
