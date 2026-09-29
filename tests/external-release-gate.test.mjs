@@ -20,9 +20,9 @@ test('gateway operations lock enquiry before token and recheck the token hash', 
   }
 });
 
-test('external directory remains visually and operationally separate from native search', () => {
-  assert.match(search, /Search businesses outside Everest/);
-  assert.match(search, /external-businesses/);
+test('external directory remains disabled from launch search while its isolated route stays non-native', () => {
+  assert.doesNotMatch(search, /Search businesses outside Everest/);
+  assert.doesNotMatch(search, /external-businesses/);
   assert.doesNotMatch(search, /functions\.invoke\('external-discovery'/);
   assert.match(directory, /NOT YET ON EVEREST/);
   assert.match(directory, /AUTHORISE THIS ENQUIRY/);
