@@ -34,6 +34,22 @@ test('customer cannot release inventory after a Stripe Checkout session exists',
   assert.match(releaseGuard, /process|Stripe must confirm failure or expiry/i);
 });
 
+test('paid product orders preserve payment state when delivery fails and can be redispatched', async () => {
+  const lifecycle = await readFile(
+    new URL('../supabase/migrations/20260930084000_restore_paid_order_and_job_integrity.sql', import.meta.url),
+    'utf8',
+  );
+  assert.match(lifecycle, /Paid Everest orders require support cancellation/);
+  assert.match(lifecycle, /p_status in \('FAILED','CANCELLED'\)/);
+  assert.match(lifecycle, /payment_status='SUCCEEDED'/);
+  assert.match(lifecycle, /status='READY_FOR_PICKUP'/);
+  assert.match(lifecycle, /existing_status not in \('PENDING','READY_FOR_PICKUP','FAILED','CANCELLED'\)/);
+  assert.doesNotMatch(
+    lifecycle.slice(lifecycle.indexOf('create or replace function public.update_delivery_status'),lifecycle.indexOf('create or replace function public.request_delivery_for_order')),
+    /set status='CANCELLED'/
+  );
+});
+
 test('security suite remains wired to the commerce integrity test', () => {
   assert.match(packageJson.scripts['test:security'], /tests\/commerce-financial-integrity\.test\.mjs/);
 });
