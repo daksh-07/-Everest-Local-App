@@ -83,3 +83,9 @@ test('adding from a product increments an existing cart line instead of silently
  assert.match(product,/\(existing\?\.quantity\?\?0\)\+qty/);
  assert.match(product,/setCartCount/);
 });
+
+test('cart blocks checkout when no common fulfilment method is available',()=>{
+ assert.match(cart,/hasFulfillmentMethod=pickupAvailable\|\|deliveryAvailable\|\|shippingAvailable/);
+ assert.match(cart,/No fulfilment method available/);
+ assert.match(cart,/\|\|!hasFulfillmentMethod\|\|method!==/);
+});
