@@ -499,26 +499,11 @@ export default function Search(){
           <View style={{paddingVertical:38,alignItems:'center'}}>
             <Text style={{fontSize:16,fontWeight:'900',color:c.text}}>No Everest results</Text>
             <Text style={{fontSize:12,color:c.muted,marginTop:6,textAlign:'center'}}>
-              {photoOnly?'No results match the active filters.':'Try another keyword or search businesses outside Everest below.'}
+              {photoOnly?'No results match the active filters.':'Try another keyword, category, or nearby service.'}
             </Text>
           </View>
         )}
 
-        {(tab==='TOP'||tab==='BUSINESS'||tab==='SERVICE')&&q.trim()?(
-          <Pressable
-            onPress={()=>{void rememberSearch();router.push('/external-businesses?q='+encodeURIComponent(q.trim()))}}
-            style={{marginTop:20,padding:18,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,flexDirection:'row',alignItems:'center',gap:12}}
-          >
-            <View style={{width:42,height:42,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}>
-              <Ionicons name="globe-outline" size={20} color={c.text}/>
-            </View>
-            <View style={{flex:1}}>
-              <Text style={{fontSize:13,fontWeight:'900',color:c.text}}>Can’t find what you’re looking for?</Text>
-              <Text style={{fontSize:12,color:c.muted,marginTop:3}}>Search businesses outside Everest</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={c.muted}/>
-          </Pressable>
-        ):null}
       </ScrollView>
 
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={()=>setMenuOpen(false)}>
