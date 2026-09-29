@@ -54,6 +54,8 @@ test('home renders cached live weather from resolved coordinates without a secon
  assert.match(home,/getCurrentWeather/);
  assert.match(home,/weatherIcon/);
  assert.match(home,/weatherInline/);
+ assert.match(home,/void loadWeather\(locality\)/);
+ assert.doesNotMatch(home,/loadNearby\(locality\),loadWeather\(locality\)/);
  assert.match(weather,/api\.open-meteo\.com\/v1\/forecast/);
  assert.match(weather,/current=temperature_2m,weather_code,is_day/);
  assert.match(weather,/20\*60_000/);
