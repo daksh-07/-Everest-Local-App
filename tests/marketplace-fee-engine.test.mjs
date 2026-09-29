@@ -4,26 +4,31 @@ import fs from 'node:fs';
 import {URL} from 'node:url';
 
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
-const migration=read('supabase/migrations/20260926231500_marketplace_fee_engine.sql');
+const migration=read('supabase/migrations/20260926231500_marketplace_fee_engine.sql')+'\n'+read('supabase/migrations/20260929133200_flat_marketplace_fee_policy_v2.sql');
 const serviceCheckout=read('supabase/functions/service-checkout/index.ts');
 const productCheckout=read('supabase/functions/checkout/index.ts');
 
 function serviceFee(amount){
  const gross=Math.max(0,amount);
  if(gross<=0)return 0;
- const fee=Math.min(gross,Math.max(5,Math.min(gross,500)*.05+Math.max(Math.min(gross,1000)-500,0)*.035+Math.max(gross-1000,0)*.028));
+ const fee=gross<200?Math.min(gross,Math.max(5,gross*.05)):gross<=500?gross*.05:gross<=1000?gross*.035:gross*.028;
  return Math.round((fee+Number.EPSILON)*100)/100;
 }
 
-test('service fee schedule is progressive without threshold cliffs',()=>{
+test('service fee schedule uses the approved flat launch bands',()=>{
  assert.equal(serviceFee(50),5);
  assert.equal(serviceFee(100),5);
+ assert.equal(serviceFee(150),7.5);
+ assert.equal(serviceFee(199.99),10);
  assert.equal(serviceFee(200),10);
  assert.equal(serviceFee(500),25);
- assert.equal(serviceFee(750),33.75);
- assert.equal(serviceFee(1000),42.5);
- assert.equal(serviceFee(1500),56.5);
- assert.equal(serviceFee(5000),154.5);
+ assert.equal(serviceFee(500.01),17.5);
+ assert.equal(serviceFee(750),26.25);
+ assert.equal(serviceFee(1000),35);
+ assert.equal(serviceFee(1000.01),28);
+ assert.equal(serviceFee(1500),42);
+ assert.equal(serviceFee(5000),140);
+ assert.match(migration,/2026-09-v2/);
 });
 
 test('database owns fee calculations and payout ledger',()=>{
