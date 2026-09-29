@@ -37,6 +37,15 @@ test('marketplace quotes require active business authority and Stripe payout rea
  assert.match(leads,/amount<=0/);
 });
 
+test('instant booking cannot bypass payout readiness or marketplace payment authority',()=>{
+ const instant=fs.readFileSync('supabase/migrations/20260930090500_harden_instant_booking_payment_authority.sql','utf8');
+ assert.match(instant,/is_business_payment_ready\(s\.business_id\)/);
+ assert.match(instant,/calculate_service_platform_fee\(s\.base_price\)/);
+ assert.match(instant,/s\.base_price,minimum_deposit,s\.base_price/);
+ assert.match(instant,/'PENDING_PAYMENT',true/);
+ assert.doesNotMatch(instant,/values\([\s\S]{0,400}s\.base_price,0,s\.base_price/);
+});
+
 test('service checkout supports deposit then remaining balance',()=>{
  assert.match(migration,/payment_kind in \('DEPOSIT','BALANCE'\)/);
  assert.match(migration,/next_kind:='BALANCE'/);
