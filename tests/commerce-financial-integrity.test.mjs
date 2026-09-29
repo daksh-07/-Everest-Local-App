@@ -22,6 +22,18 @@ test('order line totals must match unit price multiplied by quantity', () => {
   assert.match(migration, /line_total = round\(unit_price \* quantity, 2\)/);
 });
 
+
+test('customer cannot release inventory after a Stripe Checkout session exists', async () => {
+  const releaseGuard = await readFile(
+    new URL('../supabase/migrations/20260929135500_lock_order_reservation_release_after_checkout.sql', import.meta.url),
+    'utf8',
+  );
+  assert.match(releaseGuard, /provider_checkout_session_id/);
+  assert.match(releaseGuard, /p\.status='PENDING'/);
+  assert.match(releaseGuard, /Checkout is already in progress/);
+  assert.match(releaseGuard, /process|Stripe must confirm failure or expiry/i);
+});
+
 test('security suite remains wired to the commerce integrity test', () => {
   assert.match(packageJson.scripts['test:security'], /tests\/commerce-financial-integrity\.test\.mjs/);
 });
