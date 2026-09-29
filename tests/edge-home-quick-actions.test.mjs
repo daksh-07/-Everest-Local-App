@@ -8,6 +8,7 @@ const home=fs.readFileSync('app/index.tsx','utf8');
 const tabs=fs.readFileSync('components/CustomerTabBar.tsx','utf8');
 const swipe=fs.readFileSync('components/GlobalSwipeNavigator.tsx','utf8');
 const quick=fs.readFileSync('lib/quick-actions.ts','utf8');
+const weather=fs.readFileSync('lib/weather.ts','utf8');
 const manifest=JSON.parse(fs.readFileSync('public/manifest.json','utf8'));
 const app=JSON.parse(fs.readFileSync('app.json','utf8'));
 
@@ -47,6 +48,17 @@ test('home v3 exposes intent actions and real discovery without gateway-card dup
  assert.match(home,/AmbientEdge/);
  assert.doesNotMatch(home,/OR START HERE/);
  assert.doesNotMatch(home,/label:'Request a Quote'/);
+});
+
+test('home renders cached live weather from resolved coordinates without a second permission flow',()=>{
+ assert.match(home,/getCurrentWeather/);
+ assert.match(home,/weatherIcon/);
+ assert.match(home,/weatherInline/);
+ assert.match(weather,/api\.open-meteo\.com\/v1\/forecast/);
+ assert.match(weather,/current=temperature_2m,weather_code,is_day/);
+ assert.match(weather,/20\*60_000/);
+ assert.match(weather,/weatherConditionForCode/);
+ assert.doesNotMatch(home,/☀️|☁️|🌧️|⛈️/);
 });
 
 test('bottom navigation respects safe area and provides native haptic selection',()=>{
