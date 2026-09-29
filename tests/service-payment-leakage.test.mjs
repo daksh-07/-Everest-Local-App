@@ -15,6 +15,16 @@ test('marketplace service quotes cannot create zero-payment bookings',()=>{
  assert.match(migration,/'PENDING_PAYMENT',true/);
 });
 
+test('service commission is reserved once from the whole job across deposit and balance',()=>{
+ const split=fs.readFileSync('supabase/migrations/20260929134000_preserve_split_service_fee_v2.sql','utf8');
+ assert.match(split,/select q\.total into job_total/);
+ assert.match(split,/full_fee:=public\.calculate_service_platform_fee\(coalesce\(job_total,new\.amount\)\)/);
+ assert.match(split,/sp\.status='SUCCEEDED'/);
+ assert.match(split,/full_fee-prior_fee/);
+ assert.match(split,/least\(new\.amount,greatest\(full_fee-prior_fee,0\)\)/);
+ assert.match(split,/fee_policy_version:='2026-09-v2'/);
+});
+
 test('service checkout supports deposit then remaining balance',()=>{
  assert.match(migration,/payment_kind in \('DEPOSIT','BALANCE'\)/);
  assert.match(migration,/next_kind:='BALANCE'/);
