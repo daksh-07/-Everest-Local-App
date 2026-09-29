@@ -74,6 +74,18 @@ test('inventory reactivation cannot bypass the authoritative product publication
   assert.doesNotMatch(hardening, /when status='OUT_OF_STOCK'[\s\S]{0,160}then 'ACTIVE'/);
 });
 
+test('direct product order RPCs cannot reserve inventory for a payout-disabled business', async () => {
+  const gate = await readFile(
+    new URL('../supabase/migrations/20260930091500_enforce_order_creation_payment_readiness.sql', import.meta.url),
+    'utf8',
+  );
+  assert.match(gate, /before insert on public\.orders/);
+  assert.match(gate, /is_business_payment_ready\(new\.business_id\)/);
+  assert.match(gate, /new\.status='PENDING'/);
+  assert.match(gate, /new\.payment_status='PENDING'/);
+  assert.match(gate, /revoke all on function public\.enforce_order_business_payment_readiness\(\) from public,anon,authenticated/);
+});
+
 test('security suite remains wired to the commerce integrity test', () => {
   assert.match(packageJson.scripts['test:security'], /tests\/commerce-financial-integrity\.test\.mjs/);
 });
