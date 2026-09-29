@@ -50,6 +50,30 @@ test('paid product orders preserve payment state when delivery fails and can be 
   );
 });
 
+test('cart changes cannot cancel an order once Stripe Checkout exists', async () => {
+  const hardening = await readFile(
+    new URL('../supabase/migrations/20260930085500_harden_cart_and_inventory_reactivation.sql', import.meta.url),
+    'utf8',
+  );
+  const cartStart = hardening.indexOf('create or replace function public.set_my_cart_item_v2');
+  const inventoryStart = hardening.indexOf('create or replace function public.set_product_inventory');
+  const cart = hardening.slice(cartStart, inventoryStart);
+  assert.match(cart, /provider_checkout_session_id/);
+  assert.match(cart, /Checkout is already in progress/);
+  assert.ok(cart.indexOf('provider_checkout_session_id') < cart.indexOf("update public.orders\n    set status='CANCELLED'"));
+  assert.match(cart, /public\.is_business_payment_ready\(p\.business_id\)/);
+});
+
+test('inventory reactivation cannot bypass the authoritative product publication gate', async () => {
+  const hardening = await readFile(
+    new URL('../supabase/migrations/20260930085500_harden_cart_and_inventory_reactivation.sql', import.meta.url),
+    'utf8',
+  );
+  assert.match(hardening, /perform public\.set_product_status\(p_product_id,'ACTIVE'\)/);
+  assert.match(hardening, /has_business_permission\(bid,'CATALOG_MANAGE'\)/);
+  assert.doesNotMatch(hardening, /when status='OUT_OF_STOCK'[\s\S]{0,160}then 'ACTIVE'/);
+});
+
 test('security suite remains wired to the commerce integrity test', () => {
   assert.match(packageJson.scripts['test:security'], /tests\/commerce-financial-integrity\.test\.mjs/);
 });
