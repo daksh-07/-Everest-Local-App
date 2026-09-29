@@ -51,6 +51,11 @@ Production now enforces:
 - failed/cancelled Everest Delivery returns a paid order to READY_FOR_PICKUP rather than silently cancelling the paid order;
 - failed/cancelled deliveries can be requested again;
 - failed/cancelled delivery assignments are closed so the driver is not left falsely busy.
+- cart mutation cannot cancel/release a pending product order once Stripe Checkout exists;
+- cart purchase validation re-checks business payout readiness;
+- inventory updates cannot auto-reactivate an OUT_OF_STOCK product around the authoritative product publishing gate;
+- instant bookings require Stripe payout readiness, use the authoritative minimum deposit, set marketplace payment required, and enter PENDING_PAYMENT;
+- direct authenticated product-order creation is blocked by a database trigger when the business is not payout-ready.
 
 ## Existing-data integrity check
 
