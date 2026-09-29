@@ -12,6 +12,7 @@ const availability=read('app/business-availability.tsx');
 const home=read('app/index.tsx');
 const location=read('lib/customer-location.ts');
 const tab=read('components/BusinessTabBar.tsx');
+const control=read('app/business-control.tsx');
 
 test('global locality does not persist precise coordinates on the profile',()=>{
  assert.match(location,/getCurrentPositionAsync/);assert.match(location,/reverseGeocodeAsync/);assert.match(location,/p_suburb:locality\.suburb/);assert.match(location,/p_country:locality\.country/);
@@ -38,7 +39,7 @@ test('duplicate detection warns and does not silently merge',()=>{
 test('Customer 360 is tabbed and separates contacts from sales objects',()=>{
  assert.match(customer,/CUSTOMER 360/);for(const label of ['OVERVIEW','TIMELINE','DEALS','QUOTES','BOOKINGS','PAYMENTS','NOTES','TASKS'])assert.match(customer,new RegExp(label));
  assert.match(customer,/listCrmOpportunities/);assert.match(customer,/listCrmQuotes/);assert.match(customer,/listCrmBookings/);assert.match(customer,/crm_notes/);assert.match(customer,/from\('bookings'\).*customer_id/s);assert.match(customer,/from\('quotes'\).*customer_id/s);
- assert.match(tab,/label:'Jobs'/);assert.match(tab,/label:'Schedule'/);assert.doesNotMatch(tab,/label:'CRM'/);
+ assert.match(tab,/label:'Jobs'/);assert.match(tab,/Calendar/);assert.match(control,/SALES & CRM/);assert.match(control,/CRM workspace/);
 });
 
 test('verified completed-work provenance cannot be directly forged by authenticated clients',()=>{
