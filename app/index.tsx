@@ -68,7 +68,9 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
 
  async function loadWeather(locality:Pick<CustomerLocality,'latitude'|'longitude'>){
   const coordinates={latitude:locality.latitude,longitude:locality.longitude};
+  const previous=weatherCoordinates.current;
   weatherCoordinates.current=coordinates;
+  if(!previous||previous.latitude!==coordinates.latitude||previous.longitude!==coordinates.longitude)setWeather(null);
   const next=await getCurrentWeather(coordinates).catch(()=>null);
   const current=weatherCoordinates.current;
   if(next&&current&&current.latitude===coordinates.latitude&&current.longitude===coordinates.longitude)setWeather(next);
@@ -119,7 +121,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
    const locality=await resolveCustomerLocality({requestIfUndetermined});
    if(!locality)return;
    setSuburb(locality.suburb||locality.city||'Nearby');
-   await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality),loadWeather(locality)]);
+   void loadWeather(locality);await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);
   }finally{setLocating(false);}
  }
 
@@ -131,7 +133,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
    const locality=await resolveCustomerLocality({requestIfUndetermined:false}).catch(()=>null);
    if(locality){
     setSuburb(locality.suburb||locality.city||'Nearby');
-    await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality),loadWeather(locality)]);
+    void loadWeather(locality);await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);
    }else{
     const [biz,feed,shop]=await Promise.all([
      supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').limit(8),
@@ -200,7 +202,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
   else if(request.data)setContext({kind:'request',title:'Active request',detail:String(request.data.description||request.data.status),route:'/requests'});
 
   const locality=await resolveCustomerLocality({requestIfUndetermined:true}).catch(()=>null);
-  if(active&&locality){setSuburb(locality.suburb||locality.city||'Nearby');await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality),loadWeather(locality)]);}
+  if(active&&locality){setSuburb(locality.suburb||locality.city||'Nearby');void loadWeather(locality);await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);}
   else if(active&&p?.city){await loadNearby({suburb:p.suburb||p.city,city:p.city,state:p.state||''});}
  }catch{if(active){setBusinesses([]);setPosts([])}}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
 
