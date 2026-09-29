@@ -38,9 +38,9 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  sheet:{width:'100%',maxWidth:760,alignSelf:'center',backgroundColor:c.canvas,borderTopLeftRadius:30,borderTopRightRadius:30,borderWidth:1,borderBottomWidth:0,borderColor:c.border,paddingHorizontal:18,paddingTop:10,paddingBottom:14,shadowColor:'#000',shadowOpacity:.22,shadowRadius:28,shadowOffset:{width:0,height:-10}},
  handle:{width:42,height:4,borderRadius:2,backgroundColor:c.border,alignSelf:'center',marginBottom:16},
  header:{flexDirection:'row',alignItems:'flex-start',gap:14},
- kicker:{fontSize:8,fontWeight:'900',letterSpacing:1.6,color:c.accent},
+ kicker:{fontSize:12,fontWeight:'900',letterSpacing:1.6,color:c.accent},
  title:{fontSize:25,lineHeight:30,fontWeight:'900',letterSpacing:-.45,color:c.text,marginTop:4},
- subtitle:{maxWidth:540,fontSize:11,lineHeight:17,color:c.muted,marginTop:6},
+ subtitle:{maxWidth:540,fontSize:14,lineHeight:20,color:c.muted,marginTop:6},
  close:{width:42,height:42,borderRadius:15,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},
  grid:{gap:9,marginTop:18},
  card:{minHeight:88,borderRadius:21,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:14,flexDirection:'row',alignItems:'center',gap:12},
@@ -49,8 +49,8 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  cardTitleRow:{flexDirection:'row',alignItems:'center',gap:8,flexWrap:'wrap'},
  cardTitle:{fontSize:16,fontWeight:'900',color:c.text},
  tag:{borderRadius:999,backgroundColor:c.accentSoft,paddingHorizontal:8,paddingVertical:4},
- tagText:{fontSize:7,fontWeight:'900',letterSpacing:.35,color:c.accent},
- cardCopy:{fontSize:10,lineHeight:15,color:c.muted,marginTop:4},
+ tagText:{fontSize:12,fontWeight:'900',letterSpacing:.35,color:c.accent},
+ cardCopy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:4},
  footer:{minHeight:46,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:7,paddingTop:12},
- footerText:{fontSize:9,fontWeight:'700',color:c.textSecondary,textAlign:'center'}
+ footerText:{fontSize:12,fontWeight:'700',color:c.textSecondary,textAlign:'center'}
 });

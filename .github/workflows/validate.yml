@@ -68,6 +68,8 @@ jobs:
         run: npm run test:release
       - name: Edge-to-edge Home and quick actions regressions
         run: npm run test:home-shell
+      - name: Launch UI and lifecycle regressions
+        run: npm run test:ui-release
       - name: Product marketplace regressions
         run: npm run test:products
       - name: Service dispatch regression tests
