@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 // Production deployment retry 2026-09-26
-import {Animated,Image,Modal,Pressable,RefreshControl,StyleSheet,Text,useWindowDimensions,View} from 'react-native';
+import {Animated,AppState,Image,Modal,Pressable,RefreshControl,StyleSheet,Text,useWindowDimensions,View} from 'react-native';
 import {PagerAwareScrollView as ScrollView} from '@/components/PagerAwareScrollView';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
@@ -19,6 +19,7 @@ import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {ui} from '@/lib/ui';
 import {resolveCustomerLocality,saveLocalityToProfile,type CustomerLocality} from '@/lib/customer-location';
 import {useExperience} from '@/lib/experience';
+import {getCurrentWeather,type CurrentWeather} from '@/lib/weather';
 
 
 type IconName=keyof typeof Ionicons.glyphMap;
@@ -42,6 +43,17 @@ const homeMenuItems:ReadonlyArray<{label:string;copy:string;icon:IconName;route:
 function greeting(){const h=new Date().getHours();return h<12?'Good morning':h<18?'Good afternoon':'Good evening'}
 function initials(name:string){return name.trim().split(/\s+/).slice(0,2).map(v=>v[0]?.toUpperCase()).join('')||'EL'}
 function currency(value:number){return String.fromCharCode(36)+Number(value).toFixed(2)}
+function weatherIcon(weather:CurrentWeather):IconName{
+ switch(weather.condition){
+  case 'CLEAR':return weather.isDay?'sunny-outline':'moon-outline';
+  case 'PARTLY_CLOUDY':return weather.isDay?'partly-sunny-outline':'cloud-outline';
+  case 'OVERCAST':case 'FOG':return 'cloud-outline';
+  case 'DRIZZLE':return 'water-outline';
+  case 'RAIN':return 'rainy-outline';
+  case 'SNOW':return 'snow-outline';
+  case 'STORM':return 'thunderstorm-outline';
+ }
+}
 
 export default function Home(){const hosted=useCustomerRouteHost();return hosted?null:<HomeScreen/>}
 export function HomeScreen({visible=true}:{visible?:boolean}={}){
@@ -49,11 +61,18 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  const {colors:c}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const s=useMemo(()=>styles(c,desktop),[c,desktop]);const osReducedMotion=useReducedMotion();const reduced=osReducedMotion||experience.mode==='CLASSIC';
  const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Set location');
  const [unread,setUnread]=useState(0);const [businesses,setBusinesses]=useState<BusinessPreview[]>([]);const [products,setProducts]=useState<ProductPreview[]>([]);const [posts,setPosts]=useState<SocialPost[]>([]);const [postMedia,setPostMedia]=useState<Record<string,string[]>>({});
- const [mediaWarning,setMediaWarning]=useState('');
+ const [mediaWarning,setMediaWarning]=useState('');const [weather,setWeather]=useState<CurrentWeather|null>(null);
  const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [locating,setLocating]=useState(false);const [navHidden,setNavHidden]=useState(false);const [menuOpen,setMenuOpen]=useState(false);
  useEffect(()=>{if(!visible)return;let mounted=true;void import('@/lib/workspace').then(({getWorkspaceContext})=>getWorkspaceContext()).then(workspace=>{if(mounted&&workspace.mode==='BUSINESS'&&workspace.active_business_id)router.replace('/business-today')}).catch(()=>undefined);return()=>{mounted=false}},[visible]);
- const enter=useRef(new Animated.Value(reduced?1:0)).current;const lastScrollY=useRef(0);
+ const enter=useRef(new Animated.Value(reduced?1:0)).current;const lastScrollY=useRef(0);const weatherCoordinates=useRef<{latitude:number;longitude:number}|null>(null);
 
+ async function loadWeather(locality:Pick<CustomerLocality,'latitude'|'longitude'>){
+  const coordinates={latitude:locality.latitude,longitude:locality.longitude};
+  weatherCoordinates.current=coordinates;
+  const next=await getCurrentWeather(coordinates).catch(()=>null);
+  const current=weatherCoordinates.current;
+  if(next&&current&&current.latitude===coordinates.latitude&&current.longitude===coordinates.longitude)setWeather(next);
+ }
  async function businessMatches(field:'suburb'|'city'|'state',value:string){
   if(!value.trim())return[] as BusinessPreview[];
   const {data}=await supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').ilike(field,value.trim()).limit(8);
@@ -100,7 +119,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
    const locality=await resolveCustomerLocality({requestIfUndetermined});
    if(!locality)return;
    setSuburb(locality.suburb||locality.city||'Nearby');
-   await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);
+   await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality),loadWeather(locality)]);
   }finally{setLocating(false);}
  }
 
@@ -112,7 +131,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
    const locality=await resolveCustomerLocality({requestIfUndetermined:false}).catch(()=>null);
    if(locality){
     setSuburb(locality.suburb||locality.city||'Nearby');
-    await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);
+    await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality),loadWeather(locality)]);
    }else{
     const [biz,feed,shop]=await Promise.all([
      supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').limit(8),
@@ -181,10 +200,11 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
   else if(request.data)setContext({kind:'request',title:'Active request',detail:String(request.data.description||request.data.status),route:'/requests'});
 
   const locality=await resolveCustomerLocality({requestIfUndetermined:true}).catch(()=>null);
-  if(active&&locality){setSuburb(locality.suburb||locality.city||'Nearby');await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);}
+  if(active&&locality){setSuburb(locality.suburb||locality.city||'Nearby');await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality),loadWeather(locality)]);}
   else if(active&&p?.city){await loadNearby({suburb:p.suburb||p.city,city:p.city,state:p.state||''});}
  }catch{if(active){setBusinesses([]);setPosts([])}}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
 
+ useEffect(()=>{const subscription=AppState.addEventListener('change',state=>{if(state!=='active')return;const coordinates=weatherCoordinates.current;if(!coordinates)return;void getCurrentWeather(coordinates).then(next=>{const current=weatherCoordinates.current;if(next&&current&&current.latitude===coordinates.latitude&&current.longitude===coordinates.longitude)setWeather(next)}).catch(()=>undefined)});return()=>subscription.remove()},[]);
  useEffect(()=>{if(reduced){enter.setValue(1);return}Animated.timing(enter,{toValue:1,duration:MOTION.standard,easing:ease,useNativeDriver:true}).start()},[enter,reduced]);
  const appear={opacity:enter,transform:[{translateY:enter.interpolate({inputRange:[0,1],outputRange:[reduced?0:8,0]})}]};
  const go=(route:string)=>{void haptic.selection();router.push(route as never)};
@@ -195,7 +215,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  return <View style={s.root}><SafeAreaView edges={['top','left','right']} style={s.safe}>
   <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void refreshHome()} tintColor={c.accent} colors={[c.accent]}/>} scrollEventThrottle={16} onScroll={e=>{const y=Math.max(0,e.nativeEvent.contentOffset.y);const delta=y-lastScrollY.current;if(y<24)setNavHidden(false);else if(delta>8)setNavHidden(true);else if(delta<-6)setNavHidden(false);lastScrollY.current=y}} contentContainerStyle={[s.page,{paddingHorizontal:desktop?28:experience.tokens.spacing.screen}]}>
    <Animated.View style={appear}>
-    <View style={s.topbar}><View style={{flex:1}}><Text style={s.brand}>EVEREST LOCAL</Text><Pressable onPress={()=>void refreshLocality(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityLabel="Update your location"><Ionicons name={locating?'locate':'location-outline'} size={13} color={c.muted}/><Text style={s.place}>{locating?'Finding you…':suburb}</Text><Ionicons name="chevron-down" size={11} color={c.muted}/></Pressable></View>
+    <View style={s.topbar}><View style={{flex:1}}><Text style={s.brand}>EVEREST LOCAL</Text><Pressable onPress={()=>void refreshLocality(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityLabel={weather?`Update your location. ${weather.label}, ${Math.round(weather.temperatureC)} degrees`:'Update your location'}><Ionicons name={locating?'locate':'location-outline'} size={13} color={c.muted}/><Text numberOfLines={1} style={s.place}>{locating?'Finding you…':suburb}</Text>{weather?<View style={s.weatherInline}><Ionicons name={weatherIcon(weather)} size={14} color={c.muted}/><Text style={s.weatherTemp}>{Math.round(weather.temperatureC)}°</Text></View>:null}<Ionicons name="chevron-down" size={11} color={c.muted}/></Pressable></View>
      <Pressable onPress={()=>{void haptic.selection();setMenuOpen(true)}} style={({pressed})=>[s.iconButton,pressed&&s.press]} accessibilityLabel="Open Everest menu"><Ionicons name="menu" size={22} color={c.text}/></Pressable>
      <Pressable onPress={()=>go('/notifications')} style={({pressed})=>[s.iconButton,pressed&&s.press]} accessibilityLabel="Notifications"><Ionicons name="notifications-outline" size={20} color={c.text}/>{unread>0?<View style={s.dot}/>:null}</Pressable>
      <Pressable onPress={()=>go('/account')} style={({pressed})=>[s.avatar,pressed&&s.press]} accessibilityLabel="Open account">{avatar?<Image source={{uri:avatar}} style={s.avatarImage}/>:<Text style={s.avatarText}>{initials(name||'Everest Local')}</Text>}</Pressable>
@@ -252,7 +272,7 @@ function Trust({icon,label}:{icon:IconName;label:string}){const {colors}=useAppT
 function BusinessSkeleton({colors:c}:{colors:ThemeColors}){return <View style={{flexDirection:'row',gap:10}}>{[0,1].map(i=><View key={i} style={{width:188,height:166,borderRadius:20,backgroundColor:c.soft,opacity:.7}}/>)}</View>}
 const styles=(c:ThemeColors,desktop:boolean)=>StyleSheet.create({
  root:{flex:1,backgroundColor:c.canvas},safe:{flex:1,backgroundColor:'transparent'},page:{width:'100%',maxWidth:ui.contentMaxWidth,alignSelf:'center',paddingHorizontal:desktop?28:18,paddingTop:2},
- topbar:{flexDirection:'row',alignItems:'center',gap:9,minHeight:48},brand:{fontSize:10,fontWeight:'900',letterSpacing:1.7,color:c.text},placeRow:{flexDirection:'row',alignItems:'center',gap:4,marginTop:3},place:{fontSize:10,fontWeight:'700',color:c.muted},iconButton:{width:42,height:42,borderRadius:21,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},dot:{position:'absolute',right:9,top:8,width:7,height:7,borderRadius:4,backgroundColor:c.brand,borderWidth:1,borderColor:c.canvas},avatar:{width:42,height:42,borderRadius:21,backgroundColor:c.elevated,alignItems:'center',justifyContent:'center',overflow:'hidden',borderWidth:1,borderColor:c.border},avatarImage:{width:42,height:42},avatarText:{fontSize:12,fontWeight:'900',color:c.text},
+ topbar:{flexDirection:'row',alignItems:'center',gap:9,minHeight:48},brand:{fontSize:10,fontWeight:'900',letterSpacing:1.7,color:c.text},placeRow:{flexDirection:'row',alignItems:'center',gap:4,marginTop:3},place:{fontSize:10,fontWeight:'700',color:c.muted,maxWidth:118},weatherInline:{flexDirection:'row',alignItems:'center',gap:3,marginLeft:3},weatherTemp:{fontSize:10,fontWeight:'800',color:c.muted,fontVariant:['tabular-nums']},iconButton:{width:42,height:42,borderRadius:21,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},dot:{position:'absolute',right:9,top:8,width:7,height:7,borderRadius:4,backgroundColor:c.brand,borderWidth:1,borderColor:c.canvas},avatar:{width:42,height:42,borderRadius:21,backgroundColor:c.elevated,alignItems:'center',justifyContent:'center',overflow:'hidden',borderWidth:1,borderColor:c.border},avatarImage:{width:42,height:42},avatarText:{fontSize:12,fontWeight:'900',color:c.text},
  heroGrid:{flexDirection:desktop?'row':'column',gap:desktop?20:0,alignItems:'stretch',marginTop:desktop?20:11},heroPanel:{flexGrow:desktop?1.15:0,flexShrink:desktop?1:0,flexBasis:desktop?0:'auto',minWidth:0,padding:desktop?24:0},sidePanel:{flexGrow:desktop?.85:0,flexShrink:desktop?1:0,flexBasis:desktop?0:'auto',minWidth:0,paddingTop:desktop?20:0,marginTop:desktop?0:24},heroEyebrow:{fontSize:10,fontWeight:'700',letterSpacing:1.1,color:c.accent,marginTop:desktop?0:16},greeting:{fontSize:desktop?40:34,lineHeight:desktop?46:40,fontWeight:'800',letterSpacing:-1.2,color:c.text,marginTop:10},heroCopy:{fontSize:desktop?14:13,lineHeight:21,color:c.textSecondary,marginTop:8,maxWidth:620},searchGlow:{marginTop:23},search:{height:58,borderRadius:18,backgroundColor:c.soft,flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:13},searchPressed:{transform:[{scale:.985}],opacity:.86},searchIcon:{width:36,height:36,alignItems:'center',justifyContent:'center'},searchText:{flex:1,fontSize:14,color:c.textSecondary},quickIntentRow:{flexDirection:'row',gap:10,marginTop:13},quickIntent:{minHeight:71,borderRadius:18,flexDirection:'row',alignItems:'center',gap:9,paddingHorizontal:13,paddingVertical:10},quickIntentPrimary:{flex:1.08,backgroundColor:c.brand},quickLiveGlow:{flex:.92},quickIntentLive:{height:'100%',backgroundColor:c.elevated},quickIntentIcon:{width:36,height:36,borderRadius:12,backgroundColor:c.accentSoft,alignItems:'center',justifyContent:'center'},quickIntentPrimaryTitle:{fontSize:11,lineHeight:14,fontWeight:'800',color:c.onBrand},quickIntentTitle:{fontSize:11,fontWeight:'800',color:c.text},liveTitleRow:{flexDirection:'row',alignItems:'center',gap:7},liveIntentTitle:{fontWeight:'800',color:c.text},liveIntentCopy:{color:c.textSecondary,marginTop:3},liveBadge:{borderRadius:999,backgroundColor:c.success,paddingHorizontal:7,paddingVertical:3},liveBadgeText:{fontSize:7,fontWeight:'800',letterSpacing:.8,color:c.canvas},trustRow:{flexDirection:'row',flexWrap:'wrap',gap:12,marginTop:15,paddingVertical:4},
  context:{marginTop:16,minHeight:70,backgroundColor:c.elevated,flexDirection:'row',alignItems:'center',gap:11,padding:13,borderRadius:14},contextIcon:{width:40,height:40,borderRadius:20,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},contextLabel:{fontSize:9,fontWeight:'700',letterSpacing:.4,color:c.muted},contextTitle:{fontSize:14,fontWeight:'800',color:c.text,marginTop:2},contextDetail:{fontSize:11,color:c.muted,marginTop:3},
  sideHeading:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-end',marginTop:desktop?0:26},sideEyebrow:{fontSize:8,fontWeight:'900',letterSpacing:1.1,color:c.accent},sideTitle:{fontSize:18,fontWeight:'900',color:c.text,marginTop:3},composerShell:{marginTop:10,borderRadius:20,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,padding:12,shadowColor:'#000',shadowOpacity:.08,shadowRadius:18,shadowOffset:{width:0,height:8}},
