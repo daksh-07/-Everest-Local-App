@@ -29,10 +29,10 @@ test('personal message requests are distinct from marketplace conversations',()=
  assert.match(messages,/Business enquiry \/ booking/);
  assert.match(messages,/REQUESTS/);
 });
-test('universal search is server-side and external results are separate',()=>{
+test('universal search is server-side and disabled external discovery is absent from launch search',()=>{
  assert.match(migration,/create or replace function public\.universal_search/);
  assert.match(search,/universalSearch/);
- assert.match(search,/external-businesses/);
+ assert.doesNotMatch(search,/external-businesses/);
  assert.doesNotMatch(search,/external-discovery/);
 });
 test('search and profile RPCs suppress blocked users and private discovery',()=>{
