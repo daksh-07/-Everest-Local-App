@@ -32,7 +32,7 @@ export default function BusinessLeads(){
  },[filter]);
  useEffect(()=>{void load();},[load]);
 
- async function sendQuote(){if(!quoteLead||!business)return;const amount=Number(price);if(!Number.isFinite(amount)||amount<0||!message.trim()){setError('Add a valid price and a short message.');return;}setBusy(true);setError('');
+ async function sendQuote(){if(!quoteLead||!business)return;const amount=Number(price);if(!Number.isFinite(amount)||amount<=0||!message.trim()){setError('Add a price above $0 and a short message.');return;}setBusy(true);setError('');
   try{const usePreferred=availability==='PREFERRED'&&!!quoteLead.preferred_date;const {error:rpcError}=await supabase.rpc('send_quote_for_business',{p_business_id:business.id,p_request_id:quoteLead.request_id,p_service_id:null,p_description:message.trim(),p_line_items:[],p_price:amount,p_deposit:0,p_total:amount,p_proposed_date:usePreferred?quoteLead.preferred_date:null,p_proposed_time:usePreferred&&quoteLead.timing_mode==='EXACT_TIME'?quoteLead.preferred_time:null,p_valid_until:null,p_terms:null});if(rpcError)throw rpcError;setQuoteLead(null);setPrice('');setMessage('');setAvailability('PREFERRED');await load(true);}catch(e){setError(e instanceof Error?e.message:'Quote could not be sent.');}finally{setBusy(false);}}
  const verified=business?.verification_status==='VERIFIED';
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}><ScrollView keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.brand}/>} contentContainerStyle={st.page}>
