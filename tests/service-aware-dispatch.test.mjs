@@ -22,6 +22,8 @@ const migration = [
   findMigration('fix_dispatch_offer_response_guard'),
 ].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 
+const dispatchPrivilegeHardening = fs.readFileSync(findMigration('lock_dispatch_candidate_helper_to_server'), 'utf8');
+
 const fn = (name) => {
   const start = migration.lastIndexOf(`create or replace function public.${name}`);
   assert.notEqual(start, -1, `${name} must exist`);
@@ -170,6 +172,12 @@ test('internal candidate/queue functions are not client executable', () => {
   assert.match(migration, /revoke all on function public\.get_service_dispatch_candidates/);
   assert.match(migration, /revoke all on function public\.dispatch_next_service_provider/);
   assert.match(migration, /revoke all on function public\.process_service_dispatch_queue/);
+});
+
+test('candidate helper remains server-only after later dispatch migrations', () => {
+  assert.match(dispatchPrivilegeHardening, /revoke execute on function public\.get_service_dispatch_candidates\(uuid,integer\) from public, anon, authenticated/i);
+  assert.match(dispatchPrivilegeHardening, /grant execute on function public\.get_service_dispatch_candidates\(uuid,integer\) to service_role/i);
+  assert.doesNotMatch(dispatchPrivilegeHardening, /grant execute[^;]*to authenticated/i);
 });
 
 test('location updates are server-authoritative and adaptive', () => {
