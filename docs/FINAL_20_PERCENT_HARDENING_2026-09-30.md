@@ -70,6 +70,8 @@ At audit time production contained:
 
 ## Runtime observations
 
+The production Stripe webhook was also migrated off the legacy `esm.sh` Stripe build after live Edge logs exposed repeated `Deno.core.runMicrotasks()` runtime failures. It now uses pinned `npm:stripe@22.6.2`, `Stripe.createSubtleCryptoProvider()`, and asynchronous `constructEventAsync()` signature verification. The full Edge Function type-check suite passes, production `stripe-webhook` is ACTIVE on the new build, post-deploy sampled logs show no new backend/runtime error spike, and the Stripe event ledger contains no claimed/stuck events requiring repair.
+
 In the last-hour runtime check after hardening:
 
 - no REST/API 401 storm remained;
@@ -82,9 +84,11 @@ These are not code defects and must not be bypassed in source:
 
 1. The currently connected business Stripe account must finish Stripe-hosted onboarding until details, charges and payouts are enabled. Do not mark it ACTIVE manually.
 2. Supabase Auth leaked-password protection is still a dashboard configuration warning and should be enabled.
-3. A signed production/preview build still requires physical iPhone and Android validation for permissions, safe areas, keyboard, deep links, background push, camera/photos, location, checkout and account deletion.
+3. Signed production/preview builds still require physical iPhone, iPad and Android validation for permissions, safe areas, rotation/tablet layout, keyboard, deep links, background push, camera/photos, location, checkout and account deletion.
 4. App Store / Play signing, store records and release declarations require the operator's Apple/Google accounts.
 5. Real Stripe payment/webhook success, failure, expiry, retry and duplicate-event behavior should be exercised with controlled live/test transactions before taking unrestricted public payments.
+
+Automated native configuration gates now pass for both iOS and Android: iOS prebuild verifies the iPhone + iPad device family and production APNs entitlement; Android prebuild compiles a release AAB and verifies the merged Play manifest/package/notification permission.
 
 No fake businesses, payments, reviews, orders or verification state were introduced to satisfy these gates.
 
