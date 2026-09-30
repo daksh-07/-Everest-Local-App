@@ -46,11 +46,20 @@ async function persistProSubscription(db:unknown,subscription:Stripe.Subscriptio
  return businessId;
 }
 
-async function persistCustomerMembership(db:unknown,subscription:Stripe.Subscription,eventId:string,eventCreated:number,fallbackMembershipId?:string){
+async function persistCustomerMembership(db:unknown,subscription:Stripe.Subscription,eventId:string,eventCreated:number,fallbackMembershipId?:string,connectedAccountId?:string|null){
  const membershipId=String(subscription.metadata?.membership_id??fallbackMembershipId??'');
  if(!membershipId)throw new Error('Customer membership subscription is missing membership metadata');
+ const client=db as {
+  rpc:(name:string,args:Record<string,unknown>)=>Promise<{error:{message?:string}|null}>;
+  from:(table:string)=>{select:(columns:string)=>{eq:(column:string,value:string)=>{maybeSingle:()=>Promise<{data:Record<string,unknown>|null;error:{message?:string}|null}>}}}
+ };
+ const {data:membership,error:membershipError}=await client.from('customer_memberships')
+  .select('stripe_connected_account_id').eq('id',membershipId).maybeSingle();
+ if(membershipError)throw membershipError;
+ const expectedAccount=String(membership?.stripe_connected_account_id??'');
+ if(expectedAccount&&expectedAccount!==String(connectedAccountId??''))throw new Error('Membership connected-account mismatch');
  const period=subscriptionPeriod(subscription);
- const rpc=(db as {rpc:(name:string,args:Record<string,unknown>)=>Promise<{error:{message?:string}|null}>}).rpc.bind(db);
+ const rpc=client.rpc.bind(client);
  const {error}=await rpc('set_customer_membership_from_stripe',{
   p_membership_id:membershipId,
   p_customer_id:subscriptionCustomer(subscription),
@@ -154,10 +163,12 @@ Deno.serve(async req=>{
    const invoice=event.data.object as unknown;
    const subscriptionId=invoiceSubscriptionId(invoice);
    if(subscriptionId){
-    const subscription=await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription=connectedAccountId
+     ?await stripe.subscriptions.retrieve(subscriptionId,{}, {stripeAccount:connectedAccountId})
+     :await stripe.subscriptions.retrieve(subscriptionId);
     const subKind=String(subscription.metadata?.payment_kind??'');
     if(subKind==='business_membership'){
-     const membershipId=await persistCustomerMembership(db,subscription,event.id,event.created);
+     const membershipId=await persistCustomerMembership(db,subscription,event.id,event.created,undefined,connectedAccountId);
      const inv=invoice as {id:string;amount_paid?:number;amount_due?:number;currency?:string;period_start?:number;period_end?:number};
      const invoiceStatus=event.type==='invoice.paid'||event.type==='invoice.payment_succeeded'?'PAID':event.type==='invoice.payment_failed'?'FAILED':event.type==='invoice.voided'?'VOID':null;
      if(invoiceStatus){
@@ -192,12 +203,14 @@ Deno.serve(async req=>{
     if(session.mode!=='subscription')throw new Error('Membership checkout was not a subscription');
     const subscriptionId=typeof session.subscription==='string'?session.subscription:session.subscription?.id;
     if(!subscriptionId)throw new Error('Membership checkout completed without subscription id');
-    subscription=await stripe.subscriptions.retrieve(subscriptionId);
+    subscription=connectedAccountId
+     ?await stripe.subscriptions.retrieve(subscriptionId,{}, {stripeAccount:connectedAccountId})
+     :await stripe.subscriptions.retrieve(subscriptionId);
     membershipId=String(session.metadata?.membership_id??membershipId??'');
    }else if(event.type.startsWith('customer.subscription.')){
     subscription=event.data.object as Stripe.Subscription;
    }
-   if(subscription)await persistCustomerMembership(db,subscription,event.id,event.created,membershipId);
+   if(subscription)await persistCustomerMembership(db,subscription,event.id,event.created,membershipId,connectedAccountId);
    handledKind='business_membership';
   }else if(metadata.payment_kind==='everest_pro'){
    let subscription:Stripe.Subscription|null=null;
@@ -243,6 +256,11 @@ Deno.serve(async req=>{
   }else if(metadata.payment_kind==='business_package'){
    const customerPackageId=String(metadata.customer_package_id??'');
    if(!customerPackageId)throw new Error('Missing package purchase metadata');
+   const {data:packageRow,error:packageLookupError}=await db.from('customer_packages')
+    .select('stripe_connected_account_id').eq('id',customerPackageId).maybeSingle();
+   if(packageLookupError)throw packageLookupError;
+   const expectedAccount=String(packageRow?.stripe_connected_account_id??'');
+   if(expectedAccount&&expectedAccount!==String(connectedAccountId??''))throw new Error('Package connected-account mismatch');
    const success=event.type==='payment_intent.succeeded'||(event.type==='checkout.session.completed'&&(event.data.object as Stripe.Checkout.Session).payment_status==='paid');
    if(success){
     let checkoutSessionId='';
