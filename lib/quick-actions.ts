@@ -22,7 +22,7 @@ export async function configureEverestQuickActions(){
 
 export function isSafeInternalRoute(value:unknown):value is string{
  if(typeof value!=='string'||!value.startsWith('/')||value.startsWith('//')||value.includes('\\'))return false;
- if(/[\u0000-\u001F\u007F]/.test(value))return false;
+ for(let i=0;i<value.length;i++){const code=value.charCodeAt(i);if(code<=0x1F||code===0x7F)return false;}
  return !/^[\\/]*[a-z][a-z0-9+.-]*:/i.test(value);
 }
 
