@@ -5,6 +5,7 @@ import {ActivityIndicator,Platform,Pressable,StyleSheet,Text,View} from 'react-n
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {acceptBusinessInvitation,getMyBusinessInvitations,type BusinessInvitation} from '@/lib/business-operations';
 import {storePendingQuickActionRoute} from '@/lib/quick-actions';
+import {signOut as signOutAccount} from '@/lib/auth';
 import {supabase} from '@/lib/supabase';
 import {useAppTheme,type ThemeColors} from '@/lib/theme';
 import {businessHomeRoute,getWorkspaceContext,setWorkspacePreference} from '@/lib/workspace';
@@ -35,7 +36,7 @@ export default function BusinessInvite(){
 
  async function signIn(){
   if(!invitationId)return;
-  if(signedIn)await supabase.auth.signOut();
+  if(signedIn)await signOutAccount();
   const returnTo='/business-invite?invitationId='+encodeURIComponent(invitationId);
   if(Platform.OS==='web'&&typeof window!=='undefined')window.localStorage.setItem('everest-auth-return-to',returnTo);
   else await storePendingQuickActionRoute(returnTo);
