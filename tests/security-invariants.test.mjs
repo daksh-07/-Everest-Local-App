@@ -315,6 +315,17 @@ test('admin auth-state inspection does not require SECURITY DEFINER privileges',
 });
 
 
+test('private audio visibility follows post visibility and product media writes require catalogue permission', async () => {
+  const hardening = await readFile(join(migrationsDir, '20260930165000_media_storage_permission_hardening.sql'), 'utf8');
+  assert.match(hardening,/bucket_id='user-audio'/);
+  assert.match(hardening,/p\.status='PUBLISHED'/);
+  assert.match(hardening,/p\.visibility='PUBLIC'/);
+  assert.match(hardening,/p\.visibility='FOLLOWERS'/);
+  assert.match(hardening,/user_blocks/);
+  assert.match(hardening,/has_business_permission\(p\.business_id,'CATALOG_MANAGE'\)/);
+  assert.doesNotMatch(hardening,/product_media_member_(?:insert|update|delete)[\s\S]{0,800}is_business_member\(p\.business_id\)/);
+});
+
 test('profile and business identity media is owner-written and publicly readable only from the dedicated bucket', () => {
   assert.match(migrationText, /'profile-media'[\s\S]{0,240}true[\s\S]{0,160}5242880/i);
   assert.match(migrationText, /profile_media_owner_insert[\s\S]{0,500}storage\.foldername\(name\)[\s\S]{0,200}auth\.uid/i);
