@@ -152,7 +152,7 @@ begin
 
   select p.business_id into parent_business
   from public.posts p
-  where p.id=coalesce(new.post_id,old.post_id);
+  where p.id=case when tg_op='INSERT' then new.post_id else old.post_id end;
 
   if tg_op='INSERT'
      and parent_business is not null
