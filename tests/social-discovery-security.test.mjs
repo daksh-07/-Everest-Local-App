@@ -7,6 +7,7 @@ const search=fs.readFileSync('app/search.tsx','utf8');
 const social=fs.readFileSync('lib/social.ts','utf8');
 const messages=fs.readFileSync('app/messages.tsx','utf8');
 const rlsHardening=fs.readFileSync('supabase/migrations/20260927133000_social_rls_advisor_hardening.sql','utf8');
+const actorPrivacy=fs.readFileSync('supabase/migrations/20260929011000_social_actor_privacy_hardening.sql','utf8');
 
 test('people use connections while business follow RPC remains separate',()=>{
  assert.match(migration,/create table if not exists public\.user_connections/);
@@ -90,4 +91,13 @@ test('availability has one authenticated read policy and separate member writes'
 test('booking payment summary is not anonymous executable',()=>{
  assert.match(rlsHardening,/revoke all on function public\.service_booking_payment_summary\(uuid\) from public,anon/);
  assert.match(rlsHardening,/grant execute on function public\.service_booking_payment_summary\(uuid\) to authenticated,service_role/);
+});
+
+test('public social actor helpers do not bypass private profile visibility',()=>{
+ for(const fn of ['social_actor_name','social_actor_avatar']){
+  assert.match(actorPrivacy,new RegExp('function public\\.'+fn));
+ }
+ assert.ok((actorPrivacy.match(/pp\.visibility='PUBLIC' or pp\.id=auth\.uid\(\)/g)??[]).length>=2);
+ assert.match(actorPrivacy,/revoke all on function public\.social_actor_name\(uuid\) from public/);
+ assert.match(actorPrivacy,/revoke all on function public\.social_actor_avatar\(uuid\) from public/);
 });
