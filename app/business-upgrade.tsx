@@ -24,6 +24,9 @@ export default function BusinessUpgrade(){
   try{
    const ctx=await getWorkspaceContext();
    if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
+   const current=ctx.businesses.find(x=>x.id===ctx.active_business_id);
+   if(!current)throw new Error('Business access unavailable.');
+   if(!current.can_manage_finance){router.replace('/business-control');return;}
    setBusinessId(ctx.active_business_id);
    setSubscription(await getBusinessSubscription(ctx.active_business_id));
   }catch(e){setError(e instanceof Error?e.message:'Subscription status could not be loaded.')}
