@@ -17,9 +17,11 @@ const keyFor=(req:Request,fallback:string)=>{
 type MembershipCheckout={
  membership_id:string;business_id:string;customer_id:string;title:string;price:number;currency:string;
  interval_unit:'DAY'|'WEEK'|'MONTH'|'YEAR';interval_count:number;start_date:string;checkout_session_id:string|null;
+ connected_account_id:string;marketplace_fee_per_period:number;application_fee_percent:number;fee_policy_version:string;
 };
 type PackageCheckout={
  customer_package_id:string;package_id:string;business_id:string;customer_id:string;name?:string;price:number;currency:string;credits:number;checkout_session_id:string|null;
+ connected_account_id:string;marketplace_fee:number;provider_net:number;fee_policy_version:string;
 };
 
 function recurring(unit:string,count:number):{interval:'day'|'week'|'month'|'year';interval_count:number}{
@@ -59,9 +61,20 @@ Deno.serve(async req=>{
    if(error)throw error;
    const m=data as MembershipCheckout;
    if(m.customer_id!==user.id)throw new Error('Membership customer mismatch');
+   const connectedId=String(m.connected_account_id??'');
+   const feePercent=Number(m.application_fee_percent??0);
+   if(!/^acct_[A-Za-z0-9]+$/.test(connectedId))return json({error:'This business is still setting up payouts.'},409);
+   if(!Number.isFinite(feePercent)||feePercent<0||feePercent>100)throw new Error('Invalid membership application fee');
    if(m.checkout_session_id){
-    const existing=await stripe.checkout.sessions.retrieve(m.checkout_session_id);
-    if(existing.url&&existing.status==='open')return json({url:existing.url,membershipId,reused:true});
+    try{
+     const existing=await stripe.checkout.sessions.retrieve(m.checkout_session_id,{}, {stripeAccount:connectedId});
+     if(existing.url&&existing.status==='open')return json({url:existing.url,membershipId,reused:true});
+    }catch{/* stale or inaccessible session: create a fresh attempt below */}
+    const {error:clearError}=await admin.from('customer_memberships')
+     .update({stripe_checkout_session_id:null,updated_at:new Date().toISOString()})
+     .eq('id',m.membership_id).eq('customer_id',user.id).eq('stripe_connected_account_id',connectedId)
+     .eq('stripe_checkout_session_id',m.checkout_session_id);
+    if(clearError)throw clearError;
    }
    const start=Date.parse(m.start_date+'T00:00:00Z');
    const trialEnd=Number.isFinite(start)&&start>Date.now()+60_000?Math.floor(start/1000):undefined;
@@ -81,10 +94,14 @@ Deno.serve(async req=>{
     cancel_url:base+'/memberships?checkout=cancelled',
     metadata:{payment_kind:'business_membership',membership_id:m.membership_id,business_id:m.business_id,customer_id:user.id},
     subscription_data:{
-     metadata:{payment_kind:'business_membership',membership_id:m.membership_id,business_id:m.business_id,customer_id:user.id},
+     application_fee_percent:feePercent,
+     metadata:{
+      payment_kind:'business_membership',membership_id:m.membership_id,business_id:m.business_id,
+      customer_id:user.id,connected_account_id:connectedId,fee_policy_version:m.fee_policy_version
+     },
      ...(trialEnd?{trial_end:trialEnd}:{})
     },
-   },{idempotencyKey:'membership-checkout:'+m.membership_id});
+   },{idempotencyKey:'membership-checkout:'+m.membership_id+':'+idem,stripeAccount:connectedId});
    if(!session.url)throw new Error('Stripe Checkout URL was not returned');
    const {error:attachError}=await admin.rpc('attach_membership_checkout_session',{p_membership_id:m.membership_id,p_session_id:session.id});
    if(attachError)throw attachError;
@@ -99,19 +116,38 @@ Deno.serve(async req=>{
    if(error)throw error;
    const p=data as PackageCheckout;
    if(p.customer_id!==user.id)throw new Error('Package customer mismatch');
+   const connectedId=String(p.connected_account_id??'');
+   if(!/^acct_[A-Za-z0-9]+$/.test(connectedId))return json({error:'This business is still setting up payouts.'},409);
    if(p.checkout_session_id){
-    const existing=await stripe.checkout.sessions.retrieve(p.checkout_session_id);
-    if(existing.url&&existing.status==='open')return json({url:existing.url,customerPackageId:p.customer_package_id,reused:true});
+    try{
+     const existing=await stripe.checkout.sessions.retrieve(p.checkout_session_id,{}, {stripeAccount:connectedId});
+     if(existing.url&&existing.status==='open')return json({url:existing.url,customerPackageId:p.customer_package_id,reused:true});
+    }catch{/* stale or inaccessible session: create a fresh attempt below */}
+    const {error:clearError}=await admin.from('customer_packages')
+     .update({stripe_checkout_session_id:null,updated_at:new Date().toISOString()})
+     .eq('id',p.customer_package_id).eq('customer_id',user.id).eq('stripe_connected_account_id',connectedId)
+     .eq('stripe_checkout_session_id',p.checkout_session_id);
+    if(clearError)throw clearError;
    }
+   const applicationFeeCents=Math.round(Number(p.marketplace_fee??0)*100);
    const session=await stripe.checkout.sessions.create({
     mode:'payment',
     customer_email:user.email??undefined,
     line_items:[{price_data:{currency:p.currency,product_data:{name:p.name??'Everest Local prepaid package',description:p.credits+' service credits'},unit_amount:Math.round(Number(p.price)*100)},quantity:1}],
     success_url:base+'/memberships?package=success&session_id={CHECKOUT_SESSION_ID}',
     cancel_url:base+'/memberships?package=cancelled',
-    metadata:{payment_kind:'business_package',customer_package_id:p.customer_package_id,package_id:p.package_id,business_id:p.business_id,customer_id:user.id},
-    payment_intent_data:{metadata:{payment_kind:'business_package',customer_package_id:p.customer_package_id,package_id:p.package_id,business_id:p.business_id,customer_id:user.id}},
-   },{idempotencyKey:'package-checkout:'+p.customer_package_id});
+    metadata:{
+     payment_kind:'business_package',customer_package_id:p.customer_package_id,package_id:p.package_id,
+     business_id:p.business_id,customer_id:user.id,connected_account_id:connectedId,fee_policy_version:p.fee_policy_version
+    },
+    payment_intent_data:{
+     metadata:{
+      payment_kind:'business_package',customer_package_id:p.customer_package_id,package_id:p.package_id,
+      business_id:p.business_id,customer_id:user.id,connected_account_id:connectedId,fee_policy_version:p.fee_policy_version
+     },
+     ...(applicationFeeCents>0?{application_fee_amount:applicationFeeCents}:{})
+    },
+   },{idempotencyKey:'package-checkout:'+p.customer_package_id+':'+idem,stripeAccount:connectedId});
    if(!session.url)throw new Error('Stripe Checkout URL was not returned');
    const {error:attachError}=await admin.rpc('attach_package_checkout_session',{p_customer_package_id:p.customer_package_id,p_session_id:session.id});
    if(attachError)throw attachError;
@@ -121,16 +157,27 @@ Deno.serve(async req=>{
   if(action==='PORTAL'||action==='CANCEL_AT_PERIOD_END'||action==='RESUME'){
    const membershipId=String(body.membershipId??'');
    if(!membershipId)return json({error:'Membership is required.'},400);
-   const {data:m,error}=await userClient.from('customer_memberships').select('id,stripe_customer_id,stripe_subscription_id,status').eq('id',membershipId).eq('customer_id',user.id).maybeSingle();
+   const {data:m,error}=await userClient.from('customer_memberships')
+    .select('id,stripe_customer_id,stripe_subscription_id,stripe_connected_account_id,status')
+    .eq('id',membershipId).eq('customer_id',user.id).maybeSingle();
    if(error)throw error;
    if(!m)return json({error:'Membership not found.'},404);
+   const connectedId=String(m.stripe_connected_account_id??'');
+   if(!/^acct_[A-Za-z0-9]+$/.test(connectedId))return json({error:'Membership payout account is unavailable.'},409);
    if(action==='PORTAL'){
     if(!m.stripe_customer_id)return json({error:'No billing account exists for this membership yet.'},400);
-    const portal=await stripe.billingPortal.sessions.create({customer:m.stripe_customer_id,return_url:base+'/memberships'});
+    const portal=await stripe.billingPortal.sessions.create(
+     {customer:m.stripe_customer_id,return_url:base+'/memberships'},
+     {stripeAccount:connectedId}
+    );
     return json({url:portal.url});
    }
    if(!m.stripe_subscription_id)return json({error:'No active Stripe subscription exists.'},400);
-   const subscription=await stripe.subscriptions.update(m.stripe_subscription_id,{cancel_at_period_end:action==='CANCEL_AT_PERIOD_END'});
+   const subscription=await stripe.subscriptions.update(
+    m.stripe_subscription_id,
+    {cancel_at_period_end:action==='CANCEL_AT_PERIOD_END'},
+    {stripeAccount:connectedId}
+   );
    return json({ok:true,status:subscription.status,cancelAtPeriodEnd:subscription.cancel_at_period_end});
   }
 
