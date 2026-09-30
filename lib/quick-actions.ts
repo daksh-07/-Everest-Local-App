@@ -20,14 +20,25 @@ export async function configureEverestQuickActions(){
  }catch{return false}
 }
 
+export function isSafeInternalRoute(value:unknown):value is string{
+ if(typeof value!=='string'||!value.startsWith('/')||value.startsWith('//')||value.includes('\\'))return false;
+ if(/[\u0000-\u001F\u007F]/.test(value))return false;
+ return !/^[\\/]*[a-z][a-z0-9+.-]*:/i.test(value);
+}
+
 export function quickActionHref(action:QuickActions.Action|null|undefined){
  const href=action?.params?.href;
- return typeof href==='string'&&href.startsWith('/')?href:null;
+ return isSafeInternalRoute(href)?href:null;
 }
 
 export async function storePendingQuickActionRoute(href:string){
- if(Platform.OS==='web')return;
+ if(Platform.OS==='web'||!isSafeInternalRoute(href))return;
  await SecureStore.setItemAsync(PENDING_QUICK_ACTION_KEY,href);
+}
+
+export async function clearPendingQuickActionRoute(){
+ if(Platform.OS==='web')return;
+ try{await SecureStore.deleteItemAsync(PENDING_QUICK_ACTION_KEY)}catch{return}
 }
 
 export async function consumePendingQuickActionRoute(){
@@ -35,7 +46,7 @@ export async function consumePendingQuickActionRoute(){
  try{
   const value=await SecureStore.getItemAsync(PENDING_QUICK_ACTION_KEY);
   if(value)await SecureStore.deleteItemAsync(PENDING_QUICK_ACTION_KEY);
-  return value?.startsWith('/')?value:null;
+  return isSafeInternalRoute(value)?value:null;
  }catch{return null}
 }
 
