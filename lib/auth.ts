@@ -2,6 +2,7 @@ import { Platform, Linking } from 'react-native';
 import { supabase, requireSupabaseConfig } from './supabase';
 import { z } from 'zod';
 import {disableCurrentDevicePushNotifications} from './push-notifications';
+import {clearPendingQuickActionRoute} from './quick-actions';
 
 const emailSchema = z.string().trim().email().max(254);
 const passwordSchema = z.string().min(8).max(128);
@@ -14,7 +15,18 @@ function authEmailRedirect() {
 }
 
 function passwordResetRedirect() {
-  return authEmailRedirect();
+  const base=authEmailRedirect();
+  return base+(base.includes('?')?'&':'?')+'recovery=1';
+}
+
+export function isPasswordRecoveryUrl(value:string|null|undefined){
+  if(!value)return false;
+  try{
+    const parsed=new URL(value);
+    if(parsed.searchParams.get('recovery')==='1'||parsed.searchParams.get('type')==='recovery')return true;
+    const fragment=value.includes('#')?value.slice(value.indexOf('#')+1):'';
+    return new URLSearchParams(fragment).get('type')==='recovery';
+  }catch{return false}
 }
 
 function oauthRedirect(intent?: 'CUSTOMER' | 'BUSINESS' | 'DELIVERY_DRIVER') {
@@ -96,8 +108,13 @@ export async function signIn(email:string,password:string){
 
 export async function signOut(){
   requireSupabaseConfig();
-  // Best-effort privacy cleanup: never let push-provider failure block sign-out.
+  // Best-effort privacy/state cleanup: never let local cleanup block sign-out.
   await disableCurrentDevicePushNotifications().catch(()=>false);
+  await clearPendingQuickActionRoute().catch(()=>undefined);
+  if(Platform.OS==='web'&&typeof window!=='undefined'){
+    window.localStorage.removeItem('everest-auth-return-to');
+    window.localStorage.removeItem('everest-auth-intent');
+  }
   const {error}=await supabase.auth.signOut();
   if(error)throw new Error(error.message);
 }
