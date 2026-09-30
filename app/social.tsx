@@ -50,7 +50,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  const isClipScene=sceneMode==='CLIPS'&&Boolean(pager);
  useAnimatedReaction(()=>Math.abs(sceneProgress.value-2)<.015,(now,before)=>{if(isClipScene&&now!==before)runOnJS(setClipSettled)(now)},[isClipScene,sceneProgress]);
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {width,height}=useWindowDimensions();const params=useGlobalSearchParams<{postId?:string;commentId?:string;mode?:string}>();
- const requestedPostId=typeof requestedPostId==='string'?requestedPostId:'';
+ const requestedPostId=typeof params.postId==='string'?params.postId:'';
  const cachedFeed=feedCache&&Date.now()-feedCache.at<FEED_CACHE_MS?feedCache:null;
  const [posts,setPosts]=useState<FeedPost[]>(()=>cachedFeed?.posts??[]);const [clips,setClips]=useState<FeedPost[]>([]);const [stories,setStories]=useState<StoryCard[]>([]);const [localMode,setMode]=useState<'POSTS'|'CLIPS'>(()=>params.mode==='clips'?'CLIPS':'POSTS');const mode=sceneMode??localMode;const [activeClipId,setActiveClipId]=useState<string|null>(null);const [loading,setLoading]=useState(()=>!cachedFeed);const [refreshing,setRefreshing]=useState(false);
  useEffect(()=>{if(!pager)fallbackProgress.value=mode==='CLIPS'?2:1},[fallbackProgress,mode,pager]);
