@@ -1,0 +1,61 @@
+name: Validate Rive RML
+
+on:
+  pull_request:
+    paths:
+      - "design/rive/**"
+      - "assets/rive/**"
+      - ".github/workflows/rive-rml.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "design/rive/**"
+      - "assets/rive/**"
+      - ".github/workflows/rive-rml.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-rive:
+    name: Verify Rive projects
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rive CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://releases.rive.app/cli/install.sh | bash
+          echo "$HOME/.rive/bin" >> "$GITHUB_PATH"
+          "$HOME/.rive/bin/rive" --version
+
+      - name: Verify and inspect tracked Rive projects
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -d '' projects < <(find design/rive -name rive.yaml -type f -print0 2>/dev/null || true)
+
+          if [ "${#projects[@]}" -eq 0 ]; then
+            echo "No tracked Rive projects yet; smoke-testing the installed CLI."
+            cd /tmp
+            rive create everest-rive-smoke
+            rive everest-rive-smoke --verify
+            rive inspect everest-rive-smoke --summary
+            exit 0
+          fi
+
+          for config in "${projects[@]}"; do
+            project_dir="$(dirname "$config")"
+            echo "::group::Rive verify: $project_dir"
+            rive "$project_dir" --verify
+            rive inspect "$project_dir" --summary
+            echo "::endgroup::"
+          done
