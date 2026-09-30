@@ -1,4 +1,4 @@
-import {useEffect,useMemo,useRef,useState} from 'react';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ActivityIndicator,Alert,Animated,Image,Keyboard,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useGlobalSearchParams} from 'expo-router';
@@ -64,6 +64,8 @@ export function MessagesScreen(){
  const {colors:c}=useAppTheme();
  const insets=useSafeAreaInsets();
  const params=useGlobalSearchParams<{personalId?:string;marketId?:string;conversationId?:string}>();
+ const requestedPersonalId=typeof params.personalId==='string'?params.personalId:'';
+ const requestedMarketId=typeof params.marketId==='string'?params.marketId:typeof params.conversationId==='string'?params.conversationId:'';
  const [tab,setTab]=useState<'CHATS'|'REQUESTS'>('CHATS');
  const [marketFilter,setMarketFilter]=useState<'ALL'|'PRODUCT'|'SERVICE'>('ALL');
  const [isBusinessUser,setIsBusinessUser]=useState(false);
@@ -73,6 +75,9 @@ export function MessagesScreen(){
  const [market,setMarket]=useState<MarketConversation[]>([]);
  const [selectedPersonal,setSelectedPersonal]=useState<PersonalConversation|null>(null);
  const [selectedMarket,setSelectedMarket]=useState<MarketConversation|null>(null);
+ const selectedPersonalRef=useRef<PersonalConversation|null>(null);const selectedMarketRef=useRef<MarketConversation|null>(null);
+ selectedPersonalRef.current=selectedPersonal;selectedMarketRef.current=selectedMarket;
+ const selectedPersonalId=selectedPersonal?.id??'';const selectedMarketId=selectedMarket?.id??'';const pagerSelected=pager?.selected;
  useEffect(()=>{pager?.setThreadOpen(Boolean(selectedPersonal||selectedMarket))},[pager,selectedPersonal,selectedMarket]);
  const [personalThread,setPersonalThread]=useState<PersonalMessage[]>([]);
  const [marketThread,setMarketThread]=useState<MarketMessage[]>([]);
@@ -106,7 +111,7 @@ export function MessagesScreen(){
  const composerBottomInset=keyboardOpen||nativeKeyboardOpen?0:insets.bottom;
  const chatRootStyle={flex:1,minHeight:0,width:'100%',overflow:'hidden',backgroundColor:c.canvas} as const;
 
- async function loadHome(silent=false){
+ const loadHome=useCallback(async(silent=false)=>{
   lastHomeLoad.current=Date.now();
   if(!silent)setLoading(true);
   if(!silent)setError('');
@@ -125,30 +130,28 @@ export function MessagesScreen(){
    }
    const names=Object.fromEntries(businessRows.map(x=>[x.id,x]));
    setMarket(rows.map(x=>({...x,counterpart_name:names[x.business_id]?.name??'Business conversation',logo_url:names[x.business_id]?.logo_url??null})));
-   const requested=typeof params.personalId==='string'?params.personalId:'';
-   if(requested&&!selectedPersonal){
-    const found=[...p,...r].find(x=>x.id===requested);
+   if(requestedPersonalId&&!selectedPersonalRef.current){
+    const found=[...p,...r].find(x=>x.id===requestedPersonalId);
     if(found){setSelectedPersonal(found);setTab(found.status==='REQUEST'&&found.initiated_by!==user?.id?'REQUESTS':'CHATS')}
    }
-   const requestedMarket=typeof params.marketId==='string'?params.marketId:typeof params.conversationId==='string'?params.conversationId:'';
-   if(requestedMarket&&!selectedMarket){const found=rows.find(x=>x.id===requestedMarket);if(found)setSelectedMarket({...found,counterpart_name:names[found.business_id]?.name??'Business conversation',logo_url:names[found.business_id]?.logo_url??null})}
+   if(requestedMarketId&&!selectedMarketRef.current){const found=rows.find(x=>x.id===requestedMarketId);if(found)setSelectedMarket({...found,counterpart_name:names[found.business_id]?.name??'Business conversation',logo_url:names[found.business_id]?.logo_url??null})}
   }catch{if(!silent)setError('Messages could not be loaded.')}
   finally{if(!silent)setLoading(false)}
- }
+ },[requestedPersonalId,requestedMarketId]);
 
- async function refreshPersonalThread(id:string,silent=false){
+ const refreshPersonalThread=useCallback(async(id:string,silent=false)=>{
   try{
    const rows=await personalMessages(id,null,PAGE_SIZE);
    setPersonalThread(rows);setHasOlder(rows.length===PAGE_SIZE);
    await markPersonalConversationRead(id).catch(()=>0);
    if(!silent){initialScrollRef.current=true}
   }catch{if(!silent)setError('Conversation could not be loaded.')}
- }
+ },[]);
 
- async function refreshMarketThread(id:string){
+ const refreshMarketThread=useCallback(async(id:string)=>{
   try{setMarketThread(await messages(id) as MarketMessage[])}
   catch{setError('Conversation could not be loaded.')}
- }
+ },[]);
 
  async function loadOlder(){
   if(!selectedPersonal||loadingOlder||!hasOlder||!personalThread.length)return;
@@ -161,25 +164,25 @@ export function MessagesScreen(){
   finally{setLoadingOlder(false)}
  }
 
- useEffect(()=>{void loadHome()},[]);
+ useEffect(()=>{void loadHome()},[loadHome]);
  useEffect(()=>{
-  if(pager&&pager.selected!==4)return;
+  if(pagerSelected!==undefined&&pagerSelected!==4)return;
   if(Date.now()-lastHomeLoad.current>12_000)void loadHome(true);
-  const timer=setInterval(()=>{if(!selectedPersonal&&!selectedMarket)void loadHome(true)},12000);
+  const timer=setInterval(()=>{if(!selectedPersonalId&&!selectedMarketId)void loadHome(true)},12000);
   return()=>clearInterval(timer);
- },[selectedPersonal,selectedMarket,pager?.selected]);
+ },[loadHome,selectedPersonalId,selectedMarketId,pagerSelected]);
  useEffect(()=>{
-  if(!selectedPersonal||(pager&&pager.selected!==4))return;
-  initialScrollRef.current=true;void refreshPersonalThread(selectedPersonal.id);
-  const timer=setInterval(()=>void refreshPersonalThread(selectedPersonal.id,true),3000);
+  if(!selectedPersonalId||(pagerSelected!==undefined&&pagerSelected!==4))return;
+  initialScrollRef.current=true;void refreshPersonalThread(selectedPersonalId);
+  const timer=setInterval(()=>void refreshPersonalThread(selectedPersonalId,true),3000);
   return()=>clearInterval(timer);
- },[selectedPersonal?.id,pager?.selected]);
+ },[refreshPersonalThread,selectedPersonalId,pagerSelected]);
  useEffect(()=>{
-  if(!selectedMarket||(pager&&pager.selected!==4))return;
-  void refreshMarketThread(selectedMarket.id);
-  const timer=setInterval(()=>void refreshMarketThread(selectedMarket.id),4000);
+  if(!selectedMarketId||(pagerSelected!==undefined&&pagerSelected!==4))return;
+  void refreshMarketThread(selectedMarketId);
+  const timer=setInterval(()=>void refreshMarketThread(selectedMarketId),4000);
   return()=>clearInterval(timer);
- },[selectedMarket?.id,pager?.selected]);
+ },[refreshMarketThread,selectedMarketId,pagerSelected]);
 
  useEffect(()=>{
   if(reducedMotion){tabFade.setValue(1);return}
