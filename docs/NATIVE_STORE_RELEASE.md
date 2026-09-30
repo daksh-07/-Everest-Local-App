@@ -14,7 +14,7 @@ This document is the authoritative native release checklist for the App Store an
 - Android notification icon: white transparent native asset
 - Android edge-to-edge enabled
 - Android keyboard mode: resize
-- iPad support is disabled until tablet UX is physically certified
+- iPhone and iPad are both enabled; tablet layout, rotation and multitasking behavior remain part of the physical-device release gate
 - Native Everest Pro purchases never fall back to Stripe. Web can use Stripe; native digital billing requires store-native billing.
 - Production Android EAS builds fail closed when Firebase or Google Maps native configuration is missing.
 
@@ -56,7 +56,7 @@ Every relevant pull request and main-branch change runs:
 - Expo config resolution
 - clean iOS prebuild
 - App Store bundle id / deep-link / production APNs entitlement checks
-- iPhone-only device-family check
+- iPhone + iPad device-family check
 - native icon generation check
 - clean Android prebuild
 - Play package id check
@@ -68,7 +68,7 @@ Every relevant pull request and main-branch change runs:
 
 ## Physical-device release gate
 
-Automation cannot replace this final device matrix. Before public release, install signed production/preview builds on at least one real iPhone and one real Google Play Android device and verify:
+Automation cannot replace this final device matrix. Before public release, install signed production/preview builds on at least one real iPhone, one real iPad and one real Google Play Android device and verify:
 
 - fresh install, sign-up, sign-in, sign-out, account switching and password recovery;
 - customer mode and business mode switching;
