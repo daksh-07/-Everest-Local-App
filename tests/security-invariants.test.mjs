@@ -253,6 +253,19 @@ test('account deletion preflight retains marketplace, moderation and compliance 
   assert.match(hardening,/external_enquiries/);
 });
 
+test('private user audio follows post visibility and product media writes require catalogue permission', async () => {
+  const media = await readFile(join(migrationsDir, '20260930165000_media_storage_permission_hardening.sql'), 'utf8');
+  assert.match(media,/user_audio_visible_select/);
+  assert.match(media,/p\.status='PUBLISHED'/);
+  assert.match(media,/p\.visibility='PUBLIC'/);
+  assert.match(media,/p\.visibility='FOLLOWERS'/);
+  assert.match(media,/user_blocks/);
+  assert.match(media,/has_business_permission\(p\.business_id,'CATALOG_MANAGE'\)/);
+  assert.match(media,/product_media_member_insert/);
+  assert.match(media,/product_media_member_update/);
+  assert.match(media,/product_media_member_delete/);
+});
+
 test('sole admin cannot use ordinary account deletion', () => {
   assert.match(migrationText, /can_delete_my_account[\s\S]{0,700}is_admin_identity\(\)[\s\S]{0,80}return\s+false/i);
 });
