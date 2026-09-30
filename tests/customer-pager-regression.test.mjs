@@ -29,6 +29,14 @@ test('deep links and the five-destination tab projection resolve continuously',(
  assert.equal(tabForProgress(2.5),1.5);
  assert.equal(tabForProgress(4),3);
 });
+test('pager lazily mounts nearby scenes and retains them after first visit',()=>{
+ assert.match(shell,/sceneWindow\(page:number\)/);
+ assert.match(shell,/useState<Set<number>>\(\(\)=>sceneWindow\(routePage\?\?0\)\)/);
+ assert.match(shell,/mountSceneWindow\(target\)/);
+ assert.match(shell,/mountedPages\.has\(0\)\?<HomeScreen/);
+ assert.match(shell,/mountedPages\.has\(4\)\?<MessagesScreen/);
+ assert.doesNotMatch(shell,/mountedPages\.delete|setMountedPages\(new Set/);
+});
 test('pager does not set React state during frames; route follows spring completion',()=>{
  const gesture=shell.slice(shell.indexOf('.onUpdate(event=>'),shell.indexOf('.onEnd(event=>'));
  assert.doesNotMatch(gesture,/setSelected|router\.|setState/);
