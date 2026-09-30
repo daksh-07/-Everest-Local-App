@@ -59,7 +59,7 @@ test('discovery is authenticated, metered and native search retains failure isol
  assert.match(discovery,/pageSize: 5/);
  assert.match(discovery,/AbortSignal\.timeout\(4500\)/);
  assert.doesNotMatch(search,/functions\.invoke\('external-discovery'/);
- assert.match(search,/external-businesses/);
+ assert.doesNotMatch(search,/external-businesses/);
  assert.match(externalDirectory,/functions\.invoke\('external-discovery'/);
  assert.match(externalDirectory,/search itself never contacts them/i);
  assert.match(migration,/values \('discovery'\),\('enquiries'\),\('gateway'\),\('messaging'\),\('claiming'\)/);
