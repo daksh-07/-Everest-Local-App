@@ -240,6 +240,19 @@ test('no client Data API path can insert/update/delete profiles or select ADMIN 
   assert.match(migrationText, /enforce_single_admin_identity[\s\S]{0,700}new\.role\s*=\s*['"]ADMIN['"][\s\S]{0,300}716edb35-a0cb-4cbf-99b2-41fa8500ffd3/i);
 });
 
+test('account deletion preflight retains marketplace, moderation and compliance evidence', async () => {
+  const hardening = await readFile(join(migrationsDir, '20260930163500_account_deletion_retention_hardening.sql'), 'utf8');
+  for (const table of [
+    'customer_memberships','customer_packages','membership_billing_history','service_credit_ledger',
+    'post_promotions','personal_messages','personal_message_edit_history','payment_circumvention_flags',
+    'user_reports','post_reports','support_requests','driver_applications',
+  ]) {
+    assert.match(hardening,new RegExp('public\\.'+table));
+  }
+  assert.match(hardening,/external_business_claim_requests/);
+  assert.match(hardening,/external_enquiries/);
+});
+
 test('sole admin cannot use ordinary account deletion', () => {
   assert.match(migrationText, /can_delete_my_account[\s\S]{0,700}is_admin_identity\(\)[\s\S]{0,80}return\s+false/i);
 });
