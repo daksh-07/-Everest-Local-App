@@ -47,8 +47,10 @@ Deno.serve(async req=>{
   const action=String(body.action??'CREATE_CHECKOUT');
   if(!businessId)return json({error:'Business is required.'},400);
 
-  const {data:membership,error:membershipError}=await userClient.from('business_members').select('business_id').eq('business_id',businessId).eq('user_id',user.id).maybeSingle();
-  if(membershipError||!membership)return json({error:'Business access unavailable.'},403);
+  const {data:allowed,error:permissionError}=await userClient.rpc('has_business_permission',{
+   p_business_id:businessId,p_permission:'FINANCE_MANAGE'
+  });
+  if(permissionError||allowed!==true)return json({error:'Finance management access is required.'},403);
 
   const {data:subRow}=await admin.from('business_subscriptions').select('stripe_customer_id,stripe_subscription_id,status').eq('business_id',businessId).maybeSingle();
 
