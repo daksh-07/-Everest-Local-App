@@ -54,7 +54,12 @@ Deno.serve(async req=>{
    .eq('id',businessId).maybeSingle();
   if(businessError)throw businessError;
   const connected=business as ConnectBusiness|null;
-  if(!connectReady(connected))return json({error:'This business is still setting up payouts. No payment was taken.'},409);
+  if(!connectReady(connected)){
+   await admin.from('service_payments').update({
+    status:'FAILED',updated_at:new Date().toISOString(),
+   }).eq('id',paymentId).eq('status','PENDING').is('provider_checkout_session_id',null);
+   return json({error:'This business is still setting up payouts. No payment was taken.'},409);
+  }
   const connectedId=connected!.stripe_connected_account_id!;
 
   const stripe=new Stripe(stripeKey,{apiVersion:'2025-07-30.basil'});
