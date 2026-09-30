@@ -45,7 +45,7 @@ export default function CreatePost(){
  useEffect(()=>{let active=true;(async()=>{try{
   const [{data:{user}},ctx,{data:profile}]=await Promise.all([supabase.auth.getUser(),getWorkspaceContext(),supabase.from('profiles').select('full_name,suburb,city,state,country').maybeSingle()]);
   if(!active)return;if(!user){router.replace('/auth');return;}
-  const list:Identity[]=[{kind:'PERSONAL',id:user.id,name:profile?.full_name||'My profile'},...ctx.businesses.map(b=>({kind:'BUSINESS' as const,id:b.id,name:b.name,business:b}))];
+  const list:Identity[]=[{kind:'PERSONAL',id:user.id,name:profile?.full_name||'My profile'},...ctx.businesses.filter(b=>b.can_manage_catalog).map(b=>({kind:'BUSINESS' as const,id:b.id,name:b.name,business:b}))];
   setIdentities(list);const preferred=ctx.mode==='BUSINESS'&&ctx.active_business_id?list.find(i=>i.kind==='BUSINESS'&&i.id===ctx.active_business_id):list[0];setIdentity(preferred??list[0]);
   if(!location.trim()&&(profile?.suburb||profile?.city))setLocation([profile?.suburb,profile?.city&&profile.city!==profile.suburb?profile.city:'',profile?.state,profile?.country].filter(Boolean).join(', '));
   if(params.intent==='question')setType('QUESTION');else if(params.intent==='update')setType('UPDATE');
