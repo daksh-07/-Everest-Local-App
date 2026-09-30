@@ -47,6 +47,7 @@ export default function BusinessIntegrations(){
    if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
    const current=ctx.businesses.find(x=>x.id===ctx.active_business_id);
    if(!current)throw new Error('Business access unavailable.');
+   if(!current.can_manage_crm){router.replace('/business-control');return;}
    setBusiness(current);
    const [nextConnections,subscription]=await Promise.all([listIntegrationConnections(current.id),getBusinessSubscription(current.id)]);
    setConnections(nextConnections);
