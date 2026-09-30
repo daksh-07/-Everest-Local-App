@@ -47,8 +47,7 @@ export default function CreatePost(){
   if(!active)return;if(!user){router.replace('/auth');return;}
   const list:Identity[]=[{kind:'PERSONAL',id:user.id,name:profile?.full_name||'My profile'},...ctx.businesses.filter(b=>b.can_manage_catalog).map(b=>({kind:'BUSINESS' as const,id:b.id,name:b.name,business:b}))];
   setIdentities(list);const preferred=ctx.mode==='BUSINESS'&&ctx.active_business_id?list.find(i=>i.kind==='BUSINESS'&&i.id===ctx.active_business_id):list[0];setIdentity(preferred??list[0]);
-  if(!location.trim()&&(profile?.suburb||profile?.city))setLocation([profile?.suburb,profile?.city&&profile.city!==profile.suburb?profile.city:'',profile?.state,profile?.country].filter(Boolean).join(', '));
-  if(params.intent==='question')setType('QUESTION');else if(params.intent==='update')setType('UPDATE');
+  if(profile?.suburb||profile?.city){const profileLocation=[profile?.suburb,profile?.city&&profile.city!==profile.suburb?profile.city:'',profile?.state,profile?.country].filter(Boolean).join(', ');setLocation(current=>current.trim()?current:profileLocation);}
  }catch(e){setError(e instanceof Error?e.message:'Post composer could not be opened.')}finally{setLoading(false)}})();return()=>{active=false}},[]);
 
  useEffect(()=>{let active=true;(async()=>{if(identity?.kind!=='BUSINESS'){setServices([]);setProducts([]);setServiceId(null);setProductId(null);return;}
@@ -58,6 +57,7 @@ export default function CreatePost(){
   ]);
   if(!active)return;if(!sr.error)setServices((sr.data??[]) as Listing[]);if(!pr.error)setProducts((pr.data??[]) as Listing[]);setVisibility('PUBLIC');
  })();return()=>{active=false}},[identity]);
+ useEffect(()=>{if(params.intent==='question')setType('QUESTION');else if(params.intent==='update')setType('UPDATE')},[params.intent]);
  useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active){if(next.source==='VOICEOVER')setVoiceover(next);else setSound(next)}}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Sound could not be loaded.')});return()=>{active=false}},[params.soundId]);
 
  const choices=identity?.kind==='BUSINESS'?businessChoices:personalChoices;
