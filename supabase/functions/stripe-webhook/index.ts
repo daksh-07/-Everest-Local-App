@@ -238,11 +238,12 @@ Deno.serve(async req=>{
     }else{
      const paymentObject=event.data.object as Stripe.Checkout.Session|Stripe.PaymentIntent;
      const checkoutSessionId=event.type==='checkout.session.completed'?(paymentObject as Stripe.Checkout.Session).id:null;
+     const sessionPaymentIntent=(paymentObject as Stripe.Checkout.Session).payment_intent;
      const paymentIntentId=event.type==='payment_intent.succeeded'
       ?(paymentObject as Stripe.PaymentIntent).id
-      :typeof (paymentObject as Stripe.Checkout.Session).payment_intent==='string'
-       ?(paymentObject as Stripe.Checkout.Session).payment_intent as string
-       :(paymentObject as Stripe.Checkout.Session).payment_intent?.id??null;
+      :typeof sessionPaymentIntent==='string'
+       ?sessionPaymentIntent
+       :sessionPaymentIntent?.id??null;
      const {error}=await db.rpc('activate_post_promotion',{
       p_promotion_id:promotionId,p_checkout_session_id:checkoutSessionId,p_payment_intent_id:paymentIntentId
      });
