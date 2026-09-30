@@ -55,6 +55,10 @@ test('home renders live weather beside the resolved locality without blocking Ho
  assert.match(home,/weatherIcon/);
  assert.match(home,/weatherInline/);
  assert.match(home,/void loadWeather\(locality\)/);
+ assert.match(home,/geocodeCustomerLocality/);
+ assert.match(home,/weatherLoading/);
+ assert.match(home,/partly-sunny-outline/);
+ assert.match(home,/--°/);
  assert.doesNotMatch(home,/loadNearby\(locality\),loadWeather\(locality\)/);
  assert.match(weather,/api\.open-meteo\.com\/v1\/forecast/);
  assert.match(weather,/current=temperature_2m,weather_code,is_day/);
