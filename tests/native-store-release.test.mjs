@@ -10,12 +10,13 @@ const push=fs.readFileSync('lib/push-notifications.native.ts','utf8');
 const upgrade=fs.readFileSync('app/business-upgrade.tsx','utf8');
 const validator=fs.readFileSync('scripts/validate-store-build-env.mjs','utf8');
 const workflow=fs.readFileSync('.github/workflows/validate-ios-native.yml','utf8');
+const manifest=JSON.parse(fs.readFileSync('public/manifest.json','utf8'));
 
 test('store identifiers and production profiles are explicit',()=>{
  assert.equal(app.ios.bundleIdentifier,'com.everestlocal.app');
  assert.equal(app.android.package,'com.everestlocal.app');
- assert.equal(app.scheme,'everestlocal');
- assert.equal(app.ios.supportsTablet,false);
+ assert.equal(app.scheme,'everestlocal');\n assert.deepEqual(app.platforms,['ios','android','web']);\n assert.equal(manifest.orientation,'any');
+ assert.equal(app.ios.supportsTablet,true);\n assert.equal(app.orientation,'default');
  assert.equal(app.ios.config.usesNonExemptEncryption,false);
  assert.equal(eas.build.production.distribution,'store');
  assert.equal(eas.build.production.android.buildType,'app-bundle');

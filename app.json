@@ -3,11 +3,11 @@
     "name": "Everest Local",
     "slug": "everest-local",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "userInterfaceStyle": "automatic",
     "scheme": "everestlocal",
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.everestlocal.app",
       "backgroundColor": "#151513",
       "infoPlist": {},
@@ -85,6 +85,11 @@
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#151513"
-    }
+    },
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ]
   }
 }
