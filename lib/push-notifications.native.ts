@@ -94,3 +94,23 @@ export async function getInitialPushHref(){
 export async function clearPushBadge(){
  try{await Notifications.setBadgeCountAsync(0)}catch{return}
 }
+
+export async function disableCurrentDevicePushNotifications(){
+ if(Platform.OS!=='ios'&&Platform.OS!=='android')return false;
+ try{
+  const permission=await Notifications.getPermissionsAsync();
+  if(permission.status!=='granted')return false;
+  const projectId=Constants.easConfig?.projectId
+    ??(Constants.expoConfig?.extra?.eas as {projectId?:string}|undefined)?.projectId;
+  if(!projectId)return false;
+  const expoToken=(await Notifications.getExpoPushTokenAsync({projectId})).data;
+  if(!expoToken)return false;
+  const {error}=await supabase.rpc('disable_my_push_token',{p_expo_push_token:expoToken});
+  if(error)throw error;
+  await Notifications.setBadgeCountAsync(0);
+  return true;
+ }catch(error){
+  if(typeof console!=='undefined')console.warn('[Everest push sign-out cleanup]',error);
+  return false;
+ }
+}
