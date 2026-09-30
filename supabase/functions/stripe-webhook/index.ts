@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import Stripe from 'https://esm.sh/stripe@18.5.0?target=deno';
+import Stripe from 'npm:stripe@22.6.2';
 
 type StripeMetadata={
  order_id?:string;payment_kind?:string;service_payment_id?:string;booking_id?:string;business_id?:string;
@@ -112,7 +112,7 @@ Deno.serve(async req=>{
  const secret=Deno.env.get('STRIPE_SECRET_KEY'),webhookSecret=Deno.env.get('STRIPE_WEBHOOK_SECRET'),connectWebhookSecret=Deno.env.get('STRIPE_CONNECT_WEBHOOK_SECRET'),url=Deno.env.get('SUPABASE_URL'),service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
  if(!secret||!url||!service)return json({error:'Webhook not configured'},503);
  const signature=req.headers.get('stripe-signature');if(!signature)return json({error:'Missing signature'},400);
- const body=await req.text();const stripe=new Stripe(secret,{apiVersion:'2025-07-30.basil'});
+ const body=await req.text();const stripe=new Stripe(secret);const cryptoProvider=Stripe.createSubtleCryptoProvider();
  const db=createClient(url,service);
  const candidates=[webhookSecret,connectWebhookSecret].filter((v):v is string=>Boolean(v));
  const {data:vaultSecrets,error:vaultError}=await db.rpc('get_stripe_webhook_secrets');
@@ -125,7 +125,7 @@ Deno.serve(async req=>{
  if(!candidates.length)return json({error:'Webhook signing secret not configured'},503);
  let event:Stripe.Event|null=null;
  for(const candidate of candidates){
-  try{event=stripe.webhooks.constructEvent(body,signature,candidate);break;}catch{/* try the next registered endpoint secret */}
+  try{event=await stripe.webhooks.constructEventAsync(body,signature,candidate,undefined,cryptoProvider);break;}catch{/* try the next registered endpoint secret */}
  }
  if(!event)return json({error:'Invalid signature'},400)
  const {data:claimed,error:claimError}=await db.rpc('claim_stripe_event',{p_event_id:event.id,p_event_type:event.type});
