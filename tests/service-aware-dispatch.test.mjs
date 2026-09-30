@@ -176,7 +176,7 @@ test('internal candidate/queue functions are not client executable', () => {
 
 test('candidate helper remains server-only after later dispatch migrations', () => {
   assert.match(dispatchPrivilegeHardening, /revoke execute on function public\.get_service_dispatch_candidates\(uuid,integer\)\s+from public, anon, authenticated/i);
-  assert.match(dispatchPrivilegeHardening, /grant execute on function public\.get_service_dispatch_candidates\(uuid,integer\) to service_role/i);
+  assert.match(dispatchPrivilegeHardening, /grant execute on function public\.get_service_dispatch_candidates\(uuid,integer\)\s+to service_role/i);
   assert.doesNotMatch(dispatchPrivilegeHardening, /grant execute[^;]*to authenticated/i);
 });
 
