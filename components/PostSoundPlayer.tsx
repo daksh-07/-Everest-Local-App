@@ -33,8 +33,9 @@ export function PostSoundPlayer({
  const primary=audible.find(track=>track.source!=='VOICEOVER')??audible[0]??tracks[0];
  const voice=audible.find(track=>track.source==='VOICEOVER');
  const durationMs=photoDurationMs??Math.max(5000,...audible.map(track=>track.endMs?Math.max(1000,track.endMs-track.startMs):15000));
+ const trackKey=tracks.map(track=>track.id).join('|');
 
- useEffect(()=>{setPlaying(false)},[tracks.map(x=>x.id).join('|'),photoDurationMs]);
+ useEffect(()=>{setPlaying(false)},[trackKey,photoDurationMs]);
  useEffect(()=>{if(!playing)return;const timer=setTimeout(()=>setPlaying(false),durationMs);return()=>clearTimeout(timer)},[playing,durationMs]);
 
  function toggle(){
