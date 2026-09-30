@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const migration=fs.readFileSync('supabase/migrations/20260926203000_business_growth_engine_p0.sql','utf8');
 const billing=fs.readFileSync('supabase/functions/membership-billing/index.ts','utf8');
+const connectBilling=fs.readFileSync('supabase/migrations/20260930190000_connect_membership_package_billing.sql','utf8');
 const webhook=fs.readFileSync('supabase/functions/stripe-webhook/index.ts','utf8');
 const growth=fs.readFileSync('lib/growth.ts','utf8');
 const wallet=fs.readFileSync('app/memberships.tsx','utf8');
@@ -37,6 +38,20 @@ test('Stripe is authoritative for membership lifecycle and package activation',(
  assert.match(migration,/grant execute on function public\.set_customer_membership_from_stripe[\s\S]*to service_role/);
  assert.match(migration,/grant execute on function public\.record_membership_invoice[\s\S]*to service_role/);
  assert.doesNotMatch(webhook,/metadata\.payment_kind==='everest_pro'\|\|event\.type\.startsWith\('customer\.subscription\.'/);
+});
+
+test('business memberships and packages charge the connected business account with Everest fees',()=>{
+ assert.match(connectBilling,/is_business_payment_ready/);
+ assert.match(connectBilling,/stripe_connected_account_id/);
+ assert.match(connectBilling,/calculate_service_platform_fee/);
+ assert.match(connectBilling,/stripe_application_fee_percent/);
+ assert.match(connectBilling,/marketplace_fee/);
+ assert.match(billing,/stripeAccount:connectedId/);
+ assert.match(billing,/application_fee_percent:feePercent/);
+ assert.match(billing,/application_fee_amount:applicationFeeCents/);
+ assert.match(webhook,/Membership connected-account mismatch/);
+ assert.match(webhook,/Package connected-account mismatch/);
+ assert.match(webhook,/stripeAccount:connectedAccountId/);
 });
 
 test('tenant boundaries protect business growth data',()=>{
