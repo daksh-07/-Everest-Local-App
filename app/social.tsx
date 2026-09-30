@@ -50,6 +50,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  const isClipScene=sceneMode==='CLIPS'&&Boolean(pager);
  useAnimatedReaction(()=>Math.abs(sceneProgress.value-2)<.015,(now,before)=>{if(isClipScene&&now!==before)runOnJS(setClipSettled)(now)},[isClipScene,sceneProgress]);
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {width,height}=useWindowDimensions();const params=useGlobalSearchParams<{postId?:string;commentId?:string;mode?:string}>();
+ const requestedPostId=typeof requestedPostId==='string'?requestedPostId:'';
  const cachedFeed=feedCache&&Date.now()-feedCache.at<FEED_CACHE_MS?feedCache:null;
  const [posts,setPosts]=useState<FeedPost[]>(()=>cachedFeed?.posts??[]);const [clips,setClips]=useState<FeedPost[]>([]);const [stories,setStories]=useState<StoryCard[]>([]);const [localMode,setMode]=useState<'POSTS'|'CLIPS'>(()=>params.mode==='clips'?'CLIPS':'POSTS');const mode=sceneMode??localMode;const [activeClipId,setActiveClipId]=useState<string|null>(null);const [loading,setLoading]=useState(()=>!cachedFeed);const [refreshing,setRefreshing]=useState(false);
  useEffect(()=>{if(!pager)fallbackProgress.value=mode==='CLIPS'?2:1},[fallbackProgress,mode,pager]);
@@ -78,8 +79,9 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  }).current;
 
  const load=useCallback(async(force=false)=>{
-  if(exploreLoad){await exploreLoad;if(exploreSnapshot&&!force){setPosts(exploreSnapshot.posts);setClips(exploreSnapshot.clips);setStories(exploreSnapshot.stories);setLocality(exploreSnapshot.locality);setUserId(exploreSnapshot.userId);setActiveClipId(exploreSnapshot.clips[0]?.id??null);setLoading(false);return}}
-  if(!force&&exploreSnapshot&&Date.now()-exploreSnapshot.at<FEED_CACHE_MS){setPosts(exploreSnapshot.posts);setClips(exploreSnapshot.clips);setStories(exploreSnapshot.stories);setLocality(exploreSnapshot.locality);setUserId(exploreSnapshot.userId);setActiveClipId(exploreSnapshot.clips[0]?.id??null);setLoading(false);return}
+  const snapshotHasRequestedPost=(snapshot:NonNullable<typeof exploreSnapshot>)=>!requestedPostId||snapshot.posts.some(item=>item.id===requestedPostId)||snapshot.clips.some(item=>item.id===requestedPostId);
+  if(exploreLoad){await exploreLoad;if(exploreSnapshot&&!force&&snapshotHasRequestedPost(exploreSnapshot)){setPosts(exploreSnapshot.posts);setClips(exploreSnapshot.clips);setStories(exploreSnapshot.stories);setLocality(exploreSnapshot.locality);setUserId(exploreSnapshot.userId);setActiveClipId(exploreSnapshot.clips[0]?.id??null);setLoading(false);return}}
+  if(!force&&exploreSnapshot&&Date.now()-exploreSnapshot.at<FEED_CACHE_MS&&snapshotHasRequestedPost(exploreSnapshot)){setPosts(exploreSnapshot.posts);setClips(exploreSnapshot.clips);setStories(exploreSnapshot.stories);setLocality(exploreSnapshot.locality);setUserId(exploreSnapshot.userId);setActiveClipId(exploreSnapshot.clips[0]?.id??null);setLoading(false);return}
   let release=()=>{};exploreLoad=new Promise<void>(resolve=>{release=resolve});
   setError('');
   try{
@@ -89,11 +91,11 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
    ]);
    const localityHint=loc?.suburb||loc?.city||undefined;
    let items=await listPublicPosts({limit:40,offset:0,locality:localityHint});
-   if(params.postId&&!items.some(item=>item.id===params.postId)){
-    const direct=await getAccessiblePost(params.postId).catch(()=>null);
+   if(requestedPostId&&!items.some(item=>item.id===requestedPostId)){
+    const direct=await getAccessiblePost(requestedPostId).catch(()=>null);
     if(direct&&(direct.content_format??'POST')==='POST')items=[direct,...items];
    }
-   const nextUserId=user?.id??null;const nextLocality=loc?(loc.suburb||loc.city||'Near you'):(cachedFeed?.locality??'Near you');
+   const nextUserId=user?.id??null;const nextLocality=loc?(loc.suburb||loc.city||'Near you'):(feedCache?.locality??'Near you');
    setUserId(nextUserId);setLocality(nextLocality);
    const ids=items.map(x=>x.id);const businessIds=[...new Set(items.map(x=>x.business_id).filter((x):x is string=>Boolean(x)))];
    const authorIds=[...new Set(items.map(x=>x.author_id))];
@@ -111,7 +113,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
    const terms=loc?[loc.suburb,loc.city,loc.state].filter(Boolean).map(x=>String(x).toLowerCase()):[];
    const score=(p:SocialPost)=>terms.reduce((n,t)=>n+((p.location_label??'').toLowerCase().includes(t)?3:0),0);
    const sorted=[...items].sort((a,b)=>{
-    if(params.postId){if(a.id===params.postId)return -1;if(b.id===params.postId)return 1;}
+    if(requestedPostId){if(a.id===requestedPostId)return -1;if(b.id===requestedPostId)return 1;}
     return Number(b.feed_score??score(b))-Number(a.feed_score??score(a))||new Date(b.created_at).getTime()-new Date(a.created_at).getTime();
    });
    const nextPosts=sorted.map(x=>({...x,media:media[x.id]??[],verifiedWork:verified.has(x.id),businesses:x.business_id?businessMap[x.business_id]??null:null,profile:profileMap[x.author_id]??null,engagement:engagement[x.id]??emptyEngagement}));
@@ -150,29 +152,29 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
     const cp=Object.fromEntries((clipProfiles.data??[]).map(x=>[x.id,x]));
     const cb=Object.fromEntries((clipBusinesses.data??[]).map(x=>[x.id,x]));
     const hydrated=clipRows.map(x=>({...x,media:[],verifiedWork:false,businesses:x.business_id?cb[x.business_id]??null:null,profile:cp[x.author_id]??null,engagement:clipEngagement[x.id]??emptyEngagement,music:x.music_track_id?musicMap[x.music_track_id]??null:null,musicUrl:x.music_track_id?musicUrls[x.music_track_id]??null:null,audioTracks:audioByPost[x.id]??[]}));
-    const orderedClips=params.postId?[...hydrated].sort((a,b)=>a.id===params.postId?-1:b.id===params.postId?1:0):hydrated;
+    const orderedClips=requestedPostId?[...hydrated].sort((a,b)=>a.id===requestedPostId?-1:b.id===requestedPostId?1:0):hydrated;
     setClips(orderedClips);
     exploreSnapshot={posts:enrichedPosts,clips:orderedClips,stories:storyRows,locality:nextLocality,userId:nextUserId,at:Date.now()};
-    if(!activeClipId&&orderedClips[0])setActiveClipId(orderedClips[0].id);
+    if(orderedClips[0])setActiveClipId(current=>current??orderedClips[0].id);
    }else{setClips([]);exploreSnapshot={posts:enrichedPosts,clips:[],stories:storyRows,locality:nextLocality,userId:nextUserId,at:Date.now()}}
   }catch(e){setError(e instanceof Error?e.message:'Could not load Explore.');}
   finally{setLoading(false);setRefreshing(false);release();exploreLoad=null}
- },[]);
+ },[requestedPostId]);
 
  useEffect(()=>{void load()},[load]);
  useEffect(()=>{setMode(params.mode==='clips'?'CLIPS':'POSTS')},[params.mode]);
  useEffect(()=>{const timer=setTimeout(()=>listRef.current?.scrollToOffset({offset:scrollOffsets.current[mode],animated:false}),0);return()=>clearTimeout(timer)},[mode]);
  useEffect(()=>{
-  if(!params.postId||lastDeepLinkedPost.current===params.postId)return;
+  if(!requestedPostId||lastDeepLinkedPost.current===requestedPostId)return;
   const list=mode==='CLIPS'?clips:posts;
-  const target=list.find(p=>p.id===params.postId);
+  const target=list.find(p=>p.id===requestedPostId);
   if(!target)return;
-  lastDeepLinkedPost.current=params.postId;
-  const index=list.findIndex(p=>p.id===params.postId);
+  lastDeepLinkedPost.current=requestedPostId;
+  const index=list.findIndex(p=>p.id===requestedPostId);
   const timer=setTimeout(()=>{if(index>=0)listRef.current?.scrollToIndex({index,animated:false,viewPosition:0})},60);
   if(params.commentId)void openComments(target);
   return()=>clearTimeout(timer);
- },[params.postId,params.commentId,posts,clips,mode]);
+ },[requestedPostId,params.commentId,posts,clips,mode]);
 
  const updateEngagement=(id:string,fn:(e:PostEngagement)=>PostEngagement)=>{setPosts(current=>current.map(p=>p.id===id?{...p,engagement:fn(p.engagement)}:p));setClips(current=>current.map(p=>p.id===id?{...p,engagement:fn(p.engagement)}:p));};
 
