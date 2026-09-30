@@ -87,3 +87,26 @@ These are not code defects and must not be bypassed in source:
 5. Real Stripe payment/webhook success, failure, expiry, retry and duplicate-event behavior should be exercised with controlled live/test transactions before taking unrestricted public payments.
 
 No fake businesses, payments, reviews, orders or verification state were introduced to satisfy these gates.
+
+
+## Second-pass findings and fixes
+
+A second production sweep after the initial hardening found and fixed additional edge cases:
+
+- service checkout now checks payout readiness before creating/reusing a payment attempt, and the live Edge Function marks a payout-blocked no-session attempt FAILED instead of stranding it as PENDING;
+- account hard deletion now retains marketplace billing/subscription, moderation, support, driver/compliance and message-history evidence that the prior preflight omitted;
+- private user-audio reads now inherit the visibility/block/business-verification rules of the post using the audio;
+- product-media insert/update/delete now requires CATALOG_MANAGE (or admin), rather than generic business membership;
+- cross-system delivery/service dispatch exclusivity was re-audited and confirmed to be protected by live advisory-lock triggers, with zero current overlaps;
+- push dispatch is enabled/configured and Everest Live/service-dispatch cron workers are active; production currently has no registered native push tokens, so physical-device push remains an external QA gate;
+- the service-checkout Edge Function was explicitly redeployed as version 14 with JWT verification enabled;
+- Supabase migration history was reconciled to the committed migration filenames so future Git-based database deploys can run deterministically.
+
+Final live-state sanity after the second pass:
+
+- 0 orphan PENDING service payments without Checkout Sessions;
+- 0 unpaid completed marketplace bookings;
+- 0 paid-cancelled product orders;
+- 0 cross-domain active dispatch overlaps;
+- no 401/5xx runtime spike in the sampled production window;
+- all external-business rollout flags remain OFF.
