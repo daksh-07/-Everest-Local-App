@@ -17,7 +17,7 @@ import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { AuthRolePicker } from '@/components/AuthRolePicker';
 import {useReducedMotion} from '@/lib/motion';
-import {consumePendingQuickActionRoute} from '@/lib/quick-actions';
+import {consumePendingQuickActionRoute,isSafeInternalRoute} from '@/lib/quick-actions';
 
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   return (
@@ -203,7 +203,7 @@ async function routeAfterAuth(selectedIntent: AuthIntent) {
   if(Platform.OS==='web'&&typeof window!=='undefined'){
     const returnTo=window.localStorage.getItem('everest-auth-return-to');
     if(returnTo)window.localStorage.removeItem('everest-auth-return-to');
-    if(returnTo?.startsWith('/')&&!returnTo.startsWith('//')&&!returnTo.includes('\\')){router.replace(returnTo as never);return}
+    if(isSafeInternalRoute(returnTo)){router.replace(returnTo as never);return}
   }
   const pending=await consumePendingQuickActionRoute();
   if(pending){router.replace(pending as never);return}
@@ -283,11 +283,12 @@ export default function Auth() {
     async function handleRecoveryUrl(url: string | null) {
       if (!url || !mounted) return;
       try {
+        const {exchangePasswordRecoveryCode,isPasswordRecoveryUrl}=await import('@/lib/auth');
+        if(!isPasswordRecoveryUrl(url))return;
         const parsed = new URL(url);
         const code = parsed.searchParams.get('code');
         if (!code) return;
         setBusy(true);
-        const { exchangePasswordRecoveryCode } = await import('@/lib/auth');
         await exchangePasswordRecoveryCode(code);
         if (mounted) {
           setMode('recovery');
@@ -308,14 +309,14 @@ export default function Auth() {
     }
 
     if (Platform.OS !== 'web') {
-      void Linking.getInitialURL().then(url => {
-        void handleNativeAuthUrl(url);
-        void handleRecoveryUrl(url);
-      });
-      nativeSubscription = Linking.addEventListener('url', event => {
-        void handleNativeAuthUrl(event.url);
-        void handleRecoveryUrl(event.url);
-      });
+      const routeNativeAuthUrl=async(url:string|null)=>{
+        if(!url)return;
+        const {isPasswordRecoveryUrl}=await import('@/lib/auth');
+        if(isPasswordRecoveryUrl(url))await handleRecoveryUrl(url);
+        else await handleNativeAuthUrl(url);
+      };
+      void Linking.getInitialURL().then(url=>{void routeNativeAuthUrl(url)});
+      nativeSubscription = Linking.addEventListener('url',event=>{void routeNativeAuthUrl(event.url)});
     }
 
     return () => {
