@@ -156,6 +156,40 @@ async function geocodeWeb(query:string){
  }catch{return null;}
 }
 
+export async function geocodeCustomerLocality(input:{suburb?:string|null;city?:string|null;state?:string|null;country?:string|null}):Promise<CustomerLocality|null>{
+ const suburb=clean(input.suburb),city=clean(input.city),state=clean(input.state),country=clean(input.country)||'Australia';
+ const query=unique([suburb,city&&city!==suburb?city:'',state,country]).join(', ');
+ if(!query||(!suburb&&!city))return null;
+
+ if(Platform.OS==='web'){
+  const row=await geocodeWeb(query);
+  if(!row)return null;
+  return{
+   suburb:row.suburb||suburb||city,
+   city:row.city||city||suburb,
+   state:row.state||state,
+   country:row.country||country,
+   latitude:row.latitude,
+   longitude:row.longitude,
+   accuracy:null,
+  };
+ }
+
+ try{
+  const rows=await withTimeout(Location.geocodeAsync(query),GEO_TIMEOUT_MS,'Locality lookup');
+  const first=rows[0];if(!first)return null;
+  return{
+   suburb:suburb||city,
+   city:city||suburb,
+   state,
+   country,
+   latitude:first.latitude,
+   longitude:first.longitude,
+   accuracy:null,
+  };
+ }catch{return null;}
+}
+
 export async function geocodeServiceAddress(input:{addressLine1:string;suburb:string;city:string;state:string;postalCode?:string;country?:string}):Promise<CustomerServiceLocation|null>{
  const addressLine1=clean(input.addressLine1),suburb=clean(input.suburb),city=clean(input.city),state=clean(input.state),postalCode=clean(input.postalCode),country=clean(input.country)||'Australia';
  const query=formatAddress({addressLine1,suburb,city,state,postalCode,country});
