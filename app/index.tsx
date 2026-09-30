@@ -18,7 +18,7 @@ import {searchShop,signedProductMediaBatch,type ShopProduct} from '@/lib/product
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {ui} from '@/lib/ui';
-import {resolveCustomerLocality,saveLocalityToProfile,type CustomerLocality} from '@/lib/customer-location';
+import {geocodeCustomerLocality,resolveCustomerLocality,saveLocalityToProfile,type CustomerLocality} from '@/lib/customer-location';
 import {useExperience} from '@/lib/experience';
 import {getCurrentWeather,type CurrentWeather} from '@/lib/weather';
 
@@ -61,7 +61,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  const {colors:c}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const s=useMemo(()=>styles(c,desktop),[c,desktop]);const osReducedMotion=useReducedMotion();const reduced=osReducedMotion||experience.mode==='CLASSIC';
  const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Set location');
  const [unread,setUnread]=useState(0);const [businesses,setBusinesses]=useState<BusinessPreview[]>([]);const [products,setProducts]=useState<ProductPreview[]>([]);const [posts,setPosts]=useState<SocialPost[]>([]);const [postMedia,setPostMedia]=useState<Record<string,string[]>>({});
- const [mediaWarning,setMediaWarning]=useState('');const [loadError,setLoadError]=useState('');const [weather,setWeather]=useState<CurrentWeather|null>(null);
+ const [mediaWarning,setMediaWarning]=useState('');const [loadError,setLoadError]=useState('');const [weather,setWeather]=useState<CurrentWeather|null>(null);const [weatherLoading,setWeatherLoading]=useState(false);
  const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [locating,setLocating]=useState(false);const [navHidden,setNavHidden]=useState(false);const [menuOpen,setMenuOpen]=useState(false);
  useEffect(()=>{if(!visible)return;let mounted=true;void import('@/lib/workspace').then(({getWorkspaceContext})=>getWorkspaceContext()).then(workspace=>{if(mounted&&workspace.mode==='BUSINESS'&&workspace.active_business_id)router.replace('/business-today')}).catch(()=>undefined);return()=>{mounted=false}},[visible]);
  const enter=useRef(new Animated.Value(reduced?1:0)).current;const lastScrollY=useRef(0);const weatherCoordinates=useRef<{latitude:number;longitude:number}|null>(null);
@@ -71,9 +71,15 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
   const previous=weatherCoordinates.current;
   weatherCoordinates.current=coordinates;
   if(!previous||previous.latitude!==coordinates.latitude||previous.longitude!==coordinates.longitude)setWeather(null);
-  const next=await getCurrentWeather(coordinates).catch(()=>null);
-  const current=weatherCoordinates.current;
-  if(next&&current&&current.latitude===coordinates.latitude&&current.longitude===coordinates.longitude)setWeather(next);
+  setWeatherLoading(true);
+  try{
+   const next=await getCurrentWeather(coordinates).catch(()=>null);
+   const current=weatherCoordinates.current;
+   if(next&&current&&current.latitude===coordinates.latitude&&current.longitude===coordinates.longitude)setWeather(next);
+  }finally{
+   const current=weatherCoordinates.current;
+   if(current&&current.latitude===coordinates.latitude&&current.longitude===coordinates.longitude)setWeatherLoading(false);
+  }
  }
  async function businessMatches(field:'suburb'|'city'|'state',value:string){
   if(!value.trim())return[] as BusinessPreview[];
@@ -202,8 +208,19 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
   else if(request.data)setContext({kind:'request',title:'Active request',detail:String(request.data.description||request.data.status),route:'/requests'});
 
   const locality=await resolveCustomerLocality({requestIfUndetermined:false}).catch(()=>null);
-  if(active&&locality){setSuburb(locality.suburb||locality.city||'Nearby');void loadWeather(locality);await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);}
-  else if(active&&p?.city){await loadNearby({suburb:p.suburb||p.city,city:p.city,state:p.state||''});}
+  if(active&&locality){
+   setSuburb(locality.suburb||locality.city||'Nearby');
+   void loadWeather(locality);
+   await Promise.all([saveLocalityToProfile(locality).catch(()=>undefined),loadNearby(locality)]);
+  }else if(active&&p?.city){
+   const savedLocality={suburb:p.suburb||p.city,city:p.city,state:p.state||''};
+   setSuburb(savedLocality.suburb);
+   const savedCoordinates=await geocodeCustomerLocality({
+    suburb:p.suburb,city:p.city,state:p.state,country:p.country,
+   }).catch(()=>null);
+   if(active&&savedCoordinates)void loadWeather(savedCoordinates);
+   await loadNearby(savedLocality);
+  }
  }catch{if(active)setLoadError('Nearby activity could not be loaded. Check your connection and try again.')}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
 
  useEffect(()=>{const subscription=AppState.addEventListener('change',state=>{if(state!=='active')return;const coordinates=weatherCoordinates.current;if(!coordinates)return;void getCurrentWeather(coordinates).then(next=>{const current=weatherCoordinates.current;if(next&&current&&current.latitude===coordinates.latitude&&current.longitude===coordinates.longitude)setWeather(next)}).catch(()=>undefined)});return()=>subscription.remove()},[]);
@@ -217,7 +234,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  return <View style={s.root}><SafeAreaView edges={['top','left','right']} style={s.safe}>
   <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void refreshHome()} tintColor={c.accent} colors={[c.accent]}/>} scrollEventThrottle={16} onScroll={e=>{const y=Math.max(0,e.nativeEvent.contentOffset.y);const delta=y-lastScrollY.current;if(y<24)setNavHidden(false);else if(delta>8)setNavHidden(true);else if(delta<-6)setNavHidden(false);lastScrollY.current=y}} contentContainerStyle={[s.page,{paddingHorizontal:desktop?28:experience.tokens.spacing.screen}]}>
    <Animated.View style={appear}>
-    <View style={s.topbar}><View style={{flex:1}}><Text style={s.brand}>EVEREST LOCAL</Text><Pressable onPress={()=>void refreshLocality(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityLabel={weather?`Update your location. ${weather.label}, ${Math.round(weather.temperatureC)} degrees`:'Update your location'}><Ionicons name={locating?'locate':'location-outline'} size={13} color={c.muted}/><Text numberOfLines={1} style={s.place}>{locating?'Finding you…':suburb}</Text>{weather?<View style={s.weatherInline}><Ionicons name={weatherIcon(weather)} size={14} color={c.muted}/><Text style={s.weatherTemp}>{Math.round(weather.temperatureC)}°</Text></View>:null}<Ionicons name="chevron-down" size={11} color={c.muted}/></Pressable></View>
+    <View style={s.topbar}><View style={{flex:1}}><Text style={s.brand}>EVEREST LOCAL</Text><Pressable onPress={()=>void refreshLocality(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityLabel={weather?`Update your location. ${weather.label}, ${Math.round(weather.temperatureC)} degrees`:'Update your location and weather'}><Ionicons name={locating?'locate':'location-outline'} size={13} color={c.muted}/><Text numberOfLines={1} style={s.place}>{locating?'Finding you…':suburb}</Text>{suburb!=='Set location'?<View style={s.weatherInline}><Ionicons name={weather?weatherIcon(weather):'partly-sunny-outline'} size={14} color={c.muted}/><Text style={s.weatherTemp}>{weather?`${Math.round(weather.temperatureC)}°`:weatherLoading?'…':'--°'}</Text></View>:null}<Ionicons name="chevron-down" size={11} color={c.muted}/></Pressable></View>
      <Pressable onPress={()=>{void haptic.selection();setMenuOpen(true)}} style={({pressed})=>[s.iconButton,pressed&&s.press]} accessibilityLabel="Open Everest menu"><Ionicons name="menu" size={22} color={c.text}/></Pressable>
      <Pressable onPress={()=>go('/notifications')} style={({pressed})=>[s.iconButton,pressed&&s.press]} accessibilityLabel="Notifications"><Ionicons name="notifications-outline" size={20} color={c.text}/>{unread>0?<View style={s.dot}/>:null}</Pressable>
      <Pressable onPress={()=>go('/account')} style={({pressed})=>[s.avatar,pressed&&s.press]} accessibilityLabel="Open account">{avatar?<Image source={{uri:avatar}} style={s.avatarImage}/>:<Text style={s.avatarText}>{initials(name||'Everest Local')}</Text>}</Pressable>
