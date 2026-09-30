@@ -150,8 +150,10 @@ Deno.serve(async req=>{
   const label=String(profile.mail??profile.userPrincipalName??profile.email??'Connected account');
   if(!accountId)return json({error:'Provider account identity missing.'},502);
 
-  const {data:membership}=await admin.from('business_members').select('business_id').eq('business_id',state.businessId).eq('user_id',state.userId).maybeSingle();
-  if(!membership)return json({error:'Business access is no longer available.'},403);
+  const {data:callbackAllowed,error:callbackPermissionError}=await admin.rpc('user_has_business_permission',{
+   p_user_id:state.userId,p_business_id:state.businessId,p_permission:'CRM_MANAGE'
+  });
+  if(callbackPermissionError||callbackAllowed!==true)return json({error:'CRM management access is no longer available.'},403);
 
   if(state.provider==='GMAIL'){
    const {data:subscription}=await admin.from('business_subscriptions').select('status').eq('business_id',state.businessId).maybeSingle();
@@ -194,8 +196,10 @@ Deno.serve(async req=>{
  const body=await req.json().catch(()=>({}));
  const action=String(body.action??'');
  const businessId=String(body.businessId??'');
- const {data:membership}=await userClient.from('business_members').select('business_id').eq('business_id',businessId).eq('user_id',user.id).maybeSingle();
- if(!membership)return json({error:'Business access unavailable.'},403);
+ const {data:allowed,error:permissionError}=await userClient.rpc('has_business_permission',{
+  p_business_id:businessId,p_permission:'CRM_MANAGE'
+ });
+ if(permissionError||allowed!==true)return json({error:'CRM management access is required.'},403);
 
  if(action==='BEGIN'){
   const provider=String(body.provider??'') as Provider;
