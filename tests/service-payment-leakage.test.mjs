@@ -46,6 +46,15 @@ test('instant booking cannot bypass payout readiness or marketplace payment auth
  assert.doesNotMatch(instant,/values\([\s\S]{0,400}s\.base_price,0,s\.base_price/);
 });
 
+test('service checkout does not strand pending attempts when payouts are unavailable',()=>{
+ const retry=fs.readFileSync('supabase/migrations/20260930162000_service_checkout_retry_hardening.sql','utf8');
+ const checkout=fs.readFileSync('supabase/functions/service-checkout/index.ts','utf8');
+ assert.match(retry,/is_business_payment_ready\(b\.business_id\)/);
+ assert.match(checkout,/status:'FAILED'/);
+ assert.match(checkout,/provider_checkout_session_id/);
+ assert.match(checkout,/This business is still setting up payouts/);
+});
+
 test('service checkout supports deposit then remaining balance',()=>{
  assert.match(migration,/payment_kind in \('DEPOSIT','BALANCE'\)/);
  assert.match(migration,/next_kind:='BALANCE'/);
