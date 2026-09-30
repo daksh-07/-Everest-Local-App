@@ -20,9 +20,17 @@ export async function configureEverestQuickActions(){
  }catch{return false}
 }
 
+function hasAsciiControlCharacter(value:string){
+ for(let index=0;index<value.length;index++){
+  const code=value.charCodeAt(index);
+  if(code<=31||code===127)return true;
+ }
+ return false;
+}
+
 export function isSafeInternalRoute(value:unknown):value is string{
  if(typeof value!=='string'||!value.startsWith('/')||value.startsWith('//')||value.includes('\\'))return false;
- if(/[\u0000-\u001F\u007F]/.test(value))return false;
+ if(hasAsciiControlCharacter(value))return false;
  return !/^[\\/]*[a-z][a-z0-9+.-]*:/i.test(value);
 }
 
