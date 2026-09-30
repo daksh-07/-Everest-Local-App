@@ -30,6 +30,7 @@ Deno.serve(async req=>{
  let paymentId:string|undefined;
 
  try{
+  // Database payment creation also enforces current payout readiness.
   const {data:raw,error}=await userClient.rpc('create_service_payment',{p_booking_id:bookingId,p_idempotency_key:idem});
   if(error)throw error;
   const payment=raw as ServicePaymentResult;
