@@ -7,7 +7,7 @@ import {useReducedMotion} from '@/lib/motion';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /** Interruptible UI-thread feedback; resolve callback styles before Reanimated. */
-export function MotionPressable({style, onPressIn, onPressOut, disabled, ...props}: PressableProps) {
+export function MotionPressable({style, onPressIn, onPressOut, disabled, accessibilityState, ...props}: PressableProps) {
   const {tokens} = useExperience();
   const [pressed,setPressed] = useState(false);
   const reduced = useReducedMotion();
@@ -21,7 +21,14 @@ export function MotionPressable({style, onPressIn, onPressOut, disabled, ...prop
     cancelAnimation(scale);
     scale.value = reduced ? 1 : withSpring(value, {mass: .5, damping: 20, stiffness: 360});
   };
-  return <AnimatedPressable accessibilityRole="button" {...props} disabled={disabled}
+  return <AnimatedPressable accessibilityRole="button"
+    accessibilityState={accessibilityState}
+    aria-checked={accessibilityState?.checked}
+    aria-selected={accessibilityState?.selected}
+    aria-expanded={accessibilityState?.expanded}
+    aria-busy={accessibilityState?.busy}
+    aria-disabled={disabled||accessibilityState?.disabled}
+    {...props} disabled={disabled}
     onPressIn={event => {setPressed(true);settle(tokens.motion.pressScale); onPressIn?.(event);}}
     onPressOut={event => {setPressed(false);settle(1); onPressOut?.(event);}}
     style={[typeof style === 'function' ? style({pressed:pressed&&!disabled}) : style, animatedStyle]}
