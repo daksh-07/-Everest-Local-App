@@ -1,3 +1,4 @@
+import {useReducedMotion} from '@/lib/motion';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ActivityIndicator,FlatList,Image,Modal,Pressable,RefreshControl,Share,StyleSheet,Text,TextInput,View,useWindowDimensions,type ViewToken} from 'react-native';
 import {PagerAwareScrollView as ScrollView} from '@/components/PagerAwareScrollView';
@@ -42,7 +43,7 @@ let exploreLoad:Promise<void>|null=null;
 
 export default function Social(){const hosted=useCustomerRouteHost();return hosted?null:<SocialScreen/>}
 export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS';active?:boolean}={}){
- const pager=useCustomerPager();
+ const reducedMotion=useReducedMotion();const pager=useCustomerPager();
  const fallbackProgress=useSharedValue(2);const sceneProgress=pager?.progress??fallbackProgress;
  const [segmentWidth,setSegmentWidth]=useState(0);
  const segmentMotion=useAnimatedStyle(()=>({transform:[{translateX:Math.max(0,Math.min(1,sceneProgress.value-1))*Math.max(0,(segmentWidth-8)/2)}]}),[segmentWidth]);
@@ -334,7 +335,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
    </View>}
   />
   <CustomerTabBar active="/social"/>
-  <Modal visible={Boolean(commentPost)} transparent animationType="slide" onRequestClose={()=>setCommentPost(null)}>
+  <Modal visible={Boolean(commentPost)} transparent animationType={reducedMotion?'none':'slide'} onRequestClose={()=>setCommentPost(null)}>
    <Pressable style={s.scrim} onPress={()=>setCommentPost(null)}/>
    <View style={s.sheet}>
     <View style={s.sheetHandle}/>

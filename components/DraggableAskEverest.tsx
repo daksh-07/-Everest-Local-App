@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import {useReducedMotion} from '@/lib/motion';
 import { useAppTheme } from '@/lib/theme';
 
 const BUTTON_WIDTH = 50;
@@ -12,7 +13,7 @@ const BOTTOM_GUARD = 112;
 const TRASH_SIZE = 68;
 
 export function DraggableAskEverest({ pathname }: { pathname: string }) {
-  const theme=useAppTheme();
+  const theme=useAppTheme();const reducedMotion=useReducedMotion();
   const { width, height } = useWindowDimensions();
   const hiddenRoute = ['/assistant', '/auth', '/messages', '/cart', '/request'].includes(pathname);
   const [dismissed, setDismissed] = useState(false);
@@ -27,11 +28,18 @@ export function DraggableAskEverest({ pathname }: { pathname: string }) {
   const last = useRef({ x: startX, y: startY });
   const shred = useRef(new Animated.Value(0)).current;
 
-  const clampY = (y: number) => Math.min(Math.max(y, TOP_GUARD), Math.max(TOP_GUARD, height - BOTTOM_GUARD - BUTTON_HEIGHT));
+  const clampY = useCallback((y: number) => Math.min(Math.max(y, TOP_GUARD), Math.max(TOP_GUARD, height - BOTTOM_GUARD - BUTTON_HEIGHT)),[height]);
+  useEffect(()=>{
+    pan.stopAnimation(value=>{
+      const next={x:Math.min(Math.max(value.x,EDGE),Math.max(EDGE,width-BUTTON_WIDTH-EDGE)),y:clampY(value.y)};
+      last.current=next;pan.setValue(next);
+    });
+  },[clampY,pan,width]);
   const trashCenter = { x: width / 2, y: height - 76 };
 
-  const animateTo = (x: number, y: number) => {
+  const animateTo = useCallback((x: number, y: number) => {
     last.current = { x, y };
+    if(reducedMotion){pan.stopAnimation();pan.setValue({x,y});return}
     Animated.spring(pan, {
       toValue: { x, y },
       damping: 22,
@@ -39,16 +47,16 @@ export function DraggableAskEverest({ pathname }: { pathname: string }) {
       mass: 0.72,
       useNativeDriver: false,
     }).start();
-  };
+  },[pan,reducedMotion]);
 
-  const dismissWithShred = () => {
+  const dismissWithShred = useCallback(() => {
     setShredding(true);
-    Animated.timing(shred, { toValue: 1, duration: 360, useNativeDriver: true }).start(() => {
+    Animated.timing(shred, { toValue: 1, duration: reducedMotion?0:360, useNativeDriver: true }).start(() => {
       setDismissed(true);
       setDragging(false);
       setOverTrash(false);
     });
-  };
+  },[reducedMotion,shred]);
 
   const responder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
@@ -99,7 +107,7 @@ export function DraggableAskEverest({ pathname }: { pathname: string }) {
       setDragging(false);
       setOverTrash(false);
     },
-  }), [height, width]);
+  }), [animateTo,clampY,dismissWithShred,pan,trashCenter.x,trashCenter.y,width]);
 
   if (hiddenRoute || dismissed) return null;
 

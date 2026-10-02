@@ -12,7 +12,7 @@ export default function Root({ children }: PropsWithChildren) {
           name="viewport"
           content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
-        <meta name="theme-color" content="#f8f7f4" />
+        <meta name="theme-color" content="#F7F5F0" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Everest Local" />
@@ -23,7 +23,7 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <ScrollViewStyleReset />
-        <script dangerouslySetInnerHTML={{__html:`(function(){try{var p=localStorage.getItem('everest-local-theme');var d=p==='DARK'||(p!=='LIGHT'&&matchMedia('(prefers-color-scheme: dark)').matches);var c=d?'#070B09':'#F7F5F0';document.documentElement.style.setProperty('--everest-canvas',c);document.documentElement.style.setProperty('--everest-text',d?'#F5F1E9':'#121411');document.documentElement.style.background=c;document.documentElement.style.colorScheme=d?'dark':'light';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c)}catch(e){}})();`}} />
+        <script dangerouslySetInnerHTML={{__html:`(function(){try{var p=localStorage.getItem('everest-local-theme');var d=p==='DARK'||(p!=='LIGHT'&&matchMedia('(prefers-color-scheme: dark)').matches);var c=d?'#10100F':'#F7F5F0';document.documentElement.style.setProperty('--everest-canvas',c);document.documentElement.style.setProperty('--everest-text',d?'#F5F1E9':'#121411');document.documentElement.style.background=c;document.documentElement.style.colorScheme=d?'dark':'light';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c)}catch(e){}})();`}} />
         <style dangerouslySetInnerHTML={{ __html: `
           :focus-visible { outline: 2px solid #805D2E; outline-offset: 3px; }
           @media (prefers-reduced-motion: reduce) {
@@ -36,7 +36,7 @@ export default function Root({ children }: PropsWithChildren) {
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
             touch-action: manipulation;
-            background: var(--everest-canvas, #f8f7f4);
+            background: var(--everest-canvas, #F7F5F0);
           }
 
           body {
@@ -49,7 +49,7 @@ export default function Root({ children }: PropsWithChildren) {
             overscroll-behavior-x: none;
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
-            background: var(--everest-canvas, #f8f7f4);
+            background: var(--everest-canvas, #F7F5F0);
           }
 
 
@@ -58,7 +58,7 @@ export default function Root({ children }: PropsWithChildren) {
             min-width: 0;
             min-height: 100%;
             min-height: 100dvh;
-            background: var(--everest-canvas, #f8f7f4);
+            background: var(--everest-canvas, #F7F5F0);
           }
 
           #everest-chat-shell {
