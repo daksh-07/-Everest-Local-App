@@ -16,9 +16,9 @@
         try {
           var preference = localStorage.getItem('everest-local-theme');
           var dark = preference === 'DARK' || (preference !== 'LIGHT' && matchMedia('(prefers-color-scheme: dark)').matches);
-          var canvas = dark ? '#151513' : '#f8f7f4';
+          var canvas = dark ? '#10100F' : '#F7F5F0';
           document.documentElement.style.setProperty('--everest-canvas', canvas);
-          document.documentElement.style.setProperty('--everest-text', dark ? '#f7f1e8' : '#171715');
+          document.documentElement.style.setProperty('--everest-text', dark ? '#F5F1E9' : '#121411');
           document.documentElement.style.backgroundColor = canvas;
           document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
           document.querySelector('meta[name="theme-color"]').setAttribute('content', canvas);

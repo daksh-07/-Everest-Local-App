@@ -9,14 +9,14 @@ export const uiTokens={
   space:{xxs:4,xs:8,sm:12,md:16,lg:20,xl:24,xxl:32,section:40},
   radius:{sm:10,md:14,lg:20,xl:24,pill:999},
   control:{compact:44,standard:48,large:52},
-  typography:{caption:12,small:13,body:15,title:20,display:31},
+  typography:{caption:12,small:13,body:16,title:20,display:31},
 } as const;
 
 const STORAGE_KEY='everest-local-theme';
 // Everest uses warm neutral surfaces and champagne for brand emphasis.
 // Green is reserved for semantic status such as live, available and success.
 const light:ThemeColors={canvas:'#F7F5F0',surface:'#FFFEFB',elevated:'#F2EEE7',text:'#121411',textSecondary:'#626861',muted:'#686E66',border:'#DDD9D0',soft:'#EFECE5',input:'#FFFEFB',danger:'#A9433C',success:'#176B4D',overlay:'rgba(18,20,17,.48)',navigation:'#FFFEFB',brand:'#C6A26B',onBrand:'#121411',accent:'#805D2E',accentSoft:'#E8DCC8',info:'#315F8A'};
-const dark:ThemeColors={canvas:'#070B09',surface:'#101512',elevated:'#151B17',text:'#F5F1E9',textSecondary:'#C5CAC5',muted:'#959D97',border:'#29312C',soft:'#1D241F',input:'#121814',danger:'#F1A39B',success:'#6FC39B',overlay:'rgba(0,0,0,.76)',navigation:'#0D120F',brand:'#D8BE96',onBrand:'#17130D',accent:'#D8BE96',accentSoft:'#29231C',info:'#9FC2E5'};
+const dark:ThemeColors={canvas:'#10100F',surface:'#191917',elevated:'#22221F',text:'#F5F1E9',textSecondary:'#CAC6BE',muted:'#ABA69C',border:'#383730',soft:'#292822',input:'#1C1C19',danger:'#F1A39B',success:'#6FC39B',overlay:'rgba(0,0,0,.76)',navigation:'#191917',brand:'#D8BE96',onBrand:'#17130D',accent:'#D8BE96',accentSoft:'#29231C',info:'#9FC2E5'};
 const ThemeContext=createContext<AppTheme|null>(null);
 
 function valid(value:string|null):value is ThemePreference{return value==='SYSTEM'||value==='LIGHT'||value==='DARK'}

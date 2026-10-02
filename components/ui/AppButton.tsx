@@ -1,6 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+import {MotionPressable as Pressable} from './MotionPressable';
+import {useExperience} from '@/lib/experience';
+import {haptic} from '@/lib/haptics';
 import { useAppTheme } from '@/lib/theme';
 
 type IconName=ComponentProps<typeof Ionicons>['name'];
@@ -20,6 +23,7 @@ export function AppButton({
   style?:StyleProp<ViewStyle>;
 }){
   const {colors:c}=useAppTheme();
+  const {tokens:t}=useExperience();
   const isDisabled=disabled||busy;
   const palette=variant==='primary'
     ?{background:c.brand,border:c.brand,text:c.onBrand}
@@ -33,10 +37,10 @@ export function AppButton({
     accessibilityLabel={accessibilityLabel??label}
     accessibilityState={{disabled:isDisabled,busy}}
     disabled={isDisabled}
-    onPress={onPress}
+    onPress={()=>{void haptic.selection();onPress()}}
     style={({pressed})=>[
       styles.base,
-      {backgroundColor:palette.background,borderColor:palette.border},
+      {backgroundColor:palette.background,borderColor:palette.border,minHeight:t.controls.minHeight,borderRadius:t.shape.medium},
       fullWidth&&styles.full,
       isDisabled&&styles.disabled,
       pressed&&!isDisabled&&styles.pressed,
@@ -53,5 +57,5 @@ const styles=StyleSheet.create({
   full:{width:'100%'},
   label:{flexShrink:1,textAlign:'center',fontSize:15,lineHeight:21,fontWeight:'700'},
   disabled:{opacity:.46},
-  pressed:{opacity:.78,transform:[{scale:.985}]},
+  pressed:{opacity:.82},
 });

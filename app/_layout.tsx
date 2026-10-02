@@ -8,6 +8,7 @@ import { BusinessOpportunityAlert } from '@/components/BusinessOpportunityAlert'
 import { EverestLiveMiniPlayer } from '@/components/EverestLiveMiniPlayer';
 import type { AccessContext } from '@/lib/access';
 import { ThemeProvider,useAppTheme } from '@/lib/theme';
+import {useReducedMotion} from '@/lib/motion';
 import {ExperienceProvider} from '@/lib/experience';
 import {GlobalSwipeNavigator} from '@/components/GlobalSwipeNavigator';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
@@ -35,7 +36,7 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
 }
 function ThemedRootLayout() {
   const pathname=usePathname();const nav=useRouter();
-  const theme=useAppTheme();
+  const theme=useAppTheme();const reducedMotion=useReducedMotion();
   const initialQuickActionHandled=useRef(false);
   const initialPushHandled=useRef(false);
   const [authInitialized,setAuthInitialized]=useState(false);const [supabaseConfigured,setSupabaseConfigured]=useState(false);const [sessionUserId,setSessionUserId]=useState<string|null>(null);const [access,setAccess]=useState<AccessContext|null>(null);const [startupError,setStartupError]=useState('');const [retryNonce,setRetryNonce]=useState(0);
@@ -105,7 +106,7 @@ function ThemedRootLayout() {
   },[pathname,authInitialized,supabaseConfigured,sessionUserId,access,startupError,nav]);
 
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
-  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><GlobalSwipeNavigator key={sessionUserId??'guest'}><Stack screenOptions={{headerShown:false,animation:'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}><Stack.Screen name="create" options={{presentation:'transparentModal',animation:'fade',contentStyle:{backgroundColor:'transparent'}}}/></Stack></GlobalSwipeNavigator>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="auto" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}{sessionUserId?<BusinessOpportunityAlert/>:null}{sessionUserId?<EverestLiveMiniPlayer/>:null}<DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></View>;
+  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><GlobalSwipeNavigator key={sessionUserId??'guest'}><Stack screenOptions={{headerShown:false,animation:reducedMotion?'none':Platform.OS==='ios'?'default':'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}><Stack.Screen name="create" options={{presentation:'transparentModal',animation:reducedMotion?'none':'fade',contentStyle:{backgroundColor:'transparent'}}}/></Stack></GlobalSwipeNavigator>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="auto" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}{sessionUserId?<BusinessOpportunityAlert/>:null}{sessionUserId?<EverestLiveMiniPlayer/>:null}<DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></View>;
 }
 export default function RootLayout(){return <GestureHandlerRootView style={styles.root}><ThemeProvider><ExperienceProvider><ThemedRootLayout/></ExperienceProvider></ThemeProvider></GestureHandlerRootView>}
 
