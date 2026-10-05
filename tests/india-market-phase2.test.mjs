@@ -17,7 +17,6 @@ const businessRoute=read('app/business.tsx');
 const verificationRoute=read('app/business-verification.tsx');
 const payouts=read('app/business-payouts.tsx');
 const requestScreen=read('app/request.tsx');
-const marketplace=read('lib/marketplace.ts');
 const dispatchIsolation=read('supabase/migrations/20261005144500_india_market_dispatch_isolation.sql');
 
 test('India provider setup never reuses ABN or enables Stripe',()=>{
