@@ -45,8 +45,9 @@ export function IndiaHomeScreen({visible=true}:{visible?:boolean}={}){
  const loadBusinesses=useCallback(async(localCity?:string)=>{
   let query=supabase.from('businesses').select('id,name,logo_url,suburb,city,state,verification_status').eq('status','ACTIVE').eq('verification_status','VERIFIED').ilike('country','India').limit(8);
   if(localCity?.trim())query=query.ilike('city',localCity.trim());
-  let {data,error:businessError}=await query;
-  if(businessError)throw businessError;
+  const first=await query;
+  if(first.error)throw first.error;
+  let data=first.data;
   if(!(data??[]).length&&localCity?.trim()){
    const fallback=await supabase.from('businesses').select('id,name,logo_url,suburb,city,state,verification_status').eq('status','ACTIVE').eq('verification_status','VERIFIED').ilike('country','India').limit(8);
    if(fallback.error)throw fallback.error;
@@ -83,7 +84,7 @@ export function IndiaHomeScreen({visible=true}:{visible?:boolean}={}){
 
  useEffect(()=>{if(!visible)return;let active=true;void load().finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[visible,load]);
 
- async function useMyLocation(){
+ async function updateMyLocation(){
   if(locating)return;setLocating(true);setError('');
   try{
    const locality=await resolveCustomerLocality({requestIfUndetermined:true});
@@ -107,7 +108,7 @@ export function IndiaHomeScreen({visible=true}:{visible?:boolean}={}){
    <View style={s.topbar}>
     <View style={{flex:1}}>
      <Text style={s.brand}>EVEREST INDIA</Text>
-     <Pressable onPress={()=>void useMyLocation()} style={s.locationRow} accessibilityLabel="Update your India location">
+     <Pressable onPress={()=>void updateMyLocation()} style={s.locationRow} accessibilityLabel="Update your India location">
       <Ionicons name={locating?'locate':'location-outline'} size={14} color={c.muted}/>
       <Text numberOfLines={1} style={s.location}>{locating?'Finding you…':place}</Text>
       <Ionicons name="chevron-down" size={12} color={c.muted}/>
