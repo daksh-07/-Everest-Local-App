@@ -68,7 +68,7 @@ Deno.serve(async req=>{
    abn:null,
    verification_provider:'INDIA_MANUAL',
    provider_reference:gstin||null,
-   provider_status:'PENDING_MANUAL_REVIEW',
+   provider_status:'EVIDENCE_SUBMITTED',
    provider_entity_name:legalName,
    provider_entity_type:entityType,
    provider_match:null,
