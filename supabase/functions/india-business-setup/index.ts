@@ -101,6 +101,12 @@ Deno.serve(async req=>{
    await admin.from('businesses').delete().eq('id',businessId).eq('owner_id',user.id);
    return json({error:'India business setup could not be finalized. Please try again.'},500);
   }
+  const {error:areaError}=await admin.from('service_areas').update({country:'India'}).eq('business_id',businessId);
+  if(areaError){
+   console.error('india_business_service_area_update_failed',{code:areaError.code});
+   await admin.from('businesses').delete().eq('id',businessId).eq('owner_id',user.id);
+   return json({error:'India business setup could not be finalized. Please try again.'},500);
+  }
 
   return json({business_id:businessId,country:'India',verification_status:'UNVERIFIED'});
  }catch(error){
