@@ -498,7 +498,7 @@ export default function Request() {
         suburb: effectiveMode === "LOCAL" ? location.suburb : undefined,
         city: effectiveMode === "LOCAL" ? location.city : undefined,
         state: effectiveMode === "LOCAL" ? location.state : undefined,
-        country: effectiveMode === "LOCAL" ? location.country : undefined,
+        country: effectiveMode === "LOCAL" ? location.country : market.countryName,
         addressLine1: effectiveMode === "LOCAL" ? location.addressLine1 : undefined,
         postalCode: effectiveMode === "LOCAL" ? location.postalCode : undefined,
         serviceAddressLabel: effectiveMode === "LOCAL" ? serviceAddressLabel({
