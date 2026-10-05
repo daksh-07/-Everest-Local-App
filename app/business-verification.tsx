@@ -5,6 +5,8 @@ import { router } from 'expo-router';
 import { myBusiness } from '@/lib/catalog';
 import { BusinessVerificationError, submitBusinessVerification } from '@/lib/business-verification';
 import { isValidAbn, normalizeAbn } from '@/lib/abn';
+import {useMarketRegion} from '@/lib/market-region';
+import {IndiaBusinessVerification} from '@/components/IndiaBusinessVerification';
 
 type Business = { id: string; name: string; verification_status: string; abn: string | null };
 
@@ -39,7 +41,8 @@ function submissionErrorMessage(error: unknown): string {
   }
 }
 
-export default function BusinessVerification() {
+export default function BusinessVerification(){const market=useMarketRegion();return market.code==='IN'?<IndiaBusinessVerification/>:<AustraliaBusinessVerification/>}
+function AustraliaBusinessVerification() {
   const [business, setBusiness] = useState<Business | null>(null);
   const [abn, setAbn] = useState('');
   const [loading, setLoading] = useState(true);
