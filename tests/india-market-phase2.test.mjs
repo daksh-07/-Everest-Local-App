@@ -7,6 +7,7 @@ const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const setup=read('supabase/functions/india-business-setup/index.ts');
 const verify=read('supabase/functions/business-india-verify/index.ts');
 const scope=read('lib/market-scope.ts');
+const currentMarket=read('lib/current-market.ts');
 const search=read('lib/universal-search.ts');
 const products=read('lib/product-commerce.ts');
 const payment=read('lib/payment-provider.ts');
@@ -51,4 +52,12 @@ test('business onboarding, verification and payouts route away from Australia fl
  assert.match(businessRoute,/IndiaBusinessOnboarding/);
  assert.match(verificationRoute,/IndiaBusinessVerification/);
  assert.match(payouts,/business-india-payouts/);
+});
+
+
+test('placeholder Australia profile country does not override an India device before locality is saved',()=>{
+ assert.match(currentMarket,/country,suburb,city,state/);
+ assert.match(currentMarket,/hasSavedLocality/);
+ assert.match(currentMarket,/saved==='AU'&&hasSavedLocality/);
+ assert.match(currentMarket,/return inferred/);
 });
