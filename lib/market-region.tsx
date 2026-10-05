@@ -1,6 +1,7 @@
 import {createContext,useCallback,useContext,useEffect,useMemo,useState,type ReactNode} from 'react';
 import {supabase,supabaseConfigured} from './supabase';
-import {MARKETS,inferDeviceMarket,normalizeCountry,type MarketCode,type MarketConfig} from './markets';
+import {MARKETS,inferDeviceMarket,type MarketCode,type MarketConfig} from './markets';
+import {resolveCurrentMarketCode} from './current-market';
 
 type MarketRegionValue={
  code:MarketCode;
@@ -19,28 +20,18 @@ const MarketRegionContext=createContext<MarketRegionValue>({
  refresh:async()=>undefined,
 });
 
-async function resolveMarketCode():Promise<MarketCode>{
- const inferred=inferDeviceMarket();
- if(!supabaseConfigured)return inferred;
- const {data:{user}}=await supabase.auth.getUser();
- if(!user)return inferred;
- const {data,error}=await supabase.from('profiles').select('country').eq('id',user.id).maybeSingle();
- if(error)return inferred;
- return normalizeCountry(data?.country)??inferred;
-}
-
 export function MarketRegionProvider({children}:{children:ReactNode}){
  const [code,setCode]=useState<MarketCode>(fallbackCode);
  const [loading,setLoading]=useState(true);
  const refresh=useCallback(async()=>{
-  try{setCode(await resolveMarketCode())}
+  try{setCode(await resolveCurrentMarketCode())}
   finally{setLoading(false)}
  },[]);
 
  useEffect(()=>{
   let active=true;
   const sync=async()=>{
-   const next=await resolveMarketCode().catch(()=>inferDeviceMarket());
+   const next=await resolveCurrentMarketCode().catch(()=>inferDeviceMarket());
    if(active){setCode(next);setLoading(false)}
   };
   void sync();
