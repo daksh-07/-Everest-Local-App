@@ -1,4 +1,4 @@
-import {useCallback,useMemo,useState} from 'react';
+import {useCallback,useEffect,useMemo,useState} from 'react';
 import {ActivityIndicator,Pressable,RefreshControl,ScrollView,StyleSheet,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import {supabase} from '@/lib/supabase';
 import {getBusinessPayoutStatus,startBusinessPayoutOnboarding,type BusinessPayoutStatus} from '@/lib/stripe-connect';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {useMarketRegion} from '@/lib/market-region';
 
 type LedgerRow={
  id:string;
@@ -25,7 +26,9 @@ type LedgerRow={
 
 const money=(value:number,currency='AUD')=>new Intl.NumberFormat(undefined,{style:'currency',currency:currency.toUpperCase(),minimumFractionDigits:2}).format(Number(value||0));
 
-export default function BusinessPayouts(){
+export default function BusinessPayouts(){const market=useMarketRegion();return market.code==='IN'?<IndiaPayoutRedirect/>:<AustraliaBusinessPayouts/>}
+function IndiaPayoutRedirect(){const {colors}=useAppTheme();useEffect(()=>{router.replace('/business-india-payouts')},[]);return <SafeAreaView style={{flex:1,backgroundColor:colors.canvas,alignItems:'center',justifyContent:'center'}}><ActivityIndicator color={colors.brand}/></SafeAreaView>}
+function AustraliaBusinessPayouts(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
  const [business,setBusiness]=useState<{id:string;name:string;verification_status:string}|null>(null);
  const [status,setStatus]=useState<BusinessPayoutStatus|null>(null);

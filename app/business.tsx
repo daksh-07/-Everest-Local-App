@@ -5,10 +5,13 @@ import { router } from 'expo-router';
 import { createBusinessSetup } from '@/lib/business';
 import { listServiceTaxonomy, type DeliveryMode, type ServiceDefinition, type TaxonomyCategory } from '@/lib/taxonomy';
 import { userFacingError } from '@/lib/errors';
+import {useMarketRegion} from '@/lib/market-region';
+import {IndiaBusinessOnboarding} from '@/components/IndiaBusinessOnboarding';
 
 type Field={label:string;value:string;setValue:(value:string)=>void;placeholder:string;multiline?:boolean};
 
-export default function Business(){
+export default function Business(){const market=useMarketRegion();return market.code==='IN'?<IndiaBusinessOnboarding/>:<AustraliaBusiness/>}
+function AustraliaBusiness(){
  const [name,setName]=useState('');const [description,setDescription]=useState('');const [abn,setAbn]=useState('');const [phone,setPhone]=useState('');const [email,setEmail]=useState('');
  const [suburb,setSuburb]=useState('');const [city,setCity]=useState('Sydney');const [state,setState]=useState('NSW');const [postcode,setPostcode]=useState('');
  const [roots,setRoots]=useState<TaxonomyCategory[]>([]);const [subs,setSubs]=useState<TaxonomyCategory[]>([]);const [definitions,setDefinitions]=useState<ServiceDefinition[]>([]);

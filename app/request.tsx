@@ -38,6 +38,8 @@ import {
 import { type ThemeColors, useAppTheme } from "@/lib/theme";
 import { startEverestLive, type LiveArrivalWindow } from "@/lib/everest-live";
 import { geocodeServiceAddress, resolveCustomerServiceLocation, serviceAddressLabel } from "@/lib/customer-location";
+import { useMarketRegion } from "@/lib/market-region";
+import { formatMarketMoney } from "@/lib/markets";
 
 type LocationValue = {
   addressLine1: string;
@@ -79,7 +81,10 @@ function timeValue(d: Date) {
 
 export default function Request() {
   const { colors } = useAppTheme();
+  const { market } = useMarketRegion();
   const s = useMemo(() => styles(colors), [colors]);
+  const localityFieldLabel = market.code === "IN" ? "Area / locality" : "Suburb";
+  const marketMoney = (value: number) => formatMarketMoney(value, market.code, { maximumFractionDigits: 0 });
   const params = useLocalSearchParams<{
     serviceId?: string;
     mode?: string;
@@ -118,7 +123,7 @@ export default function Request() {
     city: "",
     state: "",
     postalCode: "",
-    country: "Australia",
+    country: market.countryName,
     formattedAddress: "",
     source: "MANUAL",
     confirmed: false,
@@ -227,7 +232,7 @@ export default function Request() {
             suburb: profileResult.suburb ?? "",
             city: profileResult.city ?? "",
             state: profileResult.state ?? "",
-            country: "Australia",
+            country: profileResult.country ?? market.countryName,
             source: "PROFILE",
             confirmed: false,
           }));
@@ -254,7 +259,7 @@ export default function Request() {
     return () => {
       active = false;
     };
-  }, [serviceId]);
+  }, [serviceId, market.countryName]);
 
   async function locateDevice() {
     if (effectiveMode === "REMOTE" || locating) return;
@@ -270,7 +275,7 @@ export default function Request() {
         city: precise.city,
         state: precise.state,
         postalCode: precise.postalCode,
-        country: precise.country || "Australia",
+        country: precise.country || market.countryName,
         formattedAddress: precise.formattedAddress,
         latitude: precise.latitude,
         longitude: precise.longitude,
@@ -295,7 +300,7 @@ export default function Request() {
       !location.suburb.trim() ||
       !location.state.trim()
     ) {
-      setError("Add the street address, suburb and state first.");
+      setError(market.code === "IN" ? "Add the street address, area / locality and state first." : "Add the street address, suburb and state first.");
       return;
     }
     if (locating) return;
@@ -310,7 +315,7 @@ export default function Request() {
           city:next.city||next.suburb,
           state:next.state,
           postalCode:next.postalCode,
-          country:next.country||"Australia",
+          country:next.country||market.countryName,
         });
         if(!geocoded)throw new Error("We could not locate that exact address. Check the street address and try again.");
         next={
@@ -319,7 +324,7 @@ export default function Request() {
           city:geocoded.city||next.city||next.suburb,
           state:geocoded.state||next.state,
           postalCode:geocoded.postalCode||next.postalCode,
-          country:geocoded.country||next.country||"Australia",
+          country:geocoded.country||next.country||market.countryName,
           formattedAddress:geocoded.formattedAddress,
           latitude:geocoded.latitude,
           longitude:geocoded.longitude,
@@ -390,10 +395,11 @@ export default function Request() {
     }
   }
   function budgetValues() {
-    if (budgetChoice === "UNDER_100") return { budgetMax: 100 };
-    if (budgetChoice === "100_250") return { budgetMin: 100, budgetMax: 250 };
-    if (budgetChoice === "250_500") return { budgetMin: 250, budgetMax: 500 };
-    if (budgetChoice === "500_PLUS") return { budgetMin: 500 };
+    const thresholds = market.code === "IN" ? { low: 1000, mid: 2500, high: 5000 } : { low: 100, mid: 250, high: 500 };
+    if (budgetChoice === "UNDER_100") return { budgetMax: thresholds.low };
+    if (budgetChoice === "100_250") return { budgetMin: thresholds.low, budgetMax: thresholds.mid };
+    if (budgetChoice === "250_500") return { budgetMin: thresholds.mid, budgetMax: thresholds.high };
+    if (budgetChoice === "500_PLUS") return { budgetMin: thresholds.high };
     if (budgetChoice === "CUSTOM") {
       const n = Number(customBudget);
       return Number.isFinite(n) && n >= 0 ? { budget: n } : {};
@@ -492,7 +498,7 @@ export default function Request() {
         suburb: effectiveMode === "LOCAL" ? location.suburb : undefined,
         city: effectiveMode === "LOCAL" ? location.city : undefined,
         state: effectiveMode === "LOCAL" ? location.state : undefined,
-        country: effectiveMode === "LOCAL" ? location.country : undefined,
+        country: effectiveMode === "LOCAL" ? location.country : market.countryName,
         addressLine1: effectiveMode === "LOCAL" ? location.addressLine1 : undefined,
         postalCode: effectiveMode === "LOCAL" ? location.postalCode : undefined,
         serviceAddressLabel: effectiveMode === "LOCAL" ? serviceAddressLabel({
@@ -838,8 +844,8 @@ export default function Request() {
                         <TextInput
                           value={location.suburb}
                           onChangeText={(v) => setManual("suburb", v)}
-                          accessibilityLabel="Suburb"
-                          placeholder="Suburb"
+                          accessibilityLabel={localityFieldLabel}
+                          placeholder={localityFieldLabel}
                           placeholderTextColor={colors.muted}
                           style={s.input}
                         />
@@ -863,8 +869,8 @@ export default function Request() {
                           <TextInput
                             value={location.postalCode}
                             onChangeText={(v) => setManual("postalCode", v)}
-                            accessibilityLabel="Postcode"
-                            placeholder="Postcode"
+                            accessibilityLabel={market.postalLabel}
+                            placeholder={market.postalLabel}
                             keyboardType="number-pad"
                             placeholderTextColor={colors.muted}
                             style={[s.input, { flex: 1 }]}
@@ -1042,14 +1048,14 @@ export default function Request() {
                   Budget <Text style={s.optional}>(optional)</Text>
                 </Text>
                 <View style={s.chips}>
-                  {[
+                  {([
                     ["NONE", "No budget yet"],
-                    ["UNDER_100", "Under $100"],
-                    ["100_250", "$100–250"],
-                    ["250_500", "$250–500"],
-                    ["500_PLUS", "$500+"],
+                    ["UNDER_100", `Under ${marketMoney(market.code === "IN" ? 1000 : 100)}`],
+                    ["100_250", `${marketMoney(market.code === "IN" ? 1000 : 100)}–${marketMoney(market.code === "IN" ? 2500 : 250)}`],
+                    ["250_500", `${marketMoney(market.code === "IN" ? 2500 : 250)}–${marketMoney(market.code === "IN" ? 5000 : 500)}`],
+                    ["500_PLUS", `${marketMoney(market.code === "IN" ? 5000 : 500)}+`],
                     ["CUSTOM", "Custom"],
-                  ].map(([key, label]) => (
+                  ] as Array<[BudgetChoice,string]>).map(([key, label]) => (
                     <Chip
                       key={key}
                       active={budgetChoice === key}
@@ -1063,7 +1069,7 @@ export default function Request() {
                   <TextInput
                     value={customBudget}
                     onChangeText={setCustomBudget}
-                    placeholder="Custom budget AUD"
+                    placeholder={`Custom budget ${market.currency}`}
                     placeholderTextColor={colors.muted}
                     keyboardType="decimal-pad"
                     style={s.input}

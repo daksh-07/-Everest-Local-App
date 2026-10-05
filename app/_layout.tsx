@@ -10,6 +10,7 @@ import type { AccessContext } from '@/lib/access';
 import { ThemeProvider,useAppTheme } from '@/lib/theme';
 import {useReducedMotion} from '@/lib/motion';
 import {ExperienceProvider} from '@/lib/experience';
+import {MarketRegionProvider} from '@/lib/market-region';
 import {GlobalSwipeNavigator} from '@/components/GlobalSwipeNavigator';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {configureEverestQuickActions,quickActionHref,QuickActions,storePendingQuickActionRoute} from '@/lib/quick-actions';
@@ -19,7 +20,7 @@ const protectedRoutes = new Set([
   '/account','/activity','/memberships','/assistant','/request','/everest-live','/requests','/quotes','/bookings','/booking','/orders','/cart','/messages','/reviews','/notifications','/settings','/edit-profile','/appearance','/notification-settings','/help','/create','/create-post','/create-story','/create-clip','/sound','/archive','/highlights','/business-profile-edit',
 ]);
 const businessApplicationRoutes = new Set(['/business','/business-onboarding','/business-dashboard','/business-verification','/business-today','/business-control','/business-profile-edit','/business-upgrade']);
-const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities','/business-leads','/business-jobs','/business-job','/business-my-work','/business-operations','/business-inbox','/business-crm','/business-crm-booking','/business-crm-quote','/business-customer','/business-customers','/business-deal','/business-calendar','/business-availability','/business-integrations','/business-calendar-integrations','/business-automations','/business-dm-automation','/business-growth','/business-growth-p1','/business-payouts']);
+const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities','/business-leads','/business-jobs','/business-job','/business-my-work','/business-operations','/business-inbox','/business-crm','/business-crm-booking','/business-crm-quote','/business-customer','/business-customers','/business-deal','/business-calendar','/business-availability','/business-integrations','/business-calendar-integrations','/business-automations','/business-dm-automation','/business-growth','/business-growth-p1','/business-payouts','/business-india-payouts']);
 const adminRoutes = new Set(['/admin','/admin-operations','/driver-verification']);
 const deliveryRoutes = new Set(['/delivery','/driver-dashboard']);
 const driverApplicationRoutes = new Set(['/driver-onboarding']);
@@ -108,6 +109,6 @@ function ThemedRootLayout() {
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
   return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><GlobalSwipeNavigator key={sessionUserId??'guest'}><Stack screenOptions={{headerShown:false,animation:reducedMotion?'none':Platform.OS==='ios'?'default':'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}><Stack.Screen name="create" options={{presentation:'transparentModal',animation:reducedMotion?'none':'fade',contentStyle:{backgroundColor:'transparent'}}}/></Stack></GlobalSwipeNavigator>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="auto" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}{sessionUserId?<BusinessOpportunityAlert/>:null}{sessionUserId?<EverestLiveMiniPlayer/>:null}<DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></View>;
 }
-export default function RootLayout(){return <GestureHandlerRootView style={styles.root}><ThemeProvider><ExperienceProvider><ThemedRootLayout/></ExperienceProvider></ThemeProvider></GestureHandlerRootView>}
+export default function RootLayout(){return <GestureHandlerRootView style={styles.root}><ThemeProvider><MarketRegionProvider><ExperienceProvider><ThemedRootLayout/></ExperienceProvider></MarketRegionProvider></ThemeProvider></GestureHandlerRootView>}
 
 const styles=StyleSheet.create({root:{flex:1},overlay:{position:'absolute',top:0,right:0,bottom:0,left:0,zIndex:5000,elevation:40},errorScreen:{flex:1,backgroundColor:'#f8f7f4',padding:24,justifyContent:'center',alignItems:'center'},eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:2,color:'#777'},errorTitle:{maxWidth:520,marginTop:10,fontSize:25,lineHeight:31,fontWeight:'900',textAlign:'center'},errorCopy:{maxWidth:520,marginTop:10,color:'#777',fontSize:13,lineHeight:20,textAlign:'center'},retryButton:{marginTop:20,paddingVertical:12,paddingHorizontal:16},retry:{fontSize:12,fontWeight:'900',letterSpacing:.8}});

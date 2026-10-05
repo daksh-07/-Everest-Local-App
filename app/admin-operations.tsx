@@ -6,7 +6,7 @@ import { getAdminMfaState } from '@/lib/admin-mfa';
 import { ADMIN_RESOURCES, getAdminResource, getAdminResourcePage, getAdminResourceCount, type AdminResourceKey, type AdminResource } from '@/lib/admin-operations';
 
 const PAGE_SIZE=25;
-const dedicatedRoutes:Partial<Record<AdminResourceKey,string>>={business_verifications:'/business-verification',driver_applications:'/driver-verification',deliveries:'/delivery',delivery_assignments:'/delivery'};
+const dedicatedRoutes:Partial<Record<AdminResourceKey,string>>={business_verifications:'/admin',driver_applications:'/driver-verification',deliveries:'/delivery',delivery_assignments:'/delivery'};
 
 function formatValue(value:unknown){if(value===null||value===undefined||value==='')return '—';if(typeof value==='object'){try{return JSON.stringify(value)}catch{return '[data]'}}return String(value)}
 function ResourceTable({resource}:{resource:AdminResource}){
