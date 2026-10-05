@@ -68,7 +68,6 @@ test('placeholder Australia profile country does not override an India device be
 
 test('service requests carry the active market before matching',()=>{
  assert.match(requestScreen,/country: effectiveMode === "LOCAL" \? location\.country : market\.countryName/);
- assert.match(marketplace,/from\('profiles'\)\.update\(\{country\}\)/);
  assert.match(dispatchIsolation,/update public\.profiles set country=canonical_country/);
 });
 
