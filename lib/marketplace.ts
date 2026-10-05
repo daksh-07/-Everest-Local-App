@@ -32,7 +32,6 @@ export async function createServiceRequest(input:{idempotencyKey:string;category
  const nums=[input.budget,input.budgetMin,input.budgetMax].filter((v):v is number=>v!==undefined);if(nums.some(v=>!Number.isFinite(v)||v<0))throw new Error('Budget must be a valid non-negative amount.');
  if(input.idempotencyKey.trim().length<16)throw new Error('Invalid request idempotency key.');
  const country=input.country?.trim()||'';
- if(country){const user=await currentUser();if(!user)throw new Error('Authentication required.');const {error:marketError}=await supabase.from('profiles').update({country}).eq('id',user.id);if(marketError)throw safeBackendError(marketError,'Your service market could not be confirmed. Please try again.');}
  const {data,error}=await supabase.rpc('create_service_request_v5',{
   p_category_id:input.categoryId??null,p_service_definition_id:input.serviceDefinitionId??null,p_service_id:input.serviceId??null,p_description:description,p_suburb:input.suburb?.trim()||null,p_city:input.city?.trim()||null,p_state:input.state?.trim()||null,
   p_country:country||null,p_address_line1:input.addressLine1?.trim()||null,p_postal_code:input.postalCode?.trim()||null,p_service_address_label:input.serviceAddressLabel?.trim()||null,
