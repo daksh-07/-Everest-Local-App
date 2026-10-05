@@ -16,6 +16,9 @@ const servicePayments=read('lib/service-payments.ts');
 const businessRoute=read('app/business.tsx');
 const verificationRoute=read('app/business-verification.tsx');
 const payouts=read('app/business-payouts.tsx');
+const requestScreen=read('app/request.tsx');
+const marketplace=read('lib/marketplace.ts');
+const dispatchIsolation=read('supabase/migrations/20261005144500_india_market_dispatch_isolation.sql');
 
 test('India provider setup never reuses ABN or enables Stripe',()=>{
  assert.match(setup,/p_abn:null/);
@@ -60,4 +63,19 @@ test('placeholder Australia profile country does not override an India device be
  assert.match(currentMarket,/hasSavedLocality/);
  assert.match(currentMarket,/saved==='AU'&&hasSavedLocality/);
  assert.match(currentMarket,/return inferred/);
+});
+
+
+test('service requests carry the active market before matching',()=>{
+ assert.match(requestScreen,/country: effectiveMode === "LOCAL" \? location\.country : market\.countryName/);
+ assert.match(marketplace,/from\('profiles'\)\.update\(\{country\}\)/);
+ assert.match(dispatchIsolation,/update public\.profiles set country=canonical_country/);
+});
+
+test('normal matching and Everest Live cannot cross AU and IN provider pools',()=>{
+ assert.match(dispatchIsolation,/market_country_key/);
+ assert.match(dispatchIsolation,/public\.market_country_key\(coalesce\(nullif\(trim\(b\.country\),''\),'Australia'\)\)=request_market/);
+ assert.match(dispatchIsolation,/update public\.opportunities o[\s\S]*status='EXPIRED'[\s\S]*<>request_market/);
+ assert.match(dispatchIsolation,/delete from public\.service_matches sm[\s\S]*<>request_market/);
+ assert.match(dispatchIsolation,/create or replace function public\.release_everest_live_wave/);
 });
