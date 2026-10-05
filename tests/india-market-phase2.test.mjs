@@ -27,7 +27,7 @@ test('India provider setup never reuses ABN or enables Stripe',()=>{
 
 test('India verification uses a separate manual provider and optional GSTIN',()=>{
  assert.match(verify,/INDIA_MANUAL/);
- assert.match(verify,/PENDING_MANUAL_REVIEW/);
+ assert.match(verify,/EVIDENCE_SUBMITTED/);
  assert.match(verify,/\^\[0-9A-Z\]\{15\}\$/);
  assert.match(verify,/abn:null/);
  assert.doesNotMatch(verify,/ABR_LOOKUP_GUID/);
