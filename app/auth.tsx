@@ -18,6 +18,7 @@ import { router } from 'expo-router';
 import { AuthRolePicker } from '@/components/AuthRolePicker';
 import {useReducedMotion} from '@/lib/motion';
 import {consumePendingQuickActionRoute,isSafeInternalRoute} from '@/lib/quick-actions';
+import {useMarketRegion} from '@/lib/market-region';
 
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   return (
@@ -62,11 +63,13 @@ function presentAuthError(error: unknown, fallback: string) {
 }
 
 function Brand() {
+  const {market}=useMarketRegion();
+  const india=market.code==='IN';
   return (
     <View style={s.brand}>
-      <Text style={s.brandName}>EVEREST LOCAL</Text>
+      <Text style={s.brandName}>{india?'EVEREST INDIA':'EVEREST LOCAL'}</Text>
       <View style={s.brandRule} />
-      <Text style={s.brandTagline}>Everything local. One place.</Text>
+      <Text style={s.brandTagline}>{india?"India's local marketplace.":'Everything local. One place.'}</Text>
     </View>
   );
 }
