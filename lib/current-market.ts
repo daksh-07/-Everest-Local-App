@@ -6,9 +6,13 @@ export async function resolveCurrentMarketCode():Promise<MarketCode>{
  if(!supabaseConfigured)return inferred;
  const {data:{user}}=await supabase.auth.getUser();
  if(!user)return inferred;
- const {data,error}=await supabase.from('profiles').select('country').eq('id',user.id).maybeSingle();
+ const {data,error}=await supabase.from('profiles').select('country,suburb,city,state').eq('id',user.id).maybeSingle();
  if(error)return inferred;
- return normalizeCountry(data?.country)??inferred;
+ const saved=normalizeCountry(data?.country);
+ const hasSavedLocality=Boolean(data?.suburb?.trim()||data?.city?.trim()||data?.state?.trim());
+ if(saved==='IN')return 'IN';
+ if(saved==='AU'&&hasSavedLocality)return 'AU';
+ return inferred;
 }
 
 export async function resolveCurrentMarket(){
