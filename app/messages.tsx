@@ -1,7 +1,6 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ActivityIndicator,Alert,Animated,Image,Keyboard,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent,type StyleProp,type ViewStyle} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {BlurView} from 'expo-blur';
 import {router,useGlobalSearchParams} from 'expo-router';
 import {SafeAreaView,useSafeAreaInsets} from 'react-native-safe-area-context';
 import {conversations,messages,sendMessage} from '@/lib/messaging';
@@ -60,11 +59,11 @@ function scrollThreadToEndAfterLayout(ref:React.MutableRefObject<ScrollView|null
 }
 
 function GlassSurface({children,style,intensity=58}:{children:React.ReactNode;style?:StyleProp<ViewStyle>;intensity?:number}){
- const {colors:c,isDark}=useAppTheme();
- const tint=isDark?'systemThinMaterialDark':'systemThinMaterialLight';
- const fallback=isDark?'rgba(27,27,24,.96)':'rgba(255,254,251,.96)';
- if(Platform.OS==='android')return <View style={[{backgroundColor:fallback},style]}>{children}</View>;
- return <BlurView intensity={intensity} tint={tint} style={[{backgroundColor:isDark?'rgba(16,16,15,.34)':'rgba(255,254,251,.42)'},style]}>{children}</BlurView>;
+ const {isDark}=useAppTheme();
+ const strong=intensity>=60;
+ const glass=isDark?(strong?'rgba(34,34,30,.88)':'rgba(31,31,28,.76)'):(strong?'rgba(255,254,251,.90)':'rgba(255,254,251,.78)');
+ const webGlass=Platform.OS==='web'?({backdropFilter:`blur(${strong?22:16}px) saturate(1.18)`,WebkitBackdropFilter:`blur(${strong?22:16}px) saturate(1.18)`} as never):null;
+ return <View style={[{backgroundColor:glass},webGlass,style]}>{children}</View>;
 }
 
 function DeliveryMeta({createdAt,mine,sending,failed,seen,colors:c}:{createdAt:string;mine:boolean;sending?:boolean;failed?:boolean;seen?:boolean;colors:ReturnType<typeof useAppTheme>['colors']}){
