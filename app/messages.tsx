@@ -69,7 +69,7 @@ function GlassSurface({children,style,intensity=58}:{children:React.ReactNode;st
 
 function DeliveryMeta({createdAt,mine,sending,failed,seen,colors:c}:{createdAt:string;mine:boolean;sending?:boolean;failed?:boolean;seen?:boolean;colors:ReturnType<typeof useAppTheme>['colors']}){
  const label=failed?'Failed · tap to retry':sending?'Sending':seen?'Seen':'Sent';
- const icon=failed?'alert-circle-outline':sending?'time-outline':seen?'checkmark-done':'checkmark';
+ const icon:React.ComponentProps<typeof Ionicons>['name']=failed?'alert-circle-outline':sending?'time-outline':seen?'checkmark-done':'checkmark';
  return <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:4,marginHorizontal:5,alignSelf:mine?'flex-end':'flex-start'}}>
   <Text selectable={false} style={{fontSize:10,color:failed?c.danger:c.muted,fontVariant:['tabular-nums']}}>{timeOnly(createdAt)}</Text>
   {mine?<><Text selectable={false} style={{fontSize:10,color:failed?c.danger:c.muted}}>·</Text><Ionicons name={icon} size={11} color={failed?c.danger:c.muted}/><Text selectable={false} style={{fontSize:10,color:failed?c.danger:c.muted,fontWeight:failed?'700':'400'}}>{label}</Text></>:null}
@@ -413,7 +413,7 @@ export function MessagesScreen(){
  if(selectedMarket)return <View nativeID="everest-chat-shell" style={chatRootStyle}><SafeAreaView edges={['top','left','right']} style={{flex:1,minHeight:0,backgroundColor:c.canvas}}>
   <ChatKeyboardFrame>
    <GlassSurface intensity={64} style={{minHeight:70,paddingHorizontal:12,paddingVertical:9,flexDirection:'row',alignItems:'center',gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:c.border,shadowColor:'#000',shadowOpacity:.16,shadowRadius:18,shadowOffset:{width:0,height:8},zIndex:2}}>
-    <Pressable onPress={()=>{setSelectedMarket(null);setMarketThread([]);void loadHome(true)}} style={{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center'}}><Ionicons name="chevron-back" size={24} color={c.text}/></Pressable>
+    <Pressable accessibilityLabel="Back to messages" onPress={()=>{setSelectedMarket(null);setMarketThread([]);void loadHome(true)}} style={({pressed})=>({width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.95:1}]})}><Ionicons name="chevron-back" size={25} color={c.text}/></Pressable>
     {selectedMarket.logo_url?<Image source={{uri:selectedMarket.logo_url}} style={{width:46,height:46,borderRadius:16}}/>:<View style={{width:46,height:46,borderRadius:16,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="storefront-outline" size={22} color={c.brand}/></View>}
     <View style={{flex:1}}><Text style={{fontSize:17,fontWeight:'800',letterSpacing:-.45,color:c.text}}>{selectedMarket.counterpart_name}</Text><Text numberOfLines={1} style={{fontSize:11.5,color:c.muted,marginTop:2}}>{selectedMarket.context_type==='PRODUCT'?'Product · '+(selectedMarket.context_title??'Enquiry'):selectedMarket.context_type==='SERVICE'?'Service · '+(selectedMarket.context_title??'Enquiry'):'Business conversation'}</Text></View>
    </GlassSurface>
@@ -646,7 +646,7 @@ function MessageActionMenu({target,userId,colors:c,reducedMotion,onClose,onReply
   <Pressable nativeID="everest-message-action-overlay" onPress={onClose} style={{flex:1}}>
    <Animated.View pointerEvents="none" style={{position:'absolute',top:0,right:0,bottom:0,left:0,backgroundColor:'#000',opacity:open.interpolate({inputRange:[0,1],outputRange:[0,.3]})}}/>
    {!message.deleted_for_everyone?<Animated.View style={{position:'absolute',left:cardLeft,top:reactionTop,width:cardWidth,height:reactionHeight,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[5,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.97,1]})}]}}>
-    <View style={{height:reactionHeight,flexDirection:'row',justifyContent:'space-between',alignItems:'center',backgroundColor:c.surface,borderRadius:24,paddingHorizontal:7,paddingVertical:5,shadowColor:'#000',shadowOpacity:.15,shadowRadius:14,shadowOffset:{width:0,height:7}}}>{REACTIONS.map(r=><Pressable key={r} accessibilityLabel={'React '+r} onPress={()=>{void haptic.light();onReact(message,r)}} style={({pressed})=>({width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center',transform:[{scale:pressed?1.07:1}],opacity:pressed?.84:1})}><Text selectable={false} style={{fontSize:19}}>{r}</Text></Pressable>)}</View>
+    <GlassSurface intensity={66} style={{height:reactionHeight,flexDirection:'row',justifyContent:'space-between',alignItems:'center',borderRadius:24,overflow:'hidden',borderWidth:StyleSheet.hairlineWidth,borderColor:c.border,paddingHorizontal:7,paddingVertical:5,shadowColor:'#000',shadowOpacity:.22,shadowRadius:16,shadowOffset:{width:0,height:8}}}>{REACTIONS.map(r=><Pressable key={r} accessibilityLabel={'React '+r} onPress={()=>{void haptic.light();onReact(message,r)}} style={({pressed})=>({width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center',transform:[{scale:pressed?1.09:1}],opacity:pressed?.84:1})}><Text selectable={false} style={{fontSize:19}}>{r}</Text></Pressable>)}</GlassSurface>
    </Animated.View>:null}
    <Animated.View pointerEvents="box-none" style={{position:'absolute',left:bubbleLeft,top:bubbleTop,width:bubbleWidth,height:bubbleHeight,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[target.rect.y-bubbleTop,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.98,1.03]})}],shadowColor:'#000',shadowOpacity:.3,shadowRadius:18,shadowOffset:{width:0,height:10}}}>
     <View style={{maxHeight:bubbleHeight,backgroundColor:mine?c.brand:c.elevated,borderRadius:19,overflow:'hidden'}}>
@@ -661,9 +661,9 @@ function MessageActionMenu({target,userId,colors:c,reducedMotion,onClose,onReply
     <Text selectable={false} style={{fontSize:8,color:c.muted,textAlign:mine?'right':'left'}}>{timeOnly(message.created_at)}</Text>
    </Animated.View>
    <Animated.View style={{position:'absolute',left:cardLeft,top:actionTop,width:cardWidth,height:actionHeight,opacity:open,transform:[{translateY:open.interpolate({inputRange:[0,1],outputRange:[-4,0]})},{scale:open.interpolate({inputRange:[0,1],outputRange:[reducedMotion?1:.98,1]})}]}}>
-    <View style={{height:actionHeight,alignSelf:mine?'flex-end':'flex-start',flexDirection:'row',backgroundColor:c.surface,borderRadius:16,padding:4,shadowColor:'#000',shadowOpacity:.14,shadowRadius:12,shadowOffset:{width:0,height:6}}}>
+    <GlassSurface intensity={64} style={{height:actionHeight,alignSelf:mine?'flex-end':'flex-start',flexDirection:'row',borderRadius:17,overflow:'hidden',borderWidth:StyleSheet.hairlineWidth,borderColor:c.border,padding:4,shadowColor:'#000',shadowOpacity:.22,shadowRadius:15,shadowOffset:{width:0,height:8}}}>
      {compactActions.map(action=><Pressable key={action.key} accessibilityLabel={action.label} onPress={()=>{void haptic.selection();action.fn()}} style={({pressed})=>({minWidth:48,height:44,paddingHorizontal:8,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.96:1}]})}><Ionicons name={action.icon} size={18} color={action.key==='report'?c.danger:c.text}/><Text selectable={false} style={{fontSize:8,fontWeight:'800',color:action.key==='report'?c.danger:c.muted,marginTop:2}}>{action.label}</Text></Pressable>)}
-    </View>
+    </GlassSurface>
    </Animated.View>
   </Pressable>
  </Modal>;
