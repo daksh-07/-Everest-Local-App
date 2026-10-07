@@ -62,7 +62,7 @@ function GlassSurface({children,style,intensity=58}:{children:React.ReactNode;st
  const {isDark}=useAppTheme();
  const strong=intensity>=60;
  const glass=isDark?(strong?'rgba(34,34,30,.88)':'rgba(31,31,28,.76)'):(strong?'rgba(255,254,251,.90)':'rgba(255,254,251,.78)');
- const webGlass=Platform.OS==='web'?({backdropFilter:`blur(${strong?22:16}px) saturate(1.18)`,WebkitBackdropFilter:`blur(${strong?22:16}px) saturate(1.18)`} as never):null;
+ const webGlass=Platform.OS==='web'&&strong?({backdropFilter:'blur(22px) saturate(1.18)',WebkitBackdropFilter:'blur(22px) saturate(1.18)'} as never):null;
  return <View style={[{backgroundColor:glass},webGlass,style]}>{children}</View>;
 }
 
@@ -159,11 +159,21 @@ export function MessagesScreen(){
  const refreshPersonalThread=useCallback(async(id:string,silent=false)=>{
   try{
    const rows=await personalMessages(id,null,PAGE_SIZE);
-   setPersonalThread(rows);setHasOlder(rows.length===PAGE_SIZE);
-   await markPersonalConversationRead(id).catch(()=>0);
+   setPersonalThread(current=>{
+    if(!silent)return rows;
+    const localPending=current.filter(m=>m.id.startsWith('temp-')||m.sending||m.failed);
+    const merged=[...rows,...localPending.filter(local=>!rows.some(server=>server.id===local.id))].sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at));
+    const unchanged=current.length===merged.length&&current.every((message,index)=>{
+     const next=merged[index];
+     return Boolean(next)&&message.id===next.id&&message.body===next.body&&message.read_at===next.read_at&&message.edited_at===next.edited_at&&message.deleted_for_everyone===next.deleted_for_everyone&&message.sending===next.sending&&message.failed===next.failed&&JSON.stringify(message.reactions)===JSON.stringify(next.reactions);
+    });
+    return unchanged?current:merged;
+   });
+   setHasOlder(rows.length===PAGE_SIZE);
+   if(rows.some(message=>message.sender_id!==userId&&!message.read_at))await markPersonalConversationRead(id).catch(()=>0);
    if(!silent){initialScrollRef.current=true}
   }catch{if(!silent)setError('Conversation could not be loaded.')}
- },[]);
+ },[userId]);
 
  const refreshMarketThread=useCallback(async(id:string)=>{
   try{setMarketThread(await messages(id) as MarketMessage[])}
@@ -230,7 +240,7 @@ export function MessagesScreen(){
    reply_preview:reply?.deleted_for_everyone?'Message deleted':reply?.body??null,reactions:[],sending:true
   };
   setDraft('');setReplying(null);setError('');setPersonalThread(current=>[...current,optimistic]);
-  scrollThreadToEndAfterLayout(threadRef,true);
+  scrollThreadToEndAfterLayout(threadRef,!reducedMotion);
   try{
    const result=await sendPersonalMessageDetailed(selectedPersonal.other_user_id,body,reply?.id??null);
    setPersonalThread(current=>current.map(m=>m.id===tempId?{...optimistic,id:result.message_id,conversation_id:result.conversation_id,created_at:result.created_at,sending:false}:m));
@@ -271,7 +281,7 @@ export function MessagesScreen(){
  async function submitMarket(){
   if(!selectedMarket||!draft.trim()||busy)return;
   const body=draft.trim();setDraft('');setBusy(true);
-  try{await sendMessage(selectedMarket.id,body);await refreshMarketThread(selectedMarket.id);scrollThreadToEndAfterLayout(threadRef,true)}
+  try{await sendMessage(selectedMarket.id,body);await refreshMarketThread(selectedMarket.id);scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}
   catch{setDraft(body);setError('Couldn’t send message. Try again.')}
   finally{setBusy(false)}
  }
@@ -360,7 +370,7 @@ export function MessagesScreen(){
      <Pressable accessibilityLabel="Back to messages" onPress={()=>{setSelectedPersonal(null);setPersonalThread([]);setReplying(null);setEditing(null);void loadHome(true)}} style={({pressed})=>({width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.95:1}]})}><Ionicons name="chevron-back" size={25} color={c.text}/></Pressable>
      <Pressable onPress={()=>router.push('/public-user?id='+selectedPersonal.other_user_id)} style={{flex:1,flexDirection:'row',alignItems:'center',gap:10}}>
       {selectedPersonal.avatar_url?<Image source={{uri:selectedPersonal.avatar_url}} style={{width:44,height:44,borderRadius:22}}/>:<View style={{width:44,height:44,borderRadius:22,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',borderWidth:StyleSheet.hairlineWidth,borderColor:c.border}}><Text style={{fontSize:16,fontWeight:'800',color:c.brand}}>{(selectedPersonal.display_name??'E')[0]?.toUpperCase()}</Text></View>}
-      <View style={{flex:1}}><Text numberOfLines={1} style={{fontSize:17,fontWeight:'800',letterSpacing:-.45,color:c.text}}>{selectedPersonal.display_name??'Everest member'}</Text><View style={{flexDirection:'row',alignItems:'center',gap:5,marginTop:2}}><View style={{width:5,height:5,borderRadius:3,backgroundColor:outgoingRequest||incomingRequest?c.accent:c.success,opacity:.9}}/><Text style={{fontSize:11.5,color:c.muted}}>{outgoingRequest?'Request pending':incomingRequest?'Message request':'Everest conversation'}</Text></View></View>
+      <View style={{flex:1}}><Text numberOfLines={1} style={{fontSize:17,fontWeight:'800',letterSpacing:-.45,color:c.text}}>{selectedPersonal.display_name??'Everest member'}</Text><Text style={{fontSize:11.5,color:c.muted,marginTop:2}}>{outgoingRequest?'Request pending':incomingRequest?'Message request':'Everest conversation'}</Text></View>
      </Pressable>
      <Pressable accessibilityLabel="Conversation menu" onPress={()=>setHeaderMenu(true)} style={({pressed})=>({width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.95:1}]})}><Ionicons name="ellipsis-horizontal" size={21} color={c.text}/></Pressable>
     </GlassSurface>
@@ -507,15 +517,15 @@ function MotionMessage({children,mine,selected,exiting,reducedMotion}:{children:
  const visibility=useRef(new Animated.Value(1)).current;
  useEffect(()=>{
   if(reducedMotion){enter.setValue(1);return}
-  Animated.spring(enter,{toValue:1,useNativeDriver:true,damping:22,stiffness:260,mass:.75}).start();
+  Animated.spring(enter,{toValue:1,useNativeDriver:true,damping:24,stiffness:250,mass:.8}).start();
  },[enter,reducedMotion]);
  useEffect(()=>{
   const target=exiting?.12:1;
   if(reducedMotion){visibility.setValue(target);return}
   Animated.timing(visibility,{toValue:target,duration:MOTION.fast,easing:ease,useNativeDriver:true}).start();
  },[exiting,reducedMotion,visibility]);
- const baseScale=enter.interpolate({inputRange:[0,1],outputRange:[.94,1]});
- return <Animated.View style={{opacity:selected?.08:Animated.multiply(enter,visibility),transform:[{translateX:enter.interpolate({inputRange:[0,1],outputRange:[mine?12:-12,0]})},{translateY:enter.interpolate({inputRange:[0,1],outputRange:[8,0]})},{scale:baseScale}]}}>{children}</Animated.View>;
+ const baseScale=enter.interpolate({inputRange:[0,1],outputRange:[.97,1]});
+ return <Animated.View style={{opacity:selected?.08:Animated.multiply(enter,visibility),transform:[{translateX:enter.interpolate({inputRange:[0,1],outputRange:[mine?8:-8,0]})},{translateY:enter.interpolate({inputRange:[0,1],outputRange:[4,0]})},{scale:baseScale}]}}>{children}</Animated.View>;
 }
 
 function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,transitioningId,reducedMotion,onRetry,onReply,onReachTop,onNearBottomChange,onInitialContent}:{refValue:React.MutableRefObject<ScrollView|null>;items:PersonalMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onAction:(m:PersonalMessage,rect:MessageRect)=>void;selectedId:string|null;transitioningId:string|null;reducedMotion:boolean;onRetry:(m:PersonalMessage)=>void;onReply:(m:PersonalMessage)=>void;onReachTop:()=>void;onNearBottomChange:(value:boolean)=>void;onInitialContent:()=>void}){
@@ -536,7 +546,7 @@ function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,tran
   if(contentOffset.y<36)onReachTop();
   onNearBottomChange(contentSize.height-(contentOffset.y+layoutMeasurement.height)<120);
  };
- return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1,minHeight:0,backgroundColor:c.canvas}} keyboardShouldPersistTaps="always" keyboardDismissMode="interactive" maintainVisibleContentPosition={{minIndexForVisible:0}} onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={onInitialContent} contentContainerStyle={{paddingHorizontal:12,paddingTop:8,paddingBottom:12}}>
+ return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1,minHeight:0,backgroundColor:c.canvas}} keyboardShouldPersistTaps="always" keyboardDismissMode={Platform.OS==='ios'?'interactive':'none'} maintainVisibleContentPosition={{minIndexForVisible:0}} onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={onInitialContent} contentContainerStyle={{paddingHorizontal:12,paddingTop:8,paddingBottom:12}}>
   {items.map((m,index)=>{
    const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;
    const showDate=!prev||!sameDay(prev.created_at,m.created_at);
@@ -549,7 +559,7 @@ function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,tran
     <View style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}>
      <View style={{maxWidth:'79%'}}>
       <Pressable {...webProps} onLongPress={()=>openAction(m)} delayLongPress={285} onPress={()=>{if(m.failed)onRetry(m)}} style={({pressed})=>[{opacity:pressed?.9:1,transform:[{scale:pressed?.992:1}]},noSelect]}>
-       <View ref={node=>{if(node)messageRefs.current.set(m.id,node);else messageRefs.current.delete(m.id)}} collapsable={false} style={[{backgroundColor:mine?c.brand:c.elevated,borderRadius:22,paddingHorizontal:14,paddingVertical:10,borderWidth:mine?0:StyleSheet.hairlineWidth,borderColor:c.border,shadowColor:'#000',shadowOpacity:mine?.16:.07,shadowRadius:8,shadowOffset:{width:0,height:4}},radiusStyle]}>
+       <View ref={node=>{if(node)messageRefs.current.set(m.id,node);else messageRefs.current.delete(m.id)}} collapsable={false} style={[{backgroundColor:mine?c.brand:c.elevated,borderRadius:22,paddingHorizontal:14,paddingVertical:10,borderWidth:mine?0:StyleSheet.hairlineWidth,borderColor:c.border},radiusStyle]}>
         {m.reply_to_message_id?<View style={{borderLeftWidth:2,borderLeftColor:mine?c.onBrand:c.brand,paddingLeft:7,marginBottom:5,opacity:.76}}><Text selectable={false} numberOfLines={2} style={[{fontSize:10,lineHeight:13,color:mine?c.onBrand:c.textSecondary},noSelect]}>{m.reply_preview??'Message unavailable'}</Text></View>:null}
         <Text selectable={false} style={[{fontSize:16,lineHeight:22.5,letterSpacing:-.12,color:mine?c.onBrand:c.text,fontStyle:m.deleted_for_everyone?'italic':'normal'},noSelect]}>{m.body}</Text>
         {m.edited_at&&!m.deleted_for_everyone?<Text selectable={false} style={[{fontSize:8,color:mine?c.onBrand:c.muted,opacity:.68,marginTop:2},noSelect]}>edited</Text>:null}
@@ -576,8 +586,13 @@ function SwipeReplyBubble({message,colors:c,reducedMotion,onReply,children}:{mes
 }
 
 function MarketThread({refValue,items,userId,colors:c}:{refValue:React.MutableRefObject<ScrollView|null>;items:MarketMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors']}){
- return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1,backgroundColor:c.canvas}} keyboardDismissMode="interactive" keyboardShouldPersistTaps="always" onContentSizeChange={()=>refValue.current?.scrollToEnd({animated:false})} contentContainerStyle={{paddingHorizontal:12,paddingVertical:8}}>
-  {items.map((m,index)=>{const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;const groupedPrev=Boolean(prev&&prev.sender_id===m.sender_id&&sameDay(prev.created_at,m.created_at));const groupedNext=Boolean(next&&next.sender_id===m.sender_id&&sameDay(next.created_at,m.created_at));return <View key={m.id} style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}><View style={{maxWidth:'79%',backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:StyleSheet.hairlineWidth,borderColor:c.border,borderRadius:22,borderTopRightRadius:mine&&groupedPrev?9:22,borderTopLeftRadius:!mine&&groupedPrev?9:22,borderBottomRightRadius:mine&&!groupedNext?6:22,borderBottomLeftRadius:!mine&&!groupedNext?6:22,paddingHorizontal:14,paddingVertical:10,shadowColor:'#000',shadowOpacity:mine?.16:.07,shadowRadius:8,shadowOffset:{width:0,height:4}}}>{m.is_automated?<Text style={{fontSize:8,fontWeight:'900',letterSpacing:.5,color:mine?c.onBrand:c.brand,marginBottom:3}}>{m.automation_source==='EVEREST_AI'?'EVEREST AI · AUTOMATED':'AUTOMATED ANSWER'}</Text>:null}<Text style={{fontSize:16,lineHeight:22.5,letterSpacing:-.12,color:mine?c.onBrand:c.text}}>{m.body}</Text></View>{!groupedNext?<DeliveryMeta createdAt={m.created_at} mine={mine} seen={Boolean(m.read_at)} colors={c}/>:null}</View>})}
+ const marketNearBottomRef=useRef(true);
+ const onScroll=(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
+  const {contentOffset,layoutMeasurement,contentSize}=event.nativeEvent;
+  marketNearBottomRef.current=contentSize.height-(contentOffset.y+layoutMeasurement.height)<120;
+ };
+ return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1,backgroundColor:c.canvas}} keyboardDismissMode={Platform.OS==='ios'?'interactive':'none'} keyboardShouldPersistTaps="always" onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={()=>{if(marketNearBottomRef.current)refValue.current?.scrollToEnd({animated:false})}} contentContainerStyle={{paddingHorizontal:12,paddingVertical:8}}>
+  {items.map((m,index)=>{const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;const groupedPrev=Boolean(prev&&prev.sender_id===m.sender_id&&sameDay(prev.created_at,m.created_at));const groupedNext=Boolean(next&&next.sender_id===m.sender_id&&sameDay(next.created_at,m.created_at));return <View key={m.id} style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}><View style={{maxWidth:'79%',backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:StyleSheet.hairlineWidth,borderColor:c.border,borderRadius:22,borderTopRightRadius:mine&&groupedPrev?9:22,borderTopLeftRadius:!mine&&groupedPrev?9:22,borderBottomRightRadius:mine&&!groupedNext?6:22,borderBottomLeftRadius:!mine&&!groupedNext?6:22,paddingHorizontal:14,paddingVertical:10}}>{m.is_automated?<Text style={{fontSize:8,fontWeight:'900',letterSpacing:.5,color:mine?c.onBrand:c.brand,marginBottom:3}}>{m.automation_source==='EVEREST_AI'?'EVEREST AI · AUTOMATED':'AUTOMATED ANSWER'}</Text>:null}<Text style={{fontSize:16,lineHeight:22.5,letterSpacing:-.12,color:mine?c.onBrand:c.text}}>{m.body}</Text></View>{!groupedNext?<DeliveryMeta createdAt={m.created_at} mine={mine} seen={Boolean(m.read_at)} colors={c}/>:null}</View>})}
  </ScrollView>;
 }
 
@@ -596,7 +611,7 @@ export function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,reduced
    <GlassSurface intensity={70} style={{minHeight:56,maxHeight:132,borderRadius:29,overflow:'hidden',borderWidth:StyleSheet.hairlineWidth,borderColor:focused?c.brand:c.border,flexDirection:'row',alignItems:'flex-end',paddingLeft:17,paddingRight:6,paddingVertical:6,shadowColor:'#000',shadowOpacity:.22,shadowRadius:18,shadowOffset:{width:0,height:9}}}>
     <TextInput ref={inputRef} nativeID="everest-message-composer" value={draft} onChangeText={setDraft} onFocus={()=>{setFocused(true);onFocus()}} onBlur={()=>setFocused(false)} placeholder="Write a message…" placeholderTextColor={c.muted} multiline scrollEnabled showSoftInputOnFocus maxLength={5000} style={[{flex:1,minHeight:38,maxHeight:102,color:c.text,fontSize:16,lineHeight:21,paddingTop:8,paddingBottom:8,paddingHorizontal:0,textAlignVertical:'center',borderWidth:0},Platform.OS==='web'?({outlineStyle:'none',outlineWidth:0,outlineColor:'transparent',boxShadow:'none'} as never):null]}/>
     <Animated.View style={{opacity:active.interpolate({inputRange:[0,1],outputRange:[.42,1]}),transform:[{scale:Animated.multiply(active.interpolate({inputRange:[0,1],outputRange:[.9,1]}),pressed)}]}}>
-     <Pressable accessibilityLabel={edit?'Save edited message':'Send message'} disabled={busy||!draft.trim()} onPressIn={()=>pressTo(.92)} onPressOut={()=>pressTo(1)} onPress={()=>{void haptic.light();submit()}} style={({pressed:sendPressed})=>({width:42,height:42,borderRadius:21,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:1,shadowColor:'#000',shadowOpacity:hasDraft?.18:0,shadowRadius:8,shadowOffset:{width:0,height:4},transform:[{scale:sendPressed?.96:1}]})}>{busy?<ActivityIndicator size="small" color={c.onBrand}/>:<Ionicons name={edit?'checkmark':'arrow-up'} size={21} color={c.onBrand}/>}</Pressable>
+     <Pressable accessibilityLabel={edit?'Save edited message':'Send message'} disabled={busy||!draft.trim()} onPressIn={()=>pressTo(.92)} onPressOut={()=>pressTo(1)} onPress={()=>{void haptic.light();submit()}} style={{width:42,height:42,borderRadius:21,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:1,shadowColor:'#000',shadowOpacity:hasDraft?.18:0,shadowRadius:8,shadowOffset:{width:0,height:4}}}>{busy?<ActivityIndicator size="small" color={c.onBrand}/>:<Ionicons name={edit?'checkmark':'arrow-up'} size={21} color={c.onBrand}/>}</Pressable>
     </Animated.View>
    </GlassSurface>
   </View>
