@@ -176,8 +176,16 @@ export function MessagesScreen(){
  },[userId]);
 
  const refreshMarketThread=useCallback(async(id:string)=>{
-  try{setMarketThread(await messages(id) as MarketMessage[])}
-  catch{setError('Conversation could not be loaded.')}
+  try{
+   const rows=await messages(id) as MarketMessage[];
+   setMarketThread(current=>{
+    const unchanged=current.length===rows.length&&current.every((message,index)=>{
+     const next=rows[index];
+     return Boolean(next)&&message.id===next.id&&message.body===next.body&&message.read_at===next.read_at&&message.is_automated===next.is_automated&&message.automation_source===next.automation_source;
+    });
+    return unchanged?current:rows;
+   });
+  }catch{setError('Conversation could not be loaded.')}
  },[]);
 
  async function loadOlder(){
@@ -343,8 +351,8 @@ export function MessagesScreen(){
   try{await togglePersonalMessageReaction(message.id,reaction);void haptic.light();if(selectedPersonal)await refreshPersonalThread(selectedPersonal.id,true)}
   catch{setError('Reaction could not be updated.')}
  }
- function beginReply(message:PersonalMessage){setReplying(message);setEditing(null);setActionTarget(null)}
- function beginEdit(message:PersonalMessage){setEditing(message);setReplying(null);setDraft(message.body);setActionTarget(null)}
+ const beginReply=useCallback((message:PersonalMessage)=>{setReplying(message);setEditing(null);setActionTarget(null)},[]);
+ const beginEdit=useCallback((message:PersonalMessage)=>{setEditing(message);setReplying(null);setDraft(message.body);setActionTarget(null)},[])
  async function copyOnWeb(message:PersonalMessage){
   if(Platform.OS!=='web'||typeof navigator==='undefined'||!navigator.clipboard)return;
   try{await navigator.clipboard.writeText(message.body);setActionTarget(null)}
