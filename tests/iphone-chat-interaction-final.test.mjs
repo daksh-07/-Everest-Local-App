@@ -71,8 +71,8 @@ test('delete for everyone continues using the hardened v2 RPC',()=>{
 });
 
 
-test('message thread never dismisses keyboard while composer is active',()=>{
+test('message thread uses native interactive keyboard dismissal only on iOS',()=>{
  assert.match(messages,/keyboardShouldPersistTaps="always"/);
- assert.match(messages,/keyboardDismissMode="none"/);
+ assert.match(messages,/keyboardDismissMode=\{Platform\.OS==='ios'\?'interactive':'none'\}/);
  assert.match(messages,/showSoftInputOnFocus/);
 });
