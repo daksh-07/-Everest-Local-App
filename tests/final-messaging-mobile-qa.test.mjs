@@ -50,19 +50,31 @@ test('delete choices depend on message ownership',()=>{
 });
 
 test('composer stays compact and bounded',()=>{
- assert.match(messages,/minHeight:52,maxHeight:124/);
+ assert.match(messages,/minHeight:56,maxHeight:132/);
  assert.match(messages,/minHeight:38,maxHeight:102/);
  assert.match(messages,/fontSize:16/);
- assert.match(messages,/borderRadius:25/);
+ assert.match(messages,/borderRadius:29/);
 });
 
 test('grouped messages render metadata only at end of cluster',()=>{
  assert.match(messages,/const groupedNext=Boolean/);
- assert.match(messages,/!groupedNext\?<Text/);
- assert.match(messages,/timeOnly\(m\.created_at\).*meta/);
+ assert.match(messages,/!groupedNext\?<DeliveryMeta/);
+ assert.match(messages,/createdAt=\{m\.created_at\}/);
 });
 
 test('pending state is subtle contextual metadata instead of shouting',()=>{
  assert.match(messages,/Request pending/);
  assert.doesNotMatch(messages,/>PENDING REQUEST<\/Text>/);
+});
+
+
+test('silent refresh preserves optimistic or failed local messages without forcing list churn',()=>{
+ assert.match(messages,/const localPending=current\.filter/);
+ assert.match(messages,/m\.id\.startsWith\('temp-'\)\|\|m\.sending\|\|m\.failed/);
+ assert.match(messages,/return unchanged\?current:merged/);
+});
+
+test('market chat does not yank the reader to the bottom while browsing older messages',()=>{
+ assert.match(messages,/const marketNearBottomRef=useRef\(true\)/);
+ assert.match(messages,/if\(marketNearBottomRef\.current\)refValue\.current\?\.scrollToEnd/);
 });
