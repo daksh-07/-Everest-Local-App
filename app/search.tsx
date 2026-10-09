@@ -139,7 +139,7 @@ export default function Search(){
   const {colors:c}=useAppTheme();
   const params=useLocalSearchParams<{q?:string;tab?:string}>();
   const [q,setQ]=useState(typeof params.q==='string'?params.q:'');
-  const [tab,setTab]=useState<Tab>(tabs.includes(params.tab as Tab)?params.tab as Tab:'TOP');
+  const [tab,setTab]=useState<Tab>(tabs.includes(params.tab as Tab)?params.tab as Tab:'SERVICE');
   const [items,setItems]=useState<UniversalResult[]>([]);
   const [jobs,setJobs]=useState<JobResult[]>([]);
   const [loading,setLoading]=useState(false);
@@ -162,7 +162,7 @@ export default function Search(){
       setError('');
       setItems([]);
       setJobs([]);
-      if(!text){setLoading(false);return}
+      if(!text&&(tab==='JOB'||tab==='PERSON')){setLoading(false);return}
       setLoading(true);
       if(tab==='JOB')void loadJobs(text,current);
       else void universalSearch(text,tab as UniversalKind,30,0)

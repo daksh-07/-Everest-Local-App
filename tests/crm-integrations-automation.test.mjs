@@ -6,6 +6,7 @@ import {URL} from 'node:url';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const migration=read('supabase/migrations/20260925214500_crm_integrations_automation_foundation.sql');
 const oauth=read('supabase/functions/crm-integration-oauth/index.ts');
+const permissionHardening=read('supabase/migrations/20261009081254_live_geographic_eligibility.sql');
 const calendarSync=read('supabase/functions/crm-calendar-sync/index.ts');
 const client=read('lib/integrations.ts');
 const hub=read('app/business-integrations.tsx');
@@ -23,10 +24,11 @@ test('integration records and provider credentials have separate security bounda
 
 test('OAuth uses authenticated membership for initiation and signed expiring callback state',()=>{
  assert.match(oauth,/userClient\.auth\.getUser\(\)/);
- assert.match(oauth,/\.from\('business_members'\).*\.eq\('business_id',businessId\).*\.eq\('user_id',user\.id\)/s);
+ assert.match(oauth,/user_has_business_permission/);
+ assert.match(permissionHardening,/bm\.business_id=p_business_id\s+and bm\.user_id=p_user_id\s+and bm\.status='ACTIVE'/);
  assert.match(oauth,/HMAC/);
  assert.match(oauth,/state\.exp<=Date\.now\(\)/);
- assert.match(oauth,/Business access is no longer available/);
+ assert.match(oauth,/CRM management access is no longer available/);
  assert.doesNotMatch(oauth,/console\.log\(.*token/i);
 });
 

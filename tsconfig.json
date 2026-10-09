@@ -4,5 +4,5 @@
     "strict": true,
     "paths": { "@/*": ["./*"] }
   },
-  "exclude": ["supabase/functions/**/*.ts"]
+  "exclude": ["supabase/functions/**/*.ts", "dist", ".expo"]
 }

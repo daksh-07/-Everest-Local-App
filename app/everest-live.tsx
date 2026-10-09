@@ -122,7 +122,7 @@ export default function EverestLive(){
  if(!id||(!loading&&!state))return <SafeAreaView style={s.safe}><EmptyState icon="radio-outline" title="Live request unavailable" description={error||'Open an active request from My Everest, or start a new search.'} actionLabel="My Everest" onAction={()=>router.replace('/activity')}/></SafeAreaView>;
  return <SafeAreaView style={s.safe} edges={['top','left','right']}><View style={s.top}><Pressable accessibilityLabel="Go back" onPress={()=>router.back()} style={s.icon}><Ionicons name="chevron-back" size={22} color={colors.text}/></Pressable><View style={{alignItems:'center'}}><Text style={s.eyebrow}>EVEREST LIVE</Text><Text style={s.topTitle}>{presentation.title}</Text></View><Pressable accessibilityLabel="Live search help" onPress={()=>router.push('/help')} style={s.icon}><Ionicons name="help-circle-outline" size={22} color={colors.text}/></Pressable></View>
   <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void refresh('manual')} tintColor={colors.brand}/>} contentContainerStyle={s.page}>
-   <View style={s.map} accessibilityLabel={`Real Everest Live map, searching within approximately ${state?.radius_km??3} kilometres`}>
+   <View style={s.map} accessibilityLabel={`Everest Live search area, approximately ${state?.radius_km??3} kilometres. Business markers show approximate locations, not live tracking.`}>
     <LiveSearchMap customer={map.customer} businesses={map.businesses} radiusKm={Number(state?.radius_km??3)}/>
     <LiveSearchingOverlay active={searching&&Boolean(map.customer)} />
     <View pointerEvents="none" style={s.mapTop}>

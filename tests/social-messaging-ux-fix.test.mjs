@@ -43,7 +43,7 @@ test('ordinary clients cannot read raw deleted personal message content',()=>{
 
 test('blank search does not enumerate people',()=>{
  assert.match(migration,/where \(select t from q\)<>''/);
- assert.match(search,/if\(!text\)\{setLoading\(false\);return\}/);
+ assert.match(search,/if\(!text&&\(tab==='JOB'\|\|tab==='PERSON'\)\)\{setLoading\(false\);return\}/);
  assert.match(search,/People only appear when their searchable profile matches your query/);
 });
 
