@@ -1,5 +1,11 @@
 -- Let guests discover only public verified marketplace listings.
 -- People and community results still require an authenticated session.
+-- Public listing RLS policies call is_admin() even for anonymous requests.
+-- It reads the caller's own auth context and always returns false without a user.
+-- Restore the execute grant removed by the later MFA hardening migration so
+-- those public-read policies can actually evaluate for guests.
+grant execute on function public.is_admin() to anon;
+
 create or replace function public.universal_search(p_query text,p_kind text default 'TOP',p_limit int default 20,p_offset int default 0)
 returns table(kind text,id uuid,title text,subtitle text,score int,metadata jsonb)
 language sql stable security definer set search_path='' as $$

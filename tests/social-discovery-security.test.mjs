@@ -37,6 +37,7 @@ test('universal search is server-side and disabled external discovery is absent 
  assert.doesNotMatch(search,/external-discovery/);
 });
 test('guest search exposes verified marketplace listings without people or community results',()=>{
+ assert.match(guestSearch,/grant execute on function public\.is_admin\(\) to anon/);
  assert.match(guestSearch,/grant execute on function public\.universal_search\(text,text,int,int\) to anon,authenticated/);
  assert.match(guestSearch,/auth\.uid\(\) is not null or kind in \('BUSINESS','SERVICE','PRODUCT'\)/);
  assert.match(guestSearch,/b\.verification_status='VERIFIED'/);
