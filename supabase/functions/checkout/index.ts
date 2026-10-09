@@ -25,6 +25,8 @@ Deno.serve(async req=>{
  if(req.method!=='POST')return json({error:'Method not allowed'},405);
  const url=Deno.env.get('SUPABASE_URL'),anon=Deno.env.get('SUPABASE_ANON_KEY'),service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),stripeKey=Deno.env.get('STRIPE_SECRET_KEY');
  if(!url||!anon||!service||!stripeKey)return json({error:'Checkout is not configured'},503);
+ const appUrl=(Deno.env.get('APP_PUBLIC_URL')??'https://everest-local-app.vercel.app').replace(/\/$/,'');
+ if(!appUrl.startsWith('https://'))return json({error:'Payment return URL is not configured'},503);
  const auth=req.headers.get('Authorization'),idem=req.headers.get('Idempotency-Key');
  if(!auth||!idem||idem.length<16||idem.length>128)return json({error:'Authentication and a valid Idempotency-Key are required'},401);
  const userClient=createClient(url,anon,{global:{headers:{Authorization:auth}}}),admin=createClient(url,service);
@@ -122,8 +124,8 @@ Deno.serve(async req=>{
    ],
    metadata:paymentMetadata,
    payment_intent_data:paymentIntentData,
-   success_url:`everestlocal://order/success?order_id=${encodeURIComponent(orderId)}`,
-   cancel_url:`everestlocal://order/cancelled?order_id=${encodeURIComponent(orderId)}`,
+   success_url:`${appUrl}/orders?checkout=success&order_id=${encodeURIComponent(orderId)}`,
+   cancel_url:`${appUrl}/orders?checkout=cancelled&order_id=${encodeURIComponent(orderId)}`,
   },{idempotencyKey:idem,stripeAccount:connectedId});
 
   stripeSessionCreated=true;

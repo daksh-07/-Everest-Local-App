@@ -6,6 +6,7 @@ const migration=fs.readFileSync('supabase/migrations/20260927081523_stripe_conne
 const connect=fs.readFileSync('supabase/functions/stripe-connect/index.ts','utf8');
 const checkout=fs.readFileSync('supabase/functions/checkout/index.ts','utf8');
 const serviceCheckout=fs.readFileSync('supabase/functions/service-checkout/index.ts','utf8');
+const promotionCheckout=fs.readFileSync('supabase/functions/post-promotion-checkout/index.ts','utf8');
 const webhook=fs.readFileSync('supabase/functions/stripe-webhook/index.ts','utf8');
 const payouts=fs.readFileSync('app/business-payouts.tsx','utf8');
 const config=fs.readFileSync('supabase/config.toml','utf8');
@@ -38,6 +39,16 @@ test('product and service checkouts are direct connected-account charges with Ev
  }
  assert.match(checkout,/This business is still setting up payouts/);
  assert.match(serviceCheckout,/This business is still setting up payouts/);
+});
+
+test('Checkout returns to a reachable HTTPS app page without declaring payment success',()=>{
+ for(const source of [checkout,serviceCheckout,promotionCheckout]){
+  assert.match(source,/APP_PUBLIC_URL/);
+  assert.match(source,/appUrl\.startsWith\('https:\/\/'\)/);
+  assert.doesNotMatch(source,/everestlocal:\/\//);
+ }
+ assert.match(serviceCheckout,/\/booking\?id=/);
+ assert.match(checkout,/\/orders\?checkout=/);
 });
 
 test('connected account events synchronize readiness and settle the direct-charge ledger',()=>{

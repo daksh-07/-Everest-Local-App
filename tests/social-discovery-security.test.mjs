@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const migration=fs.readFileSync('supabase/migrations/20260925003000_universal_search_connections_messaging.sql','utf8');
+const guestSearch=fs.readFileSync('supabase/migrations/20261009082055_guest_marketplace_search.sql','utf8');
 const search=fs.readFileSync('app/search.tsx','utf8');
 const social=fs.readFileSync('lib/social.ts','utf8');
 const messages=fs.readFileSync('app/messages.tsx','utf8');
@@ -34,6 +35,15 @@ test('universal search is server-side and disabled external discovery is absent 
  assert.match(search,/universalSearch/);
  assert.doesNotMatch(search,/external-businesses/);
  assert.doesNotMatch(search,/external-discovery/);
+});
+test('guest search exposes verified marketplace listings without people or community results',()=>{
+ assert.match(guestSearch,/grant execute on function public\.is_admin\(\) to anon/);
+ assert.match(guestSearch,/grant execute on function public\.universal_search\(text,text,int,int\) to anon,authenticated/);
+ assert.match(guestSearch,/auth\.uid\(\) is not null or kind in \('BUSINESS','SERVICE','PRODUCT'\)/);
+ assert.match(guestSearch,/b\.verification_status='VERIFIED'/);
+ assert.match(guestSearch,/s\.active and b\.status='ACTIVE'/);
+ assert.match(guestSearch,/grant select\(service_id,instant_booking_enabled\)/);
+ assert.match(guestSearch,/service_booking_settings_guest_read[\s\S]*for select to anon/);
 });
 test('search and profile RPCs suppress blocked users and private discovery',()=>{
  assert.match(migration,/not public\.users_blocked\(auth\.uid\(\),pp\.id\)/);

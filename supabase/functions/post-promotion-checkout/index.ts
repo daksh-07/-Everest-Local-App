@@ -15,6 +15,8 @@ Deno.serve(async req=>{
 
  const url=Deno.env.get('SUPABASE_URL'),anon=Deno.env.get('SUPABASE_ANON_KEY'),service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),stripeKey=Deno.env.get('STRIPE_SECRET_KEY');
  if(!url||!anon||!service||!stripeKey)return json({error:'Post promotion checkout is not configured'},503);
+ const appUrl=(Deno.env.get('APP_PUBLIC_URL')??'https://everest-local-app.vercel.app').replace(/\/$/,'');
+ if(!appUrl.startsWith('https://'))return json({error:'Payment return URL is not configured'},503);
 
  const auth=req.headers.get('Authorization'),idem=req.headers.get('Idempotency-Key');
  if(!auth||!idem||idem.length<16||idem.length>128)return json({error:'Authentication and a valid Idempotency-Key are required'},401);
@@ -71,8 +73,8 @@ Deno.serve(async req=>{
     customer_id:user.id,
     promotion_plan:plan
    }},
-   success_url:`everestlocal://account?promotion=success&promotion_id=${encodeURIComponent(promotion.promotion_id)}`,
-   cancel_url:`everestlocal://account?promotion=cancelled&promotion_id=${encodeURIComponent(promotion.promotion_id)}`
+   success_url:`${appUrl}/account?promotion=success&promotion_id=${encodeURIComponent(promotion.promotion_id)}`,
+   cancel_url:`${appUrl}/account?promotion=cancelled&promotion_id=${encodeURIComponent(promotion.promotion_id)}`
   },{idempotencyKey:promotion.promotion_id});
 
   const {error:updateError}=await admin.from('post_promotions').update({

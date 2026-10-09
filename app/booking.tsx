@@ -36,7 +36,7 @@ const stages:ReadonlyArray<{label:string;statuses:BookingStatus[]}>= [
 ];
 
 export default function BookingPortal(){
- const {id}=useLocalSearchParams<{id?:string}>();const bookingId=typeof id==='string'?id:'';
+ const {id,checkout}=useLocalSearchParams<{id?:string;checkout?:string}>();const bookingId=typeof id==='string'?id:'';
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
  const [data,setData]=useState<PageData|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [busy,setBusy]=useState('');const [error,setError]=useState('');
  const load=useCallback(async(refresh=false)=>{if(!bookingId){setError('Booking reference is missing.');setLoading(false);return;}if(refresh)setRefreshing(true);else setLoading(true);setError('');try{
@@ -63,6 +63,7 @@ export default function BookingPortal(){
  return <SafeAreaView style={s.safe} edges={['top']}><ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.brand}/>} contentContainerStyle={s.page}>
   <Pressable onPress={()=>router.back()} accessibilityLabel="Go back" style={s.back}><Ionicons name="arrow-back" size={21} color={colors.text}/></Pressable>
   <Text style={s.eyebrow}>YOUR JOB</Text><Text style={s.title}>{data.businessName}</Text><Text style={s.subtitle}>{date}{booking.scheduled_time?` · ${booking.scheduled_time.slice(0,5)}`:''}</Text>
+  {checkout==='success'?<AppCard compact style={s.guidance}><Text style={s.guidanceTitle}>{data.payment?.status==='PAID'?'Payment confirmed':'Payment confirmation pending'}</Text><Text style={s.guidanceCopy}>{data.payment?.status==='PAID'?'Your payment is recorded on this booking.':'Stripe checkout has returned. Pull to refresh if the payment status has not updated yet.'}</Text></AppCard>:checkout==='cancelled'?<AppCard compact style={s.guidance}><Text style={s.guidanceTitle}>Checkout cancelled</Text><Text style={s.guidanceCopy}>No payment was confirmed. You can return to checkout when ready.</Text></AppCard>:null}
   <View style={[s.hero,cancelled&&s.heroCancelled]}><View style={s.heroTop}><View><Text style={s.heroLabel}>{cancelled?'BOOKING CANCELLED':operational||booking.status.replaceAll('_',' ')}</Text><Text style={s.heroTitle}>{cancelled?'This job is no longer active':booking.status==='COMPLETED'?'Job completed':operational==='ON MY WAY'?'Your professional is on the way':'Everything in one place'}</Text></View><Text style={s.price}>${Number(booking.price).toFixed(2)}</Text></View>
    {!cancelled&&<View style={s.timeline}>{stages.map((stage,index)=>{const done=index<=activeStage;return <View key={stage.label} style={s.stage}><View style={[s.dot,done&&s.dotOn]}>{done&&<Ionicons name="checkmark" size={11} color={colors.onBrand}/>}</View><Text style={[s.stageText,done&&s.stageOn]} numberOfLines={1}>{stage.label}</Text></View>})}</View>}
   </View>

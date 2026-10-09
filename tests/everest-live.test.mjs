@@ -16,6 +16,7 @@ const stabilityMigration=fs.readFileSync('supabase/migrations/20260927131500_mar
 const miniPlayer=fs.readFileSync('components/EverestLiveMiniPlayer.tsx','utf8');
 const resilience=fs.readFileSync('lib/resilience.ts','utf8');
 const billingFunction=fs.readFileSync('supabase/functions/business-subscription-billing/index.ts','utf8');
+const geographicHardening=fs.readFileSync('supabase/migrations/20261009081254_live_geographic_eligibility.sql','utf8');
 
 test('ASAP customer request starts one backend-authoritative Live search',()=>{
  assert.match(request,/startEverestLive\(id,\s*arrivalWindow\)/);
@@ -27,6 +28,14 @@ test('ASAP customer request starts one backend-authoritative Live search',()=>{
 test('eligibility enforces capability, active verification, availability, radius and conflicts',()=>{
  for(const rule of ["s.active","b.status='ACTIVE'","b.verification_status='VERIFIED'","ba.status='AVAILABLE_NOW'","service_radius_km","service_dispatch_assignments"]){assert.match(migration,new RegExp(rule.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));}
  assert.match(migration,/public\.everest_distance_km[\s\S]*<=p_radius_km/);
+});
+
+test('Live geographic coverage stays inside the active search wave',()=>{
+ const condition=geographicHardening.slice(geographicHardening.indexOf("and (\n    r.delivery_mode='REMOTE'"),geographicHardening.indexOf('order by b.id,distance_km'));
+ assert.match(condition,/everest_distance_km\(r\.latitude,r\.longitude,b\.latitude,b\.longitude\)<=p_radius_km/);
+ assert.match(condition,/bm\.status='ACTIVE'[\s\S]*<=da\.service_radius_km/);
+ assert.match(condition,/or exists \([\s\S]*public\.service_areas/);
+ assert.doesNotMatch(condition,/coalesce\([\s\S]*service_radius_km[\s\S]*p_radius_km/);
 });
 
 test('progressive search is bounded and never re-notifies a business',()=>{
