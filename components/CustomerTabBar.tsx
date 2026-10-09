@@ -1,7 +1,7 @@
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {useCallback,useEffect,useMemo,useState} from 'react';
-import {Pressable,StyleSheet,Text,View} from 'react-native';
+import {Pressable,StyleSheet,Text,useWindowDimensions,View} from 'react-native';
 import {Gesture,GestureDetector} from 'react-native-gesture-handler';
 import Animated,{runOnJS,useAnimatedStyle,useSharedValue,withSpring,type SharedValue} from 'react-native-reanimated';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -26,6 +26,7 @@ function TabIcon({index,progress,colors,label,icon,selected,showLabels,labelSize
 }
 export function CustomerTabBar({active,hidden=false,shell=false}:{active:Destination;hidden?:boolean;shell?:boolean}){
  const pager=useCustomerPager();const insets=useSafeAreaInsets();const {colors}=useAppTheme();const {tokens:t}=useExperience();const reduced=useReducedMotion();
+ const {width}=useWindowDimensions();
  const initial=Math.max(0,items.findIndex(item=>item.route===active));
  const fallback=useSharedValue<number>(items[initial].page);const progress=pager?.progress??fallback;
  useEffect(()=>{if(!pager)fallback.value=items[initial].page},[fallback,initial,pager]);
@@ -42,7 +43,7 @@ export function CustomerTabBar({active,hidden=false,shell=false}:{active:Destina
  const bottom=Math.max(9,insets.bottom?insets.bottom+3:12);
  return <View accessibilityElementsHidden={hidden} importantForAccessibility={hidden?'no-hide-descendants':'auto'} aria-hidden={hidden} pointerEvents={hidden?'none':'auto'} style={[styles.shell,{bottom,opacity:hidden?0:1}]}><GestureDetector gesture={gesture}><View onLayout={event=>setBarWidth(event.nativeEvent.layout.width)} style={[styles.bar,{height:t.navigation.height,backgroundColor:colors.navigation,borderColor:colors.border,borderWidth:t.surfaces.borderWidth,shadowOpacity:reduced?0:t.surfaces.shadowOpacity}]}>
   {barWidth?<Animated.View pointerEvents="none" style={[styles.indicator,{backgroundColor:colors.brand},lineStyle]}/>:null}
-  {items.map((item,index)=><Pressable key={item.route} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{selected:item.route===active}} aria-selected={item.route===active} onPress={()=>navigate(index)} style={({pressed})=>[styles.item,pressed&&styles.pressed]}><TabIcon index={index} progress={progress} colors={colors} label={item.label} icon={item.icon} selected={item.selected} showLabels={t.navigation.showLabels} labelSize={t.navigation.labelSize} iconSize={t.navigation.iconSize}/></Pressable>)}
+  {items.map((item,index)=><Pressable key={item.route} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{selected:item.route===active}} aria-selected={item.route===active} onPress={()=>navigate(index)} style={({pressed})=>[styles.item,pressed&&styles.pressed]}><TabIcon index={index} progress={progress} colors={colors} label={width<=360?item.route==='/activity'?'Activity':item.route==='/messages'?'Inbox':item.label:item.label} icon={item.icon} selected={item.selected} showLabels={t.navigation.showLabels} labelSize={t.navigation.labelSize} iconSize={t.navigation.iconSize}/></Pressable>)}
  </View></GestureDetector></View>;
 }
 const styles=StyleSheet.create({shell:{position:'absolute',left:12,right:12,zIndex:70,alignItems:'center'},bar:{width:'100%',maxWidth:620,flexDirection:'row',alignItems:'center',borderRadius:18,paddingHorizontal:6,shadowColor:'#000',shadowRadius:14,shadowOffset:{width:0,height:9},elevation:6,overflow:'hidden'},item:{flex:1,height:'100%',alignItems:'center',justifyContent:'center'},pressed:{opacity:.7},iconContent:{width:'100%',alignItems:'center',justifyContent:'center'},icons:{width:30,height:29,alignItems:'center',justifyContent:'center'},iconLayer:{position:'absolute',alignItems:'center',justifyContent:'center'},label:{fontWeight:'800',marginTop:2,maxWidth:'100%',paddingHorizontal:2,textAlign:'center'},highlight:{position:'absolute',top:10,width:48,height:38,borderRadius:19},indicator:{position:'absolute',top:2,width:24,height:3,borderRadius:2}});
