@@ -45,10 +45,11 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
   });
  },[]);
  const commit=useCallback((target:CustomerPage)=>{
+  mountSceneWindow(target);
   selectedRef.current=target;setSelected(target);pendingRoute.current=target;
   // The URL follows the settled page; navigation never creates the visual transition.
   router.replace(CUSTOMER_PAGES[target] as never);
- },[router]);
+ },[mountSceneWindow,router]);
  const cue=useCallback(()=>{void haptic.selection()},[]);
  const navigate=useCallback((target:CustomerPage)=>{
   mountSceneWindow(target);
@@ -69,7 +70,7 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
  const gesture=useMemo(()=>Gesture.Pan()
   .enabled(routePage!==null&&!threadOpen)
   .activeOffsetX([-18,18]).failOffsetY([-14,14])
-  .onBegin(()=>{cancelAnimation(progress);dragStart.value=settled.value;threshold.value=settled.value})
+  .onStart(()=>{cancelAnimation(progress);dragStart.value=settled.value;threshold.value=settled.value})
   .onUpdate(event=>{
    progress.value=Math.max(-.055,Math.min(5.055,dragStart.value-event.translationX/width));
    const crossed=Math.max(0,Math.min(5,Math.round(progress.value)));
@@ -90,7 +91,7 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
    const scene=document.getElementById(`everest-scene-${index}`);
    if(scene)scene.inert=routePage===null||selected!==index;
   }
- },[selected,routePage,hasVisited]);
+ },[selected,routePage,hasVisited,mountedPages]);
  const trackStyle=useAnimatedStyle(()=>({transform:[{translateX:-progress.value*width}]}),[width]);
  const context=useMemo(()=>({progress,selected,navigate,setThreadOpen,panGesture:gesture}),[progress,selected,navigate,gesture]);
  return <View style={[styles.root,{backgroundColor:colors.canvas}]}>
@@ -102,8 +103,8 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
       <View style={{width}} nativeID="everest-scene-0" accessibilityLabel={pageLabels[0]} accessibilityElementsHidden={selected!==0} importantForAccessibility={selected===0?'auto':'no-hide-descendants'} aria-hidden={selected!==0} pointerEvents={selected===0?'auto':'none'}>{mountedPages.has(0)?<HomeScreen visible={routePage!==null&&selected===0}/>:null}</View>
       <View style={{width}} nativeID="everest-scene-1" accessibilityLabel={pageLabels[1]} accessibilityElementsHidden={selected!==1} importantForAccessibility={selected===1?'auto':'no-hide-descendants'} aria-hidden={selected!==1} pointerEvents={selected===1?'auto':'none'}>{mountedPages.has(1)?<SocialScreen sceneMode="POSTS" active={routePage!==null&&selected===1}/>:null}</View>
       <View style={{width}} nativeID="everest-scene-2" accessibilityLabel={pageLabels[2]} accessibilityElementsHidden={selected!==2} importantForAccessibility={selected===2?'auto':'no-hide-descendants'} aria-hidden={selected!==2} pointerEvents={selected===2?'auto':'none'}>{mountedPages.has(2)?<SocialScreen sceneMode="CLIPS" active={routePage!==null&&selected===2}/>:null}</View>
-      <View style={{width}} nativeID="everest-scene-3" accessibilityLabel={pageLabels[3]} accessibilityElementsHidden={selected!==3} importantForAccessibility={selected===3?'auto':'no-hide-descendants'} aria-hidden={selected!==3} pointerEvents={selected===3?'auto':'none'}>{mountedPages.has(3)?<ActivityScreen/>:null}</View>
-      <View style={{width}} nativeID="everest-scene-4" accessibilityLabel={pageLabels[4]} accessibilityElementsHidden={selected!==4} importantForAccessibility={selected===4?'auto':'no-hide-descendants'} aria-hidden={selected!==4} pointerEvents={selected===4?'auto':'none'}>{mountedPages.has(4)?<MessagesScreen/>:null}</View>
+      <View style={{width}} nativeID="everest-scene-3" accessibilityLabel={pageLabels[3]} accessibilityElementsHidden={selected!==3} importantForAccessibility={selected===3?'auto':'no-hide-descendants'} aria-hidden={selected!==3} pointerEvents={selected===3?'auto':'none'}>{mountedPages.has(3)?<ActivityScreen visible={routePage!==null&&selected===3}/>:null}</View>
+      <View style={{width}} nativeID="everest-scene-4" accessibilityLabel={pageLabels[4]} accessibilityElementsHidden={selected!==4} importantForAccessibility={selected===4?'auto':'no-hide-descendants'} aria-hidden={selected!==4} pointerEvents={selected===4?'auto':'none'}>{mountedPages.has(4)?<MessagesScreen visible={routePage!==null&&selected===4}/>:null}</View>
       <View style={{width}} nativeID="everest-scene-5" accessibilityLabel={pageLabels[5]} accessibilityElementsHidden={selected!==5} importantForAccessibility={selected===5?'auto':'no-hide-descendants'} aria-hidden={selected!==5} pointerEvents={selected===5?'auto':'none'}>{mountedPages.has(5)?<AccountScreen visible={routePage!==null&&selected===5}/>:null}</View>
      </Animated.View>
     </View></GestureDetector>
