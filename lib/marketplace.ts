@@ -31,9 +31,10 @@ export async function createServiceRequest(input:{idempotencyKey:string;category
  requireSupabaseConfig();const description=input.description.trim();if(description.length<5||description.length>5000)throw new Error('Service description must be between 5 and 5000 characters.');
  const nums=[input.budget,input.budgetMin,input.budgetMax].filter((v):v is number=>v!==undefined);if(nums.some(v=>!Number.isFinite(v)||v<0))throw new Error('Budget must be a valid non-negative amount.');
  if(input.idempotencyKey.trim().length<16)throw new Error('Invalid request idempotency key.');
+ const country=input.country?.trim()||'';
  const {data,error}=await supabase.rpc('create_service_request_v5',{
   p_category_id:input.categoryId??null,p_service_definition_id:input.serviceDefinitionId??null,p_service_id:input.serviceId??null,p_description:description,p_suburb:input.suburb?.trim()||null,p_city:input.city?.trim()||null,p_state:input.state?.trim()||null,
-  p_country:input.country?.trim()||null,p_address_line1:input.addressLine1?.trim()||null,p_postal_code:input.postalCode?.trim()||null,p_service_address_label:input.serviceAddressLabel?.trim()||null,
+  p_country:country||null,p_address_line1:input.addressLine1?.trim()||null,p_postal_code:input.postalCode?.trim()||null,p_service_address_label:input.serviceAddressLabel?.trim()||null,
   p_latitude:input.latitude??null,p_longitude:input.longitude??null,p_location_source:input.locationSource??null,p_location_accuracy_m:input.locationAccuracyM??null,p_location_confirmed:input.locationConfirmed??false,
   p_preferred_date:input.preferredDate??null,p_preferred_time:input.preferredTime??null,p_timing_mode:input.timingMode??'FLEXIBLE',p_time_window_start:input.timeWindowStart??null,p_time_window_end:input.timeWindowEnd??null,
   p_budget:input.budget??null,p_budget_min:input.budgetMin??null,p_budget_max:input.budgetMax??null,p_delivery_mode:input.deliveryMode??null,p_idempotency_key:input.idempotencyKey.trim()
