@@ -18,6 +18,9 @@ import {universalSearch,type UniversalKind,type UniversalResult} from '@/lib/uni
 import {supabase} from '@/lib/supabase';
 import {useAppTheme} from '@/lib/theme';
 import {saveSearch} from '@/lib/retention';
+import {ServiceCategoryGrid} from '@/components/ServiceCategoryGrid';
+import {ErrorBanner} from '@/components/ui/ErrorBanner';
+import {useReducedMotion} from '@/lib/motion';
 import {
   addSearchHistory,
   clearSearchHistory,
@@ -30,16 +33,16 @@ type Tab='TOP'|'PERSON'|'BUSINESS'|'SERVICE'|'POST'|'VIDEO'|'PRODUCT'|'JOB';
 type SortMode='RELEVANCE'|'AZ';
 type JobResult={id:string;description:string;suburb:string|null;city:string|null;state:string|null;status:string;budget:number|null;preferred_date:string|null};
 
-const tabs:Tab[]=['TOP','PERSON','BUSINESS','SERVICE','POST','VIDEO','PRODUCT','JOB'];
+const tabs:Tab[]=['TOP','SERVICE','BUSINESS','PRODUCT','PERSON','POST','VIDEO','JOB'];
 const labels:Record<Tab,string>={
-  TOP:'TOP',
-  PERSON:'PEOPLE',
-  BUSINESS:'BUSINESSES',
-  SERVICE:'SERVICES',
-  POST:'POSTS',
-  VIDEO:'VIDEOS',
-  PRODUCT:'PRODUCTS',
-  JOB:'JOBS',
+  TOP:'All',
+  PERSON:'People',
+  BUSINESS:'Businesses',
+  SERVICE:'Services',
+  POST:'Posts',
+  VIDEO:'Videos',
+  PRODUCT:'Products',
+  JOB:'Jobs',
 };
 
 function historyLabel(tab:string){
@@ -137,6 +140,7 @@ function HistoryRow({
 
 export default function Search(){
   const {colors:c}=useAppTheme();
+  const reducedMotion=useReducedMotion();
   const params=useLocalSearchParams<{q?:string;tab?:string}>();
   const [q,setQ]=useState(typeof params.q==='string'?params.q:'');
   const [tab,setTab]=useState<Tab>(tabs.includes(params.tab as Tab)?params.tab as Tab:'TOP');
@@ -144,6 +148,9 @@ export default function Search(){
   const [jobs,setJobs]=useState<JobResult[]>([]);
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
+  const [signedIn,setSignedIn]=useState(false);
+  const [requiresSignIn,setRequiresSignIn]=useState(false);
+  const [retry,setRetry]=useState(0);
   const [savingSearch,setSavingSearch]=useState(false);
   const [history,setHistory]=useState<SearchHistoryEntry[]>([]);
   const [menuOpen,setMenuOpen]=useState(false);
@@ -154,24 +161,27 @@ export default function Search(){
   const version=useRef(0);
 
   useEffect(()=>{void getSearchHistory().then(setHistory)},[]);
+  useEffect(()=>{let active=true;void supabase.auth.getSession().then(({data})=>{if(active)setSignedIn(Boolean(data.session))});return()=>{active=false}},[]);
 
   useEffect(()=>{
+    // Invalidate immediately, including the debounce window. An older response
+    // must never be displayed underneath a newer query or selected tab.
+    const current=++version.current;
+    const controller=new AbortController();
+    setError('');setRequiresSignIn(false);setItems([]);setJobs([]);
+    setLoading(Boolean(q.trim()));
     const timer=setTimeout(()=>{
-      const current=++version.current;
       const text=q.trim();
-      setError('');
-      setItems([]);
-      setJobs([]);
       if(!text){setLoading(false);return}
       setLoading(true);
       if(tab==='JOB')void loadJobs(text,current);
-      else void universalSearch(text,tab as UniversalKind,30,0)
+      else void universalSearch(text,tab as UniversalKind,30,0,controller.signal)
         .then(x=>{if(version.current===current)setItems(x)})
-        .catch(e=>{if(version.current===current)setError(e instanceof Error?e.message:'Search is unavailable.')})
+        .catch(e=>{if(version.current!==current)return;const needsAccount=!signedIn&&e?.code==='42501';setRequiresSignIn(needsAccount);setError(needsAccount?'Sign in to search Everest':'Search could not be loaded. Check your connection and try again.')})
         .finally(()=>{if(version.current===current)setLoading(false)});
     },350);
-    return()=>clearTimeout(timer);
-  },[q,tab]);
+    return()=>{clearTimeout(timer);version.current=current+1;controller.abort()};
+  },[q,tab,retry,signedIn]);
 
   async function rememberSearch(text=q.trim(),kind=tab){
     if(!text)return;
@@ -325,11 +335,9 @@ export default function Search(){
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{padding:20,paddingBottom:70,maxWidth:900,width:'100%',alignSelf:'center'}}
       >
-        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-          <View>
-            <Text style={{fontSize:12,fontWeight:'900',letterSpacing:2,color:c.muted}}>EVEREST LOCAL</Text>
-            <Text style={{fontSize:30,fontWeight:'900',color:c.text,marginTop:4}}>Search</Text>
-          </View>
+        <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back from search" onPress={()=>router.canGoBack()?router.back():router.replace('/')} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><Ionicons name="arrow-back" size={23} color={c.text}/></Pressable>
+          <Text style={{flex:1,fontSize:28,fontWeight:'800',letterSpacing:-.6,color:c.text}}>Search</Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Search options"
@@ -350,16 +358,16 @@ export default function Search(){
             value={q}
             onChangeText={setQ}
             onSubmitEditing={()=>void rememberSearch()}
-            placeholder="Search people, businesses, services, posts or jobs…"
+            placeholder="Service, business or product"
             placeholderTextColor={c.muted}
             style={[
-              {flex:1,fontSize:16,color:c.text,minHeight:48},
+              {flex:1,minWidth:0,fontSize:16,color:c.text,minHeight:48},
               {outlineStyle:'none'} as never,
             ]}
             returnKeyType="search"
           />
           {q.length?(
-            <Pressable onPress={()=>setQ('')} hitSlop={8}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={()=>setQ('')} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
               <Ionicons name="close-circle" size={19} color={c.muted}/>
             </Pressable>
           ):null}
@@ -369,14 +377,18 @@ export default function Search(){
           {tabs.map(x=>(
             <Pressable
               key={x}
+              accessibilityRole="tab"
+              accessibilityLabel={labels[x]}
+              accessibilityState={{selected:tab===x}}
+              aria-selected={tab===x}
               onPress={()=>setTab(x)}
               style={{
-                paddingHorizontal:13,paddingVertical:9,borderRadius:12,borderWidth:1,
+                minHeight:44,justifyContent:'center',paddingHorizontal:13,paddingVertical:9,borderRadius:12,borderWidth:1,
                 borderColor:tab===x?c.brand:c.border,
                 backgroundColor:tab===x?c.brand:c.surface,
               }}
             >
-              <Text style={{fontSize:12,fontWeight:'900',color:tab===x?c.onBrand:c.text}}>{labels[x]}</Text>
+              <Text style={{fontSize:14,fontWeight:'700',color:tab===x?c.onBrand:c.text}}>{labels[x]}</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -385,7 +397,7 @@ export default function Search(){
           <View style={{flexDirection:'row',gap:8,marginBottom:5}}>
             <Pressable
               onPress={()=>setFiltersOpen(true)}
-              style={{height:42,paddingHorizontal:14,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
+              style={{minHeight:44,paddingHorizontal:14,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
             >
               <Ionicons name="options-outline" size={16} color={c.text}/>
               <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>FILTER</Text>
@@ -394,7 +406,7 @@ export default function Search(){
             <Pressable
               disabled={savingSearch}
               onPress={()=>void saveCurrentSearch()}
-              style={{flex:1,height:42,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
+              style={{flex:1,minHeight:44,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
             >
               <Ionicons name="bookmark-outline" size={16} color={c.text}/>
               <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>{savingSearch?'SAVING…':'SAVE THIS SEARCH'}</Text>
@@ -410,7 +422,14 @@ export default function Search(){
 
         {!q.trim()?(
           <View>
-            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:12,marginBottom:10}}>
+            <Text style={{fontSize:20,lineHeight:26,fontWeight:'800',letterSpacing:-.3,color:c.text,marginTop:10}}>Find a local service</Text>
+            <Text style={{fontSize:14,lineHeight:21,color:c.textSecondary,marginTop:5}}>Choose a category or search in your own words.</Text>
+            <ServiceCategoryGrid onSelect={query=>{setTab('SERVICE');setQ(query)}}/>
+            <View style={{marginTop:18,paddingVertical:18,borderTopWidth:1,borderBottomWidth:1,borderColor:c.border,flexDirection:'row',alignItems:'center',gap:12}}>
+              <View style={{flex:1,minWidth:0}}><Text style={{fontSize:16,fontWeight:'700',color:c.text}}>Have a job in mind?</Text><Text style={{fontSize:14,lineHeight:20,color:c.textSecondary,marginTop:4}}>Describe it once and request quotes.</Text></View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Request quotes from search" onPress={()=>router.push('/request')} style={{minHeight:44,justifyContent:'center',paddingHorizontal:10}}><Text style={{fontSize:14,fontWeight:'700',color:c.accent}}>Request quotes</Text></Pressable>
+            </View>
+            {history.length?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:24,marginBottom:10}}>
               <View>
                 <Text style={{fontSize:17,fontWeight:'900',color:c.text}}>Recent searches</Text>
                 <Text style={{fontSize:12,color:c.muted,marginTop:2}}>Up to 15 searches · swipe left to remove</Text>
@@ -420,7 +439,7 @@ export default function Search(){
                   <Text style={{fontSize:12,fontWeight:'800',color:c.text}}>{manageHistory?'Done':'Manage'}</Text>
                 </Pressable>
               ):null}
-            </View>
+            </View>:null}
 
             {history.length?history.map(item=>(
               <HistoryRow
@@ -432,27 +451,19 @@ export default function Search(){
                 colors={c}
               />
             )):(
-              <View style={{paddingVertical:44,alignItems:'center'}}>
-                <View style={{width:58,height:58,borderRadius:20,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}>
-                  <Ionicons name="search-outline" size={27} color={c.muted}/>
-                </View>
-                <Text style={{fontSize:16,fontWeight:'900',color:c.text,marginTop:13}}>Search Everest Local</Text>
-                <Text style={{fontSize:12,lineHeight:18,color:c.muted,marginTop:7,textAlign:'center',maxWidth:420}}>
-                  Your recent searches will appear here, so you can jump back in instantly.
-                </Text>
-              </View>
+              null
             )}
           </View>
         ):loading?(
           <ActivityIndicator style={{marginTop:40}} color={c.text}/>
         ):error?(
-          <Text style={{fontSize:12,color:c.danger,marginTop:20}}>{error}</Text>
+          requiresSignIn?<View style={{paddingVertical:30}}><Text accessibilityRole="header" style={{fontSize:20,fontWeight:'800',color:c.text}}>Sign in to search Everest</Text><Text style={{fontSize:16,lineHeight:24,color:c.textSecondary,marginTop:8}}>Search is currently available to signed-in members. Your query stays here when you return.</Text><Pressable accessibilityRole="button" accessibilityLabel="Sign in to search" onPress={()=>{router.setParams({q:q.trim(),tab});void rememberSearch();router.push('/auth')}} style={{minHeight:48,marginTop:18,borderRadius:12,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:16,fontWeight:'700',color:c.onBrand}}>Sign in</Text></Pressable></View>:<ErrorBanner message={error} onRetry={()=>setRetry(value=>value+1)}/>
         ):tab==='JOB'?(
           jobs.length?jobs.map(job=>(
             <Pressable
               key={job.id}
               onPress={()=>{void rememberSearch();router.push('/requests')}}
-              style={{flexDirection:'row',alignItems:'center',gap:12,padding:14,borderRadius:17,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginBottom:9}}
+              style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:16,borderBottomWidth:1,borderBottomColor:c.border}}
             >
               <View style={{width:44,height:44,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}>
                 <Ionicons name="briefcase-outline" size={20} color={c.text}/>
@@ -478,7 +489,7 @@ export default function Search(){
             <Pressable
               key={x.kind+':'+x.id}
               onPress={()=>open(x)}
-              style={{flexDirection:'row',alignItems:'center',gap:12,padding:14,borderRadius:17,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginBottom:9}}
+              style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:16,borderBottomWidth:1,borderBottomColor:c.border}}
             >
               {typeof x.metadata.avatar_url==='string'||typeof x.metadata.logo_url==='string'?(
                 <Image source={{uri:String(x.metadata.avatar_url??x.metadata.logo_url)}} style={{width:44,height:44,borderRadius:14}}/>
@@ -488,8 +499,8 @@ export default function Search(){
                 </View>
               )}
               <View style={{flex:1}}>
-                <Text style={{fontSize:14,fontWeight:'900',color:c.text}}>{x.title}</Text>
-                <Text numberOfLines={2} style={{fontSize:12,lineHeight:17,color:c.muted,marginTop:3}}>{x.subtitle}</Text>
+                <Text style={{fontSize:16,lineHeight:22,fontWeight:'700',color:c.text}}>{x.title}</Text>
+                <Text numberOfLines={2} style={{fontSize:14,lineHeight:20,color:c.textSecondary,marginTop:4}}>{x.subtitle}</Text>
                 <Text style={{fontSize:12,fontWeight:'900',color:c.brand,marginTop:5}}>{x.kind==='PERSON'?'PERSON':x.kind}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.muted}/>
@@ -506,7 +517,7 @@ export default function Search(){
 
       </ScrollView>
 
-      <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={()=>setMenuOpen(false)}>
+      <Modal visible={menuOpen} transparent animationType={reducedMotion?'none':'fade'} onRequestClose={()=>setMenuOpen(false)}>
         <Pressable onPress={()=>setMenuOpen(false)} style={{flex:1,backgroundColor:'rgba(0,0,0,0.45)',justifyContent:'flex-end'}}>
           <Pressable
             onPress={()=>{}}
@@ -554,7 +565,7 @@ export default function Search(){
         </Pressable>
       </Modal>
 
-      <Modal visible={filtersOpen} transparent animationType="slide" onRequestClose={()=>setFiltersOpen(false)}>
+      <Modal visible={filtersOpen} transparent animationType={reducedMotion?'none':'slide'} onRequestClose={()=>setFiltersOpen(false)}>
         <Pressable onPress={()=>setFiltersOpen(false)} style={{flex:1,backgroundColor:'rgba(0,0,0,0.45)',justifyContent:'flex-end'}}>
           <Pressable
             onPress={()=>{}}

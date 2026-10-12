@@ -57,7 +57,7 @@ test('social migration uses valid dollar quoting and named universal-search colu
  assert.match(migration,/as metadata/);
 });
 test('universal search preserves the existing jobs entry point without client table scans',()=>{
- assert.match(search,/JOB:'JOBS'/);
+ assert.match(search,/JOB:'Jobs'/);
  assert.match(search,/from\('opportunities'\)/);
  assert.match(search,/from\('service_requests'\)/);
  assert.match(search,/\.ilike\('service_requests\.description',pattern\)/);

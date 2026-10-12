@@ -3,11 +3,12 @@
 // PLAYWRIGHT_MODULE to its index.mjs; no application dependency is required.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
+const engines=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
+const engine=process.env.EVEREST_QA_BROWSER==='webkit'?'webkit':'chromium';
 const base=process.env.EVEREST_PREVIEW_URL||'http://localhost:8082';
 const output=process.env.EVEREST_QA_ARTIFACTS||'/tmp/everest-discovery-qa';
 await fs.mkdir(output,{recursive:true});
-const browser=await chromium.launch({executablePath:process.env.EVEREST_BROWSER_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
+const browser=await engines[engine].launch(engine==='webkit'?{}:{executablePath:process.env.EVEREST_BROWSER_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
 const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
 const page=await context.newPage();const errors=[];const rest=[];
 page.on('pageerror',e=>errors.push(e.message));

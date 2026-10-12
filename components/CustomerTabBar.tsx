@@ -15,7 +15,7 @@ type Destination='/'|'/social'|'/activity'|'/messages'|'/account';
 const items=[
  {route:'/' as Destination,label:'Home',icon:'home-outline' as const,selected:'home' as const,page:0 as CustomerPage},
  {route:'/social' as Destination,label:'Explore',icon:'compass-outline' as const,selected:'compass' as const,page:1 as CustomerPage},
- {route:'/activity' as Destination,label:'My Everest',icon:'pulse-outline' as const,selected:'pulse' as const,page:3 as CustomerPage},
+ {route:'/activity' as Destination,label:'Activity',icon:'pulse-outline' as const,selected:'pulse' as const,page:3 as CustomerPage},
  {route:'/messages' as Destination,label:'Messages',icon:'chatbubble-outline' as const,selected:'chatbubble' as const,page:4 as CustomerPage},
  {route:'/account' as Destination,label:'Account',icon:'person-outline' as const,selected:'person' as const,page:5 as CustomerPage},
 ];

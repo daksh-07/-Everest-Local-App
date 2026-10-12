@@ -15,7 +15,7 @@ const TRASH_SIZE = 68;
 export function DraggableAskEverest({ pathname }: { pathname: string }) {
   const theme=useAppTheme();const reducedMotion=useReducedMotion();
   const { width, height } = useWindowDimensions();
-  const hiddenRoute = ['/assistant', '/auth', '/messages', '/cart', '/request', '/chat-input-regression'].includes(pathname);
+  const hiddenRoute = ['/', '/search', '/assistant', '/auth', '/messages', '/cart', '/request', '/chat-input-regression'].includes(pathname);
   const [dismissed, setDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [overTrash, setOverTrash] = useState(false);
