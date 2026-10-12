@@ -22,6 +22,8 @@ import {ui} from '@/lib/ui';
 import {geocodeCustomerLocality,resolveCustomerLocality,saveLocalityToProfile,type CustomerLocality} from '@/lib/customer-location';
 import {useExperience} from '@/lib/experience';
 import {getCurrentWeather,type CurrentWeather} from '@/lib/weather';
+import {useMarketRegion} from '@/lib/market-region';
+import {IndiaHomeScreen} from '@/components/IndiaHomeScreen';
 
 type IconName=keyof typeof Ionicons.glyphMap;
 type BusinessPreview={id:string;name:string;logo_url:string|null;verification_status:string;suburb:string|null;city:string|null;state:string|null};
@@ -58,6 +60,10 @@ function weatherIcon(weather:CurrentWeather):IconName{
 
 export default function Home(){const hosted=useCustomerRouteHost();return hosted?null:<HomeScreen/>}
 export function HomeScreen({visible=true}:{visible?:boolean}={}){
+ const market=useMarketRegion();
+ return market.code==='IN'?<IndiaHomeScreen visible={visible}/>:<AustraliaHomeScreen visible={visible}/>;
+}
+function AustraliaHomeScreen({visible=true}:{visible?:boolean}={}){
  const experience=useExperience();
  const {colors:c}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const s=useMemo(()=>styles(c,desktop),[c,desktop]);const osReducedMotion=useReducedMotion();const reduced=osReducedMotion||experience.mode==='CLASSIC';
  const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Set location');
@@ -84,7 +90,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  }
  async function businessMatches(field:'suburb'|'city'|'state',value:string){
   if(!value.trim())return[] as BusinessPreview[];
-  const {data}=await supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').ilike(field,value.trim()).limit(8);
+  const {data}=await supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').or('country.is.null,country.eq.Australia').ilike(field,value.trim()).limit(8);
   return (data??[]) as BusinessPreview[];
  }
  async function signPostPhotos(rows:SocialPost[]){
@@ -98,7 +104,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
    if(merged.size>=8)break;
   }
   if(!merged.size){
-   const {data}=await supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').limit(8);
+   const {data}=await supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').or('country.is.null,country.eq.Australia').limit(8);
    for(const item of (data??[]) as BusinessPreview[])merged.set(item.id,item);
   }
   setBusinesses([...merged.values()].slice(0,8));
@@ -175,7 +181,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
 
  useEffect(()=>{let active=true;void(async()=>{try{
   const {data:{user}}=await supabase.auth.getUser();
-  const businessQuery=supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').limit(8);
+  const businessQuery=supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').or('country.is.null,country.eq.Australia').limit(8);
   if(!user){
    const [biz,feed,shop]=await Promise.all([
     businessQuery,
