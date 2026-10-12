@@ -6,6 +6,7 @@ import {URL} from 'node:url';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const migration=read('supabase/migrations/20260925214500_crm_integrations_automation_foundation.sql');
 const oauth=read('supabase/functions/crm-integration-oauth/index.ts');
+const callbackPermission=read('supabase/migrations/20260930181500_service_role_user_permission_helper.sql');
 const calendarSync=read('supabase/functions/crm-calendar-sync/index.ts');
 const client=read('lib/integrations.ts');
 const hub=read('app/business-integrations.tsx');
@@ -21,12 +22,17 @@ test('integration records and provider credentials have separate security bounda
  assert.match(oauth,/secret_reference:'integration_oauth_credentials\/'/);
 });
 
-test('OAuth uses authenticated membership for initiation and signed expiring callback state',()=>{
+test('OAuth requires server CRM permission at initiation and rechecks it after signed expiring callback',()=>{
  assert.match(oauth,/userClient\.auth\.getUser\(\)/);
- assert.match(oauth,/\.from\('business_members'\).*\.eq\('business_id',businessId\).*\.eq\('user_id',user\.id\)/s);
+ assert.match(oauth,/userClient\.rpc\('has_business_permission',\{\s*p_business_id:businessId,p_permission:'CRM_MANAGE'/);
+ assert.match(oauth,/permissionError\|\|allowed!==true[\s\S]*CRM management access is required/);
+ assert.match(oauth,/admin\.rpc\('user_has_business_permission',\{\s*p_user_id:state\.userId,p_business_id:state\.businessId,p_permission:'CRM_MANAGE'/);
+ assert.match(oauth,/callbackPermissionError\|\|callbackAllowed!==true/);
+ assert.match(callbackPermission,/revoke all on function public\.user_has_business_permission\(uuid,uuid,text\)\s*from public,anon,authenticated/);
+ assert.match(callbackPermission,/grant execute on function public\.user_has_business_permission\(uuid,uuid,text\)\s*to service_role/);
  assert.match(oauth,/HMAC/);
  assert.match(oauth,/state\.exp<=Date\.now\(\)/);
- assert.match(oauth,/Business access is no longer available/);
+ assert.match(oauth,/CRM management access is no longer available/);
  assert.doesNotMatch(oauth,/console\.log\(.*token/i);
 });
 
