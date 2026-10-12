@@ -29,7 +29,7 @@ export function PwaInstallPrompt() {
     setVisible(true);
   }, []);
 
-  if (!visible || pathname === '/request') return null;
+  if (!visible || pathname === '/request' || pathname === '/messages' || pathname === '/chat-input-regression') return null;
 
   const dismiss = () => {
     try {

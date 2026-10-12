@@ -40,7 +40,7 @@ test('editing is sender-only with audit history and a finite window',()=>{
 test('read state and unread summary are based on persisted read_at',()=>{
  assert.match(migration,/mark_personal_conversation_read/);
  assert.match(migration,/um\.sender_id<>auth\.uid\(\) and um\.read_at is null/);
- assert.match(messages,/m\.read_at\?'Seen':'Sent'/);
+ assert.match(messages,/seen=\{Boolean\(m\.read_at\)\}/);
  assert.match(messages,/unread_count/);
 });
 
