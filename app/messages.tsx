@@ -76,7 +76,7 @@ function DeliveryMeta({createdAt,mine,sending,failed,seen,colors:c}:{createdAt:s
 }
 
 export default function Messages(){const hosted=useCustomerRouteHost();return hosted?null:<MessagesScreen/>}
-export function MessagesScreen(){
+export function MessagesScreen({visible=true}:{visible?:boolean}={}){
  const pager=useCustomerPager();
  const {colors:c}=useAppTheme();
  const insets=useSafeAreaInsets();
@@ -95,7 +95,7 @@ export function MessagesScreen(){
  const selectedPersonalRef=useRef<PersonalConversation|null>(null);const selectedMarketRef=useRef<MarketConversation|null>(null);
  selectedPersonalRef.current=selectedPersonal;selectedMarketRef.current=selectedMarket;
  const selectedPersonalId=selectedPersonal?.id??'';const selectedMarketId=selectedMarket?.id??'';const pagerSelected=pager?.selected;
- useEffect(()=>{pager?.setThreadOpen(Boolean(selectedPersonal||selectedMarket))},[pager,selectedPersonal,selectedMarket]);
+ useEffect(()=>{if(visible)pager?.setThreadOpen(Boolean(selectedPersonal||selectedMarket))},[pager,selectedPersonal,selectedMarket,visible]);
  const [personalThread,setPersonalThread]=useState<PersonalMessage[]>([]);
  const [marketThread,setMarketThread]=useState<MarketMessage[]>([]);
  const [hasOlder,setHasOlder]=useState(false);
@@ -199,25 +199,26 @@ export function MessagesScreen(){
   finally{setLoadingOlder(false)}
  }
 
- useEffect(()=>{void loadHome()},[loadHome]);
+ useEffect(()=>{if(visible)void loadHome(lastHomeLoad.current>0)},[loadHome,visible]);
  useEffect(()=>{
+  if(!visible)return;
   if(pagerSelected!==undefined&&pagerSelected!==4)return;
   if(Date.now()-lastHomeLoad.current>12_000)void loadHome(true);
   const timer=setInterval(()=>{if(!selectedPersonalId&&!selectedMarketId)void loadHome(true)},12000);
   return()=>clearInterval(timer);
- },[loadHome,selectedPersonalId,selectedMarketId,pagerSelected]);
+ },[loadHome,selectedPersonalId,selectedMarketId,pagerSelected,visible]);
  useEffect(()=>{
-  if(!selectedPersonalId||(pagerSelected!==undefined&&pagerSelected!==4))return;
+  if(!visible||!selectedPersonalId||(pagerSelected!==undefined&&pagerSelected!==4))return;
   initialScrollRef.current=true;void refreshPersonalThread(selectedPersonalId);
   const timer=setInterval(()=>void refreshPersonalThread(selectedPersonalId,true),3000);
   return()=>clearInterval(timer);
- },[refreshPersonalThread,selectedPersonalId,pagerSelected]);
+ },[refreshPersonalThread,selectedPersonalId,pagerSelected,visible]);
  useEffect(()=>{
-  if(!selectedMarketId||(pagerSelected!==undefined&&pagerSelected!==4))return;
+  if(!visible||!selectedMarketId||(pagerSelected!==undefined&&pagerSelected!==4))return;
   void refreshMarketThread(selectedMarketId);
   const timer=setInterval(()=>void refreshMarketThread(selectedMarketId),4000);
   return()=>clearInterval(timer);
- },[refreshMarketThread,selectedMarketId,pagerSelected]);
+ },[refreshMarketThread,selectedMarketId,pagerSelected,visible]);
 
  useEffect(()=>{
   if(reducedMotion){tabFade.setValue(1);return}

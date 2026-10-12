@@ -60,8 +60,10 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  const [commentLikes,setCommentLikes]=useState<Record<string,CommentEngagement>>({});const [replyTo,setReplyTo]=useState<PostComment|null>(null);
  const [commentsBusy,setCommentsBusy]=useState(false);const [menuPost,setMenuPost]=useState<string|null>(null);const lastDeepLinkedPost=useRef<string|null>(null);
  const viewedPosts=useRef(new Set<string>());const listRef=useRef<FlatList<FeedPost>>(null);const scrollOffsets=useRef<Record<'POSTS'|'CLIPS',number>>({POSTS:0,CLIPS:0});
+ const activeRef=useRef(active);activeRef.current=active;
  const viewabilityConfig=useRef({itemVisiblePercentThreshold:60,minimumViewTime:900}).current;
  const onViewableItemsChanged=useRef(({viewableItems}:{viewableItems:ViewToken[]})=>{
+  if(!activeRef.current)return;
   for(const token of viewableItems){
    const item=token.item as FeedPost|undefined;
    if(!item?.id||viewedPosts.current.has(item.id))continue;
@@ -70,6 +72,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
   }
  }).current;
  const onClipViewableItemsChanged=useRef(({viewableItems}:{viewableItems:ViewToken[]})=>{
+  if(!activeRef.current)return;
   const active=(viewableItems.find(token=>token.isViewable)?.item as FeedPost|undefined)?.id??null;
   setActiveClipId(active);
   for(const token of viewableItems){
@@ -162,7 +165,8 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
   finally{setLoading(false);setRefreshing(false);release();exploreLoad=null}
  },[requestedPostId]);
 
- useEffect(()=>{void load()},[load]);
+ // Keep swipe-adjacent layouts mounted, but fetch media only when a person opens Explore.
+ useEffect(()=>{if(active)void load()},[active,load]);
  useEffect(()=>{setMode(params.mode==='clips'?'CLIPS':'POSTS')},[params.mode]);
  useEffect(()=>{const timer=setTimeout(()=>listRef.current?.scrollToOffset({offset:scrollOffsets.current[mode],animated:false}),0);return()=>clearTimeout(timer)},[mode]);
  useEffect(()=>{

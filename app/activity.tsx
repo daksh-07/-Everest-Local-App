@@ -14,7 +14,7 @@ type Item = { key:string; kind:ActivityKind; label:string; status:string; detail
 const statusLabel=(value:string|null|undefined)=>(value??'PENDING').replaceAll('_',' ');
 
 export default function Activity(){const hosted=useCustomerRouteHost();return hosted?null:<ActivityScreen/>}
-export function ActivityScreen(){
+export function ActivityScreen({visible=true}:{visible?:boolean}={}){
  const {colors}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const s=useMemo(()=>createStyles(colors,desktop),[colors,desktop]);
  const [items,setItems]=useState<Item[]>([]);const itemsRef=useRef<Item[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [hasLoaded,setHasLoaded]=useState(false);const [error,setError]=useState('');const [warning,setWarning]=useState('');const busyRef=useRef(false);
  function commitItems(next:Item[]){itemsRef.current=next;setItems(next)}
@@ -36,7 +36,7 @@ export function ActivityScreen(){
   const failedKinds=new Set<ActivityKind>();if(requests.error)failedKinds.add('request');if(quotes.error)failedKinds.add('quote');if(bookings.error)failedKinds.add('booking');if(orders.error)failedKinds.add('order');
   const preserved=failedKinds.size?itemsRef.current.filter(item=>failedKinds.has(item.kind)):[];const next=[...fresh,...preserved];next.sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at));commitItems(next);setHasLoaded(true);if(failed)setWarning('Some activity could not be refreshed. Showing the last loaded items for those sections.');
  }catch{if(hasLoaded||itemsRef.current.length)setWarning('We could not refresh your activity. Showing your last loaded activity.');else setError('We could not load your activity right now. Please try again.')}finally{setLoading(false);setRefreshing(false);busyRef.current=false}}
- useEffect(()=>{void load()},[]); // eslint-disable-line react-hooks/exhaustive-deps
+ useEffect(()=>{if(visible)void load()},[visible]); // eslint-disable-line react-hooks/exhaustive-deps
  const attention=items.filter(item=>['PENDING PAYMENT','SENT','VIEWED','QUOTING'].includes(item.status));
  const active=items.filter(item=>!attention.includes(item)&&!['COMPLETED','CANCELLED','DECLINED','DELIVERED'].includes(item.status));
  const history=items.filter(item=>!attention.includes(item)&&!active.includes(item));

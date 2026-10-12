@@ -34,14 +34,14 @@ test('pager lazily mounts nearby scenes and retains them after first visit',()=>
  assert.match(shell,/useState<Set<number>>\(\(\)=>sceneWindow\(routePage\?\?0\)\)/);
  assert.match(shell,/mountSceneWindow\(target\)/);
  assert.match(shell,/mountedPages\.has\(0\)\?<HomeScreen/);
- assert.match(shell,/mountedPages\.has\(4\)\?<MessagesScreen/);
+ assert.match(shell,/mountedPages\.has\(4\)\?<MessagesScreen visible=/);
  assert.doesNotMatch(shell,/mountedPages\.delete|setMountedPages\(new Set/);
 });
 test('pager does not set React state during frames; route follows spring completion',()=>{
  const gesture=shell.slice(shell.indexOf('.onUpdate(event=>'),shell.indexOf('.onEnd(event=>'));
  assert.doesNotMatch(gesture,/setSelected|router\.|setState/);
  assert.match(shell,/withSpring\(target,[\s\S]*if\(finished\)[\s\S]*runOnJS\(commit\)/);
- assert.match(shell,/HomeScreen visible=[\s\S]*SocialScreen sceneMode="POSTS"[\s\S]*SocialScreen sceneMode="CLIPS"[\s\S]*MessagesScreen\/>/);
+ assert.match(shell,/HomeScreen visible=[\s\S]*SocialScreen sceneMode="POSTS"[\s\S]*SocialScreen sceneMode="CLIPS"[\s\S]*MessagesScreen visible=/);
  assert.match(explore,/active&&clipSettled&&activeClipId===item\.id/);
 });
 test('Messages loading, empty, and error layouts and native swipe reply survive',()=>{
