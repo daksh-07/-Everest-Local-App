@@ -230,7 +230,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  const go=(route:string)=>{void haptic.selection();router.push(route as never)};
  const menuGo=(route:string)=>{setMenuOpen(false);go(route)};
  const hello=name?greeting()+', '+name.split(' ')[0]:'What’s happening nearby?';
- const classic=experience.mode==='CLASSIC';const pulse=experience.mode==='PULSE';
+ const classic=experience.mode==='CLASSIC';
 
  return <View style={s.root}><SafeAreaView edges={['top','left','right']} style={s.safe}>
   <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void refreshHome()} tintColor={c.accent} colors={[c.accent]}/>} scrollEventThrottle={16} onScroll={e=>{const y=Math.max(0,e.nativeEvent.contentOffset.y);const delta=y-lastScrollY.current;if(y<24)setNavHidden(false);else if(delta>8)setNavHidden(true);else if(delta<-6)setNavHidden(false);lastScrollY.current=y}} contentContainerStyle={[s.page,{paddingHorizontal:desktop?28:experience.tokens.spacing.screen}]}>
