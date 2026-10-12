@@ -63,6 +63,11 @@ try{
    }
   }
   await page.setViewportSize({width:390,height:844});
+  await page.waitForFunction(()=>{
+   const target=document.querySelector('[aria-label="Request a Quote"]');
+   return target&&target.getBoundingClientRect().right<=innerWidth;
+  });
+  await page.waitForTimeout(100);
   await page.screenshot({path:`${output}/home-${mode.toLowerCase()}-${theme.toLowerCase()}-390.png`});
  }
  await page.emulateMedia({reducedMotion:'reduce'});
