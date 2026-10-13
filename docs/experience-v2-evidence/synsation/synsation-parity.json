@@ -1,0 +1,37 @@
+[
+  {
+    "file": "app/bookings.tsx",
+    "asyncFunctions": 1,
+    "actionAndDisabledExpressions": 5,
+    "hooks": 1,
+    "unchanged": true
+  },
+  {
+    "file": "app/business-profile.tsx",
+    "asyncFunctions": 5,
+    "actionAndDisabledExpressions": 23,
+    "hooks": 2,
+    "unchanged": true
+  },
+  {
+    "file": "app/orders.tsx",
+    "asyncFunctions": 2,
+    "actionAndDisabledExpressions": 9,
+    "hooks": 1,
+    "unchanged": true
+  },
+  {
+    "file": "app/notifications.tsx",
+    "asyncFunctions": 4,
+    "actionAndDisabledExpressions": 9,
+    "hooks": 1,
+    "unchanged": true
+  },
+  {
+    "file": "app/business-today.tsx",
+    "asyncFunctions": 0,
+    "actionAndDisabledExpressions": 17,
+    "hooks": 2,
+    "unchanged": true
+  }
+]

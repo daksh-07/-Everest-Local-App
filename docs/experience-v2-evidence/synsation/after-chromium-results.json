@@ -1,0 +1,381 @@
+{
+  "base": "http://localhost:8087",
+  "engine": "chromium",
+  "before": false,
+  "fixture": true,
+  "layouts": [
+    {
+      "screen": "business",
+      "width": 320,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 320,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 320,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 320,
+      "theme": "LIGHT",
+      "readAllBounds": {
+        "x": 20,
+        "y": 107,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 320,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 375,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 375,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 375,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 375,
+      "theme": "LIGHT",
+      "readAllBounds": {
+        "x": 231.328125,
+        "y": 51,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 375,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 390,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 390,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 390,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 390,
+      "theme": "LIGHT",
+      "readAllBounds": {
+        "x": 246.328125,
+        "y": 51,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 390,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 430,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 430,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 430,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 430,
+      "theme": "LIGHT",
+      "readAllBounds": {
+        "x": 286.328125,
+        "y": 51,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 430,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 768,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 768,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 768,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 768,
+      "theme": "LIGHT",
+      "readAllBounds": {
+        "x": 620.328125,
+        "y": 51,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 768,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 1440,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 1440,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 1440,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 1440,
+      "theme": "LIGHT",
+      "readAllBounds": {
+        "x": 956.328125,
+        "y": 51,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 1440,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 320,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 320,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 320,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 320,
+      "theme": "DARK",
+      "readAllBounds": {
+        "x": 20,
+        "y": 107,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 320,
+      "theme": "DARK"
+    },
+    {
+      "screen": "business",
+      "width": 375,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 375,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 375,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 375,
+      "theme": "DARK",
+      "readAllBounds": {
+        "x": 231.328125,
+        "y": 51,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 375,
+      "theme": "DARK"
+    },
+    {
+      "screen": "business",
+      "width": 390,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 390,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 390,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 390,
+      "theme": "DARK",
+      "readAllBounds": {
+        "x": 246.328125,
+        "y": 51,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 390,
+      "theme": "DARK"
+    },
+    {
+      "screen": "business",
+      "width": 430,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 430,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 430,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 430,
+      "theme": "DARK",
+      "readAllBounds": {
+        "x": 286.328125,
+        "y": 51,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 430,
+      "theme": "DARK"
+    },
+    {
+      "screen": "business",
+      "width": 768,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 768,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 768,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 768,
+      "theme": "DARK",
+      "readAllBounds": {
+        "x": 620.328125,
+        "y": 51,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 768,
+      "theme": "DARK"
+    },
+    {
+      "screen": "business",
+      "width": 1440,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 1440,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 1440,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 1440,
+      "theme": "DARK",
+      "readAllBounds": {
+        "x": 956.328125,
+        "y": 51,
+        "width": 123.671875,
+        "height": 44
+      }
+    },
+    {
+      "screen": "today",
+      "width": 1440,
+      "theme": "DARK"
+    }
+  ],
+  "states": "loading/error/retry/empty; existing booking filters"
+}

@@ -1,0 +1,309 @@
+{
+  "base": "http://localhost:8088",
+  "engine": "chromium",
+  "before": true,
+  "fixture": true,
+  "layouts": [
+    {
+      "screen": "business",
+      "width": 320,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 320,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 320,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 320,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 320,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 375,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 375,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 375,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 375,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 375,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 390,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 390,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 390,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 390,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 390,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 430,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 430,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 430,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 430,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 430,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 768,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 768,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 768,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 768,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 768,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 1440,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "bookings",
+      "width": 1440,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "orders",
+      "width": 1440,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "notifications",
+      "width": 1440,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 1440,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "business",
+      "width": 320,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 320,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 320,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 320,
+      "theme": "DARK"
+    },
+    {
+      "screen": "today",
+      "width": 320,
+      "theme": "DARK"
+    },
+    {
+      "screen": "business",
+      "width": 375,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 375,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 375,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 375,
+      "theme": "DARK"
+    },
+    {
+      "screen": "today",
+      "width": 375,
+      "theme": "DARK"
+    },
+    {
+      "screen": "business",
+      "width": 390,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 390,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 390,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 390,
+      "theme": "DARK"
+    },
+    {
+      "screen": "today",
+      "width": 390,
+      "theme": "DARK"
+    },
+    {
+      "screen": "business",
+      "width": 430,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 430,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 430,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 430,
+      "theme": "DARK"
+    },
+    {
+      "screen": "today",
+      "width": 430,
+      "theme": "DARK"
+    },
+    {
+      "screen": "business",
+      "width": 768,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 768,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 768,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 768,
+      "theme": "DARK"
+    },
+    {
+      "screen": "today",
+      "width": 768,
+      "theme": "DARK"
+    },
+    {
+      "screen": "business",
+      "width": 1440,
+      "theme": "DARK"
+    },
+    {
+      "screen": "bookings",
+      "width": 1440,
+      "theme": "DARK"
+    },
+    {
+      "screen": "orders",
+      "width": 1440,
+      "theme": "DARK"
+    },
+    {
+      "screen": "notifications",
+      "width": 1440,
+      "theme": "DARK"
+    },
+    {
+      "screen": "today",
+      "width": 1440,
+      "theme": "DARK"
+    }
+  ],
+  "states": "loading/error/retry/empty; existing booking filters"
+}
