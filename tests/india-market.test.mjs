@@ -21,8 +21,8 @@ test('India market has INR, +91 and PIN-code primitives',()=>{
 
 test('market selection honours saved India and confirmed AU locality before device inference',()=>{
  assert.match(region,/resolveCurrentMarketCode/);
- assert.match(currentMarket,/select\\('country,suburb,city,state'\\)/);
- assert.match(currentMarket,/normalizeCountry\\(data\\?\\.country\\)/);
+ assert.match(currentMarket,/select\('country,suburb,city,state'\)/);
+ assert.match(currentMarket,/normalizeCountry\(data\?\.country\)/);
  assert.match(currentMarket,/saved==='IN'/);
  assert.match(currentMarket,/saved==='AU'&&hasSavedLocality/);
  assert.match(currentMarket,/return inferred/);
