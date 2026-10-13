@@ -47,7 +47,7 @@ for(const theme of before?['LIGHT']:['LIGHT','DARK'])for(const width of before?[
  const geometry=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert.ok(geometry.scroll<=width+1,`${screen} overflow at ${width}`);
  if(!before){
   const family=await page.getByText(target,{exact:true}).first().evaluate(e=>getComputedStyle(e).fontFamily);
-  assert.ok(family.includes(['home','search','business','product','today'].includes(screen)?'BricolageGrotesque':'Inter-'),`${screen}: ${family}`);
+  assert.ok(family.includes(['home','search','business','product','today'].includes(screen)?'BricolageGrotesque':'Inter-'),`${screen} ${width} ${theme}: ${family}; ${await page.getByText(target,{exact:true}).first().evaluate(e=>e.outerHTML.slice(0,400))}`);
   if(screen==='chat'){
    const composer=page.locator('#everest-message-composer');await composer.fill('Checking the new font on a narrow phone');
    const style=await composer.evaluate(e=>({font:getComputedStyle(e).fontFamily,size:parseFloat(getComputedStyle(e).fontSize)}));assert.ok(style.font.includes('Inter-')&&style.size>=16);
