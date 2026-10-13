@@ -77,3 +77,29 @@ test('normal matching and Everest Live cannot cross AU and IN provider pools',()
  assert.match(dispatchIsolation,/delete from public\.service_matches sm[\s\S]*<>request_market/);
  assert.match(dispatchIsolation,/create or replace function public\.release_everest_live_wave/);
 });
+
+
+test('product Stripe checkout refuses India or unrecognised seller markets before session reuse',()=>{
+ const checkout=read('supabase/functions/checkout/index.ts');
+ assert.match(checkout,/const isAustralianStripeBusiness=/);
+ assert.match(checkout,/country:\s*string\|null/);
+ assert.match(checkout,/\.select\('country,stripe_connected_account_id/);
+ assert.match(checkout,/if\(!isAustralianStripeBusiness\(connected\)\)/);
+ assert.match(checkout,/release_my_order_reservations/);
+ const refusal=checkout.indexOf('if(!isAustralianStripeBusiness(connected))');
+ const existing=checkout.indexOf('if(existingPayment?.provider_checkout_session_id)');
+ const stripe=checkout.indexOf('const stripe=new Stripe');
+ assert.ok(refusal>0&&refusal<existing&&refusal<stripe,'Country check must precede new and reused Stripe sessions');
+});
+
+test('service Stripe checkout refuses India sellers and non-AUD payments before session reuse',()=>{
+ const checkout=read('supabase/functions/service-checkout/index.ts');
+ assert.match(checkout,/const isAustralianStripeBusiness=/);
+ assert.match(checkout,/\.select\('country,stripe_connected_account_id/);
+ assert.match(checkout,/!isAustralianStripeBusiness\(connected\)/);
+ assert.match(checkout,/payment\.currency\.trim\(\)\.toUpperCase\(\)!=='AUD'/);
+ const refusal=checkout.indexOf('if(!isAustralianStripeBusiness(connected)');
+ const existing=checkout.indexOf('if(payment.provider_checkout_session_id)');
+ const stripe=checkout.indexOf('const stripe=new Stripe');
+ assert.ok(refusal>0&&refusal<existing&&refusal<stripe,'Market and currency checks must precede new and reused Stripe sessions');
+});
