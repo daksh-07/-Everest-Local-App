@@ -9,12 +9,20 @@ type OrderFeeSnapshot={
 type CheckoutItem={product_name:string;unit_price:number;quantity:number};
 type CheckoutRequest={delivery_method?:unknown;delivery_address?:unknown};
 type ConnectBusiness={
+ country:string|null;
  stripe_connected_account_id:string|null;stripe_connect_status:string;
  stripe_details_submitted:boolean;stripe_charges_enabled:boolean;stripe_payouts_enabled:boolean;
 };
 
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key'};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
+// The existing Stripe Connect rail is Australia-only. A missing country is retained
+// solely for legacy Australian businesses; known non-AU countries fail closed.
+const isAustralianStripeBusiness=(business:ConnectBusiness|null)=>{
+ if(!business)return false;
+ const country=(business.country??'').trim().toUpperCase();
+ return country===''||country==='AU'||country==='AUS'||country==='AUSTRALIA';
+};
 const connectReady=(b:ConnectBusiness|null)=>Boolean(
  b?.stripe_connected_account_id&&b.stripe_connect_status==='ACTIVE'&&
  b.stripe_details_submitted&&b.stripe_charges_enabled&&b.stripe_payouts_enabled
@@ -60,10 +68,16 @@ Deno.serve(async req=>{
 
   const fee=rawTotals as OrderFeeSnapshot;
   const {data:business,error:businessError}=await admin.from('businesses')
-   .select('stripe_connected_account_id,stripe_connect_status,stripe_details_submitted,stripe_charges_enabled,stripe_payouts_enabled')
+   .select('country,stripe_connected_account_id,stripe_connect_status,stripe_details_submitted,stripe_charges_enabled,stripe_payouts_enabled')
    .eq('id',fee.business_id).maybeSingle();
   if(businessError)throw businessError;
   const connected=business as ConnectBusiness|null;
+  // Enforce the payment rail on the server, including idempotent session reuse.
+  if(!isAustralianStripeBusiness(connected)){
+   try{await userClient.rpc('release_my_order_reservations',{p_order_id:orderId});}catch{/* best-effort reservation cleanup */}
+   orderId=undefined;
+   return json({error:'This business is not eligible for Australian checkout. India payments are not live yet. No payment was taken.'},409);
+  }
 
   if(!connectReady(connected)){
    try{await userClient.rpc('release_my_order_reservations',{p_order_id:orderId});}catch{/* best-effort reservation cleanup */}
