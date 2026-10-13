@@ -8,7 +8,10 @@ This is an **incremental, draft-only child branch of `feat/india-market-phase2`*
 
 - Product-order Stripe Edge Function reads the seller's business country and rejects non-Australian sellers **before** creating or returning a Stripe Checkout session. Reservation release is attempted when a newly created order cannot proceed.
 - Service-payment Stripe Edge Function rejects non-Australian sellers **and** non-AUD payments **before** creating or reusing a Stripe Checkout session. Unstarted pending payment records are marked failed.
-- New regression tests enforce both boundaries and guard placement.
+- Stripe Connect account onboarding is blocked for India businesses at the Edge Function, not only in the UI.
+- Memberships and prepaid packages require an Australian seller **and AUD** before new or reused Stripe sessions.
+- New business Pro subscriptions and paid post promotions are blocked for Indian business/profile owners. Existing subscription portal/cancellation access remains available.
+- Security-invariant tests cover these Australia-only rails; a dedicated `validate-india-phase3.yml` workflow checks Node regressions, TypeScript, lint, web export and Deno Edge Functions on this isolated branch.
 - Null/blank business country remains accepted only for legacy Australian records. **Before India public launch, backfill and explicitly classify every seller country server-side and remove this legacy exception.**
 - The existing India Razorpay Route provider config stays disabled. **There is no UPI, payout, refund or settlement implementation in this branch.**
 
