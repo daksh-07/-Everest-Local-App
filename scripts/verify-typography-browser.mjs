@@ -48,10 +48,19 @@ for(const theme of before?['LIGHT']:['LIGHT','DARK'])for(const width of widths)f
  assert.equal(errors.length,0,errors.join('\n'));
  const geometry=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert.ok(geometry.scroll<=width+1,`${screen} overflow at ${width}`);
  if(!before){
-  const family=await page.getByText(target,{exact:true}).filter({visible:true}).first().evaluate(e=>getComputedStyle(e).fontFamily);
-  const face=family.split(',')[0].replace(/["']/g,'').trim();
-  assert.ok(await page.evaluate(face=>[...document.fonts].some(f=>f.family.replace(/["']/g,'')===face&&f.status==='loaded'),face),`${screen}: requested face loaded`);
-  assert.ok(family.includes(['home','search','business','product','today'].includes(screen)?'BricolageGrotesque':'Inter-'),`${screen} ${width} ${theme}: ${family}; ${await page.getByText(target,{exact:true}).filter({visible:true}).first().evaluate(e=>e.outerHTML.slice(0,400))}`);
+  // Today also exists in the tab bar. Wait for the actual heading/message
+  // and its loaded face, including fonts requested by late data commits.
+  const group=['home','search','business','product','today'].includes(screen)?'BricolageGrotesque':'Inter-';
+  const family=await (await page.waitForFunction(({target,group})=>{
+   for(const element of document.querySelectorAll('[dir="auto"]')){
+    if(element.textContent?.trim()!==target||!element.getClientRects().length||element.closest('[inert]'))continue;
+    const family=getComputedStyle(element).fontFamily;
+    const face=family.split(',')[0].replace(/["']/g,'').trim();
+    if(family.includes(group)&&[...document.fonts].some(f=>f.family.replace(/["']/g,'')===face&&f.status==='loaded'))return family;
+   }
+   return false;
+  },{target,group},{timeout:15000})).jsonValue();
+  assert.ok(family.includes(group),`${screen}: actual heading/message uses its loaded face`);
   if(screen==='chat'){
    const composer=page.locator('#everest-message-composer');await composer.fill('Checking the new font on a narrow phone');
    const style=await composer.evaluate(e=>({font:getComputedStyle(e).fontFamily,size:parseFloat(getComputedStyle(e).fontSize)}));assert.ok(style.font.includes('Inter-')&&style.size>=16);

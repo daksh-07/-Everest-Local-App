@@ -11,7 +11,7 @@ test('beige actions and foreground/semantic text meet AA in light and dark surfa
   for(const palette of [light,dark]){
     assert.ok(contrast(palette.onBrand,palette.brand)>=4.5,'Filled actions remain readable');
     for(const foreground of ['text','textSecondary','muted','accent','success','danger','info']){
-      for(const background of ['canvas','surface','elevated','soft']){
+      for(const background of ['canvas','surface','elevated','soft','accentSoft']){
         assert.ok(contrast(palette[foreground],palette[background])>=4.5,`${foreground} on ${background}`);
       }
     }
