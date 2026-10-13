@@ -216,13 +216,19 @@ Deno.serve(async req=>{
  if(action==='onboard'&&role!=='OWNER')return json({error:'Only the business owner can manage the payout account'},403);
 
  const {data:business,error:businessError}=await admin.from('businesses')
-  .select('id,name,description,email,status,verification_status,stripe_connected_account_id,stripe_connect_status')
+  .select('id,name,description,email,country,status,verification_status,stripe_connected_account_id,stripe_connect_status')
   .eq('id',businessId).maybeSingle();
  if(businessError){
   console.log('stripe_connect_access_failed',{businessId,action,stage:'business',message:businessError.message});
   return json({error:'Business could not be loaded'},500);
  }
  if(!business)return json({error:'Business not found'},404);
+ // AU-only onboarding: a direct Edge Function call must not create an Australian
+ // Stripe account for an India business, even if the app redirects correctly.
+ const businessCountry=typeof business.country==='string'?business.country.trim().toUpperCase():'';
+ if(!['','AU','AUS','AUSTRALIA'].includes(businessCountry)){
+  return json({error:'Stripe Connect is only available for Australian businesses. India payouts are not live yet.'},409);
+ }
 
  async function sync(account:Stripe.Account){
   const snapshot=connectSnapshot(account);
