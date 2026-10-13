@@ -21,8 +21,9 @@ test('web shell is full bleed without the old standalone safe-area strip',()=>{
 
 test('native status bar blends into the edge-to-edge root',()=>{
  assert.match(layout,/translucent backgroundColor="transparent"/);
- assert.equal(app.expo.backgroundColor,'#151513');
- assert.equal(app.expo.ios.backgroundColor,'#151513');
+ assert.equal(app.expo.backgroundColor,'#000000');
+ assert.equal(app.expo.ios.backgroundColor,'#000000');
+ assert.equal(app.expo.splash.backgroundColor,'#000000');
 });
 
 test('home uses contextual real-data sections rather than fabricated metrics',()=>{

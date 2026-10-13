@@ -9,7 +9,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.everestlocal.app",
-      "backgroundColor": "#151513",
+      "backgroundColor": "#000000",
       "infoPlist": {},
       "config": {
         "usesNonExemptEncryption": false
@@ -92,12 +92,12 @@
       "supabaseUrl": "https://bmwbljefnamvjnmuvkvv.supabase.co",
       "supabaseAnonKey": "sb_publishable_evkp_gHdu3ucFI82P8VLCw_vCjR2M2S"
     },
-    "backgroundColor": "#151513",
+    "backgroundColor": "#000000",
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#151513"
+      "backgroundColor": "#000000"
     },
     "platforms": [
       "ios",
