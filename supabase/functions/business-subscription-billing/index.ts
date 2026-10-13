@@ -66,6 +66,15 @@ Deno.serve(async req=>{
   }
 
   if(action!=='CREATE_CHECKOUT')return json({error:'Unsupported action.'},400);
+  // Existing portal access remains available for cancellation and account management.
+  // Only new Australia Stripe subscriptions are eligible for this checkout rail.
+  const {data:billingBusiness,error:billingError}=await admin.from('businesses')
+   .select('country').eq('id',businessId).maybeSingle();
+  const billingCountry=typeof billingBusiness?.country==='string'?billingBusiness.country.trim().toUpperCase():'';
+  if(billingError||!billingBusiness||!['','AU','AUS','AUSTRALIA'].includes(billingCountry)){
+   return json({error:'New Everest Pro billing for India is not live yet. No payment was taken.'},409);
+  }
+
   if(!priceId)return json({error:'Everest Pro price is not configured yet.'},503);
 
   if(subRow?.status==='ACTIVE'||subRow?.status==='TRIALING'){
