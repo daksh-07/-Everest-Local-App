@@ -4,11 +4,19 @@ import Stripe from 'https://esm.sh/stripe@18.5.0?target=deno';
 type ServicePaymentResult={payment_id:string;booking_id:string;amount:number;currency:string;payment_kind?:'DEPOSIT'|'BALANCE';provider_checkout_session_id:string|null;reused:boolean};
 type ServiceFeeSnapshot={marketplace_fee:number;provider_net:number;fee_policy_version:string;stripe_connected_account_id:string|null};
 type ConnectBusiness={
+ country:string|null;
  stripe_connected_account_id:string|null;stripe_connect_status:string;
  stripe_details_submitted:boolean;stripe_charges_enabled:boolean;stripe_payouts_enabled:boolean;
 };
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key'};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
+// The existing Stripe Connect rail is Australia-only. A missing country is retained
+// solely for legacy Australian businesses; known non-AU countries fail closed.
+const isAustralianStripeBusiness=(business:ConnectBusiness|null)=>{
+ if(!business)return false;
+ const country=(business.country??'').trim().toUpperCase();
+ return country===''||country==='AU'||country==='AUS'||country==='AUSTRALIA';
+};
 const connectReady=(b:ConnectBusiness|null)=>Boolean(
  b?.stripe_connected_account_id&&b.stripe_connect_status==='ACTIVE'&&
  b.stripe_details_submitted&&b.stripe_charges_enabled&&b.stripe_payouts_enabled
@@ -51,10 +59,17 @@ Deno.serve(async req=>{
   if(!businessId)throw new Error('Booking business is unavailable');
 
   const {data:business,error:businessError}=await admin.from('businesses')
-   .select('stripe_connected_account_id,stripe_connect_status,stripe_details_submitted,stripe_charges_enabled,stripe_payouts_enabled')
+   .select('country,stripe_connected_account_id,stripe_connect_status,stripe_details_submitted,stripe_charges_enabled,stripe_payouts_enabled')
    .eq('id',businessId).maybeSingle();
   if(businessError)throw businessError;
   const connected=business as ConnectBusiness|null;
+  // A modified client must never send an India booking or non-AUD payment to Stripe.
+  if(!isAustralianStripeBusiness(connected)||payment.currency.trim().toUpperCase()!=='AUD'){
+   await admin.from('service_payments').update({
+    status:'FAILED',updated_at:new Date().toISOString(),
+   }).eq('id',paymentId).eq('status','PENDING').is('provider_checkout_session_id',null);
+   return json({error:'This payment market is not supported by Australian checkout. India payments are not live yet. No payment was taken.'},409);
+  }
   if(!connectReady(connected)){
    await admin.from('service_payments').update({
     status:'FAILED',updated_at:new Date().toISOString(),

@@ -1,0 +1,42 @@
+name: Validate Everest India Phase 3
+# Runs independently of the main-branch release gate while the India work is staged.
+on:
+  push:
+    branches:
+      - feat/india-market-phase3-payment-boundary-20261013
+  pull_request:
+    branches:
+      - feat/india-market-phase2
+permissions:
+  contents: read
+jobs:
+  india-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: India market security regression suite
+        run: node --test tests/india-market.test.mjs tests/india-market-phase2.test.mjs
+      - name: Full security invariant suite
+        run: npm run test:security
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Migration audit
+        run: npm run audit:migrations
+      - name: Web export
+        run: npm run build:web
+  india-edge-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check all Supabase Edge Functions
+        run: deno check --config supabase/functions/deno.json --node-modules-dir=auto supabase/functions/*/index.ts

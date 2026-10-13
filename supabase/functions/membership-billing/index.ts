@@ -61,6 +61,12 @@ Deno.serve(async req=>{
    if(error)throw error;
    const m=data as MembershipCheckout;
    if(m.customer_id!==user.id)throw new Error('Membership customer mismatch');
+   // Fail closed before returning an existing Stripe session or starting a new one.
+   const {data:marketBusiness,error:marketError}=await admin.from('businesses').select('country').eq('id',m.business_id).maybeSingle();
+   const marketCountry=typeof marketBusiness?.country==='string'?marketBusiness.country.trim().toUpperCase():'';
+   if(marketError||!marketBusiness||!['','AU','AUS','AUSTRALIA'].includes(marketCountry)||String(m.currency??'').trim().toUpperCase()!=='AUD'){
+    return json({error:'Memberships and packages for this market are not available through Australian checkout.'},409);
+   }
    const connectedId=String(m.connected_account_id??'');
    const feePercent=Number(m.application_fee_percent??0);
    if(!/^acct_[A-Za-z0-9]+$/.test(connectedId))return json({error:'This business is still setting up payouts.'},409);
@@ -116,6 +122,12 @@ Deno.serve(async req=>{
    if(error)throw error;
    const p=data as PackageCheckout;
    if(p.customer_id!==user.id)throw new Error('Package customer mismatch');
+   // Fail closed before returning an existing Stripe session or starting a new one.
+   const {data:marketBusiness,error:marketError}=await admin.from('businesses').select('country').eq('id',p.business_id).maybeSingle();
+   const marketCountry=typeof marketBusiness?.country==='string'?marketBusiness.country.trim().toUpperCase():'';
+   if(marketError||!marketBusiness||!['','AU','AUS','AUSTRALIA'].includes(marketCountry)||String(p.currency??'').trim().toUpperCase()!=='AUD'){
+    return json({error:'Memberships and packages for this market are not available through Australian checkout.'},409);
+   }
    const connectedId=String(p.connected_account_id??'');
    if(!/^acct_[A-Za-z0-9]+$/.test(connectedId))return json({error:'This business is still setting up payouts.'},409);
    if(p.checkout_session_id){
