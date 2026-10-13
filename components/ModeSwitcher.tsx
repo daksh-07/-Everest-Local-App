@@ -1,5 +1,6 @@
 import { useEffect,useMemo,useState } from 'react';
-import { ActivityIndicator,Modal,Platform,Pressable,ScrollView,StyleSheet,Text,View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';

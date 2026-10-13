@@ -1,0 +1,8 @@
+/* Six static, unmodified OFL faces. Exact aliases prevent synthetic weights. */
+@font-face { font-family: "BricolageGrotesque-Bold"; src: url("/fonts/BricolageGrotesque-Bold.woff2") format("woff2"); font-weight: normal; font-style: normal; font-display: swap; }
+@font-face { font-family: "BricolageGrotesque-SemiBold"; src: url("/fonts/BricolageGrotesque-SemiBold.woff2") format("woff2"); font-weight: normal; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter-Bold"; src: url("/fonts/Inter-Bold.woff2") format("woff2"); font-weight: normal; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter-Medium"; src: url("/fonts/Inter-Medium.woff2") format("woff2"); font-weight: normal; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter-Regular"; src: url("/fonts/Inter-Regular.woff2") format("woff2"); font-weight: normal; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter-SemiBold"; src: url("/fonts/Inter-SemiBold.woff2") format("woff2"); font-weight: normal; font-style: normal; font-display: swap; }
+body { font-family: "Inter-Regular", system-ui, -apple-system, sans-serif; font-synthesis: none; }

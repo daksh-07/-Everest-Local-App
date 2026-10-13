@@ -1,16 +1,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Modal,
-  PanResponder,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, PanResponder, Pressable, ScrollView, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
+import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -422,7 +413,7 @@ export default function Search(){
 
         {!q.trim()?(
           <View>
-            <Text style={{fontSize:20,lineHeight:26,fontWeight:'800',letterSpacing:-.3,color:c.text,marginTop:10}}>Find a local service</Text>
+            <Text variant="section" style={{color:c.text,marginTop:10}}>Find a local service</Text>
             <Text style={{fontSize:14,lineHeight:21,color:c.textSecondary,marginTop:5}}>Choose a category or search in your own words.</Text>
             <ServiceCategoryGrid onSelect={query=>{setTab('SERVICE');setQ(query)}}/>
             <View style={{marginTop:18,paddingVertical:18,borderTopWidth:1,borderBottomWidth:1,borderColor:c.border,flexDirection:'row',alignItems:'center',gap:12}}>

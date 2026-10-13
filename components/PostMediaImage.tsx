@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
-import {ActivityIndicator,Image,Pressable,StyleSheet,Text,View,type ImageResizeMode,type ImageStyle,type StyleProp} from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, View, type ImageResizeMode, type ImageStyle, type StyleProp } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {Ionicons} from '@expo/vector-icons';
 import {signedPostMedia} from '@/lib/request-post-media';
 import {useAppTheme} from '@/lib/theme';

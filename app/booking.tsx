@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router,useLocalSearchParams } from 'expo-router';
 import { useCallback,useEffect,useMemo,useState } from 'react';
-import { Linking,Pressable,RefreshControl,ScrollView,StyleSheet,Text,View } from 'react-native';
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppCard,EmptyState,ErrorBanner,LoadingState,StatusBadge } from '@/components/ui';
 import { getJobWorkspace,type JobChecklistItem,type JobRecord } from '@/lib/job-operations';

@@ -1,6 +1,8 @@
 import {Ionicons} from '@expo/vector-icons';
 import {useMemo} from 'react';
-import {Pressable,Text,TextInput,View} from 'react-native';
+import { Pressable, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
+import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {businessOperationsStyles as styles} from '@/components/BusinessOperationsStyles';
 import type {OperationsJob} from '@/lib/business-operations';
 import type {ThemeColors} from '@/lib/theme';

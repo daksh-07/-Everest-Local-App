@@ -1,6 +1,8 @@
 import {useReducedMotion} from '@/lib/motion';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {ActivityIndicator,FlatList,Image,Modal,Pressable,RefreshControl,Share,StyleSheet,Text,TextInput,View,useWindowDimensions,type ViewToken} from 'react-native';
+import { ActivityIndicator, FlatList, Image, Modal, Pressable, RefreshControl, Share, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
+import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {PagerAwareScrollView as ScrollView} from '@/components/PagerAwareScrollView';
 import {Ionicons} from '@expo/vector-icons';
 import {SafeAreaView} from 'react-native-safe-area-context';

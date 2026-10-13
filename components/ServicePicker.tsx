@@ -1,15 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
-import {
-  ActivityIndicator,
-  Animated,
-  Pressable,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ActivityIndicator, Animated, Pressable, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
+import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { Ionicons } from "@expo/vector-icons";
 import type { ServiceDefinition, TaxonomyCategory } from "@/lib/taxonomy";
 import { useAppTheme } from "@/lib/theme";

@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {Animated,Pressable,StyleSheet,Text,View,type ViewStyle} from 'react-native';
+import { Animated, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {Ionicons} from '@expo/vector-icons';
 import {useEvent} from 'expo';
 import {VideoView,useVideoPlayer} from 'expo-video';

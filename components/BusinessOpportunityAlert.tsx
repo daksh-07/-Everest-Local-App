@@ -1,5 +1,6 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
-import {Animated,AppState,Pressable,StyleSheet,Text,View} from 'react-native';
+import { Animated, AppState, Pressable, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {router,usePathname} from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {supabase} from '@/lib/supabase';

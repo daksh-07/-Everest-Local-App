@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, PanResponder, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Animated, PanResponder, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {useReducedMotion} from '@/lib/motion';
@@ -15,7 +16,7 @@ const TRASH_SIZE = 68;
 export function DraggableAskEverest({ pathname }: { pathname: string }) {
   const theme=useAppTheme();const reducedMotion=useReducedMotion();
   const { width, height } = useWindowDimensions();
-  const hiddenRoute = ['/', '/search', '/assistant', '/auth', '/messages', '/cart', '/request', '/chat-input-regression'].includes(pathname);
+  const hiddenRoute = ['/', '/search', '/product', '/business-profile', '/assistant', '/auth', '/messages', '/cart', '/request', '/chat-input-regression'].includes(pathname);
   const [dismissed, setDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [overTrash, setOverTrash] = useState(false);

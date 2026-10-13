@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState} from 'react';
-import {ActivityIndicator,Pressable,StyleSheet,Text,View} from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {Ionicons} from '@expo/vector-icons';
 import {deepLinkToSubscriptions,finishTransaction,getAvailablePurchases,useIAP,type Purchase} from 'expo-iap';
 import {APPLE_PRO_PRODUCT_ID,verifyApplePurchase} from '@/lib/apple-billing';

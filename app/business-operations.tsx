@@ -1,6 +1,7 @@
 import {Ionicons} from '@expo/vector-icons';
 import {useCallback,useEffect,useMemo,useState} from 'react';
-import {ActivityIndicator,Pressable,RefreshControl,ScrollView,Text,View} from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {BusinessTabBar} from '@/components/BusinessTabBar';
 import {Avatar,Empty,Field,JobCard,Metric,Section,Tag} from '@/components/BusinessOperationsPrimitives';

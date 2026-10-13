@@ -1,7 +1,8 @@
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
 import {useCallback,useEffect,useMemo,useState} from 'react';
-import {ActivityIndicator,Platform,Pressable,StyleSheet,Text,View} from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {acceptBusinessInvitation,getMyBusinessInvitations,type BusinessInvitation} from '@/lib/business-operations';
 import {storePendingQuickActionRoute} from '@/lib/quick-actions';

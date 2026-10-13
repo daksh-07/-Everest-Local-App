@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router,useLocalSearchParams } from 'expo-router';
 import { useCallback,useEffect,useMemo,useState } from 'react';
-import { ActivityIndicator,Linking,Pressable,RefreshControl,ScrollView,StyleSheet,Text,TextInput,View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
+import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BusinessTabBar } from '@/components/BusinessTabBar';
 import { addChecklistItem,ensureJobWorkspace,getJobWorkspace,setChecklistItem,setJobProgress,type JobChecklistItem,type JobRecord } from '@/lib/job-operations';

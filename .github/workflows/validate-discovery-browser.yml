@@ -4,6 +4,12 @@ on:
   pull_request:
     branches: [main, 'codex/experience-foundation-2026-10-12']
     paths:
+      - 'assets/fonts/**'
+      - 'public/fonts/**'
+      - 'components/ui/AppText*'
+      - 'lib/typography.ts'
+      - 'lib/font-*'
+      - 'scripts/verify-typography-browser.mjs'
       - 'app/index.tsx'
       - 'app/search.tsx'
       - 'app/social.tsx'
@@ -72,6 +78,7 @@ jobs:
           fi
           node scripts/verify-discovery-foundation.mjs
           node scripts/verify-search-discovery.mjs
+          EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/typography node scripts/verify-typography-browser.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:

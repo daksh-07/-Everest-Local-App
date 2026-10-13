@@ -1,5 +1,6 @@
 import {createElement,type ChangeEvent} from 'react';
-import {View,Text,StyleSheet} from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {useAppTheme} from '@/lib/theme';
 
 function isoDate(d:Date){return d.toISOString().slice(0,10)}
