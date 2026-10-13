@@ -1,6 +1,6 @@
 # Experience V2 — Release B: customer discovery
 
-Branch: `codex/customer-discovery-2026-10-12`, based on Release A (`5f21d57`, PR #98). Review B separately against A before changing its base to main. No production deployment is claimed.
+Branch: `codex/customer-discovery-2026-10-12`, PR #99, based on main after Release A merged as `e3f8761`. The release also contains the user-requested beige palette and typography foundation; see [the typography record](experience-v2-typography.md).
 
 ## Working changes
 
@@ -36,7 +36,7 @@ Captured baseline → implemented → captured → inspected → refined → cap
 - Existing PR #98 CI WebKit chat regression passed. B adds isolated Chromium/WebKit browser CI plus quality checks on its own head. Confirm results before merging. Linux WebKit emulation is not physical iPhone Safari or native iOS.
 - Local Expo Doctor: 16/18 checks passed; Expo API / RN Directory network checks failed from this environment. A's GitHub Expo Doctor passed. B's CI reruns it.
 
-Local exported preview is served at `http://localhost:8083` inside the execution workspace. Vercel deployment listing failed with team-scope 403 and the scoped CLI had no credentials. Git integration has not produced a verified hosted preview for these commits; do not infer deployment from pushes or green tests.
+Local exported preview is served at `http://localhost:8083` inside the execution workspace. Vercel deployment listing failed with team-scope 403 and the scoped CLI had no credentials. Git integration now produces public previews. The branch URL is https://everest-local-app-git-codex-customer-d-44938d-dakshgolani5-4632.vercel.app/. Verify `/build-info.json` against the final head and run interactions before promotion. API/CLI scope failures do not mean this Git preview is unavailable.
 
 ## Performance and rollout limits
 
@@ -46,7 +46,7 @@ All 96 screens are inventoried in [the coverage record](experience-v2-screen-inv
 
 ## Next implementation sequence
 
-1. Verify hosted A/B preview and exact build provenance; run authenticated customer/business smoke tests before progressive promotion. Preserve current production while hosting access is blocked.
+1. Validate the final typography/palette preview and exact production provenance. Authenticated customer/business transaction testing remains a separate backend release gate. A is deployed and its production navigation suite passed; hosting through Git integration works.
 2. Finish B's service/business details and request/booking UX using controlled customer/provider accounts, authoritative status and actual backend error cases.
 3. Improve Business Today from real owner/employee queues: current Today performs broad CRM queries and embeds all messages in its conversations query. Profile this before replacing it with bounded priority reads; validate each role and server permission.
 4. Coordinate PR #97 migrations, Edge Functions and anonymous discovery in staging; then verify Stripe sandbox redirects, webhook confirmation, inventory and lifecycle. Do not merge its old main blindly.

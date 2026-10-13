@@ -38,7 +38,7 @@ for(const theme of before?['LIGHT']:['LIGHT','DARK'])for(const width of widths)f
   });
  }
  const paths={home:'/',search:'/search',business:`/business-profile?id=${biz}`,product:`/product?id=${other}`,chat:`/messages?personalId=${other}`,today:'/business-today'};
- await page.goto(base+paths[screen],{waitUntil:'networkidle'});
+ await page.goto(base+paths[screen],{waitUntil:'domcontentloaded'});
  const target={home:'What do you need today?',search:'Find a local service',business:name,product:'Hand-finished oak side table with a natural matte finish',chat:'Thanks. I’ll check the details and message you before you travel.',today:'Today'}[screen];
  try { await page.getByText(target,{exact:true}).filter({visible:true}).first().waitFor({timeout:15000}); } catch(error) {
   await page.screenshot({path:`${output}/failure-${screen}-${width}-${theme}.png`});
@@ -49,6 +49,8 @@ for(const theme of before?['LIGHT']:['LIGHT','DARK'])for(const width of widths)f
  const geometry=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert.ok(geometry.scroll<=width+1,`${screen} overflow at ${width}`);
  if(!before){
   const family=await page.getByText(target,{exact:true}).filter({visible:true}).first().evaluate(e=>getComputedStyle(e).fontFamily);
+  const face=family.split(',')[0].replace(/["']/g,'').trim();
+  assert.ok(await page.evaluate(face=>[...document.fonts].some(f=>f.family.replace(/["']/g,'')===face&&f.status==='loaded'),face),`${screen}: requested face loaded`);
   assert.ok(family.includes(['home','search','business','product','today'].includes(screen)?'BricolageGrotesque':'Inter-'),`${screen} ${width} ${theme}: ${family}; ${await page.getByText(target,{exact:true}).filter({visible:true}).first().evaluate(e=>e.outerHTML.slice(0,400))}`);
   if(screen==='chat'){
    const composer=page.locator('#everest-message-composer');await composer.fill('Checking the new font on a narrow phone');
@@ -58,6 +60,17 @@ for(const theme of before?['LIGHT']:['LIGHT','DARK'])for(const width of widths)f
  if(!['home','search'].includes(screen))await page.evaluate(()=>{const label=document.createElement('div');label.textContent='VISUAL QA FIXTURE · no real account or transactions';Object.assign(label.style,{position:'fixed',top:'0',left:'0',right:'0',zIndex:'99999',background:'#242424',color:'#fff',font:'10px system-ui',textAlign:'center',padding:'3px',pointerEvents:'none'});document.body.append(label)});
  if([320,390,1440].includes(width))await page.screenshot({path:`${output}/${screen}-${width}-${theme.toLowerCase()}.png`});
  results.push({screen,width,theme,fixture:!['home','search'].includes(screen)});
+ await context.close();
+}
+if(!before){
+ const context=await browser.newContext({viewport:{width:390,height:844}});
+ const page=await context.newPage();
+ await page.route('**/fonts/*.woff2',route=>route.abort('failed'));
+ await page.goto(base,{waitUntil:'domcontentloaded'});
+ await page.getByLabel('Open Everest menu',{exact:true}).waitFor();
+ await page.getByText('What do you need today?',{exact:true}).waitFor();
+ assert.equal(await page.getByRole('button',{name:/^Find .* services$/}).count(),8,'Discovery stays usable when fonts fail');
+ await page.screenshot({path:`${output}/font-fallback-390.png`});
  await context.close();
 }
 await fs.writeFile(`${output}/results.json`,JSON.stringify({engine,base,before,checks:results},null,2));console.log(`${engine}: ${results.length} typography layouts passed`);await browser.close();

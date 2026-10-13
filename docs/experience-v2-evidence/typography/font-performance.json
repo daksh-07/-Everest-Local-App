@@ -1,0 +1,384 @@
+[
+  {
+    "kind": "before",
+    "run": 0,
+    "menuMs": 2515,
+    "cls": 0.0012493024035329912,
+    "longTasks": [
+      737,
+      424,
+      301,
+      158,
+      71
+    ],
+    "shifts": [
+      0.0011889376318522113,
+      0.00006036477168077985
+    ],
+    "fonts": [
+      {
+        "family": "ionicons",
+        "status": "loaded"
+      }
+    ],
+    "fontBytes": 0,
+    "nodes": 210
+  },
+  {
+    "kind": "before",
+    "run": 1,
+    "menuMs": 2685,
+    "cls": 0.0012493024035329912,
+    "longTasks": [
+      739,
+      51,
+      388,
+      274,
+      197,
+      55
+    ],
+    "shifts": [
+      0.0011889376318522113,
+      0.00006036477168077985
+    ],
+    "fonts": [
+      {
+        "family": "ionicons",
+        "status": "loaded"
+      }
+    ],
+    "fontBytes": 0,
+    "nodes": 199
+  },
+  {
+    "kind": "before",
+    "run": 2,
+    "menuMs": 2191,
+    "cls": 0.0012493024035329912,
+    "longTasks": [
+      334,
+      300,
+      364,
+      190
+    ],
+    "shifts": [
+      0.0011889376318522113,
+      0.00006036477168077985
+    ],
+    "fonts": [
+      {
+        "family": "ionicons",
+        "status": "loaded"
+      }
+    ],
+    "fontBytes": 0,
+    "nodes": 210
+  },
+  {
+    "kind": "after",
+    "run": 0,
+    "menuMs": 2387,
+    "cls": 0.01224530889773135,
+    "longTasks": [
+      617,
+      240,
+      117,
+      203,
+      114
+    ],
+    "shifts": [
+      0.012180451863972,
+      0.00006485703375934952
+    ],
+    "fonts": [
+      {
+        "family": "BricolageGrotesque-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "BricolageGrotesque-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Medium",
+        "status": "unloaded"
+      },
+      {
+        "family": "Inter-Regular",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "ionicons",
+        "status": "loaded"
+      }
+    ],
+    "fontBytes": 435148,
+    "nodes": 214
+  },
+  {
+    "kind": "after",
+    "run": 1,
+    "menuMs": 1738,
+    "cls": 0.005066437368273773,
+    "longTasks": [
+      554,
+      147,
+      78,
+      111,
+      93,
+      64
+    ],
+    "shifts": [
+      0.001249971923362009,
+      0.003719507455049302,
+      0.00009695798986246191
+    ],
+    "fonts": [
+      {
+        "family": "BricolageGrotesque-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "BricolageGrotesque-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Medium",
+        "status": "unloaded"
+      },
+      {
+        "family": "Inter-Regular",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "ionicons",
+        "status": "loaded"
+      }
+    ],
+    "fontBytes": 435148,
+    "nodes": 214
+  },
+  {
+    "kind": "after",
+    "run": 2,
+    "menuMs": 1540,
+    "cls": 0.01224530889773135,
+    "longTasks": [
+      420,
+      310,
+      50,
+      69,
+      89
+    ],
+    "shifts": [
+      0.012180451863972,
+      0.00006485703375934952
+    ],
+    "fonts": [
+      {
+        "family": "BricolageGrotesque-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "BricolageGrotesque-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Medium",
+        "status": "unloaded"
+      },
+      {
+        "family": "Inter-Regular",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "ionicons",
+        "status": "loaded"
+      }
+    ],
+    "fontBytes": 435148,
+    "nodes": 214
+  },
+  {
+    "kind": "delayed-fonts",
+    "run": 0,
+    "menuMs": 2200,
+    "cls": 0.004882986910365405,
+    "longTasks": [
+      401,
+      496,
+      111,
+      50,
+      197,
+      67,
+      91,
+      58
+    ],
+    "shifts": [
+      0.0012263875474495182,
+      0.00007014480058099922,
+      0.00023433194015615798,
+      0.000008342001095420828,
+      0.0033437806210833087
+    ],
+    "fonts": [
+      {
+        "family": "BricolageGrotesque-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "BricolageGrotesque-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Medium",
+        "status": "unloaded"
+      },
+      {
+        "family": "Inter-Regular",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "ionicons",
+        "status": "loaded"
+      }
+    ],
+    "fontBytes": 435148,
+    "nodes": 217
+  },
+  {
+    "kind": "delayed-fonts",
+    "run": 1,
+    "menuMs": 1578,
+    "cls": 0.004812392894825201,
+    "longTasks": [
+      405,
+      194,
+      91,
+      120
+    ],
+    "shifts": [
+      0.0011565415110932956,
+      0.00007014480058099922,
+      0.00023433194015615798,
+      0.000008342001095420828,
+      0.003343032641899328
+    ],
+    "fonts": [
+      {
+        "family": "BricolageGrotesque-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "BricolageGrotesque-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Medium",
+        "status": "unloaded"
+      },
+      {
+        "family": "Inter-Regular",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "ionicons",
+        "status": "loaded"
+      }
+    ],
+    "fontBytes": 435148,
+    "nodes": 217
+  },
+  {
+    "kind": "delayed-fonts",
+    "run": 2,
+    "menuMs": 1299,
+    "cls": 0.004812392894825201,
+    "longTasks": [
+      331,
+      188,
+      75,
+      100,
+      69
+    ],
+    "shifts": [
+      0.0011565415110932956,
+      0.00007014480058099922,
+      0.00023433194015615798,
+      0.000008342001095420828,
+      0.003343032641899328
+    ],
+    "fonts": [
+      {
+        "family": "BricolageGrotesque-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "BricolageGrotesque-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Bold",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-Medium",
+        "status": "unloaded"
+      },
+      {
+        "family": "Inter-Regular",
+        "status": "loaded"
+      },
+      {
+        "family": "Inter-SemiBold",
+        "status": "loaded"
+      },
+      {
+        "family": "ionicons",
+        "status": "loaded"
+      }
+    ],
+    "fontBytes": 435148,
+    "nodes": 217
+  }
+]

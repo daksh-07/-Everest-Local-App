@@ -48,3 +48,7 @@ Rendered QA checks the request boundary, active scene inert state, Explore → C
 | 78 / 80 | Open | Security/privacy/reporting work needs independent backend review |
 
 The current service-role permission helper checks active membership in its role fallback, but a permission override is evaluated first. PR 97 addresses that existing boundary. Release A does not alter or claim to resolve it. The Live 45-second UI expansion interval must not be confused with the reported 120-second dispatch offer deadline. India payments must remain gated; no country/payment expansion is released here.
+
+## Verified delivery update — 13 October
+
+PR #98 merged as `e3f8761e7d5b4dd62cec652b2b063fc6615034a8`. The production domain’s public build metadata reports that exact production commit. Its full Home navigation/appearance/gesture suite passed on the production domain in Chromium browser emulation. This establishes deployment and interaction evidence; native hardware and authenticated/payment flows were not tested.
