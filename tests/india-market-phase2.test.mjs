@@ -103,3 +103,33 @@ test('service Stripe checkout refuses India sellers and non-AUD payments before 
  const stripe=checkout.indexOf('const stripe=new Stripe');
  assert.ok(refusal>0&&refusal<existing&&refusal<stripe,'Market and currency checks must precede new and reused Stripe sessions');
 });
+
+
+test('Stripe Connect account creation stays Australia-only on the server',()=>{
+ const source=read('supabase/functions/stripe-connect/index.ts');
+ assert.match(source,/\.select\('id,name,description,email,country,status/);
+ assert.match(source,/if\(!\['','AU','AUS','AUSTRALIA'\]\.includes\(businessCountry\)\)/);
+ assert.ok(source.indexOf('if(![\'\',\'AU\',\'AUS\',\'AUSTRALIA\'].includes(businessCountry))') < source.indexOf('connectedId=await createV2MerchantAccount('));
+});
+
+test('membership and package Stripe purchases require an AU seller and AUD even on reuse',()=>{
+ const source=read('supabase/functions/membership-billing/index.ts');
+ assert.equal((source.match(/\.select\('country'\)\.eq\('id',/g)||[]).length,2);
+ assert.match(source,/String\(m\.currency\?\?''\)\.trim\(\)\.toUpperCase\(\)!=='AUD'/);
+ assert.match(source,/String\(p\.currency\?\?''\)\.trim\(\)\.toUpperCase\(\)!=='AUD'/);
+ const first=source.indexOf('if(marketError||!marketBusiness');
+ const second=source.indexOf('if(marketError||!marketBusiness',first+1);
+ assert.ok(first>0&&first<source.indexOf('if(m.checkout_session_id)'));
+ assert.ok(second>first&&second<source.indexOf('if(p.checkout_session_id)'));
+});
+
+test('new Pro subscriptions and post promotions cannot pay through AU rail in India',()=>{
+ const pro=read('supabase/functions/business-subscription-billing/index.ts');
+ const promo=read('supabase/functions/post-promotion-checkout/index.ts');
+ assert.match(pro,/New Everest Pro billing for India is not live yet/);
+ assert.ok(pro.indexOf('if(action===\'PORTAL\')')<pro.indexOf('const billingCountry='));
+ assert.ok(pro.indexOf('const billingCountry=')<pro.indexOf("if(!priceId)"));
+ assert.match(promo,/Post promotions are not yet available for Everest India/);
+ assert.match(promo,/\.select\('id,business_id,author_id'\)/);
+ assert.ok(promo.indexOf('const country=')<promo.indexOf("userClient.rpc('create_post_promotion'"));
+});
