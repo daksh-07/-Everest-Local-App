@@ -1,7 +1,8 @@
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {useCallback,useEffect,useMemo,useState} from 'react';
-import {ActivityIndicator,Linking,Pressable,RefreshControl,ScrollView,StyleSheet,Text,View} from 'react-native';
+import { ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {BusinessTabBar} from '@/components/BusinessTabBar';
 import {ModeSwitcher} from '@/components/ModeSwitcher';
@@ -55,19 +56,19 @@ export default function BusinessMyWork(){
  const next=active[0]??null;
 
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}><ScrollView
-  refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.brand}/>}
+  refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>}
   contentContainerStyle={st.page} showsVerticalScrollIndicator={false}>
   <View style={st.header}><View><Text style={st.eyebrow}>MY WORK</Text><Text style={st.business}>{business?.name??'Business'}</Text></View><ModeSwitcher compact/></View>
   <Text style={st.title}>Your shift, without the noise.</Text><Text style={st.copy}>Only work assigned to you or your crew appears here. Company finance, payouts and admin stay with authorised roles.</Text>
   {error?<View style={st.errorBox}><Ionicons name="alert-circle-outline" size={18} color={colors.danger}/><Text style={st.error}>{error}</Text></View>:null}
-  {loading?<ActivityIndicator color={colors.brand} style={{marginTop:55}}/>:<>
+  {loading?<ActivityIndicator color={colors.accent} style={{marginTop:55}}/>:<>
    <View style={st.summary}>
     <View><Text style={st.summaryN}>{active.length}</Text><Text style={st.summaryL}>ACTIVE JOBS</Text></View>
     <View style={st.divider}/><View><Text style={st.summaryN}>{active.filter(x=>x.status==='IN_PROGRESS').length}</Text><Text style={st.summaryL}>IN PROGRESS</Text></View>
     <View style={st.divider}/><View><Text style={st.summaryN}>{completed.length}</Text><Text style={st.summaryL}>RECENTLY DONE</Text></View>
    </View>
 
-   {next?<View style={st.nextCard}><View style={st.nextTop}><View style={st.liveDot}/><Text style={st.nextKicker}>NEXT UP</Text><Text style={st.nextStatus}>{next.status.replaceAll('_',' ')}</Text></View><Text style={st.nextTitle}>{next.label}</Text><Text style={st.customer}>{next.customer_name}</Text><Info icon="time-outline" text={schedule(next.scheduled_at)} colors={colors}/><Info icon="location-outline" text={next.location||'Location pending'} colors={colors}/>{next.price!=null?<Info icon="wallet-outline" text={money(next.price)} colors={colors}/>:null}<JobActions job={next} busy={busy} onAdvance={advance} onDecline={decline} colors={colors}/></View>:<View style={st.empty}><View style={st.emptyIcon}><Ionicons name="checkmark-done-outline" size={28} color={colors.brand}/></View><Text style={st.emptyTitle}>You’re clear.</Text><Text style={st.copy}>No active work is assigned to you or your crew.</Text></View>}
+   {next?<View style={st.nextCard}><View style={st.nextTop}><View style={st.liveDot}/><Text style={st.nextKicker}>NEXT UP</Text><Text style={st.nextStatus}>{next.status.replaceAll('_',' ')}</Text></View><Text style={st.nextTitle}>{next.label}</Text><Text style={st.customer}>{next.customer_name}</Text><Info icon="time-outline" text={schedule(next.scheduled_at)} colors={colors}/><Info icon="location-outline" text={next.location||'Location pending'} colors={colors}/>{next.price!=null?<Info icon="wallet-outline" text={money(next.price)} colors={colors}/>:null}<JobActions job={next} busy={busy} onAdvance={advance} onDecline={decline} colors={colors}/></View>:<View style={st.empty}><View style={st.emptyIcon}><Ionicons name="checkmark-done-outline" size={28} color={colors.accent}/></View><Text style={st.emptyTitle}>You’re clear.</Text><Text style={st.copy}>No active work is assigned to you or your crew.</Text></View>}
 
    {active.length>1?<><Text style={st.section}>UPCOMING</Text>{active.slice(1).map(job=><JobCard key={job.assignment_id} job={job} busy={busy} onAdvance={advance} onDecline={decline} colors={colors}/>)}</>:null}
    {completed.length?<><Text style={st.section}>RECENTLY COMPLETED</Text>{completed.map(job=><View key={job.assignment_id} style={st.completed}><View style={st.doneIcon}><Ionicons name="checkmark" size={17} color={colors.onBrand}/></View><View style={{flex:1}}><Text style={st.completedTitle}>{job.label}</Text><Text style={st.completedMeta}>{job.customer_name} · {schedule(job.scheduled_at)}</Text></View></View>)}</>:null}

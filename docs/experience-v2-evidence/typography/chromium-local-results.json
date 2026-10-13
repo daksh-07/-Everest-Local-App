@@ -1,0 +1,511 @@
+{
+  "engine": "chromium",
+  "base": "http://localhost:8083",
+  "before": false,
+  "checks": [
+    {
+      "screen": "home",
+      "width": 320,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 320,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 320,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 320,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 320,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 320,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 360,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 360,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 360,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 360,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 360,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 360,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 375,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 375,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 375,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 375,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 375,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 375,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 390,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 390,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 390,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 390,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 390,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 390,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 430,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 430,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 430,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 430,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 430,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 430,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 768,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 768,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 768,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 768,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 768,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 768,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 1440,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 1440,
+      "theme": "LIGHT",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 1440,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 1440,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 1440,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 1440,
+      "theme": "LIGHT",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 320,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 320,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 320,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 320,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 320,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 320,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 360,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 360,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 360,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 360,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 360,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 360,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 375,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 375,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 375,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 375,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 375,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 375,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 390,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 390,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 390,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 390,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 390,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 390,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 430,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 430,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 430,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 430,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 430,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 430,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 768,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 768,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 768,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 768,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 768,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 768,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "home",
+      "width": 1440,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "search",
+      "width": 1440,
+      "theme": "DARK",
+      "fixture": false
+    },
+    {
+      "screen": "business",
+      "width": 1440,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "product",
+      "width": 1440,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "chat",
+      "width": 1440,
+      "theme": "DARK",
+      "fixture": true
+    },
+    {
+      "screen": "today",
+      "width": 1440,
+      "theme": "DARK",
+      "fixture": true
+    }
+  ]
+}

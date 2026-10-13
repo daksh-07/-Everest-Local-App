@@ -1,5 +1,6 @@
 import type {ComponentType} from 'react';
-import {StyleSheet,Text,View} from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {useAppTheme} from '@/lib/theme';
 
 type InputProps={type:string;value:string;min?:string;onChange:(event:{target:{value:string}})=>void;style:Record<string,string|number>;};

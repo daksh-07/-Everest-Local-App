@@ -33,7 +33,7 @@ Rendered QA checks the request boundary, active scene inert state, Explore → C
 - ESLint: zero errors, 12 existing warnings.
 - Baseline complete Node test suite: 409 passed, one failed. CRM OAuth test still expects a direct membership query; the current implementation uses a server permission RPC. This is recorded before any repair.
 - Focused Release A navigation/Home/messaging tests: 36 passed.
-- WebKit downloaded, but its system libraries cannot be installed with this environment's available privileges. Native simulators, real devices, VoiceOver/TalkBack and authenticated customer/business fixtures are unavailable.
+- Initially, WebKit's system-library installation was blocked by environment privileges. During Release B, a private tooling runtime supplied the missing libraries and the Home/Search WebKit checks passed. Native simulators, real devices, VoiceOver/TalkBack and authenticated customer/business fixtures remain unavailable.
 - Vercel project is `prj_L57g1cxp3MPMWr0NuoJeh7P8sXHh` in `dakshgolani5-4632`. Deployment API returned scope 403; scoped CLI fallback had no credentials. GitHub integration previews must be verified independently through PR checks/public build provenance.
 
 ## Outstanding work verified in GitHub
@@ -48,3 +48,7 @@ Rendered QA checks the request boundary, active scene inert state, Explore → C
 | 78 / 80 | Open | Security/privacy/reporting work needs independent backend review |
 
 The current service-role permission helper checks active membership in its role fallback, but a permission override is evaluated first. PR 97 addresses that existing boundary. Release A does not alter or claim to resolve it. The Live 45-second UI expansion interval must not be confused with the reported 120-second dispatch offer deadline. India payments must remain gated; no country/payment expansion is released here.
+
+## Verified delivery update — 13 October
+
+PR #98 merged as `e3f8761e7d5b4dd62cec652b2b063fc6615034a8`. The production domain’s public build metadata reports that exact production commit. Its full Home navigation/appearance/gesture suite passed on the production domain in Chromium browser emulation. This establishes deployment and interaction evidence; native hardware and authenticated/payment flows were not tested.

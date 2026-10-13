@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect,useMemo,useState } from 'react';
-import { KeyboardAvoidingView,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput,View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
+import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton,AppCard,EmptyState,ErrorBanner,LoadingState,StatusBadge } from '@/components/ui';
 import { createReview,reviewTargets,type ReviewTarget } from '@/lib/reviews';
@@ -17,7 +19,7 @@ export default function Reviews(){
   <Pressable accessibilityRole="button" accessibilityLabel="Back to reviews" onPress={()=>{setSelected(null);setError('')}} style={s.back}><Ionicons name="arrow-back" size={20} color={colors.text}/></Pressable>
   <Text style={s.eyebrow}>VERIFIED TRANSACTION</Text><Text style={s.title}>How was it?</Text><Text style={s.copy}>Your review is tied to a completed Everest transaction, helping local customers make better decisions.</Text>
   <AppCard style={s.contextCard}>
-   <View style={s.contextTop}><View style={s.contextIcon}><Ionicons name={selected.kind==='SERVICE'?'construct-outline':'bag-handle-outline'} size={20} color={colors.brand}/></View><View style={s.contextBody}><Text style={s.cardTitle}>{selected.businessName}</Text><Text style={s.meta}>{selected.kind==='SERVICE'?'Completed service booking':'Completed product purchase'}</Text></View><StatusBadge label="Eligible" tone="success"/></View>
+   <View style={s.contextTop}><View style={s.contextIcon}><Ionicons name={selected.kind==='SERVICE'?'construct-outline':'bag-handle-outline'} size={20} color={colors.accent}/></View><View style={s.contextBody}><Text style={s.cardTitle}>{selected.businessName}</Text><Text style={s.meta}>{selected.kind==='SERVICE'?'Completed service booking':'Completed product purchase'}</Text></View><StatusBadge label="Eligible" tone="success"/></View>
   </AppCard>
   <Text style={s.label}>YOUR RATING</Text>
   <View style={s.stars}>{[1,2,3,4,5].map(value=><Pressable key={value} accessibilityRole="button" accessibilityLabel={`${value} star rating`} accessibilityState={{selected:rating===value}} onPress={()=>setRating(value)} style={({pressed})=>[s.starButton,pressed&&s.starPressed]}><Ionicons name={rating>=value?'star':'star-outline'} size={29} color={rating>=value?colors.accent:colors.muted}/></Pressable>)}</View>
@@ -34,7 +36,7 @@ export default function Reviews(){
   {success?<AppCard compact style={s.successCard}><View style={s.successRow}><Ionicons name="checkmark-circle" size={20} color={colors.success}/><View style={s.contextBody}><Text style={s.successTitle}>Review submitted</Text><Text style={s.meta}>{success}</Text></View></View></AppCard>:null}
   {loading?<LoadingState label="Finding completed transactions…" minHeight={240}/>:error?<ErrorBanner message={error} onRetry={()=>void load()}/>:targets.length?(
    <View style={s.list}>{targets.map(target=><AppCard key={target.id} style={s.reviewCard}>
-    <View style={s.contextTop}><View style={s.contextIcon}><Ionicons name={target.kind==='SERVICE'?'construct-outline':'bag-handle-outline'} size={20} color={colors.brand}/></View><View style={s.contextBody}><Text numberOfLines={2} style={s.cardTitle}>{target.businessName}</Text><Text style={s.meta}>{target.kind==='SERVICE'?'Completed service':'Completed product purchase'}</Text></View><StatusBadge label={target.reviewed?'Reviewed':'Ready'} tone={target.reviewed?'neutral':'success'}/></View>
+    <View style={s.contextTop}><View style={s.contextIcon}><Ionicons name={target.kind==='SERVICE'?'construct-outline':'bag-handle-outline'} size={20} color={colors.accent}/></View><View style={s.contextBody}><Text numberOfLines={2} style={s.cardTitle}>{target.businessName}</Text><Text style={s.meta}>{target.kind==='SERVICE'?'Completed service':'Completed product purchase'}</Text></View><StatusBadge label={target.reviewed?'Reviewed':'Ready'} tone={target.reviewed?'neutral':'success'}/></View>
     {target.reviewed?<View style={s.reviewedRow}><Ionicons name="shield-checkmark-outline" size={17} color={colors.success}/><Text style={s.reviewedText}>Your verified review is already attached to this transaction.</Text></View>:<AppButton label="Leave review" variant="secondary" icon="star-outline" fullWidth onPress={()=>{setSelected(target);setError('')}} style={s.cardAction}/>}
    </AppCard>)}</View>
   ):<AppCard><EmptyState icon="star-outline" title="Nothing to review yet" description="After a booking or product order is completed, it will appear here automatically."/></AppCard>}

@@ -40,7 +40,7 @@ test('home v3 exposes intent actions and real discovery without gateway-card dup
  assert.match(home,/Request quotes/);
  assert.match(home,/Need it now\?/);
  assert.match(home,/Search your local area/);
- assert.match(home,/Shop nearby/);
+ assert.match(home,/Shop local/);
  assert.match(home,/From around Everest/);
  assert.match(home,/RefreshControl/);
  assert.match(home,/signedPostMediaResilient/);

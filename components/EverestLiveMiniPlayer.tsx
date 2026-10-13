@@ -1,5 +1,6 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {AppState,Pressable,StyleSheet,Text,View} from 'react-native';
+import { AppState, Pressable, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {Ionicons} from '@expo/vector-icons';
 import {usePathname,router} from 'expo-router';
 import {supabase} from '@/lib/supabase';
@@ -112,7 +113,7 @@ export function EverestLiveMiniPlayer(){
     style={({pressed})=>[s.wrap,pressed&&s.pressed]}>
     <View style={s.iconWrap}>
       <View style={[s.dot,paused&&s.dotPaused]}/>
-      <Ionicons name="radio-outline" size={20} color={colors.brand}/>
+      <Ionicons name="radio-outline" size={20} color={colors.accent}/>
     </View>
     <View style={s.copy}>
       <View style={s.row}>

@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState} from 'react';
-import {Pressable,StyleSheet,Text,View} from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {Ionicons} from '@expo/vector-icons';
 import {useAudioPlayer} from 'expo-audio';
 import type {PublicAudioTrack} from '@/lib/audio-studio';
@@ -51,14 +52,14 @@ export function PostSoundPlayer({
    <Ionicons name={playing?'pause':'play'} size={16} color={colors.onBrand}/>
   </Pressable>
   <Pressable disabled={!onOpenSound} onPress={()=>onOpenSound?.(primary)} style={s.meta}>
-   <View style={s.titleRow}><Ionicons name={primary.source==='VOICEOVER'?'mic':'musical-note'} size={12} color={colors.brand}/><Text numberOfLines={1} style={s.title}>{primary.title}</Text></View>
+   <View style={s.titleRow}><Ionicons name={primary.source==='VOICEOVER'?'mic':'musical-note'} size={12} color={colors.accent}/><Text numberOfLines={1} style={s.title}>{primary.title}</Text></View>
    <Text numberOfLines={1} style={s.copy}>{sourceLabel(primary)}{voice&&voice.id!==primary.id?' · voiceover mixed':''}{photoDurationMs?' · '+seconds(photoDurationMs):''}</Text>
   </Pressable>
-  {primary.reusable&&onOpenSound?<View style={s.reuse}><Ionicons name="repeat" size={12} color={colors.brand}/><Text style={s.reuseText}>USE SOUND</Text></View>:null}
+  {primary.reusable&&onOpenSound?<View style={s.reuse}><Ionicons name="repeat" size={12} color={colors.accent}/><Text style={s.reuseText}>USE SOUND</Text></View>:null}
  </View>;
 }
 
 const styles=(c:ThemeColors)=>StyleSheet.create({
  wrap:{marginHorizontal:13,marginTop:9,minHeight:52,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.soft,padding:7,flexDirection:'row',alignItems:'center',gap:9},
- play:{width:38,height:38,borderRadius:19,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'},meta:{flex:1,minWidth:0},titleRow:{flexDirection:'row',alignItems:'center',gap:5},title:{flex:1,fontSize:11,fontWeight:'900',color:c.text},copy:{fontSize:8,color:c.muted,marginTop:3},reuse:{height:28,borderRadius:14,backgroundColor:c.surface,paddingHorizontal:8,flexDirection:'row',alignItems:'center',gap:4},reuseText:{fontSize:7,fontWeight:'900',letterSpacing:.4,color:c.brand}
+ play:{width:38,height:38,borderRadius:19,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'},meta:{flex:1,minWidth:0},titleRow:{flexDirection:'row',alignItems:'center',gap:5},title:{flex:1,fontSize:11,fontWeight:'900',color:c.text},copy:{fontSize:8,color:c.muted,marginTop:3},reuse:{height:28,borderRadius:14,backgroundColor:c.surface,paddingHorizontal:8,flexDirection:'row',alignItems:'center',gap:4},reuseText:{fontSize:7,fontWeight:'900',letterSpacing:.4,color:c.accent}
 });

@@ -1,0 +1,87 @@
+name: Validate discovery browser experience
+
+on:
+  pull_request:
+    branches: [main, 'codex/experience-foundation-2026-10-12']
+    paths:
+      - 'assets/fonts/**'
+      - 'public/fonts/**'
+      - 'components/ui/AppText*'
+      - 'lib/typography.ts'
+      - 'lib/font-*'
+      - 'scripts/verify-typography-browser.mjs'
+      - 'app/index.tsx'
+      - 'app/search.tsx'
+      - 'app/social.tsx'
+      - 'components/CustomerTabBar.tsx'
+      - 'components/GlobalSwipeNavigator.tsx'
+      - 'components/ServiceCategoryGrid.tsx'
+      - 'lib/universal-search.ts'
+      - 'scripts/verify-discovery-foundation.mjs'
+      - 'scripts/verify-search-discovery.mjs'
+      - '.github/workflows/validate-discovery-browser.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  discovery-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run audit
+      - run: npm run audit:migrations
+      - run: node --test tests/*.test.mjs
+      - run: npx expo-doctor
+  discovery-browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:web
+      - name: Install isolated browser runtime
+        run: |
+          mkdir -p /tmp/everest-browser-tools
+          npm install --prefix /tmp/everest-browser-tools playwright@1.55.0 serve@14.2.4
+          /tmp/everest-browser-tools/node_modules/.bin/playwright install --with-deps ${{ matrix.browser }}
+      - name: Serve exported application
+        run: |
+          /tmp/everest-browser-tools/node_modules/.bin/serve -s dist -l 4173 > /tmp/everest-browser-serve.log 2>&1 &
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/everest-browser-serve.log
+          exit 1
+      - name: Verify navigation and discovery interactions
+        env:
+          PLAYWRIGHT_MODULE: /tmp/everest-browser-tools/node_modules/playwright/index.mjs
+          EVEREST_PREVIEW_URL: http://127.0.0.1:4173
+          EVEREST_QA_BROWSER: ${{ matrix.browser }}
+          EVEREST_QA_ARTIFACTS: /tmp/everest-discovery-qa
+        run: |
+          if [ "$EVEREST_QA_BROWSER" = chromium ]; then
+            export EVEREST_BROWSER_PATH="$(node --input-type=module -e 'import {chromium} from "/tmp/everest-browser-tools/node_modules/playwright/index.mjs"; console.log(chromium.executablePath())')"
+          fi
+          node scripts/verify-discovery-foundation.mjs
+          node scripts/verify-search-discovery.mjs
+          EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/typography node scripts/verify-typography-browser.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: discovery-${{ matrix.browser }}
+          path: /tmp/everest-discovery-qa
+          if-no-files-found: ignore

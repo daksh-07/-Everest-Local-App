@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState} from 'react';
-import {ActivityIndicator,Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
@@ -29,7 +30,7 @@ export default function Sound(){
  return <SafeAreaView style={s.safe}>
   <ScrollView contentContainerStyle={s.page}>
    <View style={s.header}><Pressable onPress={()=>router.back()} style={s.circle}><Ionicons name="chevron-back" size={22} color={colors.text}/></Pressable><Text style={s.headerTitle}>Sound</Text><View style={s.circle}/></View>
-   {loading?<ActivityIndicator color={colors.brand} style={{marginTop:100}}/>:error&&!sound?<View style={s.empty}><Ionicons name="musical-notes-outline" size={32} color={colors.muted}/><Text style={s.emptyTitle}>Sound unavailable</Text><Text style={s.emptyCopy}>{error}</Text></View>:sound?<>
+   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:100}}/>:error&&!sound?<View style={s.empty}><Ionicons name="musical-notes-outline" size={32} color={colors.muted}/><Text style={s.emptyTitle}>Sound unavailable</Text><Text style={s.emptyCopy}>{error}</Text></View>:sound?<>
     <View style={s.hero}>
      <Pressable onPress={()=>void toggle()} disabled={!sound.url} style={s.art}><Ionicons name={playing?'pause':'play'} size={34} color={colors.onBrand}/></Pressable>
      <Text style={s.kicker}>{sourceLabel(sound.source).toUpperCase()}</Text>
@@ -41,7 +42,7 @@ export default function Sound(){
     {sound.reusable?<View style={s.useCard}><Text style={s.useTitle}>Use this sound</Text><Text style={s.useCopy}>Start with this audio already loaded, then trim and mix it in Everest Studio.</Text><View style={s.useRow}><Pressable onPress={()=>startWithSound('clip')} style={s.primary}><Ionicons name="play-circle-outline" size={18} color={colors.onBrand}/><Text style={s.primaryText}>USE IN CLIP</Text></Pressable><Pressable onPress={()=>startWithSound('photo')} style={s.secondary}><Ionicons name="images-outline" size={18} color={colors.text}/><Text style={s.secondaryText}>USE WITH PHOTO</Text></Pressable></View></View>:<View style={s.notice}><Ionicons name="lock-closed-outline" size={17} color={colors.muted}/><Text style={s.noticeText}>The creator has not enabled reuse for this sound.</Text></View>}
 
     <View style={s.sectionHead}><Text style={s.sectionKicker}>USING THIS SOUND</Text><Text style={s.sectionCount}>{posts.length}</Text></View>
-    {posts.length?<View style={s.list}>{posts.map(post=><Pressable key={post.id} onPress={()=>router.push(('/social?mode='+(post.contentFormat==='CLIP'?'clips':'posts')+'&postId='+post.id) as never)} style={s.row}><View style={s.rowIcon}><Ionicons name={post.contentFormat==='CLIP'?'play':'images-outline'} size={18} color={colors.brand}/></View><View style={{flex:1,minWidth:0}}><Text numberOfLines={2} style={s.rowTitle}>{post.caption|| (post.contentFormat==='CLIP'?'Everest clip':'Everest post')}</Text><Text style={s.rowMeta}>{post.contentFormat==='CLIP'?'Clip':'Post'} · {new Date(post.createdAt).toLocaleDateString()}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>)}</View>:<View style={s.emptyUses}><Text style={s.emptyUsesText}>No visible posts are using this sound yet.</Text></View>}
+    {posts.length?<View style={s.list}>{posts.map(post=><Pressable key={post.id} onPress={()=>router.push(('/social?mode='+(post.contentFormat==='CLIP'?'clips':'posts')+'&postId='+post.id) as never)} style={s.row}><View style={s.rowIcon}><Ionicons name={post.contentFormat==='CLIP'?'play':'images-outline'} size={18} color={colors.accent}/></View><View style={{flex:1,minWidth:0}}><Text numberOfLines={2} style={s.rowTitle}>{post.caption|| (post.contentFormat==='CLIP'?'Everest clip':'Everest post')}</Text><Text style={s.rowMeta}>{post.contentFormat==='CLIP'?'Clip':'Post'} · {new Date(post.createdAt).toLocaleDateString()}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>)}</View>:<View style={s.emptyUses}><Text style={s.emptyUsesText}>No visible posts are using this sound yet.</Text></View>}
    </>:null}
   </ScrollView>
  </SafeAreaView>;

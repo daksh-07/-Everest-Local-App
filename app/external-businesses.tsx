@@ -1,5 +1,7 @@
 import {useEffect,useState} from 'react';
-import {ActivityIndicator,Modal,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
+import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -30,7 +32,7 @@ export default function ExternalBusinesses(){
    <Text style={{fontSize:12,lineHeight:18,color:c.muted,marginTop:8}}>Search businesses outside Everest. Results are clearly separated and searching never contacts a business.</Text>
    <View style={{flexDirection:'row',gap:8,marginTop:18}}><TextInput value={q} onChangeText={setQ} onSubmitEditing={()=>void search()} placeholder="Business or service" placeholderTextColor={c.muted} style={{flex:1,minHeight:48,borderRadius:14,borderWidth:1,borderColor:c.border,backgroundColor:c.input,color:c.text,paddingHorizontal:14,fontSize:16}}/><Pressable onPress={()=>void search()} style={{minWidth:48,borderRadius:14,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}}><Ionicons name="search" size={20} color={c.onBrand}/></Pressable></View>
    {loading?<ActivityIndicator style={{marginTop:35}} color={c.text}/>:enabled===false?<Text style={{fontSize:12,color:c.muted,marginTop:24}}>External discovery is currently disabled by its production feature gate.</Text>:items.map(x=><View key={x.referenceId} style={{marginTop:10,padding:14,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.surface}}>
-    <Text style={{fontSize:14,fontWeight:'900',color:c.text}}>{x.name}</Text><Text style={{fontSize:11,lineHeight:17,color:c.muted,marginTop:4}}>{x.address}</Text><Text style={{fontSize:9,fontWeight:'900',color:c.brand,marginTop:8}}>NOT YET ON EVEREST</Text>
+    <Text style={{fontSize:14,fontWeight:'900',color:c.text}}>{x.name}</Text><Text style={{fontSize:11,lineHeight:17,color:c.muted,marginTop:4}}>{x.address}</Text><Text style={{fontSize:9,fontWeight:'900',color:c.accent,marginTop:8}}>NOT YET ON EVEREST</Text>
     {enquiriesEnabled?<Pressable onPress={()=>{setSelected(x);void supabase.rpc('record_external_business_selection',{p_reference_id:x.referenceId})}} style={{alignSelf:'flex-start',marginTop:10,paddingHorizontal:12,paddingVertical:9,borderRadius:10,backgroundColor:c.brand}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>REQUEST QUOTE</Text></Pressable>:null}
    </View>)}
    {error?<Text style={{fontSize:12,color:c.danger,marginTop:14}}>{error}</Text>:null}

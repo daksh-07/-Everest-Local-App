@@ -1,7 +1,8 @@
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import {useCallback,useEffect,useMemo,useState} from 'react';
-import {Pressable,StyleSheet,Text,View,useWindowDimensions} from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {Gesture,GestureDetector} from 'react-native-gesture-handler';
 import Animated,{runOnJS,useAnimatedStyle,useSharedValue,withSpring,type SharedValue} from 'react-native-reanimated';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -15,7 +16,7 @@ type Destination='/'|'/social'|'/activity'|'/messages'|'/account';
 const items=[
  {route:'/' as Destination,label:'Home',icon:'home-outline' as const,selected:'home' as const,page:0 as CustomerPage},
  {route:'/social' as Destination,label:'Explore',icon:'compass-outline' as const,selected:'compass' as const,page:1 as CustomerPage},
- {route:'/activity' as Destination,label:'My Everest',icon:'pulse-outline' as const,selected:'pulse' as const,page:3 as CustomerPage},
+ {route:'/activity' as Destination,label:'Activity',icon:'pulse-outline' as const,selected:'pulse' as const,page:3 as CustomerPage},
  {route:'/messages' as Destination,label:'Messages',icon:'chatbubble-outline' as const,selected:'chatbubble' as const,page:4 as CustomerPage},
  {route:'/account' as Destination,label:'Account',icon:'person-outline' as const,selected:'person' as const,page:5 as CustomerPage},
 ];
@@ -43,7 +44,7 @@ export function CustomerTabBar({active,hidden=false,shell=false}:{active:Destina
  const bottom=Math.max(9,insets.bottom?insets.bottom+3:12);
  return <View accessibilityElementsHidden={hidden} importantForAccessibility={hidden?'no-hide-descendants':'auto'} aria-hidden={hidden} pointerEvents={hidden?'none':'auto'} style={[styles.shell,{bottom,opacity:hidden?0:1}]}><GestureDetector gesture={gesture}><View onLayout={event=>setBarWidth(event.nativeEvent.layout.width)} style={[styles.bar,{height:t.navigation.height,backgroundColor:colors.navigation,borderColor:colors.border,borderWidth:t.surfaces.borderWidth,shadowOpacity:reduced?0:t.surfaces.shadowOpacity}]}>
   {barWidth?<Animated.View pointerEvents="none" style={[styles.indicator,{backgroundColor:colors.brand},lineStyle]}/>:null}
-  {items.map((item,index)=><Pressable key={item.route} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{selected:item.route===active}} aria-selected={item.route===active} onPress={()=>navigate(index)} style={({pressed})=>[styles.item,pressed&&styles.pressed]}><TabIcon index={index} progress={progress} colors={colors} label={item.label} icon={item.icon} selected={item.selected} isSelected={item.route===active} showLabels={t.navigation.showLabels} labelSize={width<360?Math.min(t.navigation.labelSize,10):t.navigation.labelSize} iconSize={t.navigation.iconSize}/></Pressable>)}
+  {items.map((item,index)=><Pressable key={item.route} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{selected:item.route===active}} aria-selected={item.route===active} onPress={()=>navigate(index)} style={({pressed})=>[styles.item,pressed&&styles.pressed]}><TabIcon index={index} progress={progress} colors={colors} label={item.label} icon={item.icon} selected={item.selected} isSelected={item.route===active} showLabels={t.navigation.showLabels} labelSize={width<360?Math.min(t.navigation.labelSize,11):t.navigation.labelSize} iconSize={t.navigation.iconSize}/></Pressable>)}
  </View></GestureDetector></View>;
 }
-const styles=StyleSheet.create({shell:{position:'absolute',left:12,right:12,zIndex:70,alignItems:'center'},bar:{width:'100%',maxWidth:620,flexDirection:'row',alignItems:'center',borderRadius:18,paddingHorizontal:6,shadowColor:'#000',shadowRadius:14,shadowOffset:{width:0,height:9},elevation:6,overflow:'hidden'},item:{flex:1,height:'100%',alignItems:'center',justifyContent:'center'},pressed:{opacity:.7},iconContent:{width:'100%',alignItems:'center',justifyContent:'center'},icons:{width:30,height:29,alignItems:'center',justifyContent:'center'},iconLayer:{position:'absolute',alignItems:'center',justifyContent:'center'},label:{fontWeight:'800',marginTop:2,maxWidth:'100%',paddingHorizontal:2,textAlign:'center'},highlight:{position:'absolute',top:10,width:48,height:38,borderRadius:19},indicator:{position:'absolute',top:2,width:24,height:3,borderRadius:2}});
+const styles=StyleSheet.create({shell:{position:'absolute',left:12,right:12,zIndex:70,alignItems:'center'},bar:{width:'100%',maxWidth:620,flexDirection:'row',alignItems:'center',borderRadius:18,paddingHorizontal:6,shadowColor:'#000',shadowRadius:14,shadowOffset:{width:0,height:9},elevation:6,overflow:'hidden'},item:{flex:1,height:'100%',alignItems:'center',justifyContent:'center'},pressed:{opacity:.7},iconContent:{width:'100%',alignItems:'center',justifyContent:'center'},icons:{width:30,height:29,alignItems:'center',justifyContent:'center'},iconLayer:{position:'absolute',alignItems:'center',justifyContent:'center'},label:{fontWeight:'600',marginTop:2,maxWidth:'100%',paddingHorizontal:2,textAlign:'center'},highlight:{position:'absolute',top:10,width:48,height:38,borderRadius:19},indicator:{position:'absolute',top:2,width:24,height:3,borderRadius:2}});

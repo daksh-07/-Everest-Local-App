@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { ActivityIndicator, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {MotionPressable as Pressable} from './MotionPressable';
 import {useExperience} from '@/lib/experience';
 import {haptic} from '@/lib/haptics';
@@ -55,7 +56,7 @@ export function AppButton({
 const styles=StyleSheet.create({
   base:{minHeight:48,borderRadius:14,borderWidth:1,paddingHorizontal:18,paddingVertical:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8},
   full:{width:'100%'},
-  label:{flexShrink:1,textAlign:'center',fontSize:15,lineHeight:21,fontWeight:'700'},
+  label:{flexShrink:1,textAlign:'center',fontSize:15,lineHeight:21,fontWeight:'600'},
   disabled:{opacity:.46},
   pressed:{opacity:.82},
 });

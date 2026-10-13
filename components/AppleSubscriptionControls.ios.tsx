@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState} from 'react';
-import {ActivityIndicator,Pressable,StyleSheet,Text,View} from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {Ionicons} from '@expo/vector-icons';
 import {deepLinkToSubscriptions,finishTransaction,getAvailablePurchases,useIAP,type Purchase} from 'expo-iap';
 import {APPLE_PRO_PRODUCT_ID,verifyApplePurchase} from '@/lib/apple-billing';
@@ -82,7 +83,7 @@ export function AppleSubscriptionControls({businessId,active,provider,onActivate
 
  if(active&&provider==='STRIPE'){
   return <View style={st.note}>
-   <Ionicons name="checkmark-circle" size={18} color={colors.brand}/>
+   <Ionicons name="checkmark-circle" size={18} color={colors.accent}/>
    <Text style={st.noteText}>Everest Pro is already active through web billing. Your iPhone access is included.</Text>
   </View>;
  }
@@ -123,7 +124,7 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  primaryText:{fontSize:9,fontWeight:'900',color:c.onBrand,letterSpacing:.5},
  secondary:{height:43,borderWidth:1,borderColor:c.border,borderRadius:13,alignItems:'center',justifyContent:'center',marginTop:9},
  secondaryText:{fontSize:9,fontWeight:'900',color:c.text,letterSpacing:.4},
- success:{fontSize:10,lineHeight:15,color:c.brand,marginTop:10},
+ success:{fontSize:10,lineHeight:15,color:c.accent,marginTop:10},
  error:{fontSize:10,lineHeight:15,color:c.danger,marginTop:10},
  note:{marginTop:18,borderWidth:1,borderColor:c.border,borderRadius:16,backgroundColor:c.soft,padding:14,flexDirection:'row',gap:9,alignItems:'center'},
  noteText:{fontSize:10,lineHeight:16,color:c.muted,flex:1},

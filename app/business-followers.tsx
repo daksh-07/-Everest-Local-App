@@ -1,5 +1,6 @@
 import {useEffect,useState} from 'react';
-import {ActivityIndicator,Image,Pressable,ScrollView,Text,View} from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';

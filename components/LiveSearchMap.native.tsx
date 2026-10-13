@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useRef} from 'react';
-import {StyleSheet,Text,View} from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import MapView,{Circle,Marker,type MapStyleElement,type Region} from 'react-native-maps';
 import {Ionicons} from '@expo/vector-icons';
 import {type LiveMapPoint} from '@/lib/everest-live';

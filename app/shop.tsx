@@ -1,7 +1,9 @@
 import {MotionPressable as Pressable} from '@/components/ui/MotionPressable';
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import {useFocusEffect} from '@react-navigation/native';
-import {ActivityIndicator,Image,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
+import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router,useLocalSearchParams} from 'expo-router';

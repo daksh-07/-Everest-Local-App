@@ -1,5 +1,6 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
-import {ActivityIndicator,Pressable,RefreshControl,ScrollView,StyleSheet,Text,View} from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
@@ -84,9 +85,9 @@ export default function BusinessJobs(){
 
  const verified=business?.verification_status==='VERIFIED';
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}>
-  <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.brand}/>} contentContainerStyle={st.page} showsVerticalScrollIndicator={false}>
+  <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>} contentContainerStyle={st.page} showsVerticalScrollIndicator={false}>
    <View style={st.header}><View style={{flex:1}}><Text style={st.mode}>BUSINESS MODE</Text><Text style={st.name}>{business?.name??'Business'}</Text></View><ModeSwitcher compact/></View>
-   <View style={st.titleRow}><View style={{flex:1}}><Text style={st.title}>Jobs</Text><Text style={st.copy}>Booked work lives here. New customer requests stay in Incoming Work until you respond.</Text></View><Pressable onPress={()=>router.push('/business-leads')} style={st.incoming}><Ionicons name="flash-outline" size={15} color={colors.brand}/><Text style={st.incomingText}>NEW WORK</Text></Pressable></View>
+   <View style={st.titleRow}><View style={{flex:1}}><Text style={st.title}>Jobs</Text><Text style={st.copy}>Booked work lives here. New customer requests stay in Incoming Work until you respond.</Text></View><Pressable onPress={()=>router.push('/business-leads')} style={st.incoming}><Ionicons name="flash-outline" size={15} color={colors.accent}/><Text style={st.incomingText}>NEW WORK</Text></Pressable></View>
 
    {!verified&&business?<View style={st.restricted}><Text style={st.restrictedTitle}>Jobs are restricted</Text><Text style={st.copy}>Complete business verification before operating customer bookings.</Text></View>:null}
 
@@ -94,7 +95,7 @@ export default function BusinessJobs(){
     {(['TODAY','UPCOMING','ACTIVE','COMPLETED'] as const).map(value=><Pressable key={value} onPress={()=>setTab(value)} style={[st.tab,tab===value&&st.tabOn]}><Text style={[st.tabText,tab===value&&st.tabTextOn]}>{value}</Text><Text style={[st.tabCount,tab===value&&st.tabCountOn]}>{counts[value]}</Text></Pressable>)}
    </ScrollView>
 
-   {loading?<ActivityIndicator color={colors.brand} style={{marginTop:45}}/>:items.length?<View style={st.list}>{items.map(job=>{
+   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:45}}/>:items.length?<View style={st.list}>{items.map(job=>{
     const isToday=job.scheduled_date===dateKey();
     return <Pressable onPress={()=>router.push({pathname:'/business-job',params:{id:job.id}})} style={({pressed})=>[st.card,pressed&&{opacity:.72}]} key={job.id}>
      <View style={st.dateBlock}><Text style={st.day}>{job.scheduled_date?new Date(job.scheduled_date+'T12:00:00').toLocaleDateString(undefined,{day:'numeric'}):'—'}</Text><Text style={st.month}>{job.scheduled_date?new Date(job.scheduled_date+'T12:00:00').toLocaleDateString(undefined,{month:'short'}).toUpperCase():'DATE'}</Text></View>
@@ -103,7 +104,7 @@ export default function BusinessJobs(){
      </View>
      {job.price!=null?<Text style={st.price}>{money(Number(job.price))}</Text>:null}
     </Pressable>
-   })}</View>:<View style={st.empty}><View style={st.emptyIcon}><Ionicons name={tab==='COMPLETED'?'checkmark-circle-outline':'briefcase-outline'} size={23} color={colors.brand}/></View><View style={{flex:1}}><Text style={st.emptyTitle}>{tab==='TODAY'?'No booked work today.':tab==='ACTIVE'?'Nothing is in progress.':tab==='UPCOMING'?'No upcoming booked jobs.':'No completed jobs yet.'}</Text><Text style={st.copy}>{tab==='TODAY'?'New accepted work will appear here automatically.':'Pull down to refresh or check Incoming Work.'}</Text></View></View>}</>:null}
+   })}</View>:<View style={st.empty}><View style={st.emptyIcon}><Ionicons name={tab==='COMPLETED'?'checkmark-circle-outline':'briefcase-outline'} size={23} color={colors.accent}/></View><View style={{flex:1}}><Text style={st.emptyTitle}>{tab==='TODAY'?'No booked work today.':tab==='ACTIVE'?'Nothing is in progress.':tab==='UPCOMING'?'No upcoming booked jobs.':'No completed jobs yet.'}</Text><Text style={st.copy}>{tab==='TODAY'?'New accepted work will appear here automatically.':'Pull down to refresh or check Incoming Work.'}</Text></View></View>}</>:null}
 
    {error?<View style={st.errorBox}><Ionicons name="alert-circle-outline" size={16} color={colors.danger}/><Text style={st.error}>{error}</Text></View>:null}
   </ScrollView>
@@ -114,8 +115,8 @@ export default function BusinessJobs(){
 const styles=(c:ThemeColors)=>StyleSheet.create({
  safe:{flex:1,backgroundColor:c.canvas},page:{padding:20,paddingBottom:110,maxWidth:820,width:'100%',alignSelf:'center'},header:{flexDirection:'row',alignItems:'center',gap:10},mode:{fontSize:12,fontWeight:'900',letterSpacing:1.3,color:c.muted},name:{fontSize:15,fontWeight:'900',color:c.text,marginTop:2},
  titleRow:{marginTop:24,flexDirection:'row',alignItems:'flex-end',gap:12},title:{fontSize:34,fontWeight:'900',color:c.text},copy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:5},incoming:{height:40,borderRadius:12,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:11,flexDirection:'row',alignItems:'center',gap:6},incomingText:{fontSize:12,fontWeight:'900',letterSpacing:.6,color:c.text},
- tabs:{gap:7,paddingTop:20,paddingBottom:13},tab:{minWidth:92,height:45,borderRadius:14,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:11,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:7},tabOn:{backgroundColor:c.elevated,borderColor:c.brand},tabText:{fontSize:12,fontWeight:'900',letterSpacing:.5,color:c.muted},tabTextOn:{color:c.text},tabCount:{fontSize:12,fontWeight:'900',color:c.muted},tabCountOn:{color:c.brand},
- list:{marginTop:1},card:{minHeight:132,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'flex-start',paddingVertical:16,gap:13},dateBlock:{width:52,height:57,borderRadius:15,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},day:{fontSize:19,fontWeight:'900',color:c.text},month:{fontSize:12,fontWeight:'900',letterSpacing:.8,color:c.muted,marginTop:1},jobBody:{flex:1},row:{flexDirection:'row',alignItems:'center',gap:6},statusDot:{width:6,height:6,borderRadius:3},status:{fontSize:12,fontWeight:'900',color:c.muted},today:{fontSize:12,fontWeight:'900',color:c.brand,letterSpacing:.7},when:{fontSize:18,fontWeight:'900',color:c.text,marginTop:7},meta:{fontSize:12,color:c.muted,marginTop:3},price:{fontSize:14,fontWeight:'900',color:c.text,marginTop:3},
+ tabs:{gap:7,paddingTop:20,paddingBottom:13},tab:{minWidth:92,height:45,borderRadius:14,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:11,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:7},tabOn:{backgroundColor:c.elevated,borderColor:c.brand},tabText:{fontSize:12,fontWeight:'900',letterSpacing:.5,color:c.muted},tabTextOn:{color:c.text},tabCount:{fontSize:12,fontWeight:'900',color:c.muted},tabCountOn:{color:c.accent},
+ list:{marginTop:1},card:{minHeight:132,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'flex-start',paddingVertical:16,gap:13},dateBlock:{width:52,height:57,borderRadius:15,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},day:{fontSize:19,fontWeight:'900',color:c.text},month:{fontSize:12,fontWeight:'900',letterSpacing:.8,color:c.muted,marginTop:1},jobBody:{flex:1},row:{flexDirection:'row',alignItems:'center',gap:6},statusDot:{width:6,height:6,borderRadius:3},status:{fontSize:12,fontWeight:'900',color:c.muted},today:{fontSize:12,fontWeight:'900',color:c.accent,letterSpacing:.7},when:{fontSize:18,fontWeight:'900',color:c.text,marginTop:7},meta:{fontSize:12,color:c.muted,marginTop:3},price:{fontSize:14,fontWeight:'900',color:c.text,marginTop:3},
  actions:{flexDirection:'row',gap:7,marginTop:12},primary:{minHeight:39,borderRadius:11,backgroundColor:c.brand,paddingHorizontal:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6},primaryText:{fontSize:14,fontWeight:'900',color:c.onBrand},secondary:{minHeight:39,borderRadius:11,borderWidth:1,borderColor:c.border,paddingHorizontal:11,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6},secondaryText:{fontSize:14,fontWeight:'900',color:c.text},
  empty:{backgroundColor:c.surface,borderRadius:18,borderWidth:1,borderColor:c.border,padding:18,marginTop:7,flexDirection:'row',gap:12,alignItems:'center'},emptyIcon:{width:44,height:44,borderRadius:15,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},emptyTitle:{fontSize:14,fontWeight:'900',color:c.text},restricted:{backgroundColor:c.elevated,borderWidth:1,borderColor:c.border,borderRadius:18,padding:17,marginTop:18},restrictedTitle:{fontSize:16,fontWeight:'900',color:c.text},errorBox:{marginTop:12,borderWidth:1,borderColor:c.danger,borderRadius:13,padding:11,flexDirection:'row',alignItems:'center',gap:7},error:{fontSize:14,color:c.danger,flex:1},
 });

@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
 import { useAppTheme } from '@/lib/theme';
 
 export function ErrorBanner({message,onRetry,retryLabel='Try again'}:{message:string;onRetry?:()=>void;retryLabel?:string}){

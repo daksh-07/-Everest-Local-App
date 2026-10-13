@@ -1,17 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Animated,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/ui/AppText';
+import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -578,7 +568,7 @@ export default function Request() {
       <SafeAreaView style={s.safe}>
         <View style={s.success}>
           <View style={s.successIcon}>
-            <Ionicons name="sparkles" size={28} color={colors.brand} />
+            <Ionicons name="sparkles" size={28} color={colors.accent} />
           </View>
           <Text style={s.title}>
             We’re finding the best businesses near you.
@@ -658,7 +648,7 @@ export default function Request() {
                 key={label}
                 style={[
                   s.stepLabel,
-                  { color: step === index + 1 ? colors.brand : colors.muted },
+                  { color: step === index + 1 ? colors.accent : colors.muted },
                 ]}
               >
                 {label}
@@ -707,7 +697,7 @@ export default function Request() {
                     }}
                   />
                 ) : serviceLoading ? (
-                  <ActivityIndicator color={colors.brand} />
+                  <ActivityIndicator color={colors.accent} />
                 ) : (
                   <View style={s.selected}>
                     <Text style={s.eyebrow}>SELECTED SERVICE</Text>
@@ -771,7 +761,7 @@ export default function Request() {
                         <Ionicons
                           name="location"
                           size={21}
-                          color={colors.brand}
+                          color={colors.accent}
                         />
                         <View style={{ flex: 1 }}>
                           <Text style={s.locationName}>
@@ -790,7 +780,7 @@ export default function Request() {
                           <Ionicons
                             name="checkmark-circle"
                             size={23}
-                            color={colors.brand}
+                            color={colors.accent}
                           />
                         ) : null}
                       </View>
@@ -904,7 +894,7 @@ export default function Request() {
                     <Ionicons
                       name="globe-outline"
                       size={20}
-                      color={colors.brand}
+                      color={colors.accent}
                     />
                     <Text style={s.meta}>
                       Remote request — no GPS or local address is required.
@@ -1324,7 +1314,7 @@ function Review({
           {value}
         </Text>
       </View>
-      <Text style={{ fontSize: 12, fontWeight: "900", color: colors.brand }}>
+      <Text style={{ fontSize: 12, fontWeight: "900", color:colors.accent }}>
         EDIT
       </Text>
     </Pressable>
@@ -1344,7 +1334,7 @@ function ProgressRow({ done, label }: { done: boolean; label: string }) {
       <Ionicons
         name={done ? "checkmark-circle" : "ellipse-outline"}
         size={18}
-        color={done ? colors.brand : colors.muted}
+        color={done ? colors.accent : colors.muted}
       />
       <Text style={{ fontSize: 12, color: colors.text }}>{label}</Text>
     </View>
@@ -1513,7 +1503,7 @@ const styles = (c: ThemeColors) =>
       justifyContent: "center",
       paddingVertical: 10,
     },
-    textButtonText: { fontSize: 14, fontWeight: "900", color: c.brand },
+    textButtonText: { fontSize: 14, fontWeight: "900", color:c.accent },
     remote: {
       borderWidth: 1,
       borderColor: c.border,
