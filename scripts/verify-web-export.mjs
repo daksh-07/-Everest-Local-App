@@ -14,7 +14,7 @@ for (const file of requiredFiles) {
 }
 
 const manifest = JSON.parse(await readFile(join(dist, 'manifest.json'), 'utf8'));
-if (manifest?.name !== 'Everest Local' || manifest?.display !== 'standalone' || manifest?.start_url !== '/' || manifest?.background_color !== '#151513') {
+if (manifest?.name !== 'Everest Local' || manifest?.display !== 'standalone' || manifest?.start_url !== '/' || (manifest?.background_color !== '#000000' || manifest?.theme_color !== '#000000')) {
   throw new Error('Web export is incomplete: manifest.json is missing the required Everest Local PWA settings.');
 }
 for (const icon of ['/icon-192.png', '/icon-512.png']) {
