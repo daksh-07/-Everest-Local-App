@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {fontFace,fontFaces,typography,isDisplayRole} from '../lib/typography.ts';
+import {fontFace,fontFaces,typography,isDisplayRole,nativeFontStyle} from '../lib/typography.ts';
 
 test('real faces cover interface weights and legacy bold without synthetic variants',()=>{
   assert.equal(fontFace('400'),fontFaces.regular);
@@ -27,6 +27,7 @@ test('every native PostScript alias and weight is embedded and has a web counter
     assert.equal(tables.has('fvar'),false,'Unsupported variable axes are not bundled');
     const weight=bytes.readUInt16BE(tables.get('OS/2')+4);
     assert.equal(weight,name.endsWith('SemiBold')?600:name.endsWith('Bold')?700:name.endsWith('Medium')?500:400);
+    assert.equal(nativeFontStyle(name).fontWeight,String(weight),'iOS/Android requests the embedded face’s actual weight');
     const nameAt=tables.get('name'),strings=nameAt+bytes.readUInt16BE(nameAt+4);let postscript;
     for(let i=0;i<bytes.readUInt16BE(nameAt+2);i++){
       const at=nameAt+6+i*12;if(bytes.readUInt16BE(at+6)!==6)continue;

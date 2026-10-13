@@ -1,7 +1,7 @@
 import { createContext,forwardRef,useContext } from 'react';
 import { Platform,StyleSheet,Text as NativeText,type TextProps,type TextStyle } from 'react-native';
 import { FontReadyContext } from '@/lib/font-ready';
-import { fontFace,isDisplayRole,typography,type TypographyRole } from '@/lib/typography';
+import { fontFace,nativeFontStyle,isDisplayRole,typography,type TypographyRole } from '@/lib/typography';
 
 const InheritedWeight=createContext<TextStyle['fontWeight']>('400');
 type Props=TextProps&{variant?:TypographyRole;tabular?:boolean};
@@ -15,7 +15,7 @@ export const AppText=forwardRef<NativeText,Props>(function AppText({variant,tabu
   const face=fontFace(weight,isDisplayRole(variant));
   const font:TextStyle=flat?.fontFamily?{}:Platform.OS==='web'
     ?{fontFamily:`"${face}", system-ui, -apple-system, sans-serif`,fontWeight:'normal'}
-    :ready&&flat?.fontStyle!=='italic'?{fontFamily:face,fontWeight:'normal'}:{};
+    :ready&&flat?.fontStyle!=='italic'?nativeFontStyle(face):{};
   return <InheritedWeight.Provider value={weight}><NativeText {...props} ref={ref} style={[role,style,font,tabular&&{fontVariant:['tabular-nums']}]}>{children}</NativeText></InheritedWeight.Provider>;
 });
 

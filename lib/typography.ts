@@ -23,3 +23,8 @@ export function fontFace(weight:TextStyle['fontWeight']='400',display=false) {
   return display ? value>=700?fontFaces.displayBold:fontFaces.display
     : value>=700?fontFaces.bold:value>=600?fontFaces.semibold:value>=500?fontFaces.medium:fontFaces.regular;
 }
+/** iOS resolves PostScript names through their family; retain the real weight. */
+export function nativeFontStyle(face:ReturnType<typeof fontFace>):TextStyle {
+  const fontWeight=face.endsWith('SemiBold')?'600':face.endsWith('Bold')?'700':face.endsWith('Medium')?'500':'400';
+  return {fontFamily:face,fontWeight};
+}
