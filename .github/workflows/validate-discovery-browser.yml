@@ -16,6 +16,19 @@ on:
       - 'app/index.tsx'
       - 'app/search.tsx'
       - 'app/social.tsx'
+      - 'app/bookings.tsx'
+      - 'app/orders.tsx'
+      - 'app/notifications.tsx'
+      - 'app/business-profile.tsx'
+      - 'app/business-today.tsx'
+      - 'app/+html.tsx'
+      - 'public/index.html'
+      - 'public/interaction-focus.css'
+      - 'components/ui/ContentSkeleton.tsx'
+      - 'components/ui/EmptyState.tsx'
+      - 'components/ui/ErrorBanner.tsx'
+      - 'scripts/verify-visual-refinement.mjs'
+      - 'components/BusinessTabBar.tsx'
       - 'components/CustomerTabBar.tsx'
       - 'components/GlobalSwipeNavigator.tsx'
       - 'components/ServiceCategoryGrid.tsx'
@@ -81,6 +94,7 @@ jobs:
           fi
           node scripts/verify-discovery-foundation.mjs
           node scripts/verify-search-discovery.mjs
+          EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/refinement node scripts/verify-visual-refinement.mjs
           EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/typography node scripts/verify-typography-browser.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()

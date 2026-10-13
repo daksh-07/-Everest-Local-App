@@ -1,0 +1,69 @@
+{
+  "base": "http://localhost:8087",
+  "engine": "chromium",
+  "before": false,
+  "fixture": true,
+  "layouts": [
+    {
+      "screen": "today",
+      "width": 320,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 375,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 390,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 430,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 768,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 1440,
+      "theme": "LIGHT"
+    },
+    {
+      "screen": "today",
+      "width": 320,
+      "theme": "DARK"
+    },
+    {
+      "screen": "today",
+      "width": 375,
+      "theme": "DARK"
+    },
+    {
+      "screen": "today",
+      "width": 390,
+      "theme": "DARK"
+    },
+    {
+      "screen": "today",
+      "width": 430,
+      "theme": "DARK"
+    },
+    {
+      "screen": "today",
+      "width": 768,
+      "theme": "DARK"
+    },
+    {
+      "screen": "today",
+      "width": 1440,
+      "theme": "DARK"
+    }
+  ],
+  "states": "loading/error/retry/empty; existing booking filters"
+}

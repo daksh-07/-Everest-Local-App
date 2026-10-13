@@ -1,0 +1,14 @@
+/* Visual feedback only. Use the selected theme's text token for contrast. */
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--everest-text, #121411) !important;
+  outline-offset: 3px !important;
+}
+@media (forced-colors: active) {
+  [role="button"]:focus-visible,
+  [role="tab"]:focus-visible,
+  button:focus-visible,
+  a:focus-visible { outline-color: Highlight !important; }
+}

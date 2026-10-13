@@ -1,6 +1,14 @@
 # Everest Local — continuation handoff
 
-Continue the existing implementation. Do not restart the redesign or discard completed changes. The latest user explicitly requests a Scout to continue after two hours and adds typography as a fundamental identity requirement.
+Continue the existing implementation. Do not restart or duplicate merged releases.
+
+## Current review boundary — supersedes earlier release instructions
+
+The latest SYNSATION-inspired directive authorizes **visual-only implementation and a draft PR**, with **no merge or production deployment**. Preserve every action, destination, permission, data flow, payment and market restriction. Functional changes require explicit owner approval.
+
+Current isolated branch: `codex/synsation-visual-refinement-2026-10-13`, based on main/production `2c3ef4db3ee4a281d8c0dbb1853eab2e51740665`. Releases #98/#99/#100 are already merged; beige/grey/black and Bricolage/Inter are retained. See [current implementation and QA](synsation-visual-refinement.md), [verified research](synsation-visual-research.md), and the actual before/after evidence gallery in `experience-v2-evidence/synsation/`.
+
+Earlier functional experiments are isolated in local branch `codex/business-discovery-loading-2026-10-13`, commit `49bef46`; they are excluded from the visual review branch and must not be cherry-picked without approval. No production/backend changes were made in this visual milestone. Future continuation must recheck the PR, CI, deployment provenance and concurrent branches before editing. No future scheduled scout is established by this handoff itself.
 
 ## Latest user direction (takes precedence)
 
