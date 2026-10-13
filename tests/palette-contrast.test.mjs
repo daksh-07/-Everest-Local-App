@@ -17,3 +17,16 @@ test('beige actions and foreground/semantic text meet AA in light and dark surfa
     }
   }
 });
+
+
+test('dark mode uses true black and neutral un-tinted surfaces',()=>{
+  assert.equal(dark.canvas,'#000000','The main dark canvas must be real black');
+  for(const key of ['surface','elevated','soft','input','navigation','border','accentSoft']){
+    const hex=dark[key];
+    assert.match(hex,/^#[0-9a-f]{6}$/i,`${key} must be an opaque hex color`);
+    const [r,g,b]=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
+    assert.equal(r,g,`${key} must have no red/brown tint`);
+    assert.equal(g,b,`${key} must have no green/olive tint`);
+  }
+  assert.equal(light.canvas,'#F7F5F0','Light palette must remain unchanged');
+});
