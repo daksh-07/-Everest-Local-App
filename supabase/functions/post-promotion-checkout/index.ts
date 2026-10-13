@@ -29,6 +29,20 @@ Deno.serve(async req=>{
  const admin=createClient(url,service);
  const {data:{user}}=await userClient.auth.getUser();
  if(!user)return json({error:'Invalid session'},401);
+ // Promotions price in AUD. Scope the post's business or its author's profile
+ // before create_post_promotion can generate or reuse a Stripe Checkout session.
+ const {data:post,error:postError}=await admin.from('posts')
+  .select('id,business_id,author_id').eq('id',postId).maybeSingle();
+ if(postError||!post)return json({error:'Post not available for promotion.'},404);
+ const marketQuery=post.business_id
+  ?admin.from('businesses').select('country').eq('id',post.business_id).maybeSingle()
+  :admin.from('profiles').select('country').eq('id',post.author_id).maybeSingle();
+ const {data:marketOwner,error:marketError}=await marketQuery;
+ const country=typeof marketOwner?.country==='string'?marketOwner.country.trim().toUpperCase():'';
+ if(marketError||!marketOwner||!['','AU','AUS','AUSTRALIA'].includes(country)){
+  return json({error:'Post promotions are not yet available for Everest India. No payment was taken.'},409);
+ }
+
 
  try{
   const {data:raw,error}=await userClient.rpc('create_post_promotion',{
