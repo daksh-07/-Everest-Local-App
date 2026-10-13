@@ -291,7 +291,7 @@ export default function Assistant() {
                       style={({ pressed }) => [s.starterCard, pressed && s.pressed, busy && s.disabled]}
                     >
                       <View style={s.starterIcon}>
-                        <Ionicons name={item.icon} size={18} color={colors.brand} />
+                        <Ionicons name={item.icon} size={18} color={colors.accent} />
                       </View>
                       <Text style={s.starterText}>{item.label}</Text>
                       <Ionicons name="arrow-up-outline" size={15} color={colors.muted} style={s.diagonalArrow} />
@@ -337,7 +337,7 @@ export default function Assistant() {
                       <Ionicons name="sparkles" size={14} color={colors.onBrand} />
                     </View>
                     <View style={s.thinkingBubble}>
-                      <ActivityIndicator size="small" color={colors.brand} />
+                      <ActivityIndicator size="small" color={colors.accent} />
                       <Text style={s.thinkingText}>Everest is thinking</Text>
                     </View>
                   </View>
@@ -483,7 +483,7 @@ const createStyles = (c: ThemeColors) =>
 
     eyebrow: {
       textAlign: 'center',
-      color: c.brand,
+      color:c.accent,
       fontSize: 12,
       fontWeight: '900',
       letterSpacing: 1.8,
@@ -640,7 +640,7 @@ const createStyles = (c: ThemeColors) =>
     errorBody: { flex: 1 },
     errorTitle: { color: c.text, fontSize: 14, fontWeight: '800' },
     errorText: { color: c.textSecondary, fontSize: 14, lineHeight: 20, marginTop: 3 },
-    errorLink: { color: c.brand, fontSize: 14, fontWeight: '800', marginTop: 9 },
+    errorLink: { color:c.accent, fontSize: 14, fontWeight: '800', marginTop: 9 },
 
     composerShell: {
       paddingHorizontal: 14,

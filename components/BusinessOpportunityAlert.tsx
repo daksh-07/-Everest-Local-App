@@ -133,10 +133,10 @@ export function BusinessOpportunityAlert(){
    <View style={[s.handle,{backgroundColor:colors.border}]}/>
    <View style={s.heading}>
     <View style={{flex:1}}>
-     <Text style={[s.eyebrow,{color:colors.brand}]}>{item.is_live?'EVEREST LIVE REQUEST':'NEW JOB NEAR YOU'}</Text>
+     <Text style={[s.eyebrow,{color:colors.accent}]}>{item.is_live?'EVEREST LIVE REQUEST':'NEW JOB NEAR YOU'}</Text>
      <Text numberOfLines={2} style={[s.title,{color:colors.text}]}>{r?.description||'New customer request'}</Text>
     </View>
-    <View style={[s.live,{backgroundColor:colors.accentSoft}]}><View style={[s.liveDot,{backgroundColor:colors.success}]}/><Text style={[s.liveText,{color:colors.brand}]}>LIVE</Text></View>
+    <View style={[s.live,{backgroundColor:colors.accentSoft}]}><View style={[s.liveDot,{backgroundColor:colors.success}]}/><Text style={[s.liveText,{color:colors.accent}]}>LIVE</Text></View>
    </View>
    <View style={s.metaRow}>
     {location?<Text style={[s.meta,{color:colors.muted}]}>📍 {location}</Text>:null}

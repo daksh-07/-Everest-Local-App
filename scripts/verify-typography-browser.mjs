@@ -5,6 +5,8 @@ const engines=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const engine=process.env.EVEREST_QA_BROWSER||'chromium';const base=process.env.EVEREST_PREVIEW_URL||'http://localhost:8083';const output=process.env.EVEREST_QA_ARTIFACTS||'/tmp/everest-typography-qa';const before=process.env.EVEREST_TYPOGRAPHY_BEFORE==='1';
 const browser=await engines[engine].launch(engine==='chromium'?{executablePath:process.env.EVEREST_BROWSER_PATH||'/usr/bin/chromium',args:['--no-sandbox']}:{});
 await fs.mkdir(output,{recursive:true});
+const widths=process.env.EVEREST_QA_WIDTHS?.split(',').map(Number)??(before?[320,390]:[320,360,375,390,430,768,1440]);
+const screens=process.env.EVEREST_QA_SCREENS?.split(',')??['home','search','business','product','chat','today'];
 const id='11111111-1111-4111-8111-111111111111',other='22222222-2222-4222-8222-222222222222',biz='33333333-3333-4333-8333-333333333333';
 const name='North Melbourne Home & Garden Services';
 const user={id,aud:'authenticated',role:'authenticated',email:'fixture@example.invalid',app_metadata:{},user_metadata:{},created_at:'2026-01-01T00:00:00Z'};
@@ -13,7 +15,7 @@ const session={access_token:`${Buffer.from('{}').toString('base64url')}.${Buffer
 const conversation={id:other,other_user_id:other,display_name:'Alex · QA fixture',avatar_url:null,status:'ACTIVE',initiated_by:id,updated_at:'2026-10-12T12:00:00Z',latest_message:'Could we arrange collection after 5 pm?',latest_message_at:'2026-10-12T12:00:00Z',unread_count:0};
 const thread=[{id:'message-one',conversation_id:other,sender_id:other,body:'Hi! Could we arrange collection after 5 pm? I would also like to confirm the dimensions before coming over.',read_at:'2026-10-12T12:01:00Z',created_at:'2026-10-12T12:00:00Z',reactions:[]},{id:'message-two',conversation_id:other,sender_id:id,body:'Thanks. I’ll check the details and message you before you travel.',read_at:null,created_at:'2026-10-12T12:02:00Z',reactions:[]}];
 const results=[];
-for(const theme of before?['LIGHT']:['LIGHT','DARK'])for(const width of before?[320,390]:[320,360,375,390,430,768,1440])for(const screen of ['home','search','business','product','chat','today']){
+for(const theme of before?['LIGHT']:['LIGHT','DARK'])for(const width of widths)for(const screen of screens){
  const context=await browser.newContext({viewport:{width,height:844},isMobile:width<768,hasTouch:true});
  await context.addInitScript(({theme,session,auth})=>{localStorage.setItem('everest-local-theme',theme);if(auth)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session));},{theme,session,auth:['chat','today'].includes(screen)});
  const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -38,7 +40,7 @@ for(const theme of before?['LIGHT']:['LIGHT','DARK'])for(const width of before?[
  const paths={home:'/',search:'/search',business:`/business-profile?id=${biz}`,product:`/product?id=${other}`,chat:`/messages?personalId=${other}`,today:'/business-today'};
  await page.goto(base+paths[screen],{waitUntil:'networkidle'});
  const target={home:'What do you need today?',search:'Find a local service',business:name,product:'Hand-finished oak side table with a natural matte finish',chat:'Thanks. I’ll check the details and message you before you travel.',today:'Today'}[screen];
- try { await page.getByText(target,{exact:true}).first().waitFor({timeout:15000}); } catch(error) {
+ try { await page.getByText(target,{exact:true}).filter({visible:true}).first().waitFor({timeout:15000}); } catch(error) {
   await page.screenshot({path:`${output}/failure-${screen}-${width}-${theme}.png`});
   await fs.writeFile(`${output}/failure.json`,JSON.stringify({screen,width,theme,url:page.url(),errors,text:await page.locator('body').innerText()},null,2));throw error;
  }
@@ -46,8 +48,8 @@ for(const theme of before?['LIGHT']:['LIGHT','DARK'])for(const width of before?[
  assert.equal(errors.length,0,errors.join('\n'));
  const geometry=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert.ok(geometry.scroll<=width+1,`${screen} overflow at ${width}`);
  if(!before){
-  const family=await page.getByText(target,{exact:true}).first().evaluate(e=>getComputedStyle(e).fontFamily);
-  assert.ok(family.includes(['home','search','business','product','today'].includes(screen)?'BricolageGrotesque':'Inter-'),`${screen} ${width} ${theme}: ${family}; ${await page.getByText(target,{exact:true}).first().evaluate(e=>e.outerHTML.slice(0,400))}`);
+  const family=await page.getByText(target,{exact:true}).filter({visible:true}).first().evaluate(e=>getComputedStyle(e).fontFamily);
+  assert.ok(family.includes(['home','search','business','product','today'].includes(screen)?'BricolageGrotesque':'Inter-'),`${screen} ${width} ${theme}: ${family}; ${await page.getByText(target,{exact:true}).filter({visible:true}).first().evaluate(e=>e.outerHTML.slice(0,400))}`);
   if(screen==='chat'){
    const composer=page.locator('#everest-message-composer');await composer.fill('Checking the new font on a narrow phone');
    const style=await composer.evaluate(e=>({font:getComputedStyle(e).fontFamily,size:parseFloat(getComputedStyle(e).fontSize)}));assert.ok(style.font.includes('Inter-')&&style.size>=16);

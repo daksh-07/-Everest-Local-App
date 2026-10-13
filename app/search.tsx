@@ -465,7 +465,7 @@ export default function Search(){
                   {[job.suburb,job.city,job.state].filter(Boolean).join(', ')||'Local job'}
                   {job.budget!=null?' · Budget $'+Number(job.budget).toFixed(0):''}
                 </Text>
-                <Text style={{fontSize:12,fontWeight:'900',color:c.brand,marginTop:5}}>JOB</Text>
+                <Text style={{fontSize:12,fontWeight:'900',color:c.accent,marginTop:5}}>JOB</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.muted}/>
             </Pressable>
@@ -492,7 +492,7 @@ export default function Search(){
               <View style={{flex:1}}>
                 <Text style={{fontSize:16,lineHeight:22,fontWeight:'700',color:c.text}}>{x.title}</Text>
                 <Text numberOfLines={2} style={{fontSize:14,lineHeight:20,color:c.textSecondary,marginTop:4}}>{x.subtitle}</Text>
-                <Text style={{fontSize:12,fontWeight:'900',color:c.brand,marginTop:5}}>{x.kind==='PERSON'?'PERSON':x.kind}</Text>
+                <Text style={{fontSize:12,fontWeight:'900',color:c.accent,marginTop:5}}>{x.kind==='PERSON'?'PERSON':x.kind}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.muted}/>
             </Pressable>
@@ -599,7 +599,7 @@ export default function Search(){
                 <Text style={{fontSize:13,fontWeight:'800',color:c.text}}>Only results with a photo or logo</Text>
                 <Text style={{fontSize:12,color:c.muted,marginTop:2}}>Useful for quickly finding established profiles</Text>
               </View>
-              <Ionicons name={photoOnly?'checkmark-circle':'ellipse-outline'} size={22} color={photoOnly?c.brand:c.muted}/>
+              <Ionicons name={photoOnly?'checkmark-circle':'ellipse-outline'} size={22} color={photoOnly?c.accent:c.muted}/>
             </Pressable>
 
             <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>SORT</Text>

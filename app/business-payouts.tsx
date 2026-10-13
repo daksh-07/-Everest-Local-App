@@ -71,7 +71,7 @@ export default function BusinessPayouts(){
 
  return <SafeAreaView style={s.safe} edges={['top','left','right']}>
   <ScrollView
-   refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.brand}/>}
+   refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>}
    contentContainerStyle={s.page}
    showsVerticalScrollIndicator={false}>
    <View style={s.header}>
@@ -79,9 +79,9 @@ export default function BusinessPayouts(){
     <View style={{flex:1}}><Text style={s.eyebrow}>BUSINESS PAYOUTS</Text><Text style={s.title}>Payments & bank</Text></View>
    </View>
 
-   {loading?<ActivityIndicator color={colors.brand} style={{marginTop:70}}/>:!business?<View style={s.empty}><Text style={s.emptyTitle}>No business profile</Text><Text style={s.copy}>Create a business before setting up payments.</Text></View>:<>
+   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:70}}/>:!business?<View style={s.empty}><Text style={s.emptyTitle}>No business profile</Text><Text style={s.copy}>Create a business before setting up payments.</Text></View>:<>
     <View style={[s.hero,ready&&s.heroReady]}>
-     <View style={[s.heroIcon,ready&&s.heroIconReady]}><Ionicons name={ready?'checkmark':'card-outline'} size={24} color={ready?colors.onBrand:colors.brand}/></View>
+     <View style={[s.heroIcon,ready&&s.heroIconReady]}><Ionicons name={ready?'checkmark':'card-outline'} size={24} color={ready?colors.onBrand:colors.accent}/></View>
      <View style={{flex:1,minWidth:0}}>
       <Text style={s.heroKicker}>{ready?'READY TO SELL':'PAYOUT SETUP REQUIRED'}</Text>
       <Text style={s.heroTitle}>{ready?'Stripe payouts connected':'Connect a bank account before going live'}</Text>
@@ -102,17 +102,17 @@ export default function BusinessPayouts(){
      {busy?<ActivityIndicator color={colors.onBrand}/>:<><Ionicons name="open-outline" size={17} color={colors.onBrand}/><Text style={s.primaryText}>{status?.stripe_connected_account_id?'CONTINUE STRIPE SETUP':'SET UP PAYOUTS WITH STRIPE'}</Text></>}
     </Pressable>:<Pressable onPress={()=>void load(true)} style={s.secondary}><Ionicons name="refresh" size={16} color={colors.text}/><Text style={s.secondaryText}>REFRESH STRIPE STATUS</Text></Pressable>}
 
-    {business.verification_status!=='VERIFIED'?<View style={s.notice}><Ionicons name="shield-checkmark-outline" size={20} color={colors.brand}/><View style={{flex:1}}><Text style={s.noticeTitle}>Business verification first</Text><Text style={s.copy}>Complete Everest business verification before Stripe payout onboarding.</Text><Pressable onPress={()=>router.push('/business-verification')}><Text style={s.link}>OPEN VERIFICATION →</Text></Pressable></View></View>:null}
+    {business.verification_status!=='VERIFIED'?<View style={s.notice}><Ionicons name="shield-checkmark-outline" size={20} color={colors.accent}/><View style={{flex:1}}><Text style={s.noticeTitle}>Business verification first</Text><Text style={s.copy}>Complete Everest business verification before Stripe payout onboarding.</Text><Pressable onPress={()=>router.push('/business-verification')}><Text style={s.link}>OPEN VERIFICATION →</Text></Pressable></View></View>:null}
 
-    {status?.requirements_due.length?<View style={s.notice}><Ionicons name="alert-circle-outline" size={20} color={colors.brand}/><View style={{flex:1}}><Text style={s.noticeTitle}>Stripe needs more information</Text><Text style={s.copy}>Continue Stripe setup to complete the remaining verification or bank requirements.</Text></View></View>:null}
+    {status?.requirements_due.length?<View style={s.notice}><Ionicons name="alert-circle-outline" size={20} color={colors.accent}/><View style={{flex:1}}><Text style={s.noticeTitle}>Stripe needs more information</Text><Text style={s.copy}>Continue Stripe setup to complete the remaining verification or bank requirements.</Text></View></View>:null}
 
     <View style={s.info}>
-     <View style={s.infoIcon}><Ionicons name="lock-closed-outline" size={18} color={colors.brand}/></View>
+     <View style={s.infoIcon}><Ionicons name="lock-closed-outline" size={18} color={colors.accent}/></View>
      <View style={{flex:1}}><Text style={s.infoTitle}>Everest does not store your bank details</Text><Text style={s.copy}>Bank account and identity details are entered directly into Stripe’s hosted onboarding. Everest stores only the connected-account ID and readiness status.</Text></View>
     </View>
 
     <View style={s.info}>
-     <View style={s.infoIcon}><Ionicons name="wallet-outline" size={18} color={colors.brand}/></View>
+     <View style={s.infoIcon}><Ionicons name="wallet-outline" size={18} color={colors.accent}/></View>
      <View style={{flex:1}}><Text style={s.infoTitle}>Low-cost payment model</Text><Text style={s.copy}>Payments are created directly on the business Stripe account. Everest collects its marketplace commission as an application fee; Stripe processing fees are charged separately to the connected business account.</Text></View>
     </View>
 
@@ -153,7 +153,7 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  hero:{marginTop:16,borderRadius:24,borderWidth:1,borderColor:c.border,backgroundColor:c.elevated,padding:17,flexDirection:'row',gap:12},heroReady:{backgroundColor:c.soft},heroIcon:{width:48,height:48,borderRadius:16,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},heroIconReady:{backgroundColor:c.brand},heroKicker:{fontSize:12,fontWeight:'900',letterSpacing:1.2,color:c.accent},heroTitle:{fontSize:17,fontWeight:'900',color:c.text,marginTop:4},heroCopy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:5},
  statusGrid:{flexDirection:'row',flexWrap:'wrap',gap:8,marginTop:12},
  primary:{minHeight:52,borderRadius:15,backgroundColor:c.brand,marginTop:14,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8,paddingHorizontal:14},primaryText:{fontSize:14,fontWeight:'900',letterSpacing:.5,color:c.onBrand},secondary:{minHeight:50,borderRadius:15,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginTop:14,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7},secondaryText:{fontSize:14,fontWeight:'900',color:c.text},disabled:{opacity:.45},
- notice:{marginTop:12,borderRadius:17,backgroundColor:c.soft,padding:14,flexDirection:'row',gap:10},noticeTitle:{fontSize:12,fontWeight:'900',color:c.text},copy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:3},link:{fontSize:12,fontWeight:'900',color:c.brand,marginTop:9},
+ notice:{marginTop:12,borderRadius:17,backgroundColor:c.soft,padding:14,flexDirection:'row',gap:10},noticeTitle:{fontSize:12,fontWeight:'900',color:c.text},copy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:3},link:{fontSize:12,fontWeight:'900',color:c.accent,marginTop:9},
  info:{marginTop:12,borderRadius:17,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:14,flexDirection:'row',gap:10},infoIcon:{width:38,height:38,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},infoTitle:{fontSize:12,fontWeight:'900',color:c.text},
  sectionHead:{marginTop:28,marginBottom:10},sectionEyebrow:{fontSize:12,fontWeight:'900',letterSpacing:1.4,color:c.accent},sectionTitle:{fontSize:20,fontWeight:'900',color:c.text,marginTop:3},
  summary:{minHeight:92,borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,flexDirection:'row',alignItems:'center',paddingHorizontal:8},summaryItem:{flex:1,alignItems:'center'},summaryValue:{fontSize:14,fontWeight:'900',color:c.text},summaryLabel:{fontSize:14,fontWeight:'900',letterSpacing:.8,color:c.muted,marginTop:5,textAlign:'center'},summaryDivider:{width:1,height:38,backgroundColor:c.border},footnote:{fontSize:12,lineHeight:17,color:c.muted,marginTop:8},

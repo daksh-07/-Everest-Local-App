@@ -140,8 +140,8 @@ export function ServicePicker({
           ]}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-            <Ionicons name="checkmark-circle" size={18} color={c.brand} />
-            <Text style={[s.label, { color: c.brand }]}>SELECTED SERVICE</Text>
+            <Ionicons name="checkmark-circle" size={18} color={c.accent} />
+            <Text style={[s.label, { color:c.accent }]}>SELECTED SERVICE</Text>
           </View>
           <Text style={[s.selectedName, text]}>{selected.name}</Text>
           <Text style={[s.meta, { color: c.textSecondary }]}>
@@ -157,8 +157,8 @@ export function ServicePicker({
             }}
             style={s.change}
           >
-            <Text style={[s.label, { color: c.brand }]}>CHANGE</Text>
-            <Ionicons name="swap-horizontal" size={16} color={c.brand} />
+            <Text style={[s.label, { color:c.accent }]}>CHANGE</Text>
+            <Ionicons name="swap-horizontal" size={16} color={c.accent} />
           </Pressable>
         </View>
       ) : (
@@ -175,7 +175,7 @@ export function ServicePicker({
             <Ionicons
               name="search"
               size={21}
-              color={focused ? c.brand : c.muted}
+              color={focused ? c.accent : c.muted}
             />
             <TextInput
               ref={input}
@@ -209,12 +209,12 @@ export function ServicePicker({
               onPress={() => setEditing(false)}
               style={{ minHeight: 44, justifyContent: "center" }}
             >
-              <Text style={{ color: c.brand }}>Keep {selected.name}</Text>
+              <Text style={{ color:c.accent }}>Keep {selected.name}</Text>
             </Pressable>
           ) : null}
           {loading ? (
             <ActivityIndicator
-              color={c.brand}
+              color={c.accent}
               accessibilityLabel="Loading services"
             />
           ) : !services.length ? (
@@ -225,7 +225,7 @@ export function ServicePicker({
                 onPress={onRetry}
                 style={s.iconButton}
               >
-                <Text style={{ color: c.brand }}>Retry loading services</Text>
+                <Text style={{ color:c.accent }}>Retry loading services</Text>
               </Pressable>
             </View>
           ) : query.trim() ? (
@@ -267,7 +267,7 @@ export function ServicePicker({
                             : "construct-outline"
                         }
                         size={20}
-                        color={c.brand}
+                        color={c.accent}
                       />
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
@@ -283,7 +283,7 @@ export function ServicePicker({
                           : "chevron-forward"
                       }
                       size={18}
-                      color={c.brand}
+                      color={c.accent}
                     />
                   </Pressable>
                 ))}
@@ -333,7 +333,7 @@ export function ServicePicker({
                   }}
                   style={s.iconButton}
                 >
-                  <Text style={{ color: c.brand }}>Search another term</Text>
+                  <Text style={{ color:c.accent }}>Search another term</Text>
                 </Pressable>
               </View>
             )

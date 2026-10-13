@@ -63,7 +63,7 @@ export default function BusinessUpgrade(){
     <Text style={st.eyebrow}>PREMIUM BUSINESS TOOLS</Text>
     <Text style={st.title}>{active?'Everest Pro is active':'Unlock '+feature}</Text>
     <Text style={st.copy}>{active?'Your business has access to Everest Pro features while the subscription remains active.':appleIapEnabled?'Subscribe securely through your Apple Account. Everest Pro renews automatically until cancelled.':'Gmail and Everest AI require an active Everest Pro subscription. Billing is recurring, not a one-time purchase.'}</Text>
-    {active?<View style={st.activeBadge}><Ionicons name="checkmark-circle" size={14} color={colors.brand}/><Text style={st.activeText}>ACTIVE SUBSCRIPTION</Text></View>:null}
+    {active?<View style={st.activeBadge}><Ionicons name="checkmark-circle" size={14} color={colors.accent}/><Text style={st.activeText}>ACTIVE SUBSCRIPTION</Text></View>:null}
    </View>
 
    <View style={st.card}>
@@ -72,13 +72,13 @@ export default function BusinessUpgrade(){
     <Benefit icon="shield-checkmark-outline" title="Server-verified access" copy="Premium access is granted only after the billing provider is verified by the Everest backend." colors={colors}/>
    </View>
 
-   {loading?<ActivityIndicator color={colors.brand} style={{marginTop:22}}/>:<>
-    {subscription?.cancel_at_period_end&&subscription.current_period_end?<View style={st.notice}><Ionicons name="time-outline" size={18} color={colors.brand}/><Text style={st.noticeText}>Cancellation is scheduled. Pro access remains available until {new Date(subscription.current_period_end).toLocaleDateString()}.</Text></View>:null}
-    {params.subscription==='cancelled'?<View style={st.notice}><Ionicons name="information-circle-outline" size={18} color={colors.brand}/><Text style={st.noticeText}>Checkout was cancelled. No subscription change was made.</Text></View>:null}
+   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:22}}/>:<>
+    {subscription?.cancel_at_period_end&&subscription.current_period_end?<View style={st.notice}><Ionicons name="time-outline" size={18} color={colors.accent}/><Text style={st.noticeText}>Cancellation is scheduled. Pro access remains available until {new Date(subscription.current_period_end).toLocaleDateString()}.</Text></View>:null}
+    {params.subscription==='cancelled'?<View style={st.notice}><Ionicons name="information-circle-outline" size={18} color={colors.accent}/><Text style={st.noticeText}>Checkout was cancelled. No subscription change was made.</Text></View>:null}
     {appleIapEnabled?
      <AppleSubscriptionControls businessId={businessId} active={active} provider={subscription?.billing_provider??'STRIPE'} onActivated={()=>void load()}/>
      :nativeStore?
-     <View style={st.notice}><Ionicons name="phone-portrait-outline" size={18} color={colors.brand}/><Text style={st.noticeText}>{active?'Your existing Everest Pro access remains active. Subscription management is not offered through this store build.':'Everest Pro purchasing is not offered through this store build yet. Core marketplace and business tools remain available.'}</Text></View>
+     <View style={st.notice}><Ionicons name="phone-portrait-outline" size={18} color={colors.accent}/><Text style={st.noticeText}>{active?'Your existing Everest Pro access remains active. Subscription management is not offered through this store build.':'Everest Pro purchasing is not offered through this store build yet. Core marketplace and business tools remain available.'}</Text></View>
      :
      <Pressable disabled={working} onPress={()=>void billing()} style={[st.primary,working&&{opacity:.65}]}>
       {working?<ActivityIndicator color={colors.onBrand}/>:<><Text style={st.primaryText}>{active?'MANAGE SUBSCRIPTION':'START EVEREST PRO SUBSCRIPTION'}</Text><Ionicons name="arrow-forward" size={15} color={colors.onBrand}/></>}
@@ -94,7 +94,7 @@ export default function BusinessUpgrade(){
 
 function Benefit({icon,title,copy,colors}:{icon:keyof typeof Ionicons.glyphMap;title:string;copy:string;colors:ThemeColors}){
  return <View style={[benefitStyles.row,{borderBottomColor:colors.border}]}>
-  <View style={[benefitStyles.icon,{backgroundColor:colors.soft}]}><Ionicons name={icon} size={19} color={colors.brand}/></View>
+  <View style={[benefitStyles.icon,{backgroundColor:colors.soft}]}><Ionicons name={icon} size={19} color={colors.accent}/></View>
   <View style={{flex:1}}><Text style={[benefitStyles.title,{color:colors.text}]}>{title}</Text><Text style={[benefitStyles.copy,{color:colors.muted}]}>{copy}</Text></View>
  </View>;
 }
@@ -114,11 +114,11 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  headerTitle:{fontSize:14,fontWeight:'900',color:c.text},
  hero:{marginTop:30,alignItems:'center',paddingHorizontal:12},
  crown:{width:62,height:62,borderRadius:21,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:17},
- eyebrow:{fontSize:8,fontWeight:'900',letterSpacing:1.5,color:c.brand},
+ eyebrow:{fontSize:8,fontWeight:'900',letterSpacing:1.5,color:c.accent},
  title:{fontSize:31,fontWeight:'900',letterSpacing:-.8,color:c.text,textAlign:'center',marginTop:7},
  copy:{fontSize:11,lineHeight:18,color:c.muted,textAlign:'center',marginTop:9,maxWidth:520},
  activeBadge:{marginTop:13,borderRadius:999,backgroundColor:c.soft,paddingHorizontal:11,paddingVertical:7,flexDirection:'row',alignItems:'center',gap:6},
- activeText:{fontSize:8,fontWeight:'900',letterSpacing:.7,color:c.brand},
+ activeText:{fontSize:8,fontWeight:'900',letterSpacing:.7,color:c.accent},
  card:{marginTop:28,borderWidth:1,borderColor:c.border,borderRadius:22,backgroundColor:c.surface,paddingHorizontal:17,overflow:'hidden'},
  notice:{marginTop:16,borderWidth:1,borderColor:c.border,borderRadius:16,backgroundColor:c.soft,padding:14,flexDirection:'row',gap:9,alignItems:'flex-start'},
  noticeText:{fontSize:10,lineHeight:16,color:c.muted,flex:1},

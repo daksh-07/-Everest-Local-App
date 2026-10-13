@@ -108,7 +108,7 @@ export default function CreatePost(){
    <Pressable disabled={busy||loading} onPress={()=>void publish()} style={[s.postTop,(busy||loading)&&s.dim]}><Text style={s.postTopText}>{busy?'POSTING':'POST'}</Text></Pressable>
   </View>
 
-  {loading?<ActivityIndicator color={colors.brand} style={{marginTop:60}}/>:<>
+  {loading?<ActivityIndicator color={colors.accent} style={{marginTop:60}}/>:<>
    <Text style={s.eyebrow}>POSTING AS</Text>
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.identityRail}>
     {identities.map(i=>{const selected=i.id===identity?.id&&i.kind===identity?.kind;return <Pressable key={i.kind+i.id} onPress={()=>{setIdentity(i);setType(i.kind==='BUSINESS'?'COMPLETED_WORK':'UPDATE');setShowServicePicker(false);setShowProductPicker(false);void haptic.selection();}} style={[s.identityPill,selected&&s.identityPillActive]}>
@@ -138,7 +138,7 @@ export default function CreatePost(){
     <Pressable onPress={()=>removePhoto(i)} style={s.remove}><Ionicons name="close" size={15} color="#fff"/></Pressable>
     <View style={s.reorder}>{i>0?<Pressable onPress={()=>move(i,-1)}><Ionicons name="chevron-back-circle" size={25} color="#fff"/></Pressable>:<View/>}{i<photos.length-1?<Pressable onPress={()=>move(i,1)}><Ionicons name="chevron-forward-circle" size={25} color="#fff"/></Pressable>:null}</View>
    </View>)}</ScrollView>:<Pressable onPress={()=>void pickLibrary()} style={s.mediaHero}>
-    <View style={s.mediaHeroIcon}><Ionicons name="images-outline" size={27} color={colors.brand}/></View>
+    <View style={s.mediaHeroIcon}><Ionicons name="images-outline" size={27} color={colors.accent}/></View>
     <Text style={s.mediaHeroTitle}>Add photos</Text><Text style={s.mediaHeroCopy}>Show the work, moment or place. Up to 10 photos.</Text>
    </Pressable>}
    <View style={s.mediaActions}>
@@ -161,7 +161,7 @@ export default function CreatePost(){
     </>:null}
    </View>
 
-   {identity?.kind==='PERSONAL'&&type==='EXPERIENCE'?<View style={s.afterWork}><Ionicons name="heart-circle-outline" size={23} color={colors.brand}/><View style={{flex:1}}><Text style={s.afterWorkTitle}>Share the result, not just a rating</Text><Text style={s.afterWorkCopy}>Tell the local community what was done and how it felt. Your formal business review remains separate.</Text></View></View>:null}
+   {identity?.kind==='PERSONAL'&&type==='EXPERIENCE'?<View style={s.afterWork}><Ionicons name="heart-circle-outline" size={23} color={colors.accent}/><View style={{flex:1}}><Text style={s.afterWorkTitle}>Share the result, not just a rating</Text><Text style={s.afterWorkCopy}>Tell the local community what was done and how it felt. Your formal business review remains separate.</Text></View></View>:null}
 
    {progress?<Text style={s.note}>{progress}</Text>:null}{error?<Text style={s.error}>{error}</Text>:null}
    <SoundPicker visible={soundOpen} value={sound} onChange={setSound} voiceover={voiceover} onVoiceoverChange={setVoiceover} onClose={()=>setSoundOpen(false)} photoMode photoDurationMs={photoDuration} onPhotoDurationChange={setPhotoDuration}/>
@@ -173,7 +173,7 @@ export default function CreatePost(){
 const styles=(c:ThemeColors)=>StyleSheet.create({
  safe:{flex:1,backgroundColor:c.canvas},page:{paddingHorizontal:16,paddingBottom:70,maxWidth:720,width:'100%',alignSelf:'center'},
  header:{height:62,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},headerIcon:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:'transparent'},
- headerTitle:{fontSize:20,fontWeight:'900',letterSpacing:-.45,color:c.text},postTop:{minHeight:38,paddingHorizontal:10,borderRadius:19,backgroundColor:'transparent',alignItems:'center',justifyContent:'center'},postTopText:{fontSize:12,fontWeight:'900',letterSpacing:.9,color:c.brand},dim:{opacity:.5},
+ headerTitle:{fontSize:20,fontWeight:'900',letterSpacing:-.45,color:c.text},postTop:{minHeight:38,paddingHorizontal:10,borderRadius:19,backgroundColor:'transparent',alignItems:'center',justifyContent:'center'},postTopText:{fontSize:12,fontWeight:'900',letterSpacing:.9,color:c.accent},dim:{opacity:.5},
  eyebrow:{fontSize:12,fontWeight:'900',letterSpacing:2,color:c.muted,marginTop:15,marginBottom:10},
  identityRail:{gap:9,paddingRight:12},identityPill:{minHeight:52,maxWidth:260,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:12,flexDirection:'row',alignItems:'center',gap:9},identityPillActive:{borderColor:c.brand,backgroundColor:c.soft},identityPillIcon:{width:34,height:34,borderRadius:12,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},identityPillIconActive:{backgroundColor:c.brand},identityPillText:{fontSize:12,fontWeight:'900',color:c.text,maxWidth:190},identityPillTextActive:{color:c.text},
  identityLine:{flexDirection:'row',alignItems:'center',gap:11,paddingVertical:14},avatar:{width:42,height:42,borderRadius:21,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},identityName:{fontSize:14,fontWeight:'900',color:c.text},identityMeta:{fontSize:12,color:c.muted,marginTop:2},

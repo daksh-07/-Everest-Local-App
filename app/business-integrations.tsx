@@ -102,7 +102,7 @@ export default function BusinessIntegrations(){
      </View>
     </View>
 
-    {loading?<ActivityIndicator color={colors.brand} style={{marginTop:42}}/>:catalog.map((item,index)=>{
+    {loading?<ActivityIndicator color={colors.accent} style={{marginTop:42}}/>:catalog.map((item,index)=>{
      const connection=byProvider.get(item.provider);
      const status=connection?.status??'NOT_CONNECTED';
      const connected=status==='CONNECTED';
@@ -124,11 +124,11 @@ export default function BusinessIntegrations(){
        </View>
 
        {locked?<View style={st.lockStrip}>
-        <View style={st.lockInfo}><Ionicons name="diamond-outline" size={15} color={colors.brand}/><Text style={st.lockCopy}>Available with Everest Pro</Text></View>
+        <View style={st.lockInfo}><Ionicons name="diamond-outline" size={15} color={colors.accent}/><Text style={st.lockCopy}>Available with Everest Pro</Text></View>
         <Pressable onPress={()=>openPremium(item)} style={st.upgradeButton}>
          <Text style={st.upgradeText}>UNLOCK</Text><Ionicons name="arrow-forward" size={14} color={colors.onBrand}/>
         </Pressable>
-       </View>:item.provider==='OPENAI'?<View style={st.lockStrip}><View style={st.lockInfo}><Ionicons name="sparkles-outline" size={15} color={colors.brand}/><Text style={st.lockCopy}>Everest AI is included with Pro and is being connected next.</Text></View></View>:<Pressable disabled={working===item.provider||!item.available} onPress={()=>connected&&item.provider.includes('CALENDAR')?router.push('/business-calendar-integrations'):void connect(item.provider)} style={st.action}>
+       </View>:item.provider==='OPENAI'?<View style={st.lockStrip}><View style={st.lockInfo}><Ionicons name="sparkles-outline" size={15} color={colors.accent}/><Text style={st.lockCopy}>Everest AI is included with Pro and is being connected next.</Text></View></View>:<Pressable disabled={working===item.provider||!item.available} onPress={()=>connected&&item.provider.includes('CALENDAR')?router.push('/business-calendar-integrations'):void connect(item.provider)} style={st.action}>
         <Text style={st.actionText}>{working===item.provider?'OPENING…':connected?'CONFIGURE':'CONNECT'}</Text>
         <Ionicons name={connected?'settings-outline':'arrow-forward'} size={15} color={colors.text}/>
        </Pressable>}
@@ -138,7 +138,7 @@ export default function BusinessIntegrations(){
 
     <View style={st.categoryRow}><Text style={st.category}>AUTOMATION</Text><Text style={st.freeLabel}>INCLUDED</Text></View>
     <Pressable onPress={()=>router.push('/business-automations')} style={st.wideCard}>
-     <View style={st.automationIcon}><Ionicons name="git-branch-outline" size={20} color={colors.brand}/></View>
+     <View style={st.automationIcon}><Ionicons name="git-branch-outline" size={20} color={colors.accent}/></View>
      <View style={{flex:1}}>
       <Text style={st.cardTitle}>Automations & webhooks</Text>
       <Text style={st.cardCopy}>Create trigger → condition → action workflows and connect external tools with signed webhooks.</Text>
@@ -181,7 +181,7 @@ const styles=(c:ThemeColors,desktop:boolean)=>StyleSheet.create({
  copy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:7,maxWidth:650},
  categoryRow:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:27,marginBottom:8},
  category:{fontSize:12,fontWeight:'900',letterSpacing:1.35,color:c.muted},
- freeLabel:{fontSize:14,fontWeight:'900',letterSpacing:.7,color:c.brand},
+ freeLabel:{fontSize:14,fontWeight:'900',letterSpacing:.7,color:c.accent},
  card:{borderWidth:1,borderColor:c.border,backgroundColor:c.surface,borderRadius:22,padding:16,marginBottom:11,shadowColor:'#000',shadowOpacity:.12,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:3},
  premiumCard:{borderColor:c.brand},
  cardTop:{flexDirection:'row',alignItems:'center',gap:14},
@@ -189,7 +189,7 @@ const styles=(c:ThemeColors,desktop:boolean)=>StyleSheet.create({
  titleRow:{flexDirection:'row',gap:8,alignItems:'center',flexWrap:'wrap'},
  cardTitle:{fontSize:16,fontWeight:'900',color:c.text,letterSpacing:-.2},
  cardCopy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:5,maxWidth:650},
- account:{fontSize:12,fontWeight:'800',color:c.brand,marginTop:6},
+ account:{fontSize:12,fontWeight:'800',color:c.accent,marginTop:6},
  badge:{borderRadius:999,paddingHorizontal:8,paddingVertical:5,flexDirection:'row',alignItems:'center',gap:5},
  connected:{backgroundColor:c.soft},
  warning:{backgroundColor:c.elevated},

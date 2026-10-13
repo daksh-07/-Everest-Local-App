@@ -113,7 +113,7 @@ export function EverestLiveMiniPlayer(){
     style={({pressed})=>[s.wrap,pressed&&s.pressed]}>
     <View style={s.iconWrap}>
       <View style={[s.dot,paused&&s.dotPaused]}/>
-      <Ionicons name="radio-outline" size={20} color={colors.brand}/>
+      <Ionicons name="radio-outline" size={20} color={colors.accent}/>
     </View>
     <View style={s.copy}>
       <View style={s.row}>

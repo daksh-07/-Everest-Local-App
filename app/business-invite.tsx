@@ -58,10 +58,10 @@ export default function BusinessInvite(){
  return <SafeAreaView style={s.safe}><View style={s.page}>
   <View style={s.brand}><Text style={s.brandText}>EVEREST LOCAL</Text></View>
   <View style={s.card}>
-   <View style={s.icon}><Ionicons name="person-add-outline" size={27} color={colors.brand}/></View>
+   <View style={s.icon}><Ionicons name="person-add-outline" size={27} color={colors.accent}/></View>
    <Text style={s.eyebrow}>BUSINESS INVITATION</Text>
    <Text style={s.title}>{invite?.business_name?'Join '+invite.business_name:'Join your team on Everest'}</Text>
-   {loading?<ActivityIndicator color={colors.brand} style={{marginTop:24}}/>:<>
+   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:24}}/>:<>
     {invite?<><Text style={s.copy}>Your access is ready. Everest will attach this role to your existing personal account, not create a second business identity.</Text>
       <View style={s.roleBox}><Text style={s.roleLabel}>ROLE</Text><Text style={s.role}>{String(invite.member_role).replaceAll('_',' ')}</Text>{invite.job_title?<Text style={s.meta}>{invite.job_title}</Text>:null}<Text style={s.meta}>Expires {new Date(invite.expires_at).toLocaleDateString()}</Text></View>
       <Pressable disabled={busy} onPress={()=>void accept()} style={[s.primary,busy&&s.disabled]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<Text style={s.primaryText}>ACCEPT & OPEN WORKSPACE</Text>}</Pressable>

@@ -3,7 +3,8 @@ import { Platform, useColorScheme } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 export type ThemePreference='SYSTEM'|'LIGHT'|'DARK';
-export type ThemeColors={canvas:string;surface:string;elevated:string;text:string;textSecondary:string;muted:string;border:string;soft:string;input:string;danger:string;success:string;overlay:string;navigation:string;brand:string;onBrand:string;accent:string;accentSoft:string;info:string};
+import { light,dark,type ThemeColors } from './theme-colors';
+export type { ThemeColors } from './theme-colors';
 export type AppTheme={preference:ThemePreference;isDark:boolean;colors:ThemeColors;setPreference:(value:ThemePreference)=>Promise<void>;ready:boolean};
 export const uiTokens={
   space:{xxs:4,xs:8,sm:12,md:16,lg:20,xl:24,xxl:32,section:40},
@@ -16,8 +17,6 @@ const STORAGE_KEY='everest-local-theme';
 // Everest pairs warm ivory and neutral grey with soft beige and charcoal.
 // Accent highlights stay restrained; semantic red, blue and green carry status.
 // Green is reserved for semantic status such as live, available and success.
-const light:ThemeColors={canvas:'#F7F5F0',surface:'#FFFEFB',elevated:'#F2EEE7',text:'#121411',textSecondary:'#626861',muted:'#686E66',border:'#DDD9D0',soft:'#EFECE5',input:'#FFFEFB',danger:'#A9433C',success:'#176B4D',overlay:'rgba(18,20,17,.48)',navigation:'#FFFEFB',brand:'#D0BFA6',onBrand:'#121411',accent:'#805D2E',accentSoft:'#E8DCC8',info:'#315F8A'};
-const dark:ThemeColors={canvas:'#10100F',surface:'#191917',elevated:'#22221F',text:'#F5F1E9',textSecondary:'#CAC6BE',muted:'#ABA69C',border:'#383730',soft:'#292822',input:'#1C1C19',danger:'#F1A39B',success:'#6FC39B',overlay:'rgba(0,0,0,.76)',navigation:'#191917',brand:'#D8C5A7',onBrand:'#17130D',accent:'#D8BE96',accentSoft:'#29231C',info:'#9FC2E5'};
 const ThemeContext=createContext<AppTheme|null>(null);
 
 function valid(value:string|null):value is ThemePreference{return value==='SYSTEM'||value==='LIGHT'||value==='DARK'}
