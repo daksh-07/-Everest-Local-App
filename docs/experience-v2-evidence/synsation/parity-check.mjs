@@ -1,3 +1,4 @@
+/* global console */
 // Run from repository root with baseline commit available: node docs/experience-v2-evidence/synsation/parity-check.mjs
 import ts from 'typescript';import fs from 'node:fs';import {execFileSync} from 'node:child_process';
 function parity(text){const sf=ts.createSourceFile('screen.tsx',text,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);const out={actions:[],async:[],hooks:[]};function visit(n){if(ts.isJsxAttribute(n)&&['onPress','onLongPress','onRefresh','disabled'].includes(n.name.getText(sf)))out.actions.push(n.getText(sf));if(ts.isFunctionDeclaration(n)&&n.modifiers?.some(m=>m.kind===ts.SyntaxKind.AsyncKeyword))out.async.push(n.getText(sf));if(ts.isCallExpression(n)&&['useCallback','useEffect'].includes(n.expression.getText(sf)))out.hooks.push(n.getText(sf));ts.forEachChild(n,visit)}visit(sf);return out}
