@@ -11,6 +11,7 @@ export const uiTokens={
   radius:{sm:10,md:14,lg:20,xl:24,pill:999},
   control:{compact:44,standard:48,large:52},
   typography:{caption:12,small:13,body:16,title:20,display:31},
+  layout:{contentMaxWidth:1180,navMaxWidth:760},
 } as const;
 
 const STORAGE_KEY='everest-local-theme';
