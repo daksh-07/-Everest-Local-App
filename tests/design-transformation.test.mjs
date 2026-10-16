@@ -201,3 +201,11 @@ test('calendar never invents a booking time and opens the booking itself',()=>{
  assert.doesNotMatch(cal,/toFixed\(0\)|'TASK':'BLOCKED'/);
  assert.match(cal,/accessibilityLabel=\{`Remove blocked time:/);
 });
+
+test('social posts: labelled actions, relative times, and text posts that lead with the words',()=>{
+ const social=read('app/social.tsx');
+ for(const label of ["accessibilityLabel={item.engagement.likedByMe?'Unlike':'Like'}",'accessibilityLabel="Comments"','accessibilityLabel="Share"',"accessibilityLabel={item.engagement.savedByMe?'Remove from saved':'Save'}",'accessibilityLabel="Post options"'])assert.ok(social.includes(label),label);
+ assert.doesNotMatch(social,/new Date\(item\.created_at\)\.toLocaleDateString\(\)/);
+ assert.match(social,/!item\.media\?\.length&&item\.caption\?<Text style=\{s\.textPost\}>/);
+ assert.match(social,/'View 1 comment'/);
+});
