@@ -42,7 +42,7 @@ const rpcFixtures={
  list_personal_conversations_v2:body=>body?.p_requests?[]:personalConversations,
  list_personal_messages_v2:()=>personalMessages,
  get_public_user_profile:()=>({id:other,full_name:'Priya Shah',avatar_url:null,suburb:'Brunswick',city:'Melbourne'}),
- get_everest_live_state:()=>[{request_id:'r1',live_status:process.env.EVEREST_QA_LIVE_STATUS||'NOTIFYING',radius_km:3,radius_stage:1,expires_at:minutesAgo(-20),eligible_count:4,notified_count:2,viewed_count:1,responding_count:0,quote_count:process.env.EVEREST_QA_LIVE_STATUS==='RESPONSES_AVAILABLE'?2:0}],
+ get_everest_live_state:()=>[{request_id:'r1',live_status:process.env.EVEREST_QA_LIVE_STATUS||'NOTIFYING',radius_km:3,radius_stage:1,expires_at:minutesAgo(-20),eligible_count:4,notified_count:2,viewed_count:1,responding_count:0,quote_count:2}],
  get_or_create_cart:()=>'cart1',
  get_everest_live_map_points:()=>[{point_kind:'CUSTOMER',business_id:null,latitude:-37.799,longitude:144.946,activity:'YOU',distance_km:null,eta_seconds:null,address_label:'North Melbourne VIC'},{point_kind:'BUSINESS',business_id:biz,latitude:-37.803,longitude:144.951,activity:'VIEWED',distance_km:0.7,eta_seconds:null,address_label:null},{point_kind:'BUSINESS',business_id:'44444444-4444-4444-8444-444444444444',latitude:-37.79,longitude:144.96,activity:'NOTIFIED',distance_km:1.6,eta_seconds:null,address_label:null}],
 };

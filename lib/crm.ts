@@ -1,3 +1,4 @@
+import {formatStatus} from './format';
 import {supabase} from './supabase';
 
 export const CRM_SOURCES=['EVEREST','GOOGLE','FACEBOOK','INSTAGRAM','WEBSITE','REFERRAL','PHONE','WALK_IN','EMAIL','MANUAL','IMPORT','OTHER'] as const;
@@ -54,7 +55,8 @@ export type CrmBooking={
 export type BusinessAvailability={business_id:string;status:'AVAILABLE_NOW'|'AVAILABLE_LATER'|'BUSY'|'OFFLINE';available_from:string|null;available_until:string|null;updated_at:string};
 
 function clean(value?:string|null){const v=value?.trim();return v?v:null;}
-export function crmLabel(value:string){return value.replaceAll('_',' ').toLowerCase().replace(/\b\w/g,m=>m.toUpperCase());}
+/** Display label for CRM enums, in the app-wide sentence case ("Follow up", "VIP"). */
+export function crmLabel(value:string){return formatStatus(value,'');}
 export function contactLocation(contact:Pick<CrmContact,'suburb'|'city'|'state'|'country'>){return [contact.suburb,contact.city,contact.state,contact.country].filter(Boolean).join(', ');}
 export function isOverdue(dueAt:string){return new Date(dueAt).getTime()<Date.now();}
 

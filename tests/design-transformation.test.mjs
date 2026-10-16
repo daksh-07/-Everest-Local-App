@@ -192,3 +192,12 @@ test('business jobs and inbox read as work lists without leaking raw errors',()=
  // The customer's Live search pill stays out of the Business workspace, but not off the public storefront.
  assert.match(player,/pathname\.startsWith\('\/business'\)&&pathname!=='\/business-profile'/);
 });
+
+test('calendar never invents a booking time and opens the booking itself',()=>{
+ const cal=read('app/business-calendar.tsx');
+ assert.doesNotMatch(cal,/'09:00'/,'untimed bookings are not placed at 9 am');
+ assert.match(cal,/untimed\?'Time to confirm'/);
+ assert.match(cal,/router\.push\(\{pathname:'\/business-job',params:\{id:b\.id\}\}\)/);
+ assert.doesNotMatch(cal,/toFixed\(0\)|'TASK':'BLOCKED'/);
+ assert.match(cal,/accessibilityLabel=\{`Remove blocked time:/);
+});
