@@ -289,3 +289,12 @@ test('customer card: four views, next-up, formatted values, same scoped CRM read
  assert.match(c,/from\('bookings'\)\.select\('id,status,price,scheduled_date,created_at,completed_at'\)\.eq\('business_id',current\.id\)\.eq\('customer_id',c\.linked_everest_user_id\)/);
  assert.match(read('lib/initials.ts'),/export function initialsOf/);
 });
+
+test('public profile: removing a connection asks first, messaging uses a sheet, labels are explicit',()=>{
+ const pu=read('app/public-user.tsx');
+ assert.match(pu,/if\(connected\)setConfirmRemove\(true\);else void connect\(\)/,'tapping Connected never removes in one tap');
+ assert.match(pu,/<ConfirmSheet visible=\{confirmRemove\}[^>]*destructive/);
+ assert.match(pu,/accessibilityLabel=\{connectionLabel\}/);assert.match(pu,/accessibilityLabel="Your message"/);
+ assert.doesNotMatch(pu,/Send a message<\/Text>|toLocaleDateString\(undefined,\{day:'numeric',month:'short',year:'numeric'\}\)/);
+ assert.match(pu,/async function send\(\):Promise<boolean>/,'the sheet stays open when sending fails');
+});

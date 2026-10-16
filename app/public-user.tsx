@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import { ActivityIndicator, Alert, Image, Linking, Modal, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {Ionicons} from '@expo/vector-icons';
@@ -21,6 +21,8 @@ import {listHighlights,websiteLabel,type StoryHighlight} from '@/lib/social-expa
 import {signedPostMediaBatch,signedPostMediaResilient} from '@/lib/request-post-media';
 import {PostMediaImage} from '@/components/PostMediaImage';
 import {userMessage} from '@/lib/errors';
+import {formatWhen} from '@/lib/format';
+import {ConfirmSheet,EmptyState,HeaderIconButton,ScreenHeader,StatusBadge} from '@/components/ui';
 
 function initialsFor(name:string|null){
   const parts=(name??'').trim().split(/\s+/).filter(Boolean);
@@ -55,6 +57,8 @@ export default function PublicUser(){
   const [message,setMessage]=useState('');
   const [error,setError]=useState('');
   const [menuOpen,setMenuOpen]=useState(false);
+  const [confirmRemove,setConfirmRemove]=useState(false);
+  const [composerOpen,setComposerOpen]=useState(false);
   const messageInputRef=useRef<TextInput|null>(null);
 
   async function load(){
@@ -111,16 +115,18 @@ export default function PublicUser(){
     }
   }
 
-  async function send(){
-    if(!p||!message.trim())return;
+  async function send():Promise<boolean>{
+    if(!p||!message.trim())return false;
     setBusy(true);
     setError('');
     try{
       const conversationId=await sendPersonalMessage(p.id,message.trim());
       setMessage('');
       router.push('/messages?personalId='+conversationId);
+      return true;
     }catch(e){
       setError(userMessage(e,'Message could not be sent.'));
+      return false;
     }finally{
       setBusy(false);
     }
@@ -197,369 +203,79 @@ export default function PublicUser(){
         ?'View request'
         :'Connect';
 
+  const hasActivity=Boolean(p&&(p.connection_count||posts.length));
+  const connected=p?.connection_state==='CONNECTED';
   return (
     <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{paddingBottom:72}}
-      >
-        <View style={{maxWidth:760,width:'100%',alignSelf:'center'}}>
-          <View style={{paddingHorizontal:20,paddingTop:4}}>
-            <View style={{height:50,flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Go back"
-                hitSlop={12}
-                onPress={()=>router.back()}
-                style={({pressed})=>({
-                  width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',
-                  backgroundColor:pressed?c.soft:'transparent',
-                })}
-              >
-                <Ionicons name="chevron-back" size={25} color={c.text}/>
-              </Pressable>
-
-              <Text style={{fontSize:16,fontWeight:'800',color:c.text}}>Profile</Text>
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Profile actions"
-                hitSlop={12}
-                disabled={!p||busy}
-                onPress={()=>setMenuOpen(true)}
-                style={({pressed})=>({
-                  width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',
-                  backgroundColor:pressed?c.soft:'transparent',
-                  opacity:!p||busy?0.45:1,
-                })}
-              >
-                <Ionicons name="ellipsis-horizontal" size={24} color={c.text}/>
-              </Pressable>
-            </View>
-          </View>
-
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom:96}}>
+        <View style={{maxWidth:640,width:'100%',alignSelf:'center',paddingHorizontal:20}}>
+          <ScreenHeader title="" fallback="/social" actions={p?<HeaderIconButton icon="ellipsis-horizontal" label="Profile actions" onPress={()=>{if(!busy)setMenuOpen(true)}}/>:null}/>
           {!p?(
-            <View style={{paddingHorizontal:24,paddingVertical:90,alignItems:'center'}}>
-              <View style={{width:72,height:72,borderRadius:36,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}>
-                <Ionicons name="person-outline" size={30} color={c.muted}/>
-              </View>
-              <Text style={{fontSize:20,fontWeight:'900',color:c.text,marginTop:18}}>Profile unavailable</Text>
-              <Text style={{fontSize:13,lineHeight:20,color:c.muted,marginTop:8,textAlign:'center',maxWidth:320}}>
-                This profile may be private, blocked, or unavailable to you.
-              </Text>
-            </View>
+            <EmptyState icon="person-outline" title="Profile unavailable" description="This profile may be private, blocked, or no longer available."/>
           ):(
             <>
-              <View style={{paddingHorizontal:20,paddingTop:18}}>
-                <View
-                  style={{
-                    borderRadius:28,
-                    backgroundColor:c.surface,
-                    borderWidth:1,
-                    borderColor:c.border,
-                    paddingHorizontal:20,
-                    paddingTop:24,
-                    paddingBottom:20,
-                  }}
-                >
-                  <View style={{alignItems:'center'}}>
-                    <View style={{padding:4,borderRadius:58,borderWidth:1,borderColor:c.border,backgroundColor:c.canvas}}>
-                      {p.avatar_url?(
-                        <Image source={{uri:p.avatar_url}} style={{width:104,height:104,borderRadius:52}}/>
-                      ):(
-                        <View style={{width:104,height:104,borderRadius:52,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}>
-                          <Text style={{fontSize:32,fontWeight:'900',color:c.text}}>{initials}</Text>
-                        </View>
-                      )}
-                    </View>
-
-                    <View style={{flexDirection:'row',alignItems:'center',gap:7,marginTop:16}}>
-                      <Text style={{fontSize:26,lineHeight:32,fontWeight:'900',color:c.text,textAlign:'center',maxWidth:560}}>
-                        {p.display_name??'Everest member'}
-                      </Text>
-                    </View>
-
-                    {p.username?(
-                      <Text style={{fontSize:14,color:c.muted,marginTop:4}}>@{p.username}</Text>
-                    ):null}
-
-                    {p.bio?(
-                      <Text style={{fontSize:14,lineHeight:21,color:c.textSecondary,textAlign:'center',marginTop:12,maxWidth:500}}>
-                        {p.bio}
-                      </Text>
-                    ):null}
-
-                    {p.website_url?(
-                      <Pressable onPress={()=>void Linking.openURL(p.website_url!)} style={{marginTop:12,flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:11,paddingVertical:8,borderRadius:999,backgroundColor:c.soft}}>
-                        <Ionicons name="globe-outline" size={14} color={c.accent}/>
-                        <Text numberOfLines={1} style={{maxWidth:300,fontSize:12,fontWeight:'800',color:c.text}}>{websiteLabel(p.website_url)}</Text>
-                      </Pressable>
-                    ):null}
-
-                    {(p.suburb||joined)?(
-                      <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',gap:8,marginTop:14}}>
-                        {p.suburb?(
-                          <View style={{flexDirection:'row',alignItems:'center',gap:5,paddingHorizontal:10,paddingVertical:7,borderRadius:999,backgroundColor:c.soft}}>
-                            <Ionicons name="location-outline" size={14} color={c.muted}/>
-                            <Text style={{fontSize:12,fontWeight:'700',color:c.textSecondary}}>{p.suburb}</Text>
-                          </View>
-                        ):null}
-                        {joined?(
-                          <View style={{flexDirection:'row',alignItems:'center',gap:5,paddingHorizontal:10,paddingVertical:7,borderRadius:999,backgroundColor:c.soft}}>
-                            <Ionicons name="calendar-outline" size={14} color={c.muted}/>
-                            <Text style={{fontSize:12,fontWeight:'700',color:c.textSecondary}}>Joined {joined}</Text>
-                          </View>
-                        ):null}
-                      </View>
-                    ):null}
-                  </View>
-
-                  <Pressable
-                    onPress={()=>router.push('/connections?userId='+p.id)}
-                    style={({pressed})=>({
-                      marginTop:22,
-                      borderRadius:18,
-                      backgroundColor:pressed?c.soft:c.input,
-                      paddingVertical:14,
-                      paddingHorizontal:12,
-                      flexDirection:'row',
-                      alignItems:'center',
-                      justifyContent:'space-around',
-                    })}
-                  >
-                    <View style={{alignItems:'center',minWidth:90}}>
-                      <Text style={{fontSize:20,fontWeight:'900',color:c.text}}>{p.connection_count}</Text>
-                      <Text style={{fontSize:12,fontWeight:'700',color:c.muted,marginTop:2}}>Connections</Text>
-                    </View>
-                    <View style={{width:1,height:32,backgroundColor:c.border}}/>
-                    <View style={{alignItems:'center',minWidth:90}}>
-                      <Text style={{fontSize:20,fontWeight:'900',color:c.text}}>{p.mutual_count}</Text>
-                      <Text style={{fontSize:12,fontWeight:'700',color:c.muted,marginTop:2}}>Mutual</Text>
-                    </View>
-                    <View style={{width:1,height:32,backgroundColor:c.border}}/>
-                    <View style={{alignItems:'center',minWidth:90}}>
-                      <Text style={{fontSize:20,fontWeight:'900',color:c.text}}>{posts.length}</Text>
-                      <Text style={{fontSize:12,fontWeight:'700',color:c.muted,marginTop:2}}>Posts</Text>
-                    </View>
-                  </Pressable>
-
-                  <View style={{flexDirection:'row',gap:10,marginTop:14}}>
-                    {canConnect?(
-                      <Pressable
-                        disabled={busy}
-                        onPress={()=>void connect()}
-                        style={({pressed})=>({
-                          flex:1,
-                          minHeight:48,
-                          borderRadius:16,
-                          backgroundColor:p.connection_state==='CONNECTED'||p.connection_state==='OUTGOING'?c.soft:c.brand,
-                          borderWidth:p.connection_state==='CONNECTED'||p.connection_state==='OUTGOING'?1:0,
-                          borderColor:c.border,
-                          alignItems:'center',
-                          justifyContent:'center',
-                          opacity:busy?0.55:pressed?0.86:1,
-                        })}
-                      >
-                        <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
-                          <Ionicons
-                            name={p.connection_state==='CONNECTED'?'checkmark-circle':p.connection_state==='OUTGOING'?'time-outline':p.connection_state==='INCOMING'?'people-outline':'person-add-outline'}
-                            size={18}
-                            color={p.connection_state==='CONNECTED'||p.connection_state==='OUTGOING'?c.text:c.onBrand}
-                          />
-                          <Text style={{fontSize:13,fontWeight:'900',color:p.connection_state==='CONNECTED'||p.connection_state==='OUTGOING'?c.text:c.onBrand}}>
-                            {connectionLabel}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    ):null}
-
-                    {canMessage?(
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Message this user"
-                        onPress={()=>messageInputRef.current?.focus()}
-                        style={({pressed})=>({
-                          width:52,
-                          minHeight:48,
-                          borderRadius:16,
-                          borderWidth:1,
-                          borderColor:c.border,
-                          backgroundColor:pressed?c.soft:c.input,
-                          alignItems:'center',
-                          justifyContent:'center',
-                        })}
-                      >
-                        <Ionicons name="chatbubble-ellipses-outline" size={21} color={c.text}/>
-                      </Pressable>
-                    ):null}
-                  </View>
+              <View style={pu.hero}>
+                {p.avatar_url?<Image source={{uri:p.avatar_url}} style={pu.avatarImage} accessibilityIgnoresInvertColors/>:<View style={[pu.avatar,{backgroundColor:c.primaryContainer}]}><Text style={[pu.initials,{color:c.onPrimaryContainer}]}>{initials}</Text></View>}
+                <Text accessibilityRole="header" variant="title" style={[pu.name,{color:c.text}]}>{p.display_name??'Everest member'}</Text>
+                {p.username?<Text style={[pu.handle,{color:c.textSecondary}]}>@{p.username}</Text>:null}
+                {p.bio?<Text style={[pu.bio,{color:c.text}]}>{p.bio}</Text>:null}
+                <View style={pu.facts}>
+                  {p.suburb?<View style={pu.fact}><Ionicons name="location-outline" size={15} color={c.textSecondary}/><Text style={[pu.factText,{color:c.textSecondary}]}>{p.suburb}</Text></View>:null}
+                  {joined?<View style={pu.fact}><Ionicons name="calendar-outline" size={15} color={c.textSecondary}/><Text style={[pu.factText,{color:c.textSecondary}]}>Joined {joined}</Text></View>:null}
+                  {p.website_url?<Pressable accessibilityRole="link" onPress={()=>void Linking.openURL(p.website_url!)} style={pu.fact}><Ionicons name="link-outline" size={15} color={c.accent}/><Text numberOfLines={1} style={[pu.factText,{color:c.accent,maxWidth:200}]}>{websiteLabel(p.website_url)}</Text></Pressable>:null}
                 </View>
               </View>
 
-              {highlights.length?(
-                <View style={{paddingHorizontal:20,marginTop:22}}>
-                  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:11}}>
-                    <Text style={{fontSize:17,fontWeight:'900',color:c.text}}>Highlights</Text>
-                    <Text style={{fontSize:12,color:c.muted}}>{highlights.length}</Text>
-                  </View>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:12,paddingRight:12}}>
-                    {highlights.map(item=>(
-                      <Pressable key={item.id} onPress={()=>router.push(('/highlight?id='+item.id) as never)} style={{width:76,alignItems:'center'}}>
-                        <View style={{width:64,height:64,borderRadius:32,borderWidth:2,borderColor:c.accent,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',overflow:'hidden',padding:2}}>
-                          {item.coverUrl?<Image source={{uri:item.coverUrl}} style={{width:56,height:56,borderRadius:28}}/>:<Ionicons name="sparkles-outline" size={21} color={c.accent}/>}
-                        </View>
-                        <Text numberOfLines={2} style={{fontSize:12,fontWeight:'800',color:c.text,textAlign:'center',marginTop:6}}>{item.title}</Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                </View>
-              ):null}
+              {hasActivity?<Pressable accessibilityRole="button" accessibilityLabel={`${p.connection_count} connections, ${p.mutual_count} mutual, ${posts.length} posts. View connections`} onPress={()=>router.push('/connections?userId='+p.id)} style={({pressed})=>[pu.stats,{backgroundColor:c.surface,borderColor:c.border},pressed&&{opacity:.8}]}>
+                {[[p.connection_count,'Connections'],[p.mutual_count,'Mutual'],[posts.length,'Posts']].map(([value,label],index)=><View key={String(label)} style={[pu.stat,index>0&&{borderLeftWidth:StyleSheet.hairlineWidth,borderLeftColor:c.border}]}><Text tabular style={[pu.statValue,{color:c.text}]}>{value}</Text><Text style={[pu.statLabel,{color:c.textSecondary}]}>{label}</Text></View>)}
+              </Pressable>:<Text style={[pu.newMember,{color:c.textSecondary}]}>New to Everest. Say hello or connect to see their posts as they share.</Text>}
 
-              {canMessage?(
-                <View style={{paddingHorizontal:20,marginTop:18}}>
-                  <View
-                    nativeID="quick-message"
-                    style={{
-                      borderRadius:22,
-                      backgroundColor:c.surface,
-                      borderWidth:1,
-                      borderColor:c.border,
-                      padding:16,
-                    }}
-                  >
-                    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
-                      <View>
-                        <Text style={{fontSize:15,fontWeight:'900',color:c.text}}>Send a message</Text>
-                        <Text style={{fontSize:12,color:c.muted,marginTop:2}}>Start a private conversation</Text>
-                      </View>
-                      <View style={{width:34,height:34,borderRadius:17,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}>
-                        <Ionicons name="paper-plane-outline" size={17} color={c.text}/>
-                      </View>
-                    </View>
+              {(canConnect||canMessage)?<View style={pu.actions}>
+                {canConnect?<Pressable accessibilityRole="button" accessibilityLabel={connectionLabel} accessibilityHint={connected?'Asks before removing the connection':undefined} accessibilityState={{busy,selected:connected}} disabled={busy} onPress={()=>{if(connected)setConfirmRemove(true);else void connect()}} style={({pressed})=>[pu.primary,connected||p.connection_state==='OUTGOING'?{backgroundColor:c.primaryContainer}:{backgroundColor:c.brand},pressed&&{opacity:.85}]}>
+                  {busy?<ActivityIndicator color={connected?c.onPrimaryContainer:c.onBrand}/>:<><Ionicons name={connected?'checkmark-circle':p.connection_state==='OUTGOING'?'time-outline':p.connection_state==='INCOMING'?'mail-unread-outline':'person-add-outline'} size={18} color={connected||p.connection_state==='OUTGOING'?c.onPrimaryContainer:c.onBrand}/><Text style={[pu.primaryText,{color:connected||p.connection_state==='OUTGOING'?c.onPrimaryContainer:c.onBrand}]}>{connectionLabel}</Text></>}
+                </Pressable>:null}
+                {canMessage?<Pressable accessibilityRole="button" accessibilityLabel="Message" onPress={()=>setComposerOpen(true)} style={({pressed})=>[pu.secondary,{borderColor:c.borderStrong,backgroundColor:c.surface},pressed&&{opacity:.8}]}><Ionicons name="chatbubble-outline" size={18} color={c.text}/><Text style={[pu.secondaryText,{color:c.text}]}>Message</Text></Pressable>:null}
+              </View>:null}
+              {p.connection_state==='OUTGOING'?<Text style={[pu.hint,{color:c.textSecondary}]}>Request sent. Tap Requested to withdraw it.</Text>:null}
 
-                    <View style={{borderRadius:16,backgroundColor:c.input,borderWidth:1,borderColor:c.border,overflow:'hidden'}}>
-                      <TextInput
-                        ref={messageInputRef}
-                        value={message}
-                        onChangeText={setMessage}
-                        placeholder="Write something…"
-                        placeholderTextColor={c.muted}
-                        multiline
-                        maxLength={5000}
-                        style={{
-                          minHeight:78,
-                          maxHeight:180,
-                          color:c.text,
-                          paddingHorizontal:14,
-                          paddingTop:13,
-                          paddingBottom:10,
-                          textAlignVertical:'top',
-                          fontSize:14,
-                          lineHeight:20,
-                        }}
-                      />
-                      <View style={{paddingHorizontal:10,paddingBottom:10,flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-                        <Text style={{fontSize:12,color:c.muted}}>{message.length}/5000</Text>
-                        <Pressable
-                          disabled={busy||!message.trim()}
-                          onPress={()=>void send()}
-                          style={({pressed})=>({
-                            minHeight:38,
-                            paddingHorizontal:15,
-                            borderRadius:12,
-                            backgroundColor:c.brand,
-                            flexDirection:'row',
-                            alignItems:'center',
-                            justifyContent:'center',
-                            gap:6,
-                            opacity:busy||!message.trim()?0.42:pressed?0.84:1,
-                          })}
-                        >
-                          <Text style={{fontSize:12,fontWeight:'900',color:c.onBrand}}>Send</Text>
-                          <Ionicons name="arrow-up" size={15} color={c.onBrand}/>
-                        </Pressable>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              ):null}
+              {highlights.length?<View style={{marginTop:24}}>
+                <Text accessibilityRole="header" style={[pu.section,{color:c.text}]}>Highlights</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:14,paddingRight:12,paddingTop:10}}>
+                  {highlights.map(item=><Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Highlight: ${item.title}`} onPress={()=>router.push(('/highlight?id='+item.id) as never)} style={{width:76,alignItems:'center'}}>
+                    <View style={[pu.ring,{borderColor:c.tertiary,backgroundColor:c.soft}]}>{item.coverUrl?<Image source={{uri:item.coverUrl}} style={{width:58,height:58,borderRadius:29}}/>:<Ionicons name="sparkles-outline" size={21} color={c.accent}/>}</View>
+                    <Text numberOfLines={2} style={{fontSize:13,fontWeight:'500',color:c.text,textAlign:'center',marginTop:6}}>{item.title}</Text>
+                  </Pressable>)}
+                </ScrollView>
+              </View>:null}
 
-              <View style={{paddingHorizontal:20,marginTop:26}}>
-                <View style={{flexDirection:'row',alignItems:'flex-end',justifyContent:'space-between',marginBottom:12}}>
-                  <View>
-                    <Text style={{fontSize:20,fontWeight:'900',color:c.text}}>Posts</Text>
-                    <Text style={{fontSize:12,color:c.muted,marginTop:3}}>Public activity from this member</Text>
-                  </View>
-                  {posts.length?(
-                    <View style={{paddingHorizontal:9,paddingVertical:5,borderRadius:999,backgroundColor:c.soft}}>
-                      <Text style={{fontSize:12,fontWeight:'800',color:c.textSecondary}}>{posts.length}</Text>
-                    </View>
-                  ):null}
-                </View>
+              <Text accessibilityRole="header" style={[pu.section,{color:c.text,marginTop:28}]}>Posts</Text>
+              {posts.length?posts.map(item=><View key={item.id} style={[pu.post,{borderBottomColor:c.border}]}>
+                <View style={pu.postHead}><StatusBadge label={postTypeLabel(item.post_type)} tone="neutral"/><Text style={[pu.postTime,{color:c.textSecondary}]}>{formatWhen(item.created_at)}</Text></View>
+                {item.caption?<Text style={[pu.caption,{color:c.text}]}>{item.caption}</Text>:null}
+                {postMedia[item.id]?.[0]?<View style={{marginTop:14,borderRadius:16,overflow:'hidden'}}><PostMediaImage postId={item.id} uri={postMedia[item.id][0]} style={{width:'100%',height:260,backgroundColor:c.soft}}/>{postMedia[item.id].length>1?<View style={{position:'absolute',right:10,top:10,paddingHorizontal:8,paddingVertical:4,borderRadius:12,backgroundColor:'rgba(0,0,0,.6)'}}><Text style={{fontSize:12,fontWeight:'900',color:'#fff'}}>1/{postMedia[item.id].length}</Text></View>:null}</View>:Array.isArray(item.post_media)&&item.post_media.length>0?<Pressable onPress={()=>void signedPostMediaBatch([item.id],{force:true,strict:true}).then(urls=>setPostMedia(current=>({...current,...urls}))).catch(()=>setError('This post photo is still unavailable. Please try again.'))} style={{marginTop:14,borderRadius:16,backgroundColor:c.input,minHeight:92,alignItems:'center',justifyContent:'center',padding:16}}><Ionicons name="image-outline" size={22} color={c.muted}/><Text style={{fontSize:12,color:c.muted,marginTop:7}}>Photo unavailable · tap to retry</Text></Pressable>:null}
+              </View>):<View style={[pu.emptyPosts,{backgroundColor:c.surface,borderColor:c.border}]}><Ionicons name="images-outline" size={22} color={c.accent}/><Text style={[pu.emptyText,{color:c.textSecondary}]}>Nothing public yet. Posts they share will appear here.</Text></View>}
 
-                {posts.length?posts.map((item,index)=>(
-                  <View
-                    key={item.id}
-                    style={{
-                      borderRadius:22,
-                      borderWidth:1,
-                      borderColor:c.border,
-                      backgroundColor:c.surface,
-                      padding:16,
-                      marginBottom:12,
-                    }}
-                  >
-                    <View style={{flexDirection:'row',alignItems:'center'}}>
-                      {p.avatar_url?(
-                        <Image source={{uri:p.avatar_url}} style={{width:38,height:38,borderRadius:19}}/>
-                      ):(
-                        <View style={{width:38,height:38,borderRadius:19,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}>
-                          <Text style={{fontSize:13,fontWeight:'900',color:c.text}}>{initials}</Text>
-                        </View>
-                      )}
-                      <View style={{flex:1,marginLeft:10}}>
-                        <Text numberOfLines={1} style={{fontSize:13,fontWeight:'900',color:c.text}}>
-                          {p.display_name??'Everest member'}
-                        </Text>
-                        <Text style={{fontSize:12,color:c.muted,marginTop:2}}>
-                          {new Date(item.created_at).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}
-                        </Text>
-                      </View>
-                      <View style={{paddingHorizontal:9,paddingVertical:6,borderRadius:999,backgroundColor:c.soft}}>
-                        <Text style={{fontSize:12,fontWeight:'900',color:c.textSecondary}}>{postTypeLabel(item.post_type)}</Text>
-                      </View>
-                    </View>
-
-                    <Text style={{fontSize:14,lineHeight:21,color:c.text,marginTop:14}}>
-                      {item.caption||postTypeLabel(item.post_type)}
-                    </Text>
-
-                    {postMedia[item.id]?.[0]?<View style={{marginTop:14,borderRadius:16,overflow:'hidden'}}><PostMediaImage postId={item.id} uri={postMedia[item.id][0]} style={{width:'100%',height:260,backgroundColor:c.soft}}/>{postMedia[item.id].length>1?<View style={{position:'absolute',right:10,top:10,paddingHorizontal:8,paddingVertical:4,borderRadius:12,backgroundColor:'rgba(0,0,0,.6)'}}><Text style={{fontSize:12,fontWeight:'900',color:'#fff'}}>1/{postMedia[item.id].length}</Text></View>:null}</View>:Array.isArray(item.post_media)&&item.post_media.length>0?<Pressable onPress={()=>void signedPostMediaBatch([item.id],{force:true,strict:true}).then(urls=>setPostMedia(current=>({...current,...urls}))).catch(()=>setError('This post photo is still unavailable. Please try again.'))} style={{marginTop:14,borderRadius:16,backgroundColor:c.input,minHeight:92,alignItems:'center',justifyContent:'center',padding:16}}><Ionicons name="image-outline" size={22} color={c.muted}/><Text style={{fontSize:12,color:c.muted,marginTop:7}}>Photo unavailable · tap to retry</Text></Pressable>:null}
-
-                    {index<posts.length-1?null:null}
-                  </View>
-                )):(
-                  <View style={{borderRadius:22,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:28,alignItems:'center'}}>
-                    <View style={{width:54,height:54,borderRadius:27,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}>
-                      <Ionicons name="grid-outline" size={22} color={c.muted}/>
-                    </View>
-                    <Text style={{fontSize:15,fontWeight:'900',color:c.text,marginTop:14}}>Nothing public yet</Text>
-                    <Text style={{fontSize:12,lineHeight:18,color:c.muted,textAlign:'center',marginTop:5,maxWidth:280}}>
-                      When this member shares public posts, they will appear here.
-                    </Text>
-                  </View>
-                )}
-              </View>
+              {error?<View accessibilityRole="alert" style={[pu.error,{borderColor:c.danger,backgroundColor:c.dangerContainer}]}><Text style={{fontSize:14,lineHeight:20,color:c.danger}}>{error}</Text></View>:null}
             </>
           )}
-
-          {error?(
-            <View style={{marginHorizontal:20,marginTop:14,padding:12,borderRadius:14,backgroundColor:c.surface,borderWidth:1,borderColor:c.border}}>
-              <Text style={{fontSize:12,color:c.danger}}>{error}</Text>
-            </View>
-          ):null}
         </View>
       </ScrollView>
+
+      <ConfirmSheet visible={confirmRemove} title={`Remove ${p?.display_name??'this connection'}?`} subtitle="You’ll stop seeing each other’s connection-only posts." note="You can send a new request later. They aren’t notified that you removed them." confirmLabel="Remove connection" destructive busy={busy} onCancel={()=>setConfirmRemove(false)} onConfirm={()=>{void connect().finally(()=>setConfirmRemove(false))}}/>
+
+      <Modal visible={composerOpen} transparent animationType="slide" onRequestClose={()=>setComposerOpen(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1,justifyContent:'flex-end',backgroundColor:c.overlay}}>
+          <Pressable accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={()=>setComposerOpen(false)}/>
+          <SafeAreaView edges={['bottom']} style={[pu.sheet,{backgroundColor:c.canvas}]}>
+            <View style={[pu.handleBar,{backgroundColor:c.border}]}/>
+            <Text accessibilityRole="header" style={[pu.sheetTitle,{color:c.text}]}>Message {p?.display_name??''}</Text>
+            <Text style={[pu.hint,{color:c.textSecondary,marginTop:2}]}>{connected?'Starts a private conversation.':'Sent as a message request. They can accept or decline.'}</Text>
+            <TextInput ref={messageInputRef} value={message} onChangeText={setMessage} autoFocus placeholder="Write a message…" placeholderTextColor={c.muted} multiline maxLength={5000} accessibilityLabel="Your message" style={[pu.input,{color:c.text,backgroundColor:c.input,borderColor:c.borderStrong}]}/>
+            {error&&composerOpen?<Text accessibilityRole="alert" style={{fontSize:14,lineHeight:20,color:c.danger,marginTop:10}}>{error}</Text>:null}
+            <View style={pu.sheetFoot}><Text tabular style={{fontSize:13,color:c.textSecondary}}>{message.length}/5000</Text><Pressable accessibilityRole="button" accessibilityState={{disabled:busy||!message.trim()}} disabled={busy||!message.trim()} onPress={()=>{void send().then(ok=>{if(ok)setComposerOpen(false)})}} style={[pu.send,{backgroundColor:busy||!message.trim()?c.disabled:c.brand}]}>{busy?<ActivityIndicator color={c.onBrand}/>:<Text style={{fontSize:16,fontWeight:'600',color:busy||!message.trim()?c.onDisabled:c.onBrand}}>Send</Text>}</Pressable></View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
+      </Modal>
 
       <Modal
         visible={menuOpen}
@@ -653,3 +369,20 @@ export default function PublicUser(){
     </SafeAreaView>
   );
 }
+
+const pu=StyleSheet.create({
+  hero:{alignItems:'center',marginTop:4},avatar:{width:96,height:96,borderRadius:48,alignItems:'center',justifyContent:'center'},avatarImage:{width:96,height:96,borderRadius:48},initials:{fontSize:32,fontWeight:'700'},
+  name:{textAlign:'center',marginTop:14},handle:{fontSize:15,marginTop:2},bio:{fontSize:16,lineHeight:23,textAlign:'center',marginTop:10,maxWidth:480},
+  facts:{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',columnGap:14,rowGap:6,marginTop:12},fact:{flexDirection:'row',alignItems:'center',gap:4,minHeight:28},factText:{fontSize:14},
+  stats:{flexDirection:'row',marginTop:20,borderRadius:16,borderWidth:StyleSheet.hairlineWidth},stat:{flex:1,alignItems:'center',paddingVertical:12},statValue:{fontSize:19,fontWeight:'700'},statLabel:{fontSize:13,marginTop:2},
+  newMember:{fontSize:15,lineHeight:21,textAlign:'center',marginTop:18},
+  actions:{flexDirection:'row',gap:10,marginTop:16},primary:{flex:1,minHeight:50,borderRadius:16,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8},primaryText:{fontSize:16,fontWeight:'600'},
+  secondary:{flex:1,minHeight:50,borderRadius:16,borderWidth:1,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8},secondaryText:{fontSize:16,fontWeight:'600'},
+  hint:{fontSize:13,lineHeight:19,marginTop:8,textAlign:'center'},section:{fontSize:20,fontWeight:'700'},ring:{width:68,height:68,borderRadius:34,borderWidth:2,alignItems:'center',justifyContent:'center'},
+  post:{paddingVertical:16,borderBottomWidth:StyleSheet.hairlineWidth},postHead:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},postTime:{fontSize:13},caption:{fontSize:16,lineHeight:23,marginTop:10},
+  emptyPosts:{borderRadius:16,borderWidth:StyleSheet.hairlineWidth,padding:20,alignItems:'center',gap:8,marginTop:12},emptyText:{fontSize:15,lineHeight:21,textAlign:'center'},
+  error:{marginTop:16,padding:12,borderRadius:14,borderWidth:1},
+  sheet:{borderTopLeftRadius:24,borderTopRightRadius:24,paddingHorizontal:20,paddingTop:8,paddingBottom:12,width:'100%',maxWidth:620,alignSelf:'center'},handleBar:{width:36,height:4,borderRadius:2,alignSelf:'center',marginBottom:14},
+  sheetTitle:{fontSize:20,fontWeight:'700'},input:{minHeight:120,maxHeight:220,borderWidth:1,borderRadius:16,paddingHorizontal:14,paddingTop:12,marginTop:14,fontSize:16,lineHeight:22,textAlignVertical:'top'},
+  sheetFoot:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:12},send:{minWidth:110,minHeight:48,borderRadius:16,alignItems:'center',justifyContent:'center',paddingHorizontal:20},
+});

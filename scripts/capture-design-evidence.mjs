@@ -45,11 +45,11 @@ const feedPosts=[
  feedPost('p3',uid,businesses[2].id,'Before and after: full ceramic-safe hand wash in Fitzroy this morning.','BEFORE_AFTER',1600),
 ];
 const rpcFixtures={
+ get_public_user_profile:body=>body?.p_user==='99999999-9999-4999-8999-999999999999'?({id:body.p_user,display_name:'Marcus Lee',username:null,avatar_url:null,bio:null,website_url:null,suburb:null,joined_at:minutesAgo(60*24*3),connection_count:0,mutual_count:0,connection_state:'NONE'}):({id:other,display_name:'Priya Shah',username:'priyashah',avatar_url:null,bio:'Gardener, dog walker and long-time North Melbourne local. Ask me for trade recommendations.',website_url:'https://example.invalid',suburb:'North Melbourne',joined_at:minutesAgo(60*24*420),connection_count:38,mutual_count:4,connection_state:'CONNECTED'}),
  get_booking_service_location:()=>[{request_id:'r2',address_line1:'14 Errol Street',suburb:'North Melbourne',city:'Melbourne',state:'VIC',postal_code:'3051',country:'AU',service_address_label:'14 Errol Street, North Melbourne VIC 3051',latitude:-37.8027,longitude:144.9497}],
  list_discovery_feed:()=>feedPosts,
  list_personal_conversations_v2:body=>body?.p_requests?[]:personalConversations,
  list_personal_messages_v2:()=>personalMessages,
- get_public_user_profile:()=>({id:other,full_name:'Priya Shah',avatar_url:null,suburb:'Brunswick',city:'Melbourne'}),
  get_everest_live_state:()=>[{request_id:'r1',live_status:process.env.EVEREST_QA_LIVE_STATUS||'NOTIFYING',radius_km:3,radius_stage:1,expires_at:minutesAgo(-20),eligible_count:4,notified_count:2,viewed_count:1,responding_count:0,quote_count:2}],
  get_or_create_cart:()=>'cart1',
  get_everest_live_map_points:()=>[{point_kind:'CUSTOMER',business_id:null,latitude:-37.799,longitude:144.946,activity:'YOU',distance_km:null,eta_seconds:null,address_label:'North Melbourne VIC'},{point_kind:'BUSINESS',business_id:biz,latitude:-37.803,longitude:144.951,activity:'VIEWED',distance_km:0.7,eta_seconds:null,address_label:null},{point_kind:'BUSINESS',business_id:'44444444-4444-4444-8444-444444444444',latitude:-37.79,longitude:144.96,activity:'NOTIFIED',distance_km:1.6,eta_seconds:null,address_label:null}],
@@ -84,6 +84,8 @@ const screens={
  'business-customer':{path:'/business-customer?id=ct1',signedIn:true,business:true},
  'business-customer-new':{path:'/business-customer?id=ct2',signedIn:true,business:true},
  'business-profile-service':{path:'/business-profile?id='+biz,signedIn:true,click:'Garden maintenance'},
+ 'public-user':{path:'/public-user?id='+other,signedIn:true},
+ 'public-user-new':{path:'/public-user?id=99999999-9999-4999-8999-999999999999',signedIn:true},
  saved:{path:'/saved',signedIn:true},
  'service-areas':{path:'/service-areas',signedIn:true,business:true},
  'business-verification':{path:'/business-verification',signedIn:true,business:true},
@@ -132,6 +134,7 @@ function rows(table,isBusiness){
   case 'crm_tasks':return isBusiness?[{id:'t1',business_id:biz,contact_id:'ct1',opportunity_id:null,task:'Call about the maintenance plan',task_type:'CALL',due_at:minutesAgo(60*3),priority:'HIGH',status:'OPEN',owner_id:uid,notes:null,completed_at:null,created_at:minutesAgo(5000),updated_at:minutesAgo(5000)}]:[];
   case 'crm_activities':return isBusiness?[{id:'ac1',business_id:biz,contact_id:'ct1',kind:'MESSAGE',title:'Message received',detail:'Running about ten minutes late?',occurred_at:minutesAgo(9),source_record_type:null,source_record_id:null},{id:'ac2',business_id:biz,contact_id:'ct1',kind:'QUOTE',title:'Quote #1042 sent',detail:null,occurred_at:minutesAgo(2000),source_record_type:null,source_record_id:null}]:[];
   case 'crm_notes':return isBusiness?[{id:'no1',body:'Prefers mornings. Side gate sticks — lift and push.',created_at:minutesAgo(4000),contact_id:'ct1',business_id:biz}]:[];
+  case 'posts':return [{id:'up1',author_id:other,business_id:null,caption:'Huge thanks to North Melbourne Home & Garden — the back yard looks brand new.',post_type:'RECOMMENDATION',visibility:'PUBLIC',status:'PUBLISHED',created_at:minutesAgo(300),post_media:[]},{id:'up2',author_id:other,business_id:null,caption:'Anyone know a good tiler near Errol St?',post_type:'QUESTION',visibility:'PUBLIC',status:'PUBLISHED',created_at:minutesAgo(60*24*6),post_media:[]}];
   case 'conversations':return isBusiness?[
    {id:'bc1',request_id:'r2',booking_id:'b2',quote_id:null,created_at:minutesAgo(600),messages:[{id:'bm1',body:'Gate code is 4471 — the side gate sticks a little.',created_at:minutesAgo(12),read_at:null,sender_id:other},{id:'bm2',body:'Running about ten minutes late?',created_at:minutesAgo(9),read_at:null,sender_id:other}]},
    {id:'bc2',request_id:'r3',booking_id:null,quote_id:'q1',created_at:minutesAgo(2000),messages:[{id:'bm3',body:'Thanks — I’ll confirm the quote tonight.',created_at:minutesAgo(1500),read_at:minutesAgo(1400),sender_id:other}]},
