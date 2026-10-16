@@ -86,7 +86,7 @@ export default function BusinessIntegrations(){
   <View style={{flex:1}}>
    <ScrollView contentContainerStyle={st.page}>
     <View style={st.header}>
-     <Pressable onPress={()=>router.back()} style={st.back}><Ionicons name="arrow-back" size={20} color={colors.text}/></Pressable>
+     <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={()=>router.back()} style={st.back}><Ionicons name="arrow-back" size={20} color={colors.text}/></Pressable>
      <View style={{flex:1}}>
       <Text style={st.mode}>Business mode</Text>
       <Text style={st.name}>{business?.name??'Integrations'}</Text>

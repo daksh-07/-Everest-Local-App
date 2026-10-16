@@ -1085,7 +1085,7 @@ export default function Request() {
                       {photos.map((p, i) => (
                         <View key={p.assetId ?? p.uri} style={s.photoWrap}>
                           <Image source={{ uri: p.uri }} style={s.photo} />
-                          <Pressable
+                          <Pressable accessibilityLabel="Close"
                             accessibilityRole="button"
                             onPress={() =>
                               setPhotos((items) =>

@@ -48,7 +48,7 @@ export function PostSoundPlayer({
 
  return <View style={s.wrap}>
   {audible.map(track=><TrackBed key={track.id} track={track} active={playing} restartToken={restartToken} defaultDurationMs={durationMs}/>)}
-  <Pressable onPress={toggle} disabled={!audible.length} style={[s.play,!audible.length&&{opacity:.45}]}>
+  <Pressable accessibilityRole="button" accessibilityLabel={playing?'Pause sound':'Play sound'} onPress={toggle} disabled={!audible.length} style={[s.play,!audible.length&&{opacity:.45}]}>
    <Ionicons name={playing?'pause':'play'} size={16} color={colors.onBrand}/>
   </Pressable>
   <Pressable disabled={!onOpenSound} onPress={()=>onOpenSound?.(primary)} style={s.meta}>

@@ -209,3 +209,20 @@ test('social posts: labelled actions, relative times, and text posts that lead w
  assert.match(social,/!item\.media\?\.length&&item\.caption\?<Text style=\{s\.textPost\}>/);
  assert.match(social,/'View 1 comment'/);
 });
+
+test('every icon-only button has an accessible name',()=>{
+ const files=fs.readdirSync('app').filter(f=>f.endsWith('.tsx')).map(f=>'app/'+f).concat(fs.readdirSync('components').filter(f=>f.endsWith('.tsx')).map(f=>'components/'+f));
+ const offenders=[];
+ for(const file of files){
+  const s=read(file);
+  for(const m of s.matchAll(/<Pressable\b/g)){
+   // End of the opening tag: the first '>' that is not part of an arrow function.
+   let k=m.index;do k=s.indexOf('>',k+1);while(k>0&&s[k-1]==='=');
+   const opening=s.slice(m.index,k);if(opening.trimEnd().endsWith('/'))continue;
+   const body=s.slice(k,s.indexOf('</Pressable>',m.index));
+   if(body.includes('<Pressable')||/accessibilityLabel/.test(opening))continue;
+   if(body.includes('<Ionicons')&&!body.includes('<Text'))offenders.push(file+':'+(s.slice(0,m.index).split('\n').length));
+  }
+ }
+ assert.deepEqual(offenders,[]);
+});

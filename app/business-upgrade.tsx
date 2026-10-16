@@ -54,7 +54,7 @@ export default function BusinessUpgrade(){
  return <SafeAreaView style={st.safe} edges={['top']}>
   <ScrollView contentContainerStyle={st.page}>
    <View style={st.header}>
-    <Pressable onPress={()=>router.back()} style={st.back}><Ionicons name="close" size={21} color={colors.text}/></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={()=>router.back()} style={st.back}><Ionicons name="close" size={21} color={colors.text}/></Pressable>
     <Text style={st.headerTitle}>Everest Pro</Text>
    </View>
 

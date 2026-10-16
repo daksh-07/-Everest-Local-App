@@ -29,10 +29,10 @@ export default function Sound(){
 
  return <SafeAreaView style={s.safe}>
   <ScrollView contentContainerStyle={s.page}>
-   <View style={s.header}><Pressable onPress={()=>router.back()} style={s.circle}><Ionicons name="chevron-back" size={22} color={colors.text}/></Pressable><Text style={s.headerTitle}>Sound</Text><View style={s.circle}/></View>
+   <View style={s.header}><Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={()=>router.back()} style={s.circle}><Ionicons name="chevron-back" size={22} color={colors.text}/></Pressable><Text style={s.headerTitle}>Sound</Text><View style={s.circle}/></View>
    {loading?<ActivityIndicator color={colors.accent} style={{marginTop:100}}/>:error&&!sound?<View style={s.empty}><Ionicons name="musical-notes-outline" size={32} color={colors.muted}/><Text style={s.emptyTitle}>Sound unavailable</Text><Text style={s.emptyCopy}>{error}</Text></View>:sound?<>
     <View style={s.hero}>
-     <Pressable onPress={()=>void toggle()} disabled={!sound.url} style={s.art}><Ionicons name={playing?'pause':'play'} size={34} color={colors.onBrand}/></Pressable>
+     <Pressable accessibilityRole="button" accessibilityLabel={playing?'Pause':'Play'} onPress={()=>void toggle()} disabled={!sound.url} style={s.art}><Ionicons name={playing?'pause':'play'} size={34} color={colors.onBrand}/></Pressable>
      <Text style={s.kicker}>{sourceLabel(sound.source)}</Text>
      <Text style={s.title}>{sound.title}</Text>
      {sound.artist?<Text style={s.artist}>{sound.artist}</Text>:null}

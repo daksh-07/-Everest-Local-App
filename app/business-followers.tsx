@@ -38,7 +38,7 @@ export default function BusinessFollowers(){
  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
   <ScrollView contentContainerStyle={{padding:20,paddingBottom:60,maxWidth:760,width:'100%',alignSelf:'center'}}>
    <View style={{flexDirection:'row',alignItems:'center',gap:14}}>
-    <Pressable onPress={()=>router.back()}><Ionicons name="arrow-back" size={23} color={c.text}/></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={()=>router.back()}><Ionicons name="arrow-back" size={23} color={c.text}/></Pressable>
     <View style={{flex:1}}><Text style={{fontSize:23,fontWeight:'900',color:c.text}}>Followers</Text><Text style={{fontSize:11,color:c.muted,marginTop:3}}>{title}</Text></View>
    </View>
    {loading?<ActivityIndicator style={{marginTop:60}} color={c.text}/>:items.length?items.map(item=><Pressable key={item.id} onPress={()=>router.push('/public-user?id='+item.id)} style={{flexDirection:'row',alignItems:'center',gap:12,padding:14,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginTop:10}}>

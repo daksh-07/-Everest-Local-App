@@ -50,7 +50,7 @@ export function ClipEditor({
  return <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
   <View style={s.safe}>
    <View style={s.header}>
-    <Pressable onPress={onClose} style={s.circle}><Ionicons name="close" size={22} color={colors.text}/></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={s.circle}><Ionicons name="close" size={22} color={colors.text}/></Pressable>
     <View style={s.headerTitle}><Text style={s.kicker}>Everest Studio</Text><Text style={s.title}>Edit clip</Text></View>
     <Pressable onPress={()=>{onDone(normalizeClipEditManifest(draft,durationMs));void haptic.success()}} style={s.done}><Text style={s.doneText}>Done</Text></Pressable>
    </View>

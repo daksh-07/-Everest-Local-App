@@ -99,8 +99,8 @@ export function SoundPicker({
    <View style={s.selected}>
     <View style={s.selectedIcon}><Ionicons name={activeValue?.source==='VOICEOVER'?'mic':activeValue?.source==='USER_UPLOAD'?'cloud-upload':'musical-notes'} size={18} color={colors.accent}/></View>
     <View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={s.selectedTitle}>{selectedLabel}</Text><Text numberOfLines={1} style={s.selectedCopy}>{activeValue?.artist??(activeValue?activeValue.source.replaceAll('_',' ').toLowerCase():(voiceover&&tab!=='VOICEOVER'?'Voiceover also added':'Tap a source below'))}</Text></View>
-    {activeValue?.previewUri?<Pressable onPress={()=>void preview(activeValue.previewUri,activeValue.startMs)} style={s.preview}><Ionicons name="play" size={16} color={colors.text}/></Pressable>:null}
-    {activeValue?<Pressable onPress={removeActive} style={s.remove}><Ionicons name="trash-outline" size={17} color={colors.danger}/></Pressable>:null}
+    {activeValue?.previewUri?<Pressable accessibilityRole="button" accessibilityLabel="Preview sound" onPress={()=>void preview(activeValue.previewUri,activeValue.startMs)} style={s.preview}><Ionicons name="play" size={16} color={colors.text}/></Pressable>:null}
+    {activeValue?<Pressable accessibilityRole="button" accessibilityLabel="Delete" onPress={removeActive} style={s.remove}><Ionicons name="trash-outline" size={17} color={colors.danger}/></Pressable>:null}
    </View>
 
    <View style={s.sourceBlock}>
@@ -112,7 +112,7 @@ export function SoundPicker({
 
    <ScrollView style={s.body} contentContainerStyle={s.bodyContent} keyboardShouldPersistTaps="handled">
     {tab==='MUSIC'?<>
-     <View style={s.search}><Ionicons name="search" size={18} color={colors.muted}/><TextInput value={query} onChangeText={setQuery} autoCorrect={false} placeholder="Search songs, artists, moods" placeholderTextColor={colors.muted} style={s.input}/>{query?<Pressable onPress={()=>setQuery('')}><Ionicons name="close-circle" size={18} color={colors.muted}/></Pressable>:null}</View>
+     <View style={s.search}><Ionicons name="search" size={18} color={colors.muted}/><TextInput value={query} onChangeText={setQuery} autoCorrect={false} placeholder="Search songs, artists, moods" placeholderTextColor={colors.muted} style={s.input}/>{query?<Pressable accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={13} onPress={()=>setQuery('')}><Ionicons name="close-circle" size={18} color={colors.muted}/></Pressable>:null}</View>
      {loading?<ActivityIndicator color={colors.accent} style={{marginTop:32}}/>:tracks.length?<View style={s.musicList}>{tracks.map(track=><View key={track.id} style={s.musicRow}><Pressable disabled={busy} onPress={()=>void chooseMusic(track)} style={s.musicMain}><View style={s.musicArt}><Ionicons name="musical-note" size={17} color={colors.text}/></View><View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={s.musicTitle}>{track.title}</Text><Text numberOfLines={1} style={s.musicArtist}>{track.artist}{track.mood?' · '+track.mood:''}</Text></View><Text style={s.duration}>{seconds(track.duration_ms)}</Text><Ionicons name={value?.musicTrackId===track.id?'checkmark-circle':'add-circle-outline'} size={22} color={value?.musicTrackId===track.id?colors.accent:colors.muted}/></Pressable></View>)}</View>:<View style={s.empty}><View style={s.emptyIcon}><Ionicons name="musical-notes-outline" size={27} color={colors.accent}/></View><Text style={s.emptyTitle}>{query?'No licensed match':'Licensed music is being added'}</Text><Text style={s.emptyCopy}>You can still upload your own permitted audio, keep the original sound, or record a voiceover right now.</Text><View style={s.emptyActions}><Pressable onPress={()=>setTab('UPLOAD')} style={s.smallCta}><Text style={s.smallCtaText}>Upload audio</Text></Pressable><Pressable onPress={()=>setTab('VOICEOVER')} style={s.smallCta}><Text style={s.smallCtaText}>Voiceover</Text></Pressable></View></View>}
     </>:null}
 
