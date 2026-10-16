@@ -245,7 +245,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
      </View>
      <View style={[s.quickIntentRow,compact&&s.quickIntentStack]}>
       <Pressable onPress={()=>go('/request')} style={({pressed})=>[s.quickIntent,s.quickIntentPrimary,{borderRadius:t.shape.medium},pressed&&s.actionPressed]} accessibilityRole="button" accessibilityLabel="Request a Quote"><View style={s.intentCopy}><Text numberOfLines={1} style={s.quickIntentPrimaryTitle}>Request quotes</Text><Text numberOfLines={1} style={s.quickIntentPrimaryCopy}>Describe it once</Text></View><Ionicons name="arrow-forward" size={18} color={c.onBrand}/></Pressable>
-      <AmbientEdge borderRadius={t.shape.medium} tone="live" style={[s.quickLiveGlow,compact&&s.quickLiveStacked]}><Pressable onPress={()=>go('/request?live=1')} style={({pressed})=>[s.quickIntent,s.quickIntentLive,{borderRadius:t.shape.medium},pressed&&s.actionPressed]} accessibilityRole="button" accessibilityLabel="Find someone now with Everest Live"><View style={s.intentCopy}><Text numberOfLines={1} style={s.quickIntentTitle}>Need it now?</Text><View style={s.liveRow}><View style={s.liveDot}/><Text numberOfLines={1} style={s.liveIntentCopy}>Everest Live</Text></View></View><Ionicons name="radio-outline" size={19} color={c.success}/></Pressable></AmbientEdge>
+      <AmbientEdge borderRadius={t.shape.medium} tone="live" style={[s.quickLiveGlow,compact&&s.quickLiveStacked]}><Pressable onPress={()=>go('/request?live=1')} style={({pressed})=>[s.quickIntent,s.quickIntentLive,{borderRadius:t.shape.medium},pressed&&s.actionPressed]} accessibilityRole="button" accessibilityLabel="Find someone now with Everest Live"><View style={s.intentCopy}><Text numberOfLines={1} style={s.quickIntentTitle}>Need it now?</Text><View style={s.liveRow}><View style={s.liveDot}/><Text numberOfLines={1} style={s.liveIntentCopy}>Everest Live</Text></View></View><Ionicons name="radio-outline" size={19} color={c.secondaryText}/></Pressable></AmbientEdge>
      </View>
      {context?<Pressable onPress={()=>go(context.route)} style={({pressed})=>[s.context,{borderRadius:t.shape.medium},pressed&&s.press]} accessibilityRole="button" accessibilityLabel={`Continue: ${context.title}, ${context.detail}`}><View style={s.contextIcon}><Ionicons name={context.kind==='booking'?'calendar':'document-text'} size={18} color={c.accent}/></View><View style={{flex:1,minWidth:0}}><Text style={s.contextLabel}>Continue where you left off</Text><Text numberOfLines={1} style={s.contextTitle}>{context.title}</Text><Text numberOfLines={1} style={s.contextDetail}>{context.detail}</Text></View><Ionicons name="chevron-forward" size={18} color={c.muted}/></Pressable>:null}
     </View>
@@ -301,7 +301,7 @@ const styles=(c:ThemeColors,desktop:boolean)=>StyleSheet.create({
  quickIntentPrimaryTitle:{fontSize:15,lineHeight:20,fontWeight:'600',color:c.onBrand},
  quickIntentPrimaryCopy:{fontSize:13,lineHeight:17,color:c.onBrand,opacity:.78,marginTop:1},
  quickIntentTitle:{fontSize:15,lineHeight:20,fontWeight:'600',color:c.text},
- liveRow:{flexDirection:'row',alignItems:'center',gap:6,marginTop:1},liveDot:{width:6,height:6,borderRadius:3,backgroundColor:c.success},
+ liveRow:{flexDirection:'row',alignItems:'center',gap:6,marginTop:1},liveDot:{width:6,height:6,borderRadius:3,backgroundColor:c.secondary},
  liveIntentCopy:{fontSize:13,lineHeight:17,color:c.textSecondary},
  actionPressed:{opacity:.84},
  context:{marginTop:12,minHeight:68,backgroundColor:c.elevated,flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:14,paddingVertical:12},

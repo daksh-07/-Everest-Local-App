@@ -1,3 +1,4 @@
+import {useAppTheme,useThemedStyles,type ThemeColors} from '@/lib/theme';
 import {userMessage} from '@/lib/errors';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -35,22 +36,22 @@ const insuranceTypes = ['ADDITIONAL_MOTOR','COMMERCIAL_BUSINESS_USE','OTHER'] as
 function Field({ label, value, onChangeText, placeholder, keyboardType = 'default', editable = true, multiline = false }: {
   label: string; value: string; onChangeText: (value: string) => void; placeholder: string;
   keyboardType?: 'default'|'numeric'|'email-address'; editable?: boolean; multiline?: boolean;
-}) {
+}) {const s=useThemedStyles(create_s);const {colors:themeColors}=useAppTheme();
   return <View style={s.field}>
     <Text style={s.label}>{label}</Text>
-    <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#aaa69f"
+    <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={themeColors.muted}
       style={[s.input,multiline&&s.textarea]} keyboardType={keyboardType} editable={editable}
       autoCapitalize={label.includes('EMAIL') ? 'none' : 'words'} multiline={multiline}/>
   </View>;
 }
 
-function Choice({ label, selected, onPress }: { label:string; selected:boolean; onPress:()=>void }) {
+function Choice({ label, selected, onPress }: { label:string; selected:boolean; onPress:()=>void }) {const s=useThemedStyles(create_s);
   return <Pressable onPress={onPress} style={[s.choice,selected&&s.choiceSelected]}>
     <Text style={[s.choiceText,selected&&s.choiceTextSelected]}>{label}</Text>
   </Pressable>;
 }
 
-function StatusBadge({ value, good=false }: { value:string; good?:boolean }) {
+function StatusBadge({ value, good=false }: { value:string; good?:boolean }) {const s=useThemedStyles(create_s);
   return <View style={[s.badge,good&&s.badgeGood]}><Text style={[s.badgeText,good&&s.badgeGoodText]}>{value.replaceAll('_',' ')}</Text></View>;
 }
 
@@ -59,7 +60,7 @@ function DocumentCard({ label, hint, type, documents, onUpload, disabled, expire
   onUpload:(type:DriverDocumentType,camera:boolean)=>void; disabled:boolean; expiresAt?:string;
   onSetExpiry?:(value:string)=>void; documentNumber?:string; onSetDocumentNumber?:(value:string)=>void;
   issuingJurisdiction?:string; onSetIssuingJurisdiction?:(value:string)=>void; documentSubtype?:string;
-}) {
+}) {const s=useThemedStyles(create_s);
   const doc=documents.find(item=>item.document_type===type);
   const status=doc?.status ?? 'REQUIRED';
   return <View style={s.docCard}>
@@ -77,7 +78,7 @@ function DocumentCard({ label, hint, type, documents, onUpload, disabled, expire
   </View>;
 }
 
-export default function DriverOnboarding() {
+export default function DriverOnboarding() {const s=useThemedStyles(create_s);
   const [application,setApplication]=useState<DriverApplication|null>(null);
   const [compliance,setCompliance]=useState<DriverCompliance|null>(null);
   const [step,setStep]=useState(0);
@@ -317,20 +318,20 @@ export default function DriverOnboarding() {
   </SafeAreaView>;
 }
 
-const s=StyleSheet.create({
-  safe:{flex:1,backgroundColor:'#f8f7f4'},page:{padding:20,paddingBottom:70,maxWidth:860,width:'100%',alignSelf:'center'},
+const create_s=(c:ThemeColors)=>StyleSheet.create({
+  safe:{flex:1,backgroundColor:c.canvas},page:{padding:20,paddingBottom:70,maxWidth:860,width:'100%',alignSelf:'center'},
   top:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:20},back:{fontSize:34,fontWeight:'300'},topTitle:{fontSize:16,fontWeight:'800'},
-  eyebrow:{fontSize:12,fontWeight:'900',color:'#777'},title:{fontSize:31,fontWeight:'900',marginTop:7},copy:{fontSize:12,lineHeight:19,color:'#777',marginTop:8,marginBottom:16},
-  statusCard:{backgroundColor:'#fff',borderRadius:18,borderWidth:1,borderColor:'#e5e2dc',padding:16,marginTop:12},statusEyebrow:{fontSize:12,fontWeight:'900',color:'#777'},statusLine:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:5},statusTitle:{fontSize:18,fontWeight:'900'},statusCopy:{fontSize:11,lineHeight:17,color:'#777',marginTop:7},
-  badge:{alignSelf:'flex-start',backgroundColor:'#f3eee4',borderRadius:12,paddingHorizontal:9,paddingVertical:6},badgeGood:{backgroundColor:'#e7f3eb'},badgeText:{fontSize:12,fontWeight:'900',color:'#765f2d'},badgeGoodText:{color:'#2c6842'},
-  primaryWide:{height:52,borderRadius:13,backgroundColor:'#111',alignItems:'center',justifyContent:'center',marginTop:16},primary:{height:50,borderRadius:13,backgroundColor:'#111',alignItems:'center',justifyContent:'center',paddingHorizontal:18,flex:1},primaryText:{color:'#fff',fontSize:12,fontWeight:'900'},disabled:{opacity:.45},
-  progress:{height:6,borderRadius:4,backgroundColor:'#e5e2dc',overflow:'hidden',marginTop:22},progressFill:{height:'100%',backgroundColor:'#111'},stepRow:{gap:14,paddingVertical:15},step:{alignItems:'center',width:74},stepDot:{width:25,height:25,borderRadius:13,borderWidth:1,borderColor:'#d8d3ca',alignItems:'center',justifyContent:'center',backgroundColor:'#fff'},stepDotActive:{backgroundColor:'#111',borderColor:'#111'},stepNumber:{fontSize:12,fontWeight:'800',color:'#777'},stepNumberActive:{color:'#fff'},stepLabel:{fontSize:12,fontWeight:'700',color:'#999',textAlign:'center',marginTop:5},stepLabelActive:{color:'#111'},
-  sectionTitle:{fontSize:21,fontWeight:'900',marginTop:10},sectionCopy:{fontSize:11,lineHeight:18,color:'#777',marginTop:6,marginBottom:15},section:{fontSize:11,fontWeight:'900',marginTop:18,marginBottom:7},label:{fontSize:12,fontWeight:'900',color:'#777',marginBottom:6,marginTop:12},
-  field:{marginTop:10},input:{minHeight:48,borderRadius:12,borderWidth:1,borderColor:'#ddd8cf',backgroundColor:'#fff',paddingHorizontal:13,fontSize:12,color:'#111'},textarea:{minHeight:85,paddingTop:12,textAlignVertical:'top'},two:{flexDirection:'row',gap:10},half:{flex:1},
-  choices:{flexDirection:'row',flexWrap:'wrap',gap:7},choice:{borderWidth:1,borderColor:'#ddd8cf',borderRadius:11,paddingHorizontal:11,paddingVertical:10,backgroundColor:'#fff'},choiceSelected:{backgroundColor:'#111',borderColor:'#111'},choiceText:{fontSize:12,fontWeight:'800',color:'#555'},choiceTextSelected:{color:'#fff'},
-  docCard:{backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc',borderRadius:16,padding:14,marginTop:12},docHeader:{flexDirection:'row',gap:10,alignItems:'flex-start'},docTitle:{fontSize:12,fontWeight:'900'},docHint:{fontSize:12,lineHeight:15,color:'#777',marginTop:3},docActions:{flexDirection:'row',gap:8,marginTop:12},smallButton:{backgroundColor:'#111',borderRadius:10,paddingHorizontal:12,paddingVertical:10},smallButtonText:{fontSize:12,fontWeight:'900',color:'#fff'},smallOutline:{borderWidth:1,borderColor:'#d8d3ca',borderRadius:10,paddingHorizontal:12,paddingVertical:10},smallOutlineText:{fontSize:12,fontWeight:'900'},docError:{fontSize:12,lineHeight:15,color:'#a12820',marginTop:8},verifiedNote:{fontSize:12,lineHeight:14,color:'#6d665c',marginTop:9},
-  declaration:{flexDirection:'row',gap:12,alignItems:'flex-start',backgroundColor:'#fff',borderWidth:1,borderColor:'#e5e2dc',borderRadius:15,padding:14,marginTop:10},declarationAccepted:{borderColor:'#aabdaF',backgroundColor:'#f7fbf8'},checkbox:{width:24,height:24,borderRadius:7,borderWidth:1,borderColor:'#d0cbc2',alignItems:'center',justifyContent:'center'},checkboxChecked:{backgroundColor:'#111',borderColor:'#111'},checkboxText:{color:'#fff',fontWeight:'900'},declarationTitle:{fontSize:12,fontWeight:'900'},declarationText:{fontSize:12,lineHeight:16,color:'#777',marginTop:4},
-  complianceCard:{backgroundColor:'#fff',borderRadius:16,borderWidth:1,borderColor:'#e5e2dc',padding:14,marginTop:12},complianceRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingVertical:8,borderBottomWidth:1,borderBottomColor:'#efede8'},complianceLabel:{fontSize:12,fontWeight:'800'},overall:{marginTop:12,padding:12,borderRadius:12,backgroundColor:'#f8f7f4'},overallTitle:{fontSize:12,fontWeight:'900'},blocking:{fontSize:12,lineHeight:15,color:'#a12820',marginTop:5},warningText:{fontSize:12,lineHeight:15,color:'#765f2d',marginTop:4},
-  info:{backgroundColor:'#f3eee4',borderRadius:13,padding:12,marginTop:14},infoTitle:{fontSize:12,fontWeight:'900'},infoCopy:{fontSize:12,lineHeight:16,color:'#777',marginTop:4},warning:{backgroundColor:'#fff4df',borderRadius:13,padding:13,marginTop:12},warningTitle:{fontSize:11,fontWeight:'900'},warningCopy:{fontSize:12,lineHeight:16,color:'#765f2d',marginTop:4},
-  error:{fontSize:11,lineHeight:17,color:'#a12820',marginTop:14},meta:{fontSize:12,lineHeight:16,color:'#777',marginTop:5},nav:{flexDirection:'row',gap:9,marginTop:20},outline:{height:50,borderRadius:13,borderWidth:1,borderColor:'#d8d3ca',alignItems:'center',justifyContent:'center',paddingHorizontal:18},outlineText:{fontSize:12,fontWeight:'900'},center:{flex:1,padding:30,justifyContent:'center',alignItems:'center'}
+  eyebrow:{fontSize:12,fontWeight:'900',color:c.textSecondary},title:{fontSize:31,fontWeight:'900',marginTop:7},copy:{fontSize:12,lineHeight:19,color:c.textSecondary,marginTop:8,marginBottom:16},
+  statusCard:{backgroundColor:c.surface,borderRadius:18,borderWidth:1,borderColor:c.border,padding:16,marginTop:12},statusEyebrow:{fontSize:12,fontWeight:'900',color:c.textSecondary},statusLine:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:5},statusTitle:{fontSize:18,fontWeight:'900'},statusCopy:{fontSize:11,lineHeight:17,color:c.textSecondary,marginTop:7},
+  badge:{alignSelf:'flex-start',backgroundColor:c.accentSoft,borderRadius:12,paddingHorizontal:9,paddingVertical:6},badgeGood:{backgroundColor:c.successContainer},badgeText:{fontSize:12,fontWeight:'900',color:c.accent},badgeGoodText:{color:c.success},
+  primaryWide:{height:52,borderRadius:13,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginTop:16},primary:{height:50,borderRadius:13,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',paddingHorizontal:18,flex:1},primaryText:{color:c.onBrand,fontSize:12,fontWeight:'900'},disabled:{opacity:.45},
+  progress:{height:6,borderRadius:4,backgroundColor:c.soft,overflow:'hidden',marginTop:22},progressFill:{height:'100%',backgroundColor:c.brand},stepRow:{gap:14,paddingVertical:15},step:{alignItems:'center',width:74},stepDot:{width:25,height:25,borderRadius:13,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center',backgroundColor:c.surface},stepDotActive:{backgroundColor:c.brand,borderColor:c.brand},stepNumber:{fontSize:12,fontWeight:'800',color:c.textSecondary},stepNumberActive:{color:c.onBrand},stepLabel:{fontSize:12,fontWeight:'700',color:c.muted,textAlign:'center',marginTop:5},stepLabelActive:{color:c.text},
+  sectionTitle:{fontSize:21,fontWeight:'900',marginTop:10},sectionCopy:{fontSize:11,lineHeight:18,color:c.textSecondary,marginTop:6,marginBottom:15},section:{fontSize:11,fontWeight:'900',marginTop:18,marginBottom:7},label:{fontSize:12,fontWeight:'900',color:c.textSecondary,marginBottom:6,marginTop:12},
+  field:{marginTop:10},input:{minHeight:48,borderRadius:12,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:13,fontSize:12,color:c.text},textarea:{minHeight:85,paddingTop:12,textAlignVertical:'top'},two:{flexDirection:'row',gap:10},half:{flex:1},
+  choices:{flexDirection:'row',flexWrap:'wrap',gap:7},choice:{borderWidth:1,borderColor:c.border,borderRadius:11,paddingHorizontal:11,paddingVertical:10,backgroundColor:c.surface},choiceSelected:{backgroundColor:c.brand,borderColor:c.brand},choiceText:{fontSize:12,fontWeight:'800',color:c.textSecondary},choiceTextSelected:{color:c.onBrand},
+  docCard:{backgroundColor:c.surface,borderWidth:1,borderColor:c.border,borderRadius:16,padding:14,marginTop:12},docHeader:{flexDirection:'row',gap:10,alignItems:'flex-start'},docTitle:{fontSize:12,fontWeight:'900'},docHint:{fontSize:12,lineHeight:15,color:c.textSecondary,marginTop:3},docActions:{flexDirection:'row',gap:8,marginTop:12},smallButton:{backgroundColor:c.brand,borderRadius:10,paddingHorizontal:12,paddingVertical:10},smallButtonText:{fontSize:12,fontWeight:'900',color:c.onBrand},smallOutline:{borderWidth:1,borderColor:c.border,borderRadius:10,paddingHorizontal:12,paddingVertical:10},smallOutlineText:{fontSize:12,fontWeight:'900'},docError:{fontSize:12,lineHeight:15,color:c.danger,marginTop:8},verifiedNote:{fontSize:12,lineHeight:14,color:c.textSecondary,marginTop:9},
+  declaration:{flexDirection:'row',gap:12,alignItems:'flex-start',backgroundColor:c.surface,borderWidth:1,borderColor:c.border,borderRadius:15,padding:14,marginTop:10},declarationAccepted:{borderColor:c.success,backgroundColor:c.successContainer},checkbox:{width:24,height:24,borderRadius:7,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},checkboxChecked:{backgroundColor:c.brand,borderColor:c.brand},checkboxText:{color:c.onBrand,fontWeight:'900'},declarationTitle:{fontSize:12,fontWeight:'900'},declarationText:{fontSize:12,lineHeight:16,color:c.textSecondary,marginTop:4},
+  complianceCard:{backgroundColor:c.surface,borderRadius:16,borderWidth:1,borderColor:c.border,padding:14,marginTop:12},complianceRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingVertical:8,borderBottomWidth:1,borderBottomColor:c.border},complianceLabel:{fontSize:12,fontWeight:'800'},overall:{marginTop:12,padding:12,borderRadius:12,backgroundColor:c.canvas},overallTitle:{fontSize:12,fontWeight:'900'},blocking:{fontSize:12,lineHeight:15,color:c.danger,marginTop:5},warningText:{fontSize:12,lineHeight:15,color:c.accent,marginTop:4},
+  info:{backgroundColor:c.accentSoft,borderRadius:13,padding:12,marginTop:14},infoTitle:{fontSize:12,fontWeight:'900'},infoCopy:{fontSize:12,lineHeight:16,color:c.textSecondary,marginTop:4},warning:{backgroundColor:c.warningContainer,borderRadius:13,padding:13,marginTop:12},warningTitle:{fontSize:11,fontWeight:'900'},warningCopy:{fontSize:12,lineHeight:16,color:c.accent,marginTop:4},
+  error:{fontSize:11,lineHeight:17,color:c.danger,marginTop:14},meta:{fontSize:12,lineHeight:16,color:c.textSecondary,marginTop:5},nav:{flexDirection:'row',gap:9,marginTop:20},outline:{height:50,borderRadius:13,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center',paddingHorizontal:18},outlineText:{fontSize:12,fontWeight:'900'},center:{flex:1,padding:30,justifyContent:'center',alignItems:'center'}
 });

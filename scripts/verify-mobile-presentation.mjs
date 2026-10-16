@@ -24,7 +24,7 @@ try{
      return {quote:rect('Request a Quote'),live:rect('Find someone now with Everest Live'),mode:document.documentElement.dataset.everestExperience,canvas:document.documentElement.style.getPropertyValue('--everest-canvas')};
     })()`);
     assert.equal(result.mode,mode.toLowerCase());
-    assert.equal(result.canvas,theme==='DARK'?'#000000':'#F7F5F0');
+    assert.equal(result.canvas,theme==='DARK'?'#000000':'#F8FAFC');
     for(const control of [result.quote,result.live]){
      assert.ok(control.height>=44,`Touch target at ${width}: ${JSON.stringify(control)}`);
      assert.ok(control.x>=0&&control.right<=width+1,`Overflow at ${width}`);

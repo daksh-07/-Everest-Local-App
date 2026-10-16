@@ -142,7 +142,7 @@ export function EverestLiveMiniPlayer(){
     style={({pressed})=>[s.wrap,{left:inset,right:inset,bottom:TAB_BAR_ROUTES.has(pathname)?88:Math.max(12,insets.bottom+8)},pressed&&s.pressed]}>
     <View style={s.iconWrap}>
       <View style={[s.dot,paused&&s.dotPaused]}/>
-      <Ionicons name="radio-outline" size={20} color={colors.accent}/>
+      <Ionicons name="radio-outline" size={20} color={colors.onSecondaryContainer}/>
     </View>
     <View style={s.copy}>
       <View style={s.row}>
@@ -162,9 +162,9 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
     shadowColor:'#000',shadowOpacity:.14,shadowRadius:16,shadowOffset:{width:0,height:6},elevation:10
   },
   pressed:{opacity:.86},
-  iconWrap:{width:38,height:38,borderRadius:12,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},
-  dot:{position:'absolute',right:6,top:6,width:7,height:7,borderRadius:4,backgroundColor:c.success},
-  dotPaused:{backgroundColor:c.accent},
+  iconWrap:{width:38,height:38,borderRadius:12,backgroundColor:c.secondaryContainer,alignItems:'center',justifyContent:'center'},
+  dot:{position:'absolute',right:6,top:6,width:7,height:7,borderRadius:4,backgroundColor:c.secondary},
+  dotPaused:{backgroundColor:c.warning},
   copy:{flex:1,minWidth:0},
   row:{flexDirection:'row',alignItems:'center',gap:8},
   title:{flex:1,fontSize:14,lineHeight:19,fontWeight:'600',color:c.text},

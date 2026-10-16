@@ -141,7 +141,7 @@ test('shopping screens show stock honestly and format money once',()=>{
  const product=read('app/product.tsx');const cart=read('app/cart.tsx');const orders=read('app/orders.tsx');
  // A sold-out option says so in text, not only by fading; low stock is not shown in the success colour.
  assert.match(product,/!enabled\?<Text style=\{s\.variantPrice\}>Sold out<\/Text>/);
- assert.match(product,/available<=5&&product\.track_stock\)\?c\.accent:c\.success/);
+ assert.match(product,/available<=5&&product\.track_stock\)\?c\.warning:c\.success/);
  for(const [name,source] of [['product',product],['cart',cart],['orders',orders]])assert.doesNotMatch(source,/toFixed\(2\)|EVEREST LOCAL|fontSize:8,/,name);
  assert.match(orders,/<ScreenHeader title="Orders"/);
 });

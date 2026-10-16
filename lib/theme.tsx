@@ -30,8 +30,10 @@ export function ThemeProvider({children}:{children:ReactNode}){
  useEffect(()=>{let active=true;void readPreference().then(value=>{if(active){setValue(value);setReady(true)}});return()=>{active=false}},[]);
  const setPreference=async(value:ThemePreference)=>{setValue(value);await writePreference(value)};
  const isDark=preference==='DARK'||(preference==='SYSTEM'&&system==='dark');
- useEffect(()=>{if(Platform.OS!=='web'||typeof document==='undefined')return;const canvas=isDark?dark.canvas:light.canvas;document.documentElement.style.setProperty('--everest-canvas',canvas);document.documentElement.style.setProperty('--everest-text',isDark?dark.text:light.text);document.documentElement.style.backgroundColor=canvas;document.body.style.backgroundColor=canvas;document.documentElement.style.colorScheme=isDark?'dark':'light';document.querySelector('meta[name="theme-color"]')?.setAttribute('content',canvas)},[isDark]);
+ useEffect(()=>{if(Platform.OS!=='web'||typeof document==='undefined')return;const canvas=isDark?dark.canvas:light.canvas;document.documentElement.style.setProperty('--everest-canvas',canvas);document.documentElement.style.setProperty('--everest-text',isDark?dark.text:light.text);document.documentElement.style.setProperty('--everest-focus',isDark?dark.focus:light.focus);document.documentElement.style.backgroundColor=canvas;document.body.style.backgroundColor=canvas;document.documentElement.style.colorScheme=isDark?'dark':'light';document.querySelector('meta[name="theme-color"]')?.setAttribute('content',canvas)},[isDark]);
  const value=useMemo(()=>({preference,isDark,colors:isDark?dark:light,setPreference,ready}),[preference,isDark,ready]);
  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 export function useAppTheme(){const value=useContext(ThemeContext);if(!value)throw new Error('useAppTheme must be used inside ThemeProvider');return value}
+/** Memoised themed StyleSheet: `const s=useThemedStyles(createStyles)` with `createStyles=(c:ThemeColors)=>StyleSheet.create({...})`. */
+export function useThemedStyles<T>(factory:(colors:ThemeColors)=>T):T{const {colors}=useAppTheme();return useMemo(()=>factory(colors),[colors,factory])}

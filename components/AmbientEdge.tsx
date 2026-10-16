@@ -45,7 +45,7 @@ export function AmbientEdge({
 
  const segment=28;
  const thickness=1;
- const edgeColor=tone==='live'?colors.success:colors.textSecondary;
+ const edgeColor=tone==='live'?colors.secondary:colors.textSecondary;
 
  const topX=progress.interpolate({inputRange:[0,.25,1],outputRange:[-segment,size.width,size.width],extrapolate:'clamp'});
  const rightY=progress.interpolate({inputRange:[0,.25,.5,1],outputRange:[-segment,-segment,size.height,size.height],extrapolate:'clamp'});

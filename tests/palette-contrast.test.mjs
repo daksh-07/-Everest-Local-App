@@ -31,7 +31,7 @@ test('every on-colour pairing meets AA text contrast (WCAG 1.4.3)',()=>{
 
 test('control boundaries, focus and filled actions meet non-text contrast (WCAG 1.4.11)',()=>{
   for(const [name,palette] of [['light',light],['dark',dark]])for(const bg of ['canvas','surface']){
-    for(const fg of ['borderStrong','focus','primary','secondary']){
+    for(const fg of ['borderStrong','focus','primary','secondary','rating']){
       const ratio=contrast(palette[fg],palette[bg]);
       assert.ok(ratio>=3,`${name}: ${fg} against ${bg} is ${ratio.toFixed(2)}`);
     }

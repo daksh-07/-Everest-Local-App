@@ -1202,10 +1202,10 @@ export default function Request() {
                   flex: 1,
                   transform: [{ scale: pressed && !reduced ? 0.98 : 1 }],
                 },
-                !canContinue && s.disabled,
+                !canContinue && s.primaryDisabled,
               ]}
             >
-              <Text style={s.primaryText}>Continue</Text>
+              <Text style={[s.primaryText, !canContinue && s.primaryTextDisabled]}>Continue</Text>
             </Pressable>
           ) : (
             <Pressable
@@ -1587,6 +1587,8 @@ const styles = (c: ThemeColors) =>
       color: c.onBrand,
     },
     disabled: { opacity: 0.5 },
+    primaryDisabled: { backgroundColor: c.disabled },
+    primaryTextDisabled: { color: c.onDisabled },
     success: {
       flex: 1,
       padding: 28,

@@ -3,8 +3,8 @@
 // capture without touching components. The selected direction is the one shipped in lib/theme-colors.ts.
 const neutralsLight={canvas:'#F8FAFC',surface:'#FFFFFF',elevated:'#F1F4F9',soft:'#EDF1F7',input:'#FFFFFF',navigation:'#FFFFFF',text:'#161A24',textSecondary:'#4F5869',muted:'#5B6476',border:'#E1E6EE',borderStrong:'#7A8498',overlay:'rgba(14,18,30,.52)',disabled:'#E3E7EE',onDisabled:'#5F6778'};
 const neutralsDark={canvas:'#000000',surface:'#111111',elevated:'#1F1F1F',soft:'#262626',input:'#161616',navigation:'#0C0C0C',text:'#F3F5F9',textSecondary:'#C5CAD3',muted:'#A6ACB8',border:'#2E2E2E',borderStrong:'#7C7C7C',overlay:'rgba(0,0,0,.76)',disabled:'#2A2A2A',onDisabled:'#9A9FA9'};
-const statusLight={success:'#13773A',successContainer:'#E2F4E7',warning:'#8A5700',warningContainer:'#FFF2D3',danger:'#C0262D',dangerContainer:'#FDE7E7',info:'#0B67A3',infoContainer:'#E1F0FA'};
-const statusDark={success:'#72D08F',successContainer:'#0E2B18',warning:'#F3C455',warningContainer:'#30250A',danger:'#FF8C85',dangerContainer:'#3A1312',info:'#7EC6F4',infoContainer:'#0D283A'};
+const statusLight={rating:'#A86500',success:'#13773A',successContainer:'#E2F4E7',warning:'#8A5700',warningContainer:'#FFF2D3',danger:'#C0262D',dangerContainer:'#FDE7E7',info:'#0B67A3',infoContainer:'#E1F0FA'};
+const statusDark={rating:'#F3C455',success:'#72D08F',successContainer:'#0E2B18',warning:'#F3C455',warningContainer:'#30250A',danger:'#FF8C85',dangerContainer:'#3A1312',info:'#7EC6F4',infoContainer:'#0D283A'};
 
 function withLegacy(p){
  // Legacy keys used across the app map onto the new roles: brand fills = primary,
