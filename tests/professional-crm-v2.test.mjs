@@ -88,7 +88,9 @@ test('business navigation is work-first while CRM remains a separate workspace',
  for(const label of ['Today','Jobs','Calendar','Inbox','Business'])assert.match(tabs,new RegExp("label:'"+label+"'"));
  assert.doesNotMatch(tabs,/label:'Leads'/);assert.doesNotMatch(tabs,/label:'Customers'/);assert.doesNotMatch(tabs,/route:'\/business-crm',label:'CRM'/);
  assert.match(businessControl,/SALES & CRM/);assert.match(businessControl,/CRM workspace/);
- assert.match(today,/TODAY’S WORK/);assert.match(today,/OPEN JOBS/);assert.match(today,/SALES & CRM/);
+ // Work comes first: today's counts and the attention queue render before Sales & CRM.
+ assert.match(today,/'Jobs today'/);assert.match(today,/Needs attention/);assert.match(today,/Sales & CRM/);
+ assert.ok(today.indexOf('Needs attention')<today.indexOf('>Sales & CRM<'),'attention queue must precede CRM');
 });
 
 test('Customer 360 is a tabbed record instead of one giant sales-state page',()=>{
