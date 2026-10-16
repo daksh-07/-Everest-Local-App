@@ -1,3 +1,4 @@
+import {HeaderTextAction} from '@/components/ui/ScreenHeader';
 import {useEffect,useMemo,useState} from 'react';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
@@ -106,7 +107,7 @@ export default function CreatePost(){
   <View style={s.header}>
    <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={()=>router.back()} style={s.headerIcon}><Ionicons name="close" size={24} color={colors.text}/></Pressable>
    <Text style={s.headerTitle}>Create post</Text>
-   <Pressable disabled={busy||loading} onPress={()=>void publish()} style={[s.postTop,(busy||loading)&&s.dim]}><Text style={s.postTopText}>{busy?'POSTING':'POST'}</Text></Pressable>
+   <HeaderTextAction label="Post" busyLabel="Posting" busy={busy} disabled={loading} onPress={()=>void publish()}/>
   </View>
 
   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:60}}/>:<>

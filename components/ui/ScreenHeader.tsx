@@ -1,7 +1,7 @@
 import {Ionicons} from '@/components/ui/Icon';
 import {router,type Href} from 'expo-router';
 import type {ReactNode} from 'react';
-import {Pressable,StyleSheet,View,type StyleProp,type ViewStyle} from 'react-native';
+import {ActivityIndicator,Pressable,StyleSheet,View,type StyleProp,type ViewStyle} from 'react-native';
 import {AppText as Text} from './AppText';
 import {useAppTheme} from '@/lib/theme';
 
@@ -37,4 +37,15 @@ const styles=StyleSheet.create({
  subtitle:{fontSize:15,lineHeight:21,marginTop:4},
  badge:{position:'absolute',right:4,top:4,minWidth:18,height:18,borderRadius:9,borderWidth:2,alignItems:'center',justifyContent:'center',paddingHorizontal:3},
  badgeText:{fontSize:11,lineHeight:13,fontWeight:'700'},
+ textAction:{minWidth:72,minHeight:36,borderRadius:18,paddingHorizontal:16,alignItems:'center',justifyContent:'center'},
+ textActionLabel:{fontSize:15,fontWeight:'600'},
 });
+
+/** Text action for composer headers ("Post", "Share"): a filled pill when ready, the disabled
+ * colours when not, and a spinner while busy, so readiness is visible without reading opacity. */
+export function HeaderTextAction({label,busyLabel,onPress,disabled=false,busy=false}:{label:string;busyLabel?:string;onPress:()=>void;disabled?:boolean;busy?:boolean}){
+ const {colors}=useAppTheme();const inactive=disabled||busy;
+ return <Pressable accessibilityRole="button" accessibilityLabel={busy?(busyLabel??label):label} accessibilityState={{disabled:inactive,busy}} disabled={inactive} onPress={onPress} hitSlop={4} style={({pressed})=>[styles.textAction,{backgroundColor:disabled&&!busy?colors.disabled:colors.brand},pressed&&{opacity:.85}]}>
+  {busy?<ActivityIndicator size="small" color={colors.onBrand}/>:<Text style={[styles.textActionLabel,{color:disabled?colors.onDisabled:colors.onBrand}]}>{label}</Text>}
+ </Pressable>;
+}

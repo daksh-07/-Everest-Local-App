@@ -1,3 +1,4 @@
+import {HeaderTextAction} from '@/components/ui/ScreenHeader';
 import {useEffect,useMemo,useState} from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
@@ -65,7 +66,7 @@ export default function CreateClip(){
 
  return <SafeAreaView style={s.safe}>
   <ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">
-   <View style={s.header}><Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={()=>router.back()} style={s.round}><Ionicons name="close" size={22} color={colors.text}/></Pressable><View style={{alignItems:'center'}}><Text style={s.kicker}>Everest Studio</Text><Text style={s.title}>Create clip</Text></View><Pressable disabled={busy||!asset} onPress={()=>void publish()}><Text style={[s.share,(busy||!asset)&&{opacity:.4}]}>{busy?'Posting…':'POST'}</Text></Pressable></View>
+   <View style={s.header}><Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={()=>router.back()} style={s.round}><Ionicons name="close" size={22} color={colors.text}/></Pressable><View style={{alignItems:'center'}}><Text style={s.kicker}>Everest Studio</Text><Text style={s.title}>Create clip</Text></View><HeaderTextAction label="Post" busyLabel="Posting" busy={busy} disabled={!asset} onPress={()=>void publish()}/></View>
    {loading?<ActivityIndicator color={colors.accent} style={{marginTop:70}}/>:<>
     <Text style={s.label}>Posting as</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.rail}>{identities.map(item=>{const active=item.id===identity?.id&&item.kind===identity?.kind;return <Pressable key={item.kind+item.id} onPress={()=>{setIdentity(item);if(item.kind==='BUSINESS')setVisibility('PUBLIC')}} style={[s.identity,active&&s.identityActive]}><Ionicons name={item.kind==='BUSINESS'?'business-outline':'person-outline'} size={16} color={active?colors.onBrand:colors.text}/><Text style={[s.identityText,active&&{color:colors.onBrand}]}>{item.kind==='PERSONAL'?'My profile':item.name}</Text></Pressable>})}</ScrollView>
 

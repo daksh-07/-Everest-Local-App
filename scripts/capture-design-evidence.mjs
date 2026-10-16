@@ -86,6 +86,11 @@ const screens={
  'business-profile-service':{path:'/business-profile?id='+biz,signedIn:true,click:'Garden maintenance'},
  'public-user':{path:'/public-user?id='+other,signedIn:true},
  'public-user-new':{path:'/public-user?id=99999999-9999-4999-8999-999999999999',signedIn:true},
+ create:{path:'/create',signedIn:true},
+ 'create-post':{path:'/create-post',signedIn:true},
+ 'create-story':{path:'/create-story',signedIn:true},
+ 'create-clip':{path:'/create-clip',signedIn:true},
+ story:{path:'/story?id=st1',signedIn:true},
  saved:{path:'/saved',signedIn:true},
  'service-areas':{path:'/service-areas',signedIn:true,business:true},
  'business-verification':{path:'/business-verification',signedIn:true,business:true},
@@ -135,6 +140,7 @@ function rows(table,isBusiness){
   case 'crm_activities':return isBusiness?[{id:'ac1',business_id:biz,contact_id:'ct1',kind:'MESSAGE',title:'Message received',detail:'Running about ten minutes late?',occurred_at:minutesAgo(9),source_record_type:null,source_record_id:null},{id:'ac2',business_id:biz,contact_id:'ct1',kind:'QUOTE',title:'Quote #1042 sent',detail:null,occurred_at:minutesAgo(2000),source_record_type:null,source_record_id:null}]:[];
   case 'crm_notes':return isBusiness?[{id:'no1',body:'Prefers mornings. Side gate sticks — lift and push.',created_at:minutesAgo(4000),contact_id:'ct1',business_id:biz}]:[];
   case 'posts':return [{id:'up1',author_id:other,business_id:null,caption:'Huge thanks to North Melbourne Home & Garden — the back yard looks brand new.',post_type:'RECOMMENDATION',visibility:'PUBLIC',status:'PUBLISHED',created_at:minutesAgo(300),post_media:[]},{id:'up2',author_id:other,business_id:null,caption:'Anyone know a good tiler near Errol St?',post_type:'QUESTION',visibility:'PUBLIC',status:'PUBLISHED',created_at:minutesAgo(60*24*6),post_media:[]}];
+  case 'stories':return [{id:'st1',author_id:other,business_id:null,caption:'Morning light on Errol Street.',visibility:'PUBLIC',location_label:'North Melbourne',status:'ACTIVE',expires_at:minutesAgo(-600),music_track_id:null,music_start_ms:0,created_at:minutesAgo(50)},{id:'st2',author_id:uid,business_id:biz,caption:'Hedge season — two slots left this week.',visibility:'PUBLIC',location_label:'North Melbourne',status:'ACTIVE',expires_at:minutesAgo(-900),music_track_id:null,music_start_ms:0,created_at:minutesAgo(120)}];
   case 'conversations':return isBusiness?[
    {id:'bc1',request_id:'r2',booking_id:'b2',quote_id:null,created_at:minutesAgo(600),messages:[{id:'bm1',body:'Gate code is 4471 — the side gate sticks a little.',created_at:minutesAgo(12),read_at:null,sender_id:other},{id:'bm2',body:'Running about ten minutes late?',created_at:minutesAgo(9),read_at:null,sender_id:other}]},
    {id:'bc2',request_id:'r3',booking_id:null,quote_id:'q1',created_at:minutesAgo(2000),messages:[{id:'bm3',body:'Thanks — I’ll confirm the quote tonight.',created_at:minutesAgo(1500),read_at:minutesAgo(1400),sender_id:other}]},

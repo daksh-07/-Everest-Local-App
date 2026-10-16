@@ -49,3 +49,14 @@ export function formatWhen(value:string|null|undefined,{now=new Date(),locale=DE
  const local=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
  return formatDay(local,{now,locale});
 }
+
+/** Compact age for feeds and stories: "now", "5m", "3h", "2d", then a short date. */
+export function formatAgo(value:string|null|undefined,{now=new Date(),locale=DEFAULT_LOCALE}:{now?:Date;locale?:string}={}){
+ if(!value)return '';const date=new Date(value);if(Number.isNaN(date.getTime()))return '';
+ const diff=now.getTime()-date.getTime();
+ if(diff<60_000)return 'now';
+ if(diff<3_600_000)return Math.max(1,Math.floor(diff/60_000))+'m';
+ if(diff<86_400_000)return Math.max(1,Math.floor(diff/3_600_000))+'h';
+ if(diff<7*86_400_000)return Math.max(1,Math.floor(diff/86_400_000))+'d';
+ return date.toLocaleDateString(locale,{day:'numeric',month:'short'});
+}

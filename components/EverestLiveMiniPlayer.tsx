@@ -18,7 +18,7 @@ type ActiveLiveRequest={
 };
 
 // Screens with their own bottom action bar (composer, purchase, checkout) or focused flows.
-const HIDDEN_ROUTES=new Set(['/everest-live','/request','/cart','/product','/auth','/create','/create-post','/create-story','/create-clip','/assistant','/booking','/instant-book']);
+const HIDDEN_ROUTES=new Set(['/everest-live','/request','/cart','/product','/auth','/create','/create-post','/create-story','/create-clip','/assistant','/booking','/instant-book','/story','/highlight','/sound']);
 // Routes that render a bottom tab bar; elsewhere the player sits just above the safe area.
 const TAB_BAR_ROUTES=new Set(['/account','/activity','/bookings','/business-availability','/business-calendar','/business-control','/business-crm-booking','/business-crm-quote','/business-crm','/business-customer','/business-customers','/business-deal','/business-growth-p1','/business-growth','/business-inbox','/business-integrations','/business-job','/business-jobs','/business-leads','/business-my-work','/business-operations','/business-today','/','/memberships','/messages','/promote-post','/social']);
 const ACTIVE_STATUSES=['SEARCHING','NOTIFYING','RESPONSES_AVAILABLE','PROVIDER_SELECTED','NO_PROVIDER_FOUND'];

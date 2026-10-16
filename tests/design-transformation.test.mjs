@@ -306,3 +306,14 @@ test('icons are decorative unless labelled, so glyphs never leak into button nam
  const direct=[...walk('app'),...walk('components'),...walk('lib')].filter(f=>f.endsWith('.tsx')&&f!=='components/ui/Icon.tsx').filter(f=>/import\s*\{[^}]*\bIonicons\b[^}]*\}\s*from\s*'@expo\/vector-icons'/.test(read(f)));
  assert.deepEqual(direct,[],'import Ionicons from @/components/ui/Icon');
 });
+
+test('creation and stories: real header actions, story identity, accessible playback, no overlay',async()=>{
+ for(const f of ['app/create-post.tsx','app/create-story.tsx','app/create-clip.tsx']){const src=read(f);assert.match(src,/<HeaderTextAction label="(Post|Share)"/,f);assert.doesNotMatch(src,/'POST'|'SHARE'|'POSTING'/,f)}
+ const story=read('app/story.tsx');
+ assert.doesNotMatch(story,/swipe down to close/);assert.match(story,/formatAgo\(story\.created_at\)/);
+ assert.match(story,/accessibilityLabel=\{paused\?'Play story':'Pause story'\}/,'playback can be paused without press-and-hold');
+ assert.match(read('app/social.tsx'),/storyRing:\{[^}]*borderColor:c\.tertiary/);
+ assert.match(read('components/EverestLiveMiniPlayer.tsx'),/'\/story','\/highlight','\/sound'/,'no Live pill over full-screen media');
+ const {formatAgo}=await import('../lib/format.ts');const now=new Date(2026,9,16,12,0);
+ assert.equal(formatAgo(new Date(2026,9,16,11,10).toISOString(),{now}),'50m');assert.equal(formatAgo(new Date(2026,9,14,12,0).toISOString(),{now}),'2d');assert.equal(formatAgo(null),'');
+});

@@ -25,6 +25,7 @@ import {PostMediaImage} from '@/components/PostMediaImage';
 import {listActiveStories,listClips,listEverestMusic,signedMusicUrl,type ClipEditManifest,type MusicTrack,type StoryCard} from '@/lib/social-expansion';
 import {listPostAudioTracks,type PublicAudioTrack} from '@/lib/audio-studio';
 import {userMessage} from '@/lib/errors';
+import {formatAgo} from '@/lib/format';
 
 type FeedPost=SocialPost&{
  media?:string[];
@@ -230,14 +231,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
   try{await toggleCommentLike(commentId,before.likedByMe)}
   catch{setCommentLikes(current=>({...current,[commentId]:before}))}
  }
- function commentTime(value:string){
-  const diff=Date.now()-new Date(value).getTime();
-  if(diff<60_000)return 'now';
-  if(diff<3_600_000)return Math.max(1,Math.floor(diff/60_000))+'m';
-  if(diff<86_400_000)return Math.max(1,Math.floor(diff/3_600_000))+'h';
-  if(diff<7*86_400_000)return Math.max(1,Math.floor(diff/86_400_000))+'d';
-  return new Date(value).toLocaleDateString(undefined,{month:'short',day:'numeric'});
- }
+ const commentTime=(value:string)=>formatAgo(value);
  async function toggleComments(post:FeedPost){
   await setPostCommentsEnabled(post.id,!post.comments_enabled);
   setPosts(v=>v.map(x=>x.id===post.id?{...x,comments_enabled:!x.comments_enabled}:x));setMenuPost(null);
@@ -275,7 +269,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
     </View>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.storyRail}>
      <Pressable onPress={()=>router.push('/create-story')} style={s.storyTile}><View style={[s.storyRing,s.yourStory]}><Ionicons name="add" size={25} color={colors.accent}/></View><Text numberOfLines={1} style={s.storyName}>Your story</Text></Pressable>
-     {stories.map(story=><Pressable key={story.id} onPress={()=>router.push(('/story?id='+story.id) as never)} style={s.storyTile}>
+     {stories.map(story=><Pressable key={story.id} accessibilityRole="button" accessibilityLabel={`Story from ${story.businessName??story.actorName}`} onPress={()=>router.push(('/story?id='+story.id) as never)} style={s.storyTile}>
       <View style={s.storyRing}>{story.mediaType==='IMAGE'&&story.mediaUrl?<Image source={{uri:story.mediaUrl}} style={s.storyImage}/>:story.avatarUrl?<Image source={{uri:story.avatarUrl}} style={s.storyImage}/>:<View style={s.storyVideoFallback}><Ionicons name={story.mediaType==='VIDEO'?'play':'person'} size={21} color={colors.text}/></View>}</View>
       <Text numberOfLines={1} style={s.storyName}>{story.actorName}</Text>
      </Pressable>)}
@@ -390,7 +384,7 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  safe:{flex:1,backgroundColor:c.canvas},page:{width:'100%',maxWidth:760,alignSelf:'center',paddingBottom:120},
  header:{paddingHorizontal:14,paddingTop:8,paddingBottom:10,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},kicker:{fontSize:12,fontWeight:'900',color:c.accent},title:{fontSize:30,fontWeight:'900',color:c.text,marginTop:2},
  headerActions:{flexDirection:'row',alignItems:'center',gap:9},round:{width:44,height:44,borderRadius:22,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},postButton:{height:44,borderRadius:22,backgroundColor:c.brand,paddingHorizontal:15,flexDirection:'row',alignItems:'center',gap:5},postButtonText:{fontWeight:'900',color:c.onBrand},
- storyRail:{gap:12,paddingHorizontal:14,paddingTop:4,paddingBottom:15},storyTile:{width:68,alignItems:'center'},storyRing:{width:58,height:58,borderRadius:29,borderWidth:2,borderColor:c.accent,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',overflow:'hidden',padding:2},yourStory:{borderStyle:'dashed',backgroundColor:c.surface},storyImage:{width:50,height:50,borderRadius:25,backgroundColor:c.soft},storyVideoFallback:{width:50,height:50,borderRadius:25,backgroundColor:c.elevated,alignItems:'center',justifyContent:'center'},storyName:{maxWidth:68,fontSize:12,fontWeight:'800',color:c.text,marginTop:6,textAlign:'center'},
+ storyRail:{gap:12,paddingHorizontal:14,paddingTop:4,paddingBottom:15},storyTile:{width:68,alignItems:'center'},storyRing:{width:62,height:62,borderRadius:31,borderWidth:2.5,borderColor:c.tertiary,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',overflow:'hidden',padding:2},yourStory:{borderStyle:'dashed',backgroundColor:c.surface},storyImage:{width:50,height:50,borderRadius:25,backgroundColor:c.soft},storyVideoFallback:{width:50,height:50,borderRadius:25,backgroundColor:c.elevated,alignItems:'center',justifyContent:'center'},storyName:{maxWidth:68,fontSize:12,fontWeight:'800',color:c.text,marginTop:6,textAlign:'center'},
  segment:{marginHorizontal:14,marginBottom:14,borderRadius:17,backgroundColor:c.soft,padding:4,flexDirection:'row'},segmentItem:{flex:1,minHeight:42,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6},segmentActive:{position:'absolute',left:4,top:4,bottom:4,borderRadius:13,backgroundColor:c.surface,shadowColor:'#000',shadowOpacity:.08,shadowRadius:9,shadowOffset:{width:0,height:3}},segmentText:{fontSize:12,fontWeight:'700',color:c.muted},segmentTextActive:{color:c.text,fontWeight:'800'},
  tabs:{flexDirection:'row',gap:8,paddingHorizontal:14,paddingBottom:13},businessLink:{minHeight:44,flexDirection:'row',alignItems:'center',gap:6,alignSelf:'flex-start',marginHorizontal:14,marginBottom:6},businessLinkText:{fontSize:15,fontWeight:'600',color:c.accent},localityNote:{fontSize:13,lineHeight:18,color:c.textSecondary,marginHorizontal:14,marginBottom:8},tab:{borderRadius:20,borderWidth:1,borderColor:c.border,paddingHorizontal:14,paddingVertical:9},tabText:{fontSize:12,fontWeight:'800',color:c.text},
  error:{marginHorizontal:14,marginBottom:10,color:c.danger,fontWeight:'700'},card:{backgroundColor:c.canvas,marginBottom:12,paddingBottom:15},

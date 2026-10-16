@@ -9,7 +9,7 @@ import {haptic} from '@/lib/haptics';
 
 const choices=[
  {title:'Post',copy:'Photos, updates, completed work and recommendations',tag:'Photos + sound',icon:'images-outline' as const,route:'/create-post'},
- {title:'Story',copy:'Share something lightweight that disappears after 24 hours',tag:'Photo or video · 24h',icon:'ellipse-outline' as const,route:'/create-story'},
+ {title:'Story',copy:'Share something lightweight that disappears after 24 hours',tag:'Photo or video · 24h',icon:'aperture-outline' as const,route:'/create-story'},
  {title:'Clip',copy:'A short vertical video built for local discovery',tag:'Video + sound',icon:'play-circle-outline' as const,route:'/create-clip'},
 ];
 
@@ -25,7 +25,7 @@ export default function Create(){
     <Pressable onPress={()=>router.back()} accessibilityLabel="Close" style={s.close}><Ionicons name="close" size={21} color={colors.text}/></Pressable>
    </View>
    <View style={s.grid}>{choices.map(item=><Pressable key={item.title} onPress={()=>choose(item.route)} style={({pressed})=>[s.card,pressed&&s.cardPressed]}>
-    <View style={s.icon}><Ionicons name={item.icon} size={25} color={colors.accent}/></View>
+    <View style={[s.icon,{backgroundColor:item.title==='Story'?colors.tertiaryContainer:colors.primaryContainer}]}><Ionicons name={item.icon} size={25} color={item.title==='Story'?colors.onTertiaryContainer:colors.onPrimaryContainer}/></View>
     <View style={{flex:1,minWidth:0}}><View style={s.cardTitleRow}><Text style={s.cardTitle}>{item.title}</Text><View style={s.tag}><Text style={s.tagText}>{item.tag}</Text></View></View><Text style={s.cardCopy}>{item.copy}</Text></View>
     <Ionicons name="chevron-forward" size={19} color={colors.muted}/>
    </Pressable>)}</View>
