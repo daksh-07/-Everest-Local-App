@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
+import { formatMoney,formatStatus } from '@/lib/format';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -591,7 +592,7 @@ export default function Request() {
             onPress={() => router.replace("/activity")}
             style={s.primary}
           >
-            <Text style={s.primaryText}>VIEW ACTIVITY</Text>
+            <Text style={s.primaryText}>View activity</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -700,7 +701,7 @@ export default function Request() {
                   <ActivityIndicator color={colors.accent} />
                 ) : (
                   <View style={s.selected}>
-                    <Text style={s.eyebrow}>SELECTED SERVICE</Text>
+                    <Text style={s.eyebrow}>Selected service</Text>
                     <Text style={s.selectedName}>{serviceName}</Text>
                   </View>
                 )}
@@ -815,7 +816,7 @@ export default function Request() {
                             </Pressable>
                           ) : null}
                         </View>
-                        <Text style={s.or}>OR ENTER THE SERVICE ADDRESS</Text>
+                        <Text style={s.or}>Or enter the service address</Text>
                         <TextInput
                           value={location.addressLine1}
                           onChangeText={(v) => setManual("addressLine1", v)}
@@ -884,7 +885,7 @@ export default function Request() {
                           }
                           style={s.textButton}
                         >
-                          <Text style={s.textButtonText}>CHANGE LOCATION</Text>
+                          <Text style={s.textButtonText}>Change location</Text>
                         </Pressable>
                       </>
                     )}
@@ -1206,7 +1207,7 @@ export default function Request() {
                 !canContinue && s.disabled,
               ]}
             >
-              <Text style={s.primaryText}>CONTINUE</Text>
+              <Text style={s.primaryText}>Continue</Text>
             </Pressable>
           ) : (
             <Pressable

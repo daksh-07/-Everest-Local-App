@@ -43,7 +43,7 @@ try{
   await page.goto(base+'/request');
   const search=page.getByRole('textbox',{name:'Search services'});
   await search.waitFor();await page.getByRole('button',{name:'Car Detailing',exact:true}).waitFor();
-  const next=page.getByRole('button',{name:'CONTINUE',exact:true});
+  const next=page.getByRole('button',{name:'Continue',exact:true});
   assert.equal(await next.isDisabled(),true);
   assert.equal(await page.getByTestId('service-results').count(),0);
   assert.equal(await page.getByRole('textbox',{name:'Suburb',exact:true}).count(),0);
