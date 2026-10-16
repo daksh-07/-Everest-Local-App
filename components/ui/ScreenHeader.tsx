@@ -16,7 +16,7 @@ export function ScreenHeader({title,subtitle,fallback='/',actions,showBack=true,
    <View style={styles.spacer}/>
    {actions?<View style={styles.actions}>{actions}</View>:null}
   </View>
-  <Text accessibilityRole="header" variant="title" style={[styles.title,{color:colors.text}]}>{title}</Text>
+  {title?<Text accessibilityRole="header" variant="title" style={[styles.title,{color:colors.text}]}>{title}</Text>:null}
   {subtitle?<Text style={[styles.subtitle,{color:colors.textSecondary}]}>{subtitle}</Text>:null}
  </View>;
 }

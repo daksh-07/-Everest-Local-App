@@ -103,3 +103,12 @@ test('requests, quotes and bookings use the shared header and formatted values',
   assert.doesNotMatch(source,/EVEREST LOCAL|MY EVEREST|toFixed\(2\)|replaceAll\('_',' '\)/,screen);
  }
 });
+
+test('business profile is a storefront with working actions',()=>{
+ const profile=read('app/business-profile.tsx');
+ // tab=SERVICES is not a Search tab (it silently fell back to Top); the CTA now targets this business.
+ assert.doesNotMatch(profile,/tab=SERVICES/);
+ assert.match(profile,/services\.length===1\)router\.push\(`\/request\?serviceId=\$\{services\[0\]\.id\}`\)/);
+ assert.doesNotMatch(profile,/📍|🖥|VERIFIED BUSINESS|POST REQUEST|VIEW SERVICES|toFixed\(2\)/);
+ assert.match(profile,/<ScreenHeader /);
+});
