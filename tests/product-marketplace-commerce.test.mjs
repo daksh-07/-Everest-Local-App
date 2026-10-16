@@ -47,8 +47,8 @@ test('seller wizard is media-first and draft friendly',()=>{
 test('customer product page is variant and stock aware',()=>{
  assert.match(product,/setVariantCartItem/);
  assert.match(product,/image_id/);
- assert.match(product,/OUT OF STOCK/);
- assert.match(product,/ADD TO CART/);
+ assert.match(product,/'Out of stock'/i);
+ assert.match(product,/'Add to cart'/i);
 });
 
 test('product gallery supports swipe paging and pinch zoom in page and fullscreen',()=>{
@@ -73,7 +73,7 @@ test('product gallery index follows the visible page and cart is always discover
  assert.match(product,/\{index\+1\} \/ \{media\.length\}/);
  assert.match(product,/router\.push\('\/cart'\)/);
  assert.match(product,/cartBadge/);
- assert.match(product,/VIEW CART/);
+ assert.match(product,/View cart/i);
  assert.match(shop,/cartBadge/);
  assert.match(cart,/Continue shopping/);
 });

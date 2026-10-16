@@ -41,7 +41,7 @@ async function fixture(screen,width=390,theme='LIGHT',state='loaded',mode='DEFAU
  });
  await page.goto(base+paths[screen],{waitUntil:'domcontentloaded'});
  if(state==='loading'){await page.getByRole('progressbar').first().waitFor();await page.waitForTimeout(200)}
- else if(state==='error')await page.getByText(/couldn't load|could not be loaded|could not load|Unable to load/i).first().waitFor();
+ else if(state==='error')await page.getByText(/couldn['’]t load|could not be loaded|could not load|Unable to load/i).first().waitFor();
  else {await page.getByText(headings[screen],{exact:true}).filter({visible:true}).first().waitFor();await page.waitForTimeout(250)}
  await page.evaluate(()=>document.fonts.ready);
  return {context,page,errors,requests,release:()=>release(),recover:()=>{errorState=false}};
@@ -65,7 +65,7 @@ try{
   await capture(page,`${screen}-${state}`);
   if(state==='loading'){release();await page.getByText(headings[screen],{exact:true}).filter({visible:true}).first().waitFor()}
   if(state==='error'){
-   recover();const retry=page.getByText(screen==='bookings'?'Try again':screen==='orders'?'RETRY ORDERS':'RETRY',{exact:true});await retry.click();
+   recover();const retry=page.getByText(screen==='bookings'?'Try again':screen==='orders'||screen==='business'?'Try again':'RETRY',{exact:true});await retry.click();
    await page.getByText(headings[screen],{exact:true}).filter({visible:true}).first().waitFor();
   }
   assert.deepEqual(errors,[]);await context.close();
