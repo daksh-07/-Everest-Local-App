@@ -76,3 +76,12 @@ test('all candidate directions were held to the same contrast bar',()=>{
     for(const bg of SURFACES)assert.ok(contrast(p.primaryText,p[bg])>=4.5,`${key} ${mode} primaryText on ${bg}`);
   }
 });
+
+test('no icon or top-level text falls back to platform black on the dark canvas',async()=>{
+  const fs=await import('node:fs');
+  const files=fs.readdirSync('app').filter(f=>f.endsWith('.tsx')).map(f=>'app/'+f).concat(fs.readdirSync('components').filter(f=>f.endsWith('.tsx')).map(f=>'components/'+f));
+  const colourless=files.flatMap(f=>[...fs.readFileSync(f,'utf8').matchAll(/<Ionicons [^>]*\/>/g)].filter(m=>!m[0].includes('color=')).map(()=>f));
+  assert.deepEqual(colourless,[],'every Ionicons sets a themed colour');
+  const appText=fs.readFileSync('components/ui/AppText.tsx','utf8');
+  assert.match(appText,/!nested&&!flat\?\.color&&themeColors\?\{color:themeColors\.text\}/,'AppText defaults to the theme text colour');
+});

@@ -47,7 +47,7 @@ export default function PromotePost(){
   <ScrollView contentContainerStyle={s.page}>
    <View style={s.header}><Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={()=>router.back()} style={s.back}><Ionicons name="arrow-back" size={22} color={colors.text}/></Pressable><Text style={s.title}>Promote post</Text><View style={{width:42}}/></View>
    {loading?<ActivityIndicator color={colors.accent} style={{marginTop:70}}/>:<>
-    <View style={s.hero}><View style={s.spark}><Ionicons name="rocket-outline" size={24} color={colors.accent}/></View><Text style={s.heroTitle}>Put this post in front of more relevant locals</Text><Text numberOfLines={3} style={s.preview}>{caption}</Text>{location?<Text style={s.location}><Ionicons name="location-outline" size={13}/> {location}</Text>:null}</View>
+    <View style={s.hero}><View style={s.spark}><Ionicons name="rocket-outline" size={24} color={colors.accent}/></View><Text style={s.heroTitle}>Put this post in front of more relevant locals</Text><Text numberOfLines={3} style={s.preview}>{caption}</Text>{location?<Text style={s.location}><Ionicons name="location-outline" size={13} color={colors.textSecondary}/> {location}</Text>:null}</View>
     <Text style={s.section}>Choose a boost</Text>
     {POST_PROMOTION_PLANS.map(item=>{
      const active=item.id===plan;

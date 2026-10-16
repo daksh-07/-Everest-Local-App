@@ -78,6 +78,12 @@ const screens={
  'business-calendar':{path:'/business-calendar',signedIn:true,business:true},
  'business-inbox':{path:'/business-inbox',signedIn:true,business:true},
  'business-crm':{path:'/business-crm',signedIn:true,business:true},
+ saved:{path:'/saved',signedIn:true},
+ 'service-areas':{path:'/service-areas',signedIn:true,business:true},
+ 'business-verification':{path:'/business-verification',signedIn:true,business:true},
+ 'driver-onboarding':{path:'/driver-onboarding',signedIn:true},
+ 'business-onboarding':{path:'/business',signedIn:true},
+ 'delete-account':{path:'/delete-account',signedIn:true},
 };
 const selected=(process.env.EVEREST_QA_SCREENS||Object.keys(screens).join(',')).split(',');
 // Minimal PostgREST filter support (eq, neq, in, gt, gte, lt, lte, is) so counts and tabs match the query.

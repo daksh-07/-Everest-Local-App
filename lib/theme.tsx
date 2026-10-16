@@ -37,3 +37,5 @@ export function ThemeProvider({children}:{children:ReactNode}){
 export function useAppTheme(){const value=useContext(ThemeContext);if(!value)throw new Error('useAppTheme must be used inside ThemeProvider');return value}
 /** Memoised themed StyleSheet: `const s=useThemedStyles(createStyles)` with `createStyles=(c:ThemeColors)=>StyleSheet.create({...})`. */
 export function useThemedStyles<T>(factory:(colors:ThemeColors)=>T):T{const {colors}=useAppTheme();return useMemo(()=>factory(colors),[colors,factory])}
+/** Theme colours when a provider exists, otherwise undefined (root error boundaries render outside it). */
+export function useOptionalThemeColors():ThemeColors|undefined{return useContext(ThemeContext)?.colors}
