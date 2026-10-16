@@ -6,6 +6,7 @@ import {usePathname,router} from 'expo-router';
 import {supabase} from '@/lib/supabase';
 import {getEverestLiveState,type EverestLiveState} from '@/lib/everest-live';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {useRegisterFloatingLayer} from '@/lib/floating-layers';
 
 type ActiveLiveRequest={
   id:string;
@@ -17,6 +18,9 @@ type ActiveLiveRequest={
 
 const ACTIVE_STATUSES=['SEARCHING','NOTIFYING','RESPONSES_AVAILABLE','PROVIDER_SELECTED','NO_PROVIDER_FOUND'];
 const POLL_MS=30_000;
+const PLAYER_FOOTPRINT=72;
+// Local session read only; no network round trip per poll.
+async function sessionUserId(){const {data}=await supabase.auth.getSession();return data.session?.user.id??null}
 const REALTIME_COALESCE_MS=180;
 
 export function EverestLiveMiniPlayer(){
@@ -36,9 +40,13 @@ export function EverestLiveMiniPlayer(){
     try{
       do{
         rerun.current=false;
+        // RLS also lets admins read every request, so scope explicitly to the signed-in customer.
+        const customerId=await sessionUserId();
+        if(!customerId){if(mounted.current){setRequest(null);setState(null)}continue;}
         const {data,error}=await supabase
           .from('service_requests')
           .select('id,description,live_status,live_radius_km,live_expires_at')
+          .eq('customer_id',customerId)
           .eq('is_live',true)
           .in('live_status',ACTIVE_STATUSES)
           .order('live_started_at',{ascending:false})
@@ -78,19 +86,27 @@ export function EverestLiveMiniPlayer(){
   useEffect(()=>{
     const timer=setInterval(()=>{if(AppState.currentState==='active')void load()},POLL_MS);
     const app=AppState.addEventListener('change',value=>{if(value==='active')scheduleLoad()});
-    const channel=supabase.channel('everest-live-mini-player')
-      .on('postgres_changes',{event:'*',schema:'public',table:'service_requests'},scheduleLoad)
-      .on('postgres_changes',{event:'*',schema:'public',table:'quotes'},scheduleLoad)
-      .subscribe();
+    let channel:ReturnType<typeof supabase.channel>|null=null;let disposed=false;
+    void sessionUserId().then(customerId=>{
+      if(disposed||!customerId)return;
+      const filter=`customer_id=eq.${customerId}`;
+      channel=supabase.channel('everest-live-mini-player')
+        .on('postgres_changes',{event:'*',schema:'public',table:'service_requests',filter},scheduleLoad)
+        .on('postgres_changes',{event:'*',schema:'public',table:'quotes',filter},scheduleLoad)
+        .subscribe();
+    });
     return()=>{
+      disposed=true;
       clearInterval(timer);
       app.remove();
       if(debounce.current){clearTimeout(debounce.current);debounce.current=null}
-      void supabase.removeChannel(channel);
+      if(channel)void supabase.removeChannel(channel);
     };
   },[load,scheduleLoad]);
 
-  if(!request||pathname==='/everest-live'||pathname==='/request')return null;
+  const visible=Boolean(request)&&pathname!=='/everest-live'&&pathname!=='/request';
+  useRegisterFloatingLayer('everest-live-mini-player',visible?PLAYER_FOOTPRINT:0);
+  if(!request||!visible)return null;
 
   const status=state?.live_status??request.live_status;
   const responses=state?.quote_count??0;
@@ -108,7 +124,7 @@ export function EverestLiveMiniPlayer(){
 
   return <Pressable
     accessibilityRole="button"
-    accessibilityLabel="Open active Everest Live request"
+    accessibilityLabel={`Open active Everest Live request. ${paused?'Search paused':primary}`}
     onPress={()=>router.push(`/everest-live?requestId=${request.id}`)}
     style={({pressed})=>[s.wrap,pressed&&s.pressed]}>
     <View style={s.iconWrap}>
@@ -117,13 +133,9 @@ export function EverestLiveMiniPlayer(){
     </View>
     <View style={s.copy}>
       <View style={s.row}>
-        <Text numberOfLines={1} style={s.title}>Everest Live · {request.description}</Text>
-        <View style={s.radiusPill}><Text style={s.radius}>{Math.round(radius)} KM</Text></View>
+        <Text numberOfLines={1} style={s.title}>{request.description}</Text>
       </View>
-      <View style={s.statusRow}>
-        <Text numberOfLines={1} style={s.status}>{paused?'Search paused':primary}</Text>
-        <Text style={s.hint}>Tap to open</Text>
-      </View>
+      <Text numberOfLines={1} style={s.status}>Everest Live · {paused?'Search paused':primary} · {Math.round(radius)} km</Text>
     </View>
     <Ionicons name="chevron-up" size={17} color={colors.muted}/>
   </Pressable>;
@@ -131,21 +143,17 @@ export function EverestLiveMiniPlayer(){
 
 const styles=(c:ThemeColors)=>StyleSheet.create({
   wrap:{
-    position:'absolute',left:12,right:12,bottom:88,minHeight:74,maxWidth:720,alignSelf:'center',
-    borderRadius:21,borderWidth:1,borderColor:c.border,backgroundColor:c.elevated,
-    paddingHorizontal:13,paddingVertical:10,flexDirection:'row',alignItems:'center',gap:10,
-    shadowColor:'#000',shadowOpacity:.16,shadowRadius:18,shadowOffset:{width:0,height:8},elevation:10
+    position:'absolute',left:12,right:12,bottom:88,minHeight:60,maxWidth:620,alignSelf:'center',
+    borderRadius:16,borderWidth:StyleSheet.hairlineWidth,borderColor:c.border,backgroundColor:c.elevated,
+    paddingHorizontal:12,paddingVertical:9,flexDirection:'row',alignItems:'center',gap:11,
+    shadowColor:'#000',shadowOpacity:.14,shadowRadius:16,shadowOffset:{width:0,height:6},elevation:10
   },
-  pressed:{transform:[{scale:.992}],opacity:.92},
-  iconWrap:{width:42,height:42,borderRadius:15,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},
-  dot:{position:'absolute',right:7,top:7,width:7,height:7,borderRadius:4,backgroundColor:c.success},
+  pressed:{opacity:.86},
+  iconWrap:{width:38,height:38,borderRadius:12,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},
+  dot:{position:'absolute',right:6,top:6,width:7,height:7,borderRadius:4,backgroundColor:c.success},
   dotPaused:{backgroundColor:c.accent},
   copy:{flex:1,minWidth:0},
   row:{flexDirection:'row',alignItems:'center',gap:8},
-  title:{flex:1,fontSize:12,fontWeight:'900',color:c.text},
-  radiusPill:{borderRadius:999,backgroundColor:c.accentSoft,paddingHorizontal:7,paddingVertical:4},
-  radius:{fontSize:8,fontWeight:'900',letterSpacing:.45,color:c.accent},
-  statusRow:{flexDirection:'row',alignItems:'center',gap:8,marginTop:4},
-  status:{fontSize:11,fontWeight:'800',color:c.textSecondary,flex:1},
-  hint:{fontSize:8,fontWeight:'800',color:c.muted}
+  title:{flex:1,fontSize:14,lineHeight:19,fontWeight:'600',color:c.text},
+  status:{fontSize:13,lineHeight:18,color:c.textSecondary,marginTop:1},
 });

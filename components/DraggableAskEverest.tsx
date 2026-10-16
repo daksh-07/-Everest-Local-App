@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {useReducedMotion} from '@/lib/motion';
 import { useAppTheme } from '@/lib/theme';
+import { useFloatingLayerOffset } from '@/lib/floating-layers';
 
 const BUTTON_WIDTH = 50;
 const BUTTON_HEIGHT = 50;
@@ -16,6 +17,8 @@ const TRASH_SIZE = 68;
 export function DraggableAskEverest({ pathname }: { pathname: string }) {
   const theme=useAppTheme();const reducedMotion=useReducedMotion();
   const { width, height } = useWindowDimensions();
+  // Stay above the Live mini player (and any other bottom floating layer) instead of covering it.
+  const bottomGuard = BOTTOM_GUARD + useFloatingLayerOffset();
   const hiddenRoute = ['/', '/search', '/product', '/business-profile', '/assistant', '/auth', '/messages', '/cart', '/request', '/chat-input-regression'].includes(pathname);
   const [dismissed, setDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -24,12 +27,12 @@ export function DraggableAskEverest({ pathname }: { pathname: string }) {
   const moved = useRef(false);
 
   const startX = Math.max(EDGE, width - BUTTON_WIDTH - EDGE);
-  const startY = Math.max(TOP_GUARD, height - BOTTOM_GUARD - BUTTON_HEIGHT);
+  const startY = Math.max(TOP_GUARD, height - bottomGuard - BUTTON_HEIGHT);
   const pan = useRef(new Animated.ValueXY({ x: startX, y: startY })).current;
   const last = useRef({ x: startX, y: startY });
   const shred = useRef(new Animated.Value(0)).current;
 
-  const clampY = useCallback((y: number) => Math.min(Math.max(y, TOP_GUARD), Math.max(TOP_GUARD, height - BOTTOM_GUARD - BUTTON_HEIGHT)),[height]);
+  const clampY = useCallback((y: number) => Math.min(Math.max(y, TOP_GUARD), Math.max(TOP_GUARD, height - bottomGuard - BUTTON_HEIGHT)),[bottomGuard,height]);
   useEffect(()=>{
     pan.stopAnimation(value=>{
       const next={x:Math.min(Math.max(value.x,EDGE),Math.max(EDGE,width-BUTTON_WIDTH-EDGE)),y:clampY(value.y)};
