@@ -237,6 +237,10 @@ test('errors shown to people never expose database or runtime internals',async()
  assert.match(userMessage(new Error('JWT expired'),fallback),/Sign in again/);
  assert.equal(userMessage({message:'Cart is empty'},fallback),'Cart is empty','PostgREST error objects are not Error instances');
  assert.equal(userMessage(null,fallback),fallback);
+ // Recovery instructions and our own permission messages must survive (audit of 902 strings).
+ assert.equal(userMessage(new Error('Calendar credentials need reconnection.'),fallback),'Calendar credentials need reconnection.');
+ assert.equal(userMessage(new Error('Business permission denied'),fallback),'Business permission denied');
+ assert.match(userMessage(new Error('connect ECONNREFUSED 127.0.0.1:443'),fallback),/offline/);
 });
 
 test('screens route caught errors through userMessage instead of printing e.message',()=>{
@@ -245,4 +249,11 @@ test('screens route caught errors through userMessage instead of printing e.mess
  const allowed=new Set(['app/auth.tsx','app/assistant.tsx']);
  const offenders=files.filter(f=>!allowed.has(f)&&/(\w+) instanceof Error\s*\?\s*\1\.message\s*:/.test(read(f)));
  assert.deepEqual(offenders,[]);
+});
+
+test('icon labels name the action, not the glyph, where the icon is ambiguous',()=>{
+ assert.match(read('app/create-post.tsx'),/accessibilityLabel=\{`Remove photo \$\{i\+1\}`\} onPress=\{\(\)=>removePhoto\(i\)\}/);
+ assert.match(read('app/business-crm-quote.tsx'),/accessibilityLabel="Remove line item"/);
+ assert.match(read('app/messages.tsx'),/accessibilityLabel="Close search"/);
+ assert.match(read('app/business-calendar.tsx'),/'Previous day'/);
 });

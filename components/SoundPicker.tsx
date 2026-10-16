@@ -101,7 +101,7 @@ export function SoundPicker({
     <View style={s.selectedIcon}><Ionicons name={activeValue?.source==='VOICEOVER'?'mic':activeValue?.source==='USER_UPLOAD'?'cloud-upload':'musical-notes'} size={18} color={colors.accent}/></View>
     <View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={s.selectedTitle}>{selectedLabel}</Text><Text numberOfLines={1} style={s.selectedCopy}>{activeValue?.artist??(activeValue?activeValue.source.replaceAll('_',' ').toLowerCase():(voiceover&&tab!=='VOICEOVER'?'Voiceover also added':'Tap a source below'))}</Text></View>
     {activeValue?.previewUri?<Pressable accessibilityRole="button" accessibilityLabel="Preview sound" onPress={()=>void preview(activeValue.previewUri,activeValue.startMs)} style={s.preview}><Ionicons name="play" size={16} color={colors.text}/></Pressable>:null}
-    {activeValue?<Pressable accessibilityRole="button" accessibilityLabel="Delete" onPress={removeActive} style={s.remove}><Ionicons name="trash-outline" size={17} color={colors.danger}/></Pressable>:null}
+    {activeValue?<Pressable accessibilityRole="button" accessibilityLabel="Remove sound" onPress={removeActive} style={s.remove}><Ionicons name="trash-outline" size={17} color={colors.danger}/></Pressable>:null}
    </View>
 
    <View style={s.sourceBlock}>

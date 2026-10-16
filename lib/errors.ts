@@ -34,9 +34,9 @@ export function userFacingError(error: unknown, fallback: string): string {
 // userMessage is for screens that previously showed any message: copy written for people
 // (thrown by lib/* helpers or raised by our RPCs, e.g. 'Cart is empty') passes through, while
 // database, transport and runtime internals never reach the screen.
-const OFFLINE=/failed to fetch|network ?(request failed|error)|load failed|fetch failed|offline|timed? ?out|ECONN|ENOTFOUND/i;
+const OFFLINE=/failed to fetch|network ?(request failed|error)|load failed|fetch failed|offline|timed? ?out|\bECONN[A-Z]+\b|\bENOTFOUND\b/i;
 const SESSION=/^authentication required$|jwt (expired|malformed)|invalid jwt|refresh token|session (expired|missing|not found)/i;
-const TECHNICAL=/violates|duplicate key|PGRST|relation "|column "|does not exist|permission denied|row-level security|syntax error|invalid input (syntax|value)|null value|schema cache|undefined is not|cannot read propert|is not a function|unexpected token|JSON|TypeError|ReferenceError|stack|\bat \w+ \(|^[A-Z0-9]{5}$|<html|status code \d{3}/i;
+const TECHNICAL=/violates|duplicate key|PGRST|relation "|column "|does not exist|permission denied for |row-level security|syntax error|invalid input (syntax|value)|null value|schema cache|undefined is not|cannot read propert|is not a function|unexpected token|JSON|TypeError|ReferenceError|stack|\bat \w+ \(|^[A-Z0-9]{5}$|<html|status code \d{3}/i;
 
 export function userMessage(error:unknown,fallback:string):string{
  const raw=typeof error==='string'?error:error instanceof Error?error.message:typeof (error as {message?:unknown})?.message==='string'?(error as {message:string}).message:'';

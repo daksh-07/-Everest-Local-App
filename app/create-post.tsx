@@ -136,7 +136,7 @@ export default function CreatePost(){
    {photos.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.photoRow}>{photos.map((p,i)=><View key={p.assetId??p.uri} style={s.photoWrap}>
     <Image source={{uri:p.uri}} style={s.photo}/>
     {i===0?<View style={s.cover}><Text style={s.coverText}>Cover</Text></View>:null}
-    <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={()=>removePhoto(i)} style={s.remove}><Ionicons name="close" size={15} color="#fff"/></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={`Remove photo ${i+1}`} onPress={()=>removePhoto(i)} style={s.remove}><Ionicons name="close" size={15} color="#fff"/></Pressable>
     <View style={s.reorder}>{i>0?<Pressable accessibilityRole="button" accessibilityLabel={`Move photo ${i+1} earlier`} hitSlop={10} onPress={()=>move(i,-1)}><Ionicons name="chevron-back-circle" size={25} color="#fff"/></Pressable>:<View/>}{i<photos.length-1?<Pressable accessibilityRole="button" accessibilityLabel={`Move photo ${i+1} later`} hitSlop={10} onPress={()=>move(i,1)}><Ionicons name="chevron-forward-circle" size={25} color="#fff"/></Pressable>:null}</View>
    </View>)}</ScrollView>:<Pressable onPress={()=>void pickLibrary()} style={s.mediaHero}>
     <View style={s.mediaHeroIcon}><Ionicons name="images-outline" size={27} color={colors.accent}/></View>

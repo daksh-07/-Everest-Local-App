@@ -350,7 +350,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
     <View style={s.sheetHandle}/>
     <View style={s.sheetHeader}>
      <View><Text style={s.sheetTitle}>Comments</Text><Text style={s.sheetSubtitle}>{comments.length?comments.length+' in the conversation':'Start the conversation'}</Text></View>
-     <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={()=>setCommentPost(null)} style={s.closeButton}><Ionicons name="close" size={21} color={colors.text}/></Pressable>
+     <Pressable accessibilityRole="button" accessibilityLabel="Close comments" onPress={()=>setCommentPost(null)} style={s.closeButton}><Ionicons name="close" size={21} color={colors.text}/></Pressable>
     </View>
     {commentsBusy&&!comments.length?<ActivityIndicator style={{margin:30}}/>:<FlatList
      data={comments}
