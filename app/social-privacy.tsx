@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Switch, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {getSocialPreferences,setSocialPreferences,type SocialPreferences} from '@/lib/connections';

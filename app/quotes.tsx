@@ -3,7 +3,7 @@ import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleS
 import { AppText as Text } from '@/components/ui/AppText';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {acceptQuote} from '@/lib/marketplace';
 import {getOrCreateConversation} from '@/lib/messaging';
 import {supabase} from '@/lib/supabase';

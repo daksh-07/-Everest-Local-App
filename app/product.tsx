@@ -5,7 +5,7 @@ import { ActivityIndicator, Animated, Image, Modal, PanResponder, Pressable, Scr
 import { AppText as Text } from '@/components/ui/AppText';
 import { formatMoney } from '@/lib/format';
 import {SafeAreaView,useSafeAreaInsets} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router,useLocalSearchParams} from 'expo-router';
 import {getProductDetail,searchShop,setVariantCartItem,signedProductMediaBatch,type ProductDetail,type ProductVariant,type ShopProduct} from '@/lib/product-commerce';
 import {getCart} from '@/lib/commerce';

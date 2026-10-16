@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { myOrders } from '@/lib/commerce';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
 import type { Order } from '@/lib/types';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { HeaderIconButton,ScreenHeader,StatusBadge,type StatusTone } from '@/components/ui';
 import { formatDay,formatMoney,formatStatus,formatTime } from '@/lib/format';
 type Delivery={order_id:string;status:string;eta:string|null};

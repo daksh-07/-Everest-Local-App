@@ -4,7 +4,7 @@ import { ActivityIndicator, FlatList, Image, Modal, Pressable, RefreshControl, S
 import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {PagerAwareScrollView as ScrollView} from '@/components/PagerAwareScrollView';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useGlobalSearchParams} from 'expo-router';
 import {

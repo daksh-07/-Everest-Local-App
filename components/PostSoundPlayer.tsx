@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {useAudioPlayer} from 'expo-audio';
 import type {PublicAudioTrack} from '@/lib/audio-studio';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';

@@ -5,7 +5,7 @@ import { Animated, AppState, Image, RefreshControl, StyleSheet, useWindowDimensi
 import { AppText as Text } from '@/components/ui/AppText';
 import {PagerAwareScrollView as ScrollView} from '@/components/PagerAwareScrollView';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router} from 'expo-router';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
 import {ServiceCategoryGrid} from '@/components/ServiceCategoryGrid';

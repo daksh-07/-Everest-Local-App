@@ -3,7 +3,7 @@ import { ActivityIndicator, Image, Pressable, ScrollView, View } from 'react-nat
 import { AppText as Text } from '@/components/ui/AppText';
 import {formatStatus} from '@/lib/format';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';

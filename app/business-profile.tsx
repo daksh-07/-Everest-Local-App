@@ -3,7 +3,7 @@ import { Image, Linking, Modal, Pressable, RefreshControl, ScrollView, StyleShee
 import { AppText as Text } from '@/components/ui/AppText';
 import {ContentSkeleton} from '@/components/ui/ContentSkeleton';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { isBusinessSaved,toggleSavedBusiness } from '@/lib/marketplace';

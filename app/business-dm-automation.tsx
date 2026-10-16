@@ -4,7 +4,7 @@ import { AppText as Text } from '@/components/ui/AppText';
 import {formatStatus} from '@/lib/format';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router} from 'expo-router';
 import {myBusiness} from '@/lib/catalog';
 import {addBusinessDmFaq,deleteBusinessDmFaq,getBusinessDmSettings,listBusinessDmFaqs,setBusinessDmAi,type BusinessDmFaq,type BusinessDmSettings} from '@/lib/business-dm';

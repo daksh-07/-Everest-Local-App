@@ -5,7 +5,7 @@ import { formatMoney } from '@/lib/format';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {router} from 'expo-router';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {cartUnitPrice,checkout,getCart,removeFromCart,setCartQuantity} from '@/lib/commerce';
 import type { CartItem,ProductDeliveryMethod } from '@/lib/commerce';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';

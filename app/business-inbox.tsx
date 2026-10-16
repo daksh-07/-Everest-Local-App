@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, V
 import { AppText as Text } from '@/components/ui/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { formatWhen } from '@/lib/format';
 import { BusinessTabBar } from '@/components/BusinessTabBar';
 import { ModeSwitcher } from '@/components/ModeSwitcher';

@@ -1,4 +1,4 @@
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {useAppTheme} from '@/lib/theme';

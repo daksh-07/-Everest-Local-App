@@ -2,7 +2,7 @@ import {useEffect,useMemo,useState} from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router,useLocalSearchParams} from 'expo-router';
 import {useAudioPlayer} from 'expo-audio';
 import {getPublicSoundAsset,listSoundUsage,type PublicSoundAsset,type SoundUsagePost} from '@/lib/audio-studio';

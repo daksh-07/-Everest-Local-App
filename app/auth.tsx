@@ -3,7 +3,8 @@ import { ActivityIndicator, Animated, KeyboardAvoidingView, Linking, Platform, P
 import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { router } from 'expo-router';
 import { AuthRolePicker } from '@/components/AuthRolePicker';
 import {useReducedMotion} from '@/lib/motion';

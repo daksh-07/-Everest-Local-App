@@ -4,7 +4,7 @@ import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router,useLocalSearchParams} from 'expo-router';
 import {createProduct,myBusiness} from '@/lib/catalog';
 import {getProductDetail,listProductCategories,publishProduct,removeProductImage,reorderProductImages,saveProductDetails,saveVariant,setProductInventory,setVariantImage,signedProductMedia,uploadProductImage,type ProductCategory,type ProductImage} from '@/lib/product-commerce';

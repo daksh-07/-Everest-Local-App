@@ -2,7 +2,7 @@ import {useEffect,useMemo,useState} from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type DimensionValue } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {ClipPlayer} from '@/components/ClipPlayer';
 import {normalizeClipEditManifest,type ClipEditManifest} from '@/lib/social-expansion';
 import type {DraftSound} from '@/lib/audio-studio';

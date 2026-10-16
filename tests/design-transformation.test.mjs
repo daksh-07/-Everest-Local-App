@@ -298,3 +298,11 @@ test('public profile: removing a connection asks first, messaging uses a sheet, 
  assert.doesNotMatch(pu,/Send a message<\/Text>|toLocaleDateString\(undefined,\{day:'numeric',month:'short',year:'numeric'\}\)/);
  assert.match(pu,/async function send\(\):Promise<boolean>/,'the sheet stays open when sending fails');
 });
+
+test('icons are decorative unless labelled, so glyphs never leak into button names',()=>{
+ const icon=read('components/ui/Icon.tsx');
+ assert.match(icon,/'aria-hidden':true/);assert.match(icon,/importantForAccessibility:'no-hide-descendants'/);assert.match(icon,/accessibilityElementsHidden:true/);
+ const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(d+'/'+e.name):[d+'/'+e.name]);
+ const direct=[...walk('app'),...walk('components'),...walk('lib')].filter(f=>f.endsWith('.tsx')&&f!=='components/ui/Icon.tsx').filter(f=>/import\s*\{[^}]*\bIonicons\b[^}]*\}\s*from\s*'@expo\/vector-icons'/.test(read(f)));
+ assert.deepEqual(direct,[],'import Ionicons from @/components/ui/Icon');
+});

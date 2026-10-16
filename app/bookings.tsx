@@ -1,5 +1,5 @@
 import {MotionPressable as Pressable} from '@/components/ui/MotionPressable';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { router } from 'expo-router';
 import { useEffect,useMemo,useRef,useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';

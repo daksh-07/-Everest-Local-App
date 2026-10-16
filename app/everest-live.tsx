@@ -2,7 +2,7 @@ import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Animated, AppState, Easing, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router,useLocalSearchParams} from 'expo-router';
 import {acceptQuote} from '@/lib/marketplace';
 import {cancelEverestLive,expandEverestLive,getEverestLiveMapPoints,getEverestLiveState,listLiveQuotes,type EverestLiveState,type LiveMapSnapshot,type LiveQuote} from '@/lib/everest-live';

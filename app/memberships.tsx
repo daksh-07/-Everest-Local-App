@@ -2,7 +2,7 @@ import {useCallback,useEffect,useMemo,useState,type ReactNode} from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router} from 'expo-router';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
 import {approveMembership,cancelMembershipAtPeriodEnd,getMembershipCredits,intervalLabel,listMyMemberships,listMyPackages,openMembershipPortal,resumeMembership,type CustomerMembership,type CustomerPackage} from '@/lib/growth';

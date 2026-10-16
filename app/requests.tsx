@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import type { ServiceRequest } from '@/lib/types';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { HeaderIconButton,ScreenHeader,StatusBadge,type StatusTone } from '@/components/ui';
 import { formatDay,formatSchedule,formatStatus } from '@/lib/format';
 

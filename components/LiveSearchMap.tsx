@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import type {LiveMapPoint} from '@/lib/everest-live';
 import {useAppTheme} from '@/lib/theme';
 

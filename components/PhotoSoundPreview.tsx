@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import { Image, Pressable, StyleSheet, View, type DimensionValue } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {useAudioPlayer} from 'expo-audio';
 import type {DraftSound} from '@/lib/audio-studio';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';

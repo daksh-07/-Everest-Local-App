@@ -6,7 +6,7 @@ import { AppText as Text } from '@/components/ui/AppText';
 import { formatMoney } from '@/lib/format';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router,useLocalSearchParams} from 'expo-router';
 import {listProductCategories,searchShop,signedProductMedia,type ProductCategory,type ShopProduct} from '@/lib/product-commerce';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';

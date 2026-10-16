@@ -2,7 +2,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Animated, Image, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router,useLocalSearchParams} from 'expo-router';
 import {ClipPlayer} from '@/components/ClipPlayer';
 import {listActiveStories,listEverestMusic,type MusicTrack,type StoryCard} from '@/lib/social-expansion';

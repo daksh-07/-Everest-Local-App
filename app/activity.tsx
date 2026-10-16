@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, u
 import { AppText as Text } from '@/components/ui/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
 import {useCustomerRouteHost} from '@/lib/customer-pager';
 import { supabase } from '@/lib/supabase';
