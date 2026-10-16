@@ -64,7 +64,7 @@ try{
  await page.getByRole('button',{name:'Try again',exact:true}).click();
  await page.getByText('No Everest results',{exact:true}).waitFor();
  await page.getByLabel('Back from search',{exact:true}).click();
- await page.getByLabel('Open Everest menu',{exact:true}).waitFor();
+ await page.getByLabel('Search services, businesses and products',{exact:true}).waitFor();
  assert.deepEqual(errors,[],'No uncaught browser errors');
  console.log(`PASS Search at 42 width/mode/theme combinations, categories, account guidance, stale request cancellation, clear, failure/retry and back. ${engine} emulation; transport fixtures labelled above.`);
 }finally{await browser.close()}

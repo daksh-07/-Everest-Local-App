@@ -11,11 +11,11 @@ function ready(label){run('wait','--fn',`!!document.querySelector('[aria-label="
 let checks=0;
 try{
  run('open',base);
- ready('Open Everest menu');
+ ready('Search services, businesses and products');
  for(const mode of ['DEFAULT','PULSE','CLASSIC']){
   for(const theme of ['LIGHT','DARK']){
    run('eval',`localStorage.setItem('everest-local-experience-v1','${mode}');localStorage.setItem('everest-local-theme','${theme}')`);
-   run('reload');ready('Open Everest menu');
+   run('reload');ready('Search services, businesses and products');
    for(const width of [320,390,1280]){
     run('set','viewport',String(width),'844');
     run('wait','--fn','document.documentElement.scrollWidth <= innerWidth');
@@ -24,7 +24,7 @@ try{
      return {quote:rect('Request a Quote'),live:rect('Find someone now with Everest Live'),mode:document.documentElement.dataset.everestExperience,canvas:document.documentElement.style.getPropertyValue('--everest-canvas')};
     })()`);
     assert.equal(result.mode,mode.toLowerCase());
-    assert.equal(result.canvas,theme==='DARK'?'#10100F':'#F7F5F0');
+    assert.equal(result.canvas,theme==='DARK'?'#000000':'#F7F5F0');
     for(const control of [result.quote,result.live]){
      assert.ok(control.height>=44,`Touch target at ${width}: ${JSON.stringify(control)}`);
      assert.ok(control.x>=0&&control.right<=width+1,`Overflow at ${width}`);
@@ -37,14 +37,14 @@ try{
  }
  run('set','media','light','reduced-motion');
  run('eval',"localStorage.setItem('everest-local-experience-v1','DEFAULT')");
- run('reload');ready('Open Everest menu');
+ run('reload');ready('Search services, businesses and products');
  assert.equal(value("matchMedia('(prefers-reduced-motion: reduce)').matches"),true);
  run('set','viewport','390','844');
- run('click','[aria-label="Open Everest menu"]');
- run('wait','[aria-label="Close menu"]');
- run('click','[aria-label="Close menu"]');
- run('wait','--fn',"!document.querySelector('[aria-label=\"Close menu\"]')?.getClientRects().length");
- checks++;console.log('PASS reduced-motion preference and menu open/close');
+ // Ask Everest lives in the Home search bar (the menu sheet was removed).
+ run('click','[aria-label="Ask Everest for help"]');
+ run('wait','--fn',"['/assistant','/auth'].includes(location.pathname)");
+ run('open',base);ready('Search services, businesses and products');
+ checks++;console.log('PASS reduced-motion preference and Ask Everest entry');
  run('open',base+'/shop');ready('Search local products');
  for(const width of [320,390,1280]){
   run('set','viewport',String(width),'844');
