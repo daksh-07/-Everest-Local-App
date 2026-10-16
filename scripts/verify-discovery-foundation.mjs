@@ -64,12 +64,18 @@ try{
  for(const destination of destinations){
   await page.goto(base,{waitUntil:'networkidle'});
   const target=destination.locate();
-  await target.scrollIntoViewIfNeeded();
+  await target.waitFor();
+  // Centre the entry so floating chrome (tab bar, Live bar) cannot sit over it; a trial click
+  // fails if anything else would receive the tap.
+  await target.evaluate(el=>el.scrollIntoView({block:'center',inline:'nearest'}));
+  await page.waitForTimeout(150);
   const rect=await target.boundingBox();
   assert.ok(rect&&rect.height>=44,`${destination.name}: entry is visible with a 44px target`);
+  await target.click({trial:true});
   await target.click();
-  await page.waitForFunction(paths=>paths.includes(location.pathname),destination.paths,{timeout:15000});
+  const arrived=await page.waitForFunction(paths=>paths.includes(location.pathname),destination.paths,{timeout:15000}).then(()=>true,()=>false);
   const landed=await page.evaluate(()=>location.pathname+location.search);
+  assert.ok(arrived,`${destination.name}: expected one of ${destination.paths.join(', ')} but landed on ${landed}`);
   if(destination.live&&landed.startsWith('/request'))assert.match(landed,/live=1/,'Live entry keeps its live intent');
   reached.push({name:destination.name,landed});
  }
