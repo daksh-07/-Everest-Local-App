@@ -59,7 +59,9 @@ test('home renders live weather beside the resolved locality without blocking Ho
  assert.match(home,/geocodeCustomerLocality/);
  assert.match(home,/weatherLoading/);
  assert.match(home,/partly-sunny-outline/);
- assert.match(home,/--°/);
+ // Unavailable weather is omitted rather than shown as a placeholder reading.
+ assert.doesNotMatch(home,/--°/);
+ assert.match(home,/hasPlace&&weatherText\?/);
  assert.doesNotMatch(home,/loadNearby\(locality\),loadWeather\(locality\)/);
  assert.match(weather,/api\.open-meteo\.com\/v1\/forecast/);
  assert.match(weather,/current=temperature_2m,weather_code,is_day/);
