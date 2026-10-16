@@ -6,7 +6,6 @@ import {usePathname,router} from 'expo-router';
 import {supabase} from '@/lib/supabase';
 import {getEverestLiveState,type EverestLiveState} from '@/lib/everest-live';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
-import {useRegisterFloatingLayer} from '@/lib/floating-layers';
 
 type ActiveLiveRequest={
   id:string;
@@ -18,7 +17,6 @@ type ActiveLiveRequest={
 
 const ACTIVE_STATUSES=['SEARCHING','NOTIFYING','RESPONSES_AVAILABLE','PROVIDER_SELECTED','NO_PROVIDER_FOUND'];
 const POLL_MS=30_000;
-const PLAYER_FOOTPRINT=72;
 const PLAYER_MAX_WIDTH=620;
 // Local session read only; no network round trip per poll.
 async function sessionUserId(){const {data}=await supabase.auth.getSession();return data.session?.user.id??null}
@@ -109,7 +107,6 @@ export function EverestLiveMiniPlayer(){
   },[load,scheduleLoad]);
 
   const visible=Boolean(request)&&pathname!=='/everest-live'&&pathname!=='/request';
-  useRegisterFloatingLayer('everest-live-mini-player',visible?PLAYER_FOOTPRINT:0);
   if(!request||!visible)return null;
 
   const status=state?.live_status??request.live_status;

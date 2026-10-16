@@ -2,6 +2,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { formatStatus } from '@/lib/format';
+import {AskEverestButton} from '@/components/AskEverestButton';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
@@ -170,7 +171,7 @@ export function AccountScreen({visible=true}:{visible?:boolean}={}){
 
  return <SafeAreaView style={s.safe} edges={['top']}><View style={{flex:1}}>
   <ScrollView contentContainerStyle={s.page} showsVerticalScrollIndicator={false}>
-   <View style={s.top}><Text accessibilityRole="header" style={s.topTitle}>Profile</Text><Pressable accessibilityRole="button" accessibilityLabel="Open account menu" onPress={()=>{void haptic.selection();setMenuOpen(true)}} style={s.topAction}><Ionicons name="ellipsis-horizontal" size={23} color={colors.text}/></Pressable></View>
+   <View style={s.top}><Text accessibilityRole="header" style={[s.topTitle,{flex:1}]}>Profile</Text><AskEverestButton/><Pressable accessibilityRole="button" accessibilityLabel="Open account menu" onPress={()=>{void haptic.selection();setMenuOpen(true)}} style={s.topAction}><Ionicons name="ellipsis-horizontal" size={23} color={colors.text}/></Pressable></View>
    {loading?<ActivityIndicator color={colors.accent} style={{marginTop:70}}/>:profile?<>
     <View style={s.profile}>
      <View style={s.profileGlow}/>

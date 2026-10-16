@@ -36,10 +36,13 @@ test('Live mini player only shows the signed-in customer’s own request',()=>{
  assert.doesNotMatch(player,/fontSize:8\b/,'no sub-legible text in the player');
 });
 
-test('floating layers coordinate instead of overlapping',()=>{
- const player=read('components/EverestLiveMiniPlayer.tsx');const ask=read('components/DraggableAskEverest.tsx');
- assert.match(player,/useRegisterFloatingLayer\('everest-live-mini-player'/);
- assert.match(ask,/BOTTOM_GUARD \+ useFloatingLayerOffset\(\)/);
+test('Ask Everest is a header action, never a floating button over content',()=>{
+ assert.ok(!fs.existsSync('components/DraggableAskEverest.tsx'));
+ assert.doesNotMatch(read('app/_layout.tsx'),/DraggableAskEverest/);
+ // Reachable from the customer Home search bar, customer Profile, Business Today and the employee home.
+ assert.match(read('app/index.tsx'),/accessibilityLabel="Ask Everest for help"/);
+ for(const screen of ['app/account.tsx','app/business-today.tsx','app/business-my-work.tsx'])assert.match(read(screen),/<AskEverestButton\/>/,screen);
+ assert.match(read('components/AskEverestButton.tsx'),/router\.push\('\/assistant'\)/);
 });
 
 test('Home keeps every capability reachable after removing the duplicate menu',()=>{

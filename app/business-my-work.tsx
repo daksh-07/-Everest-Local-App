@@ -3,6 +3,7 @@ import {router} from 'expo-router';
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import { ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
+import {AskEverestButton} from '@/components/AskEverestButton';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {BusinessTabBar} from '@/components/BusinessTabBar';
 import {ModeSwitcher} from '@/components/ModeSwitcher';
@@ -58,7 +59,7 @@ export default function BusinessMyWork(){
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}><ScrollView
   refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>}
   contentContainerStyle={st.page} showsVerticalScrollIndicator={false}>
-  <View style={st.header}><View><Text style={st.eyebrow}>MY WORK</Text><Text style={st.business}>{business?.name??'Business'}</Text></View><ModeSwitcher compact/></View>
+  <View style={st.header}><View style={{flex:1,minWidth:0}}><Text style={st.eyebrow}>My work</Text><Text numberOfLines={1} style={st.business}>{business?.name??'Business'}</Text></View><ModeSwitcher compact/><AskEverestButton/></View>
   <Text style={st.title}>Your shift, without the noise.</Text><Text style={st.copy}>Only work assigned to you or your crew appears here. Company finance, payouts and admin stay with authorised roles.</Text>
   {error?<View style={st.errorBox}><Ionicons name="alert-circle-outline" size={18} color={colors.danger}/><Text style={st.error}>{error}</Text></View>:null}
   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:55}}/>:<>
@@ -92,7 +93,7 @@ function JobCard({job,busy,onAdvance,onDecline,colors}:{job:AssignedJob;busy:str
 function Info({icon,text,colors}:{icon:keyof typeof Ionicons.glyphMap;text:string;colors:ThemeColors}){const s=useMemo(()=>styles(colors),[colors]);return <View style={s.info}><Ionicons name={icon} size={15} color={colors.muted}/><Text style={s.infoText}>{text}</Text></View>}
 
 const styles=(c:ThemeColors)=>StyleSheet.create({
- safe:{flex:1,backgroundColor:c.canvas},page:{paddingHorizontal:18,paddingTop:8,paddingBottom:116,maxWidth:820,width:'100%',alignSelf:'center'},header:{minHeight:58,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},eyebrow:{fontSize:12,fontWeight:'900',letterSpacing:1.5,color:c.accent},business:{fontSize:14,fontWeight:'900',color:c.text,marginTop:3},title:{fontSize:31,lineHeight:35,fontWeight:'900',letterSpacing:-.8,color:c.text,marginTop:17},copy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:6},errorBox:{borderRadius:15,borderWidth:1,borderColor:c.danger,padding:12,marginTop:13,flexDirection:'row',gap:8},error:{fontSize:14,lineHeight:20,color:c.danger,flex:1},
+ safe:{flex:1,backgroundColor:c.canvas},page:{paddingHorizontal:18,paddingTop:8,paddingBottom:116,maxWidth:820,width:'100%',alignSelf:'center'},header:{minHeight:58,flexDirection:'row',alignItems:'center',gap:4},eyebrow:{fontSize:13,fontWeight:'500',color:c.textSecondary},business:{fontSize:16,fontWeight:'600',color:c.text,marginTop:1},title:{fontSize:31,lineHeight:35,fontWeight:'900',letterSpacing:-.8,color:c.text,marginTop:17},copy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:6},errorBox:{borderRadius:15,borderWidth:1,borderColor:c.danger,padding:12,marginTop:13,flexDirection:'row',gap:8},error:{fontSize:14,lineHeight:20,color:c.danger,flex:1},
  summary:{minHeight:86,borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginTop:16,paddingHorizontal:12,flexDirection:'row',alignItems:'center',justifyContent:'space-around'},summaryN:{fontSize:22,fontWeight:'900',color:c.text,textAlign:'center'},summaryL:{fontSize:12,fontWeight:'900',letterSpacing:.8,color:c.muted,marginTop:3,textAlign:'center'},divider:{width:1,height:36,backgroundColor:c.border},
  nextCard:{borderRadius:26,borderWidth:1,borderColor:c.border,backgroundColor:c.elevated,padding:19,marginTop:12},nextTop:{flexDirection:'row',alignItems:'center',gap:7},liveDot:{width:8,height:8,borderRadius:4,backgroundColor:c.success},nextKicker:{fontSize:12,fontWeight:'900',letterSpacing:1.2,color:c.accent},nextStatus:{marginLeft:'auto',fontSize:12,fontWeight:'900',color:c.muted},nextTitle:{fontSize:24,fontWeight:'900',letterSpacing:-.4,color:c.text,marginTop:12},customer:{fontSize:12,fontWeight:'700',color:c.textSecondary,marginTop:4},info:{flexDirection:'row',gap:7,alignItems:'center',marginTop:10},infoText:{fontSize:12,lineHeight:17,color:c.muted,flex:1},
  section:{fontSize:12,fontWeight:'900',letterSpacing:1.4,color:c.muted,marginTop:25,marginBottom:2},card:{borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:16,marginTop:9},cardTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},source:{borderRadius:999,backgroundColor:c.soft,paddingHorizontal:8,paddingVertical:5},sourceText:{fontSize:12,fontWeight:'900',letterSpacing:.8,color:c.accent},status:{fontSize:12,fontWeight:'900',color:c.muted},cardTitle:{fontSize:17,fontWeight:'900',color:c.text,marginTop:10},
