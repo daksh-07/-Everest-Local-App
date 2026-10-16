@@ -15,6 +15,7 @@ import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 type Identity={kind:'PERSONAL';id:string;name:string}|{kind:'BUSINESS';id:string;name:string;business:BusinessWorkspace};
 
@@ -26,8 +27,8 @@ export default function CreateClip(){
  const [edit,setEdit]=useState<ClipEditManifest>(()=>normalizeClipEditManifest({}));const [editorOpen,setEditorOpen]=useState(false);
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
 
- useEffect(()=>{let active=true;(async()=>{try{const [{data:{user}},ctx,{data:profile}]=await Promise.all([supabase.auth.getUser(),getWorkspaceContext(),supabase.from('profiles').select('full_name,suburb,city,state').maybeSingle()]);if(!user){router.replace('/auth');return}const list:Identity[]=[{kind:'PERSONAL',id:user.id,name:profile?.full_name||'My profile'},...ctx.businesses.filter(b=>b.can_manage_catalog).map(b=>({kind:'BUSINESS' as const,id:b.id,name:b.name,business:b}))];if(active){setIdentities(list);setIdentity(ctx.mode==='BUSINESS'&&ctx.active_business_id?list.find(i=>i.id===ctx.active_business_id)??list[0]:list[0]);setLocation([profile?.suburb,profile?.city,profile?.state].filter(Boolean).join(', '))}}catch(e){if(active)setError(e instanceof Error?e.message:'Clip creator could not be opened.')}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
- useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active){if(next.source==='VOICEOVER')setVoiceover(next);else setSound(next)}}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Sound could not be loaded.')});return()=>{active=false}},[params.soundId]);
+ useEffect(()=>{let active=true;(async()=>{try{const [{data:{user}},ctx,{data:profile}]=await Promise.all([supabase.auth.getUser(),getWorkspaceContext(),supabase.from('profiles').select('full_name,suburb,city,state').maybeSingle()]);if(!user){router.replace('/auth');return}const list:Identity[]=[{kind:'PERSONAL',id:user.id,name:profile?.full_name||'My profile'},...ctx.businesses.filter(b=>b.can_manage_catalog).map(b=>({kind:'BUSINESS' as const,id:b.id,name:b.name,business:b}))];if(active){setIdentities(list);setIdentity(ctx.mode==='BUSINESS'&&ctx.active_business_id?list.find(i=>i.id===ctx.active_business_id)??list[0]:list[0]);setLocation([profile?.suburb,profile?.city,profile?.state].filter(Boolean).join(', '))}}catch(e){if(active)setError(userMessage(e,'Clip creator could not be opened.'))}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
+ useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active){if(next.source==='VOICEOVER')setVoiceover(next);else setSound(next)}}).catch(e=>{if(active)setError(userMessage(e,'Sound could not be loaded.'))});return()=>{active=false}},[params.soundId]);
 
  async function pick(){
   setError('');
@@ -39,7 +40,7 @@ export default function CreateClip(){
     setEdit(normalizeClipEditManifest({trimStartMs:0,trimEndMs:next.duration&&next.duration>0?Math.min(next.duration,90_000):null},next.duration));
     setEditorOpen(true);void haptic.selection();
    }
-  }catch(e){setError(e instanceof Error?e.message:'Video could not be opened.')}
+  }catch(e){setError(userMessage(e,'Video could not be opened.'))}
  }
 
  async function publish(){
@@ -58,7 +59,7 @@ export default function CreateClip(){
    void haptic.success();router.replace(('/social?mode=clips&postId='+createdId) as never);
   }catch(e){
    if(createdId){try{await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',createdId)}catch{void 0}}
-   void haptic.warning();setError(e instanceof Error?e.message:'Clip could not be published.');
+   void haptic.warning();setError(userMessage(e,'Clip could not be published.'));
   }finally{setBusy(false)}
  }
 

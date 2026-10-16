@@ -8,6 +8,7 @@ import {useAudioPlayer} from 'expo-audio';
 import {getPublicSoundAsset,listSoundUsage,type PublicSoundAsset,type SoundUsagePost} from '@/lib/audio-studio';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 const sourceLabel=(source:PublicSoundAsset['source'])=>source==='LICENSED_MUSIC'?'Licensed music':source==='VOICEOVER'?'Voiceover':'Creator sound';
 
@@ -20,7 +21,7 @@ export default function Sound(){
  useEffect(()=>{let active=true;(async()=>{if(!id){setError('Sound unavailable.');setLoading(false);return}try{
   const [asset,usage]=await Promise.all([getPublicSoundAsset(id),listSoundUsage(id,30)]);
   if(!active)return;setSound(asset);setPosts(usage);if(!asset)setError('Sound unavailable.');
- }catch(e){if(active)setError(e instanceof Error?e.message:'Sound could not be loaded.')}finally{if(active)setLoading(false)}})();return()=>{active=false}},[id]);
+ }catch(e){if(active)setError(userMessage(e,'Sound could not be loaded.'))}finally{if(active)setLoading(false)}})();return()=>{active=false}},[id]);
 
  useEffect(()=>{player.pause();setPlaying(false);if(sound?.url)player.replace(sound.url);return()=>player.pause()},[sound?.url,player]);
 

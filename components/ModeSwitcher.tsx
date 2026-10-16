@@ -7,19 +7,20 @@ import { router } from 'expo-router';
 import {acceptBusinessInvitation,getMyBusinessInvitations,type BusinessInvitation} from '@/lib/business-operations';
 import { businessHomeRoute,type BusinessWorkspace,getWorkspaceContext,setWorkspacePreference } from '@/lib/workspace';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 export function ModeSwitcher({compact=false}:{compact?:boolean}){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
  const [open,setOpen]=useState(false);const [businesses,setBusinesses]=useState<BusinessWorkspace[]>([]);const [invitations,setInvitations]=useState<BusinessInvitation[]>([]);
  const [mode,setMode]=useState<'CUSTOMER'|'BUSINESS'>('CUSTOMER');const [active,setActive]=useState<string|null>(null);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
- useEffect(()=>{if(!open)return;let mounted=true;setError('');void Promise.all([getWorkspaceContext(),getMyBusinessInvitations().catch(()=>[])]).then(([ctx,invites])=>{if(!mounted)return;setBusinesses(ctx.businesses);setMode(ctx.mode);setActive(ctx.active_business_id);setInvitations(invites)}).catch(e=>mounted&&setError(e instanceof Error?e.message:'Workspace could not be loaded.'));return()=>{mounted=false}},[open]);
+ useEffect(()=>{if(!open)return;let mounted=true;setError('');void Promise.all([getWorkspaceContext(),getMyBusinessInvitations().catch(()=>[])]).then(([ctx,invites])=>{if(!mounted)return;setBusinesses(ctx.businesses);setMode(ctx.mode);setActive(ctx.active_business_id);setInvitations(invites)}).catch(e=>mounted&&setError(userMessage(e,'Workspace could not be loaded.')));return()=>{mounted=false}},[open]);
  async function choose(nextMode:'CUSTOMER'|'BUSINESS',businessId:string|null){
   if(busy)return;setBusy(true);setError('');
   try{
    await setWorkspacePreference(nextMode,businessId);if(Platform.OS!=='web')await Haptics.selectionAsync();setMode(nextMode);setActive(businessId);setOpen(false);
    if(nextMode==='CUSTOMER'){router.replace('/');return;}
    const selected=businesses.find(b=>b.id===businessId);router.replace(selected?businessHomeRoute(selected):'/business-today');
-  }catch(e){setError(e instanceof Error?e.message:'Workspace could not be switched.');}
+  }catch(e){setError(userMessage(e,'Workspace could not be switched.'));}
   finally{setBusy(false)}
  }
  async function accept(invite:BusinessInvitation){
@@ -31,7 +32,7 @@ export function ModeSwitcher({compact=false}:{compact?:boolean}){
    const selected=ctx.businesses.find(b=>b.id===businessId);
    if(Platform.OS!=='web')await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
    setOpen(false);router.replace(selected?businessHomeRoute(selected):'/business-my-work');
-  }catch(e){setError(e instanceof Error?e.message:'The invitation could not be accepted.');}
+  }catch(e){setError(userMessage(e,'The invitation could not be accepted.'));}
   finally{setBusy(false);}
  }
  return <><Pressable accessibilityLabel="Switch mode" onPress={()=>setOpen(true)} style={[s.trigger,compact&&s.compact]}><Ionicons name="swap-horizontal" size={17} color={colors.text}/>{!compact&&<Text style={s.triggerText}>Switch mode</Text>}</Pressable>

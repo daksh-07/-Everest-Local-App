@@ -11,6 +11,7 @@ import {addCrmNote,createCrmOpportunity,createCrmTask,crmLabel,getBusinessContac
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Tab='OVERVIEW'|'TIMELINE'|'DEALS'|'QUOTES'|'BOOKINGS'|'PAYMENTS'|'NOTES'|'TASKS';
 type Note={id:string;body:string;created_at:string};
@@ -39,12 +40,12 @@ export default function BusinessCustomer(){
    ]);if(nb.error)throw nb.error;if(nq.error)throw nq.error;const bookingRowsNative=(nb.data??[]) as NativeBooking[];setNativeBookings(bookingRowsNative);setNativeQuotes((nq.data??[]) as NativeQuote[]);
    if(bookingRowsNative.length){const pay=await supabase.from('service_payments').select('id,amount,currency,status,created_at,booking_id').in('booking_id',bookingRowsNative.map(b=>b.id)).order('created_at',{ascending:false});if(pay.error)throw pay.error;setPayments((pay.data??[]) as Payment[]);}else setPayments([]);
   }else{setNativeBookings([]);setNativeQuotes([]);setPayments([]);}
- }catch(e){setError(e instanceof Error?e.message:'Customer could not be loaded.');}finally{setLoading(false);}},[id]);
+ }catch(e){setError(userMessage(e,'Customer could not be loaded.'));}finally{setLoading(false);}},[id]);
  useEffect(()=>{void load();},[load]);
 
- async function saveNote(){if(!business||!contact||!note.trim())return;setBusy(true);try{await addCrmNote(business.id,contact.id,note);setNote('');setModal(null);await load();}catch(e){setError(e instanceof Error?e.message:'Note could not be saved.');}finally{setBusy(false);}}
- async function saveTask(){if(!business||!contact||!task.trim())return;setBusy(true);try{await createCrmTask({businessId:business.id,contactId:contact.id,title:task.trim(),type:taskType,dueAt:taskDue.toISOString()});setTask('');setModal(null);await load();}catch(e){setError(e instanceof Error?e.message:'Task could not be saved.');}finally{setBusy(false);}}
- async function saveDeal(){if(!business||!contact||!dealTitle.trim())return;const value=dealValue.trim()?Number(dealValue):null;if(value!==null&&(!Number.isFinite(value)||value<0)){setError('Enter a valid deal value.');return;}setBusy(true);try{const dealId=await createCrmOpportunity({businessId:business.id,contactId:contact.id,title:dealTitle.trim(),source:contact.source,estimatedValue:value});setModal(null);setDealTitle('');setDealValue('');await load();router.push({pathname:'/business-deal',params:{id:dealId}});}catch(e){setError(e instanceof Error?e.message:'Deal could not be created.');}finally{setBusy(false);}}
+ async function saveNote(){if(!business||!contact||!note.trim())return;setBusy(true);try{await addCrmNote(business.id,contact.id,note);setNote('');setModal(null);await load();}catch(e){setError(userMessage(e,'Note could not be saved.'));}finally{setBusy(false);}}
+ async function saveTask(){if(!business||!contact||!task.trim())return;setBusy(true);try{await createCrmTask({businessId:business.id,contactId:contact.id,title:task.trim(),type:taskType,dueAt:taskDue.toISOString()});setTask('');setModal(null);await load();}catch(e){setError(userMessage(e,'Task could not be saved.'));}finally{setBusy(false);}}
+ async function saveDeal(){if(!business||!contact||!dealTitle.trim())return;const value=dealValue.trim()?Number(dealValue):null;if(value!==null&&(!Number.isFinite(value)||value<0)){setError('Enter a valid deal value.');return;}setBusy(true);try{const dealId=await createCrmOpportunity({businessId:business.id,contactId:contact.id,title:dealTitle.trim(),source:contact.source,estimatedValue:value});setModal(null);setDealTitle('');setDealValue('');await load();router.push({pathname:'/business-deal',params:{id:dealId}});}catch(e){setError(userMessage(e,'Deal could not be created.'));}finally{setBusy(false);}}
  if(loading)return <SafeAreaView style={st.safe}><ActivityIndicator color={colors.accent} style={{marginTop:80}}/></SafeAreaView>;
  if(!contact)return <SafeAreaView style={st.safe}><Text style={st.error}>{error||'Customer not found.'}</Text></SafeAreaView>;
 

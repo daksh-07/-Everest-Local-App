@@ -12,6 +12,7 @@ import { createServiceCheckout } from '@/lib/service-payments';
 import { supabase } from '@/lib/supabase';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
 import type { BookingStatus } from '@/lib/types';
+import {userMessage} from '@/lib/errors';
 
 type Booking={id:string;business_id:string;request_id:string|null;quote_id:string|null;price:number;scheduled_date:string|null;scheduled_time:string|null;status:BookingStatus;created_at:string;completed_at:string|null};
 type Payment={amount:number;status:string;created_at:string;payment_kind?:'DEPOSIT'|'BALANCE'};
@@ -55,7 +56,7 @@ export default function BookingPortal(){
   setData({booking:typed,businessName:String(businessResult.data?.name??'Local business'),payment:paymentResult.data as Payment|null,paymentSummary:paymentSummaryResult.data as PaymentSummary,hasReview:Boolean(reviewResult.data),...workspace});
  }catch{setError('This booking could not be loaded. Check your connection and try again.');}finally{setLoading(false);setRefreshing(false)}},[bookingId]);
  useEffect(()=>{void load()},[load]);
- async function action(key:string,work:()=>Promise<void>){if(busy)return;setBusy(key);setError('');try{await work()}catch(e){setError(e instanceof Error?e.message:'That action could not be completed.')}finally{setBusy('')}}
+ async function action(key:string,work:()=>Promise<void>){if(busy)return;setBusy(key);setError('');try{await work()}catch(e){setError(userMessage(e,'That action could not be completed.'))}finally{setBusy('')}}
  if(loading)return <SafeAreaView style={s.safe}><LoadingState label="Loading your booking…" minHeight={320}/></SafeAreaView>;
  if(!data)return <SafeAreaView style={s.safe}><View style={s.center}><EmptyState icon="calendar-outline" title="Booking unavailable" description={error||'We could not load this booking.'} actionLabel="Try again" onAction={()=>void load()}/></View></SafeAreaView>;
  const {booking,record,checklist,paymentSummary}=data;const cancelled=booking.status==='CANCELLED';const activeStage=stages.findLastIndex(stage=>stage.statuses.includes(booking.status));const canPayBalance=!cancelled&&['CONFIRMED','UPCOMING','IN_PROGRESS'].includes(booking.status)&&paymentSummary.balance_due>0;

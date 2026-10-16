@@ -11,6 +11,7 @@ import {getMyAssignedJobs,updateAssignmentStatus,type AssignedJob} from '@/lib/b
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 const nextAction=(status:string):{label:string;next:'ACCEPTED'|'EN_ROUTE'|'ARRIVED'|'IN_PROGRESS'|'COMPLETED';icon:keyof typeof Ionicons.glyphMap}|null=>{
  if(status==='ASSIGNED')return{label:'Accept job',next:'ACCEPTED',icon:'checkmark-circle-outline'};
@@ -35,7 +36,7 @@ export default function BusinessMyWork(){
    const current=ctx.businesses.find(x=>x.id===ctx.active_business_id);
    if(!current)throw new Error('Business access unavailable.');
    setBusiness(current);setJobs(await getMyAssignedJobs(current.id));
-  }catch(e){setError(e instanceof Error?e.message:'Your work queue could not be loaded.');}
+  }catch(e){setError(userMessage(e,'Your work queue could not be loaded.'));}
   finally{setLoading(false);setRefreshing(false);}
  },[]);
  useEffect(()=>{void load();},[load]);
@@ -43,13 +44,13 @@ export default function BusinessMyWork(){
  async function advance(job:AssignedJob,next:ReturnType<typeof nextAction>){
   if(!next||busy)return;setBusy(job.assignment_id);setError('');
   try{await updateAssignmentStatus(job.assignment_id,next.next);void haptic.success();await load(true);}
-  catch(e){setError(e instanceof Error?e.message:'The job could not be updated.');}
+  catch(e){setError(userMessage(e,'The job could not be updated.'));}
   finally{setBusy('');}
  }
  async function decline(job:AssignedJob){
   if(busy)return;setBusy(job.assignment_id);setError('');
   try{await updateAssignmentStatus(job.assignment_id,'DECLINED');void haptic.selection();await load(true);}
-  catch(e){setError(e instanceof Error?e.message:'The job could not be declined.');}
+  catch(e){setError(userMessage(e,'The job could not be declined.'));}
   finally{setBusy('');}
  }
  const active=jobs.filter(x=>!['COMPLETED','DECLINED','CANCELLED'].includes(x.status));

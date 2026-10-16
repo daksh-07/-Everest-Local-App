@@ -17,6 +17,7 @@ import {
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type ViewKey='PIPELINE'|'TASKS'|'REPORTS';
 type TaskView='TODAY'|'OVERDUE'|'UPCOMING'|'COMPLETED';
@@ -50,7 +51,7 @@ export default function BusinessCrm(){
    const {data:{user}}=await supabase.auth.getUser();const unreadCount=(conversations.data??[]).flatMap(row=>(row.messages??[]) as Array<{sender_id:string;read_at:string|null}>).filter(m=>m.sender_id!==user?.id&&!m.read_at).length;
    setContacts(contactRows);setStages(stageRows);setDeals(dealRows);setTasks(taskRows);setQuotes(quoteRows);setBookings(bookingRows);setUnread(unreadCount);
    setNativeBooked((nativeBookings.data??[]).reduce((sum,row)=>sum+Number(row.price||0),0));
-  }catch(e){setError(e instanceof Error?e.message:'CRM could not be loaded.');}finally{setLoading(false);setRefreshing(false);}
+  }catch(e){setError(userMessage(e,'CRM could not be loaded.'));}finally{setLoading(false);setRefreshing(false);}
  },[]);
  useEffect(()=>{void load();},[load]);
 
@@ -66,7 +67,7 @@ export default function BusinessCrm(){
  function goView(next:'PIPELINE'|'CONTACTS'|'TASKS'|'REPORTS'){if(next==='CONTACTS')router.push('/business-customers');else router.replace({pathname:'/business-crm',params:{view:next}});}
  async function saveDeal(){if(!business||!dealContact||!dealTitle.trim())return;const value=dealValue.trim()?Number(dealValue):null;if(value!==null&&(!Number.isFinite(value)||value<0)){setError('Enter a valid deal value.');return;}setSaving(true);setError('');
   try{const id=await createCrmOpportunity({businessId:business.id,contactId:dealContact,title:dealTitle.trim(),source:dealSource,estimatedValue:value});setNewDealOpen(false);setDealContact('');setDealTitle('');setDealValue('');setDealSource('MANUAL');await load(true);router.push({pathname:'/business-deal',params:{id}});}
-  catch(e){setError(e instanceof Error?e.message:'Deal could not be created.');}finally{setSaving(false);}
+  catch(e){setError(userMessage(e,'Deal could not be created.'));}finally{setSaving(false);}
  }
  const nav=(<View style={st.crmNav}>{(['PIPELINE','CONTACTS','TASKS','REPORTS'] as const).map(item=><Pressable key={item} onPress={()=>goView(item)} style={[st.crmNavItem,(view===item||(item==='CONTACTS'&&false))&&st.crmNavOn]}><Ionicons name={item==='PIPELINE'?'git-network-outline':item==='CONTACTS'?'people-outline':item==='TASKS'?'checkmark-circle-outline':'bar-chart-outline'} size={17} color={view===item?colors.accent:colors.muted}/><Text style={[st.crmNavText,view===item&&st.crmNavTextOn]}>{item[0]+item.slice(1).toLowerCase()}</Text></Pressable>)}</View>);
 

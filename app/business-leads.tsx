@@ -9,6 +9,7 @@ import {ModeSwitcher} from '@/components/ModeSwitcher';
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Lead={id:string;request_id:string;status:string;created_at:string;expires_at:string|null;description:string;suburb:string|null;city:string|null;state:string|null;preferred_date:string|null;preferred_time:string|null;timing_mode:string;time_window_start:string|null;time_window_end:string|null;budget:number|null;budget_min:number|null;budget_max:number|null;media_urls:string[];media?:string[]};
 type Availability='PREFERRED'|'CONFIRM';
@@ -30,13 +31,13 @@ export default function BusinessLeads(){
    const rows=(data??[]) as Lead[];
    const hydrated=await Promise.all(rows.map(async lead=>{const urls:string[]=[];for(const path of lead.media_urls??[]){const {data:signed}=await supabase.storage.from('request-media').createSignedUrl(path,1800);if(signed?.signedUrl)urls.push(signed.signedUrl);}return{...lead,media:urls};}));
    setItems(hydrated);
-  }catch(e){setError(e instanceof Error?e.message:'Leads could not be loaded.');}
+  }catch(e){setError(userMessage(e,'Leads could not be loaded.'));}
   finally{setLoading(false);setRefreshing(false);}
  },[filter]);
  useEffect(()=>{void load();},[load]);
 
  async function sendQuote(){if(!quoteLead||!business)return;const amount=Number(price);if(!Number.isFinite(amount)||amount<=0||!message.trim()){setError('Add a price above $0 and a short message.');return;}setBusy(true);setError('');
-  try{const usePreferred=availability==='PREFERRED'&&!!quoteLead.preferred_date;const {error:rpcError}=await supabase.rpc('send_quote_for_business',{p_business_id:business.id,p_request_id:quoteLead.request_id,p_service_id:null,p_description:message.trim(),p_line_items:[],p_price:amount,p_deposit:0,p_total:amount,p_proposed_date:usePreferred?quoteLead.preferred_date:null,p_proposed_time:usePreferred&&quoteLead.timing_mode==='EXACT_TIME'?quoteLead.preferred_time:null,p_valid_until:null,p_terms:null});if(rpcError)throw rpcError;setQuoteLead(null);setPrice('');setMessage('');setAvailability('PREFERRED');await load(true);}catch(e){setError(e instanceof Error?e.message:'Quote could not be sent.');}finally{setBusy(false);}}
+  try{const usePreferred=availability==='PREFERRED'&&!!quoteLead.preferred_date;const {error:rpcError}=await supabase.rpc('send_quote_for_business',{p_business_id:business.id,p_request_id:quoteLead.request_id,p_service_id:null,p_description:message.trim(),p_line_items:[],p_price:amount,p_deposit:0,p_total:amount,p_proposed_date:usePreferred?quoteLead.preferred_date:null,p_proposed_time:usePreferred&&quoteLead.timing_mode==='EXACT_TIME'?quoteLead.preferred_time:null,p_valid_until:null,p_terms:null});if(rpcError)throw rpcError;setQuoteLead(null);setPrice('');setMessage('');setAvailability('PREFERRED');await load(true);}catch(e){setError(userMessage(e,'Quote could not be sent.'));}finally{setBusy(false);}}
  const verified=business?.verification_status==='VERIFIED';
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}><ScrollView keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>} contentContainerStyle={st.page}>
   <View style={st.header}><View><Text style={st.mode}>Business mode</Text><Text style={st.name}>{business?.name??'Business'}</Text></View><ModeSwitcher compact/></View><Text style={st.title}>Leads</Text><Text style={st.copy}>Everest only shows requests released to this verified business in controlled matching waves.</Text>

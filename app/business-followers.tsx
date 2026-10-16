@@ -6,6 +6,7 @@ import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {listBusinessFollowers,type BusinessFollower} from '@/lib/social';
 import {useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 const PAGE_SIZE=25;
 
@@ -29,7 +30,7 @@ export default function BusinessFollowers(){
    const rows=await listBusinessFollowers(id,PAGE_SIZE,offset);
    setItems(current=>reset?rows:[...current,...rows]);
    setMore(rows.length===PAGE_SIZE);
-  }catch(e){setError(e instanceof Error?e.message:'Followers could not be loaded.')}
+  }catch(e){setError(userMessage(e,'Followers could not be loaded.'))}
   finally{setLoading(false);setBusy(false)}
  }
 

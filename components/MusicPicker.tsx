@@ -8,6 +8,7 @@ import {useEvent} from 'expo';
 import {listEverestMusic,signedMusicUrl,type MusicTrack} from '@/lib/social-expansion';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 const duration=(ms:number)=>{const sec=Math.max(0,Math.round(ms/1000));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')};
 
@@ -19,7 +20,7 @@ export function MusicPicker({visible,selected,onClose,onSelect}:{visible:boolean
  const {isPlaying}=useEvent(previewPlayer,'playingChange',{isPlaying:previewPlayer.playing});
 
  useEffect(()=>{if(!visible){previewPlayer.pause();return}let active=true;setLoading(true);setError('');
-  const timer=setTimeout(()=>{void listEverestMusic(query).then(rows=>{if(active)setTracks(rows)}).catch(e=>active&&setError(e instanceof Error?e.message:'Everest Music could not be loaded.')).finally(()=>active&&setLoading(false))},query?220:0);
+  const timer=setTimeout(()=>{void listEverestMusic(query).then(rows=>{if(active)setTracks(rows)}).catch(e=>active&&setError(userMessage(e,'Everest Music could not be loaded.'))).finally(()=>active&&setLoading(false))},query?220:0);
   return()=>{active=false;clearTimeout(timer)};
  },[visible,query,previewPlayer]);
 
@@ -29,7 +30,7 @@ export function MusicPicker({visible,selected,onClose,onSelect}:{visible:boolean
   try{
    const url=await signedMusicUrl(track.storage_path);if(!url)throw new Error('Preview unavailable.');
    await previewPlayer.replaceAsync(url);previewPlayer.currentTime=0;previewPlayer.play();setPreviewId(track.id);
-  }catch(e){setError(e instanceof Error?e.message:'Preview unavailable.')}finally{setPreviewBusy(null)}
+  }catch(e){setError(userMessage(e,'Preview unavailable.'))}finally{setPreviewBusy(null)}
  }
  function close(){previewPlayer.pause();onClose()}
 

@@ -1,3 +1,4 @@
+import {userMessage} from '@/lib/errors';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Alert, Image, Modal, PanResponder, Pressable, ScrollView, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
@@ -226,7 +227,7 @@ export default function Search(){
         if(version.current===current)setJobs((data??[]) as JobResult[]);
       }
     }catch(e){
-      if(version.current===current)setError(e instanceof Error?e.message:'Jobs could not be loaded.');
+      if(version.current===current)setError(userMessage(e,'Jobs could not be loaded.'));
     }finally{
       if(version.current===current)setLoading(false);
     }
@@ -261,7 +262,7 @@ export default function Search(){
       });
       router.push('/saved-searches');
     }catch(e){
-      setError(e instanceof Error?e.message:'Could not save this search.');
+      setError(userMessage(e,'Could not save this search.'));
     }finally{
       setSavingSearch(false);
     }

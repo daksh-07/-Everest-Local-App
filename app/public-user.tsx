@@ -20,6 +20,7 @@ import {useAppTheme} from '@/lib/theme';
 import {listHighlights,websiteLabel,type StoryHighlight} from '@/lib/social-expansion';
 import {signedPostMediaBatch,signedPostMediaResilient} from '@/lib/request-post-media';
 import {PostMediaImage} from '@/components/PostMediaImage';
+import {userMessage} from '@/lib/errors';
 
 function initialsFor(name:string|null){
   const parts=(name??'').trim().split(/\s+/).filter(Boolean);
@@ -72,7 +73,7 @@ export default function PublicUser(){
       try{setPostMedia(await signedPostMediaResilient(content.map(item=>item.id),{onPartialFailure:()=>setError('Some post photos are unavailable. Tap a photo area to retry.')}))}
       catch{setError('Some post photos could not be loaded. Tap a photo area to retry.')}
     }catch(e){
-      setError(e instanceof Error?e.message:'Profile could not be loaded.');
+      setError(userMessage(e,'Profile could not be loaded.'));
     }finally{
       setLoading(false);
     }
@@ -104,7 +105,7 @@ export default function PublicUser(){
       }
       await load();
     }catch(e){
-      setError(e instanceof Error?e.message:'Connection action failed.');
+      setError(userMessage(e,'Connection action failed.'));
     }finally{
       setBusy(false);
     }
@@ -119,7 +120,7 @@ export default function PublicUser(){
       setMessage('');
       router.push('/messages?personalId='+conversationId);
     }catch(e){
-      setError(e instanceof Error?e.message:'Message could not be sent.');
+      setError(userMessage(e,'Message could not be sent.'));
     }finally{
       setBusy(false);
     }
@@ -142,7 +143,7 @@ export default function PublicUser(){
               await reportUser(p.id,'OTHER');
               Alert.alert('Report sent','Thanks. Everest Local will review this profile.');
             }catch(e){
-              setError(e instanceof Error?e.message:'Report could not be sent.');
+              setError(userMessage(e,'Report could not be sent.'));
             }finally{
               setBusy(false);
             }
@@ -170,7 +171,7 @@ export default function PublicUser(){
               await blockUser(p.id);
               router.back();
             }catch(e){
-              setError(e instanceof Error?e.message:'User could not be blocked.');
+              setError(userMessage(e,'User could not be blocked.'));
             }finally{
               setBusy(false);
             }

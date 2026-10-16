@@ -12,6 +12,7 @@ import {parseContactCsv} from '@/lib/contact-import';
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Segment='ALL'|'LEADS'|'CUSTOMERS'|'REPEAT'|'INACTIVE_30'|'INACTIVE_90'|'HIGH_VALUE';
 type Sort='RECENT'|'NAME'|'VALUE';
@@ -40,7 +41,7 @@ export default function BusinessCustomers(){
    for(const b of nativeBookings.data??[]){const cid=linkedByUser.get(b.customer_id);if(cid&&map[cid]){map[cid].value+=Number(b.price||0);map[cid].jobs++;}}
    for(const task of tasks){if(task.contact_id&&map[task.contact_id]&&!map[task.contact_id].nextTask)map[task.contact_id].nextTask=task.due_at;}
    setContacts(contactRows);setMetrics(map);
-  }catch(e){setError(e instanceof Error?e.message:'Contacts could not be loaded.');}finally{setLoading(false);setRefreshing(false);}
+  }catch(e){setError(userMessage(e,'Contacts could not be loaded.'));}finally{setLoading(false);setRefreshing(false);}
  },[]);
  useEffect(()=>{void load();},[load]);
 
@@ -57,10 +58,10 @@ export default function BusinessCustomers(){
   try{
    if(!force){const matches=await findPossibleDuplicates(business.id,email,phone);if(matches.length){setDuplicates(matches);setSaving(false);return;}}
    const id=await createBusinessContact({businessId:business.id,name:name.trim(),phone,email,company,source:leadSource,suburb,city,notes});setAdding(false);resetForm();await load(true);router.push({pathname:'/business-customer',params:{id}});
-  }catch(e){setError(e instanceof Error?e.message:'Contact could not be created.');}finally{setSaving(false);}
+  }catch(e){setError(userMessage(e,'Contact could not be created.'));}finally{setSaving(false);}
  }
  const importRows=useMemo(()=>parseContactCsv(csv),[csv]);
- async function runImport(){if(!business||!importRows.length)return;setImportBusy(true);setError('');setImportResult('');try{const result=await importCrmContacts(business.id,importRows,importSource);setImportResult(`${result.imported} added · ${result.duplicates} duplicates skipped · ${result.skipped} skipped`);await load(true);}catch(e){setError(e instanceof Error?e.message:'Contacts could not be imported.');}finally{setImportBusy(false);}}
+ async function runImport(){if(!business||!importRows.length)return;setImportBusy(true);setError('');setImportResult('');try{const result=await importCrmContacts(business.id,importRows,importSource);setImportResult(`${result.imported} added · ${result.duplicates} duplicates skipped · ${result.skipped} skipped`);await load(true);}catch(e){setError(userMessage(e,'Contacts could not be imported.'));}finally{setImportBusy(false);}}
 
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}><ScrollView keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>} contentContainerStyle={st.page}>
   <View style={st.header}><Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={()=>router.replace('/business-crm')} style={st.back}><Ionicons name="chevron-back" size={18} color={colors.text}/></Pressable><View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={st.name}>{business?.name??'Business'}</Text><Text style={st.mode}>Business mode</Text></View><ModeSwitcher compact/></View>

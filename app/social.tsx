@@ -24,6 +24,7 @@ import {PostSoundPlayer} from '@/components/PostSoundPlayer';
 import {PostMediaImage} from '@/components/PostMediaImage';
 import {listActiveStories,listClips,listEverestMusic,signedMusicUrl,type ClipEditManifest,type MusicTrack,type StoryCard} from '@/lib/social-expansion';
 import {listPostAudioTracks,type PublicAudioTrack} from '@/lib/audio-studio';
+import {userMessage} from '@/lib/errors';
 
 type FeedPost=SocialPost&{
  media?:string[];
@@ -163,7 +164,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
     exploreSnapshot={posts:enrichedPosts,clips:orderedClips,stories:storyRows,locality:nextLocality,userId:nextUserId,at:Date.now()};
     if(orderedClips[0])setActiveClipId(current=>current??orderedClips[0].id);
    }else{setClips([]);exploreSnapshot={posts:enrichedPosts,clips:[],stories:storyRows,locality:nextLocality,userId:nextUserId,at:Date.now()}}
-  }catch(e){setError(e instanceof Error?e.message:'Could not load Explore.');}
+  }catch(e){setError(userMessage(e,'Could not load Explore.'));}
   finally{setLoading(false);setRefreshing(false);release();exploreLoad=null}
  },[requestedPostId]);
 
@@ -212,7 +213,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
    const row=await addPostComment(commentPost.id,commentText,replyTo?.id??null);
    setComments(v=>[...v,row]);setCommentLikes(v=>({...v,[row.id]:{likeCount:0,likedByMe:false}}));
    setCommentText('');setReplyTo(null);updateEngagement(commentPost.id,e=>({...e,commentCount:e.commentCount+1}));void haptic.success();
-  }catch(e){setError(e instanceof Error?e.message:'Could not add comment.')}finally{setCommentsBusy(false)}
+  }catch(e){setError(userMessage(e,'Could not add comment.'))}finally{setCommentsBusy(false)}
  }
  async function hideComment(commentId:string){
   if(!commentPost)return;
@@ -220,7 +221,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
    await hidePostComment(commentId);
    setComments(v=>v.filter(x=>x.id!==commentId));
    updateEngagement(commentPost.id,e=>({...e,commentCount:Math.max(0,e.commentCount-1)}));
-  }catch(e){setError(e instanceof Error?e.message:'Could not hide comment.')}
+  }catch(e){setError(userMessage(e,'Could not hide comment.'))}
  }
  async function likeComment(commentId:string){
   const before=commentLikes[commentId]??{likeCount:0,likedByMe:false};

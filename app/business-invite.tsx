@@ -10,6 +10,7 @@ import {signOut as signOutAccount} from '@/lib/auth';
 import {supabase} from '@/lib/supabase';
 import {useAppTheme,type ThemeColors} from '@/lib/theme';
 import {businessHomeRoute,getWorkspaceContext,setWorkspacePreference} from '@/lib/workspace';
+import {userMessage} from '@/lib/errors';
 
 export default function BusinessInvite(){
  const params=useLocalSearchParams<{invitationId?:string|string[]}>();
@@ -29,7 +30,7 @@ export default function BusinessInvite(){
    const match=invites.find(item=>item.id===invitationId)??null;
    setInvite(match);
    if(!match)setError('This invitation is not available for the email currently signed in. Use the email address that received the invitation.');
-  }catch(e){setError(e instanceof Error?e.message:'This invitation could not be loaded.')}
+  }catch(e){setError(userMessage(e,'This invitation could not be loaded.'))}
   finally{setLoading(false)}
  },[invitationId]);
 
@@ -51,7 +52,7 @@ export default function BusinessInvite(){
    const ctx=await getWorkspaceContext();
    const selected=ctx.businesses.find(item=>item.id===businessId);
    router.replace(selected?businessHomeRoute(selected):'/business-my-work');
-  }catch(e){setError(e instanceof Error?e.message:'The invitation could not be accepted.')}
+  }catch(e){setError(userMessage(e,'The invitation could not be accepted.'))}
   finally{setBusy(false)}
  }
 

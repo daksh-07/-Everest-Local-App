@@ -13,6 +13,7 @@ import {createCrmCalendarBlock,createCrmTask,crmLabel,deleteCrmCalendarBlock,lis
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type CalendarView='DAY'|'WEEK'|'AGENDA';
 type NativeBooking={id:string;price:number;scheduled_date:string|null;scheduled_time:string|null;status:string;request_id:string|null};
@@ -49,9 +50,9 @@ export default function BusinessCalendar(){
  const visible=useMemo(()=>{if(view==='DAY')return events.filter(e=>sameDay(e.start,selected));if(view==='WEEK'){const from=monday(selected),to=new Date(from.getTime()+7*86400000);return events.filter(e=>e.start>=from&&e.start<to);}const from=startDay(selected),to=new Date(from.getTime()+30*86400000);return events.filter(e=>e.start>=from&&e.start<to);},[events,view,selected]);
  const weekDays=Array.from({length:7},(_,i)=>new Date(monday(selected).getTime()+i*86400000));
  function shift(delta:number){const d=new Date(selected);d.setDate(d.getDate()+delta*(view==='DAY'?1:view==='WEEK'?7:30));setSelected(startDay(d));}
- async function saveBlock(){if(!business)return;setBusy(true);try{await createCrmCalendarBlock(business.id,blockTitle,blockStart.toISOString(),new Date(blockStart.getTime()+blockDuration*60000).toISOString());setBlockOpen(false);await load(true);}catch(e){setError(e instanceof Error?e.message:'Blocked time could not be saved.');}finally{setBusy(false);}}
- async function saveTask(){if(!business||!taskTitle.trim())return;setBusy(true);try{await createCrmTask({businessId:business.id,title:taskTitle.trim(),type:taskType,dueAt:taskDue.toISOString()});setTaskOpen(false);setTaskTitle('');await load(true);}catch(e){setError(e instanceof Error?e.message:'Task could not be created.');}finally{setBusy(false);}}
- async function removeBlock(block:CrmCalendarBlock){if(!business)return;setBusy(true);try{await deleteCrmCalendarBlock(business.id,block.id);await load(true);}catch(e){setError(e instanceof Error?e.message:'Blocked time could not be removed.');}finally{setBusy(false);}}
+ async function saveBlock(){if(!business)return;setBusy(true);try{await createCrmCalendarBlock(business.id,blockTitle,blockStart.toISOString(),new Date(blockStart.getTime()+blockDuration*60000).toISOString());setBlockOpen(false);await load(true);}catch(e){setError(userMessage(e,'Blocked time could not be saved.'));}finally{setBusy(false);}}
+ async function saveTask(){if(!business||!taskTitle.trim())return;setBusy(true);try{await createCrmTask({businessId:business.id,title:taskTitle.trim(),type:taskType,dueAt:taskDue.toISOString()});setTaskOpen(false);setTaskTitle('');await load(true);}catch(e){setError(userMessage(e,'Task could not be created.'));}finally{setBusy(false);}}
+ async function removeBlock(block:CrmCalendarBlock){if(!business)return;setBusy(true);try{await deleteCrmCalendarBlock(business.id,block.id);await load(true);}catch(e){setError(userMessage(e,'Blocked time could not be removed.'));}finally{setBusy(false);}}
 
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}><ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>} contentContainerStyle={st.page}>
   <View style={st.header}><View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={st.name}>{business?.name??'Business'}</Text><Text style={st.mode}>Business mode</Text></View><ModeSwitcher compact/></View>

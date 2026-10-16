@@ -7,13 +7,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton,AppCard,EmptyState,ErrorBanner,LoadingState,StatusBadge } from '@/components/ui';
 import { createReview,reviewTargets,type ReviewTarget } from '@/lib/reviews';
 import {type ThemeColors,useAppTheme,uiTokens} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 export default function Reviews(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
  const [targets,setTargets]=useState<ReviewTarget[]>([]);const [loading,setLoading]=useState(true);const [selected,setSelected]=useState<ReviewTarget|null>(null);const [rating,setRating]=useState(5);const [body,setBody]=useState('');const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [success,setSuccess]=useState('');
- async function load(){setLoading(true);setError('');try{setTargets(await reviewTargets())}catch(e){setError(e instanceof Error?e.message:'Unable to load review opportunities.')}finally{setLoading(false)}}
+ async function load(){setLoading(true);setError('');try{setTargets(await reviewTargets())}catch(e){setError(userMessage(e,'Unable to load review opportunities.'))}finally{setLoading(false)}}
  useEffect(()=>{void load()},[]);
- async function submit(){if(!selected||busy)return;setBusy(true);setError('');setSuccess('');try{await createReview({businessId:selected.businessId,bookingId:selected.kind==='SERVICE'?selected.referenceId:undefined,orderId:selected.kind==='PRODUCT'?selected.referenceId:undefined,productId:selected.productId,rating,body});setSuccess('Your review is now linked to the completed transaction.');setSelected(null);setBody('');setRating(5);await load()}catch(e){setError(e instanceof Error?e.message:'Review could not be submitted.')}finally{setBusy(false)}}
+ async function submit(){if(!selected||busy)return;setBusy(true);setError('');setSuccess('');try{await createReview({businessId:selected.businessId,bookingId:selected.kind==='SERVICE'?selected.referenceId:undefined,orderId:selected.kind==='PRODUCT'?selected.referenceId:undefined,productId:selected.productId,rating,body});setSuccess('Your review is now linked to the completed transaction.');setSelected(null);setBody('');setRating(5);await load()}catch(e){setError(userMessage(e,'Review could not be submitted.'))}finally{setBusy(false)}}
 
  if(selected)return <SafeAreaView style={s.safe}><KeyboardAvoidingView style={s.flex} behavior={Platform.OS==='ios'?'padding':undefined}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.page}>
   <Pressable accessibilityRole="button" accessibilityLabel="Back to reviews" onPress={()=>{setSelected(null);setError('')}} style={s.back}><Ionicons name="arrow-back" size={20} color={colors.text}/></Pressable>

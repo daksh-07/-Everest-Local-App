@@ -7,6 +7,7 @@ import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {supabase} from '@/lib/supabase';
 import {useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Result={source:'google_places';externalId:string;referenceId:string;name:string;address:string};
 type RequestRow={id:string;description:string;suburb:string|null;city:string|null;state:string|null;preferred_date:string|null;preferred_time:string|null};
@@ -23,7 +24,7 @@ export default function ExternalBusinesses(){
    if(e)throw e;
    setEnabled(data?.enabled===true);setEnquiriesEnabled(data?.enquiriesEnabled===true);
    setItems(Array.isArray(data?.businesses)?data.businesses:[]);
-  }catch(e){setError(e instanceof Error?e.message:'External business search is unavailable.')}
+  }catch(e){setError(userMessage(e,'External business search is unavailable.'))}
   finally{setLoading(false)}
  }
  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>

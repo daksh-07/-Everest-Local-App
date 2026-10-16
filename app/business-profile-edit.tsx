@@ -10,13 +10,14 @@ import {setBusinessWebsite,websiteLabel} from '@/lib/social-expansion';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 export default function BusinessProfileEdit(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
  const [businessId,setBusinessId]=useState('');const [name,setName]=useState('Business');const [website,setWebsite]=useState('');
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
- useEffect(()=>{let active=true;(async()=>{try{const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');const {data,error}=await supabase.from('businesses').select('id,name,website_url').eq('id',ctx.active_business_id).single();if(error)throw error;if(active){setBusinessId(data.id);setName(data.name);setWebsite(data.website_url??'')}}catch(e){if(active)setError(e instanceof Error?e.message:'Business profile could not be loaded.')}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
- async function save(){if(!businessId||busy)return;setBusy(true);setError('');try{await setBusinessWebsite(businessId,website);void haptic.success();router.back()}catch(e){void haptic.warning();setError(e instanceof Error?e.message:'Website could not be saved.')}finally{setBusy(false)}}
+ useEffect(()=>{let active=true;(async()=>{try{const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');const {data,error}=await supabase.from('businesses').select('id,name,website_url').eq('id',ctx.active_business_id).single();if(error)throw error;if(active){setBusinessId(data.id);setName(data.name);setWebsite(data.website_url??'')}}catch(e){if(active)setError(userMessage(e,'Business profile could not be loaded.'))}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
+ async function save(){if(!businessId||busy)return;setBusy(true);setError('');try{await setBusinessWebsite(businessId,website);void haptic.success();router.back()}catch(e){void haptic.warning();setError(userMessage(e,'Website could not be saved.'))}finally{setBusy(false)}}
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">
   <View style={s.header}><Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={()=>router.back()} style={s.round}><Ionicons name="arrow-back" size={21} color={colors.text}/></Pressable><View style={{flex:1}}><Text style={s.kicker}>Public profile</Text><Text style={s.title}>Edit business profile</Text></View><Pressable disabled={busy||loading} onPress={()=>void save()}><Text style={[s.save,(busy||loading)&&{opacity:.4}]}>{busy?'Saving…':'SAVE'}</Text></Pressable></View>
   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:70}}/>:<>

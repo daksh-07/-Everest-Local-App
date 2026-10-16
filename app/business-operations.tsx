@@ -16,6 +16,7 @@ import {
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 type Tab='OVERVIEW'|'DISPATCH'|'TEAM'|'STRUCTURE';
 const roleLabel=(value:string)=>value.replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
@@ -33,9 +34,9 @@ export default function BusinessOperations(){
  const load=useCallback(async(refresh=false)=>{if(refresh)setRefreshing(true);else setLoading(true);setError('');try{
   const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
   const current=ctx.businesses.find(x=>x.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);setData(await getOperationsDashboard(current.id));
- }catch(e){setError(e instanceof Error?e.message:'Operations could not be loaded.');}finally{setLoading(false);setRefreshing(false)}},[]);
+ }catch(e){setError(userMessage(e,'Operations could not be loaded.'));}finally{setLoading(false);setRefreshing(false)}},[]);
  useEffect(()=>{void load()},[load]);
- async function run(key:string,work:()=>Promise<void>){if(busy)return;setBusy(key);setError('');setNotice('');try{await work();void haptic.success();await load(true)}catch(e){setError(e instanceof Error?e.message:'That change could not be completed.')}finally{setBusy('')}}
+ async function run(key:string,work:()=>Promise<void>){if(busy)return;setBusy(key);setError('');setNotice('');try{await work();void haptic.success();await load(true)}catch(e){setError(userMessage(e,'That change could not be completed.'))}finally{setBusy('')}}
  async function invite(){if(!business||!email.trim())return;const recipient=email.trim();await run('invite',async()=>{const result=await inviteBusinessMember({businessId:business.id,email:recipient,role,displayName:name,jobTitle:title,isDispatchable:dispatchable});setEmail('');setName('');setTitle('');setNotice(result.emailSent?'Invitation email sent to '+recipient+'.':'Invitation created, but email delivery failed. Tap RESEND below to try again.')})}
  async function addLocation(){if(!business||!locationName.trim())return;await run('location',async()=>{await createBusinessLocation({businessId:business.id,name:locationName,addressLine:address,suburb,city:'Sydney',state:'NSW',postcode});setLocationName('');setAddress('');setSuburb('');setPostcode('')})}
  async function addTeam(){if(!business||!teamName.trim())return;await run('team',async()=>{await createBusinessTeam({businessId:business.id,name:teamName,description:teamDescription});setTeamName('');setTeamDescription('')})}

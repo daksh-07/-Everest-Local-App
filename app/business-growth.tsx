@@ -10,6 +10,7 @@ import {getBusinessContact,type CrmContact} from '@/lib/crm';
 import {createBusinessMembershipPlan,createBusinessPackage,getBusinessGrowthMetrics,intervalLabel,inviteCustomerToMembership,listBusinessMembershipPlans,listBusinessPackages,type BillingUnit,type BusinessPackage,type GrowthMetrics,type MembershipPlan,type PlanVisibility} from '@/lib/growth';
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 const presets:Array<{label:string;unit:BillingUnit;count:number}>=[
  {label:'Weekly',unit:'WEEK',count:1},{label:'Fortnightly',unit:'WEEK',count:2},{label:'Monthly',unit:'MONTH',count:1},{label:'Quarterly',unit:'MONTH',count:3},{label:'Annual',unit:'YEAR',count:1},
@@ -28,23 +29,23 @@ export default function BusinessGrowth(){
   const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}const current=ctx.businesses.find(x=>x.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
   const [planRows,packageRows,growth]=await Promise.all([listBusinessMembershipPlans(current.id),listBusinessPackages(current.id),getBusinessGrowthMetrics(current.id)]);setPlans(planRows);setPackages(packageRows);setMetrics(growth);
   if(contactId){const c=await getBusinessContact(current.id,contactId);setContact(c);setSelectedPlan(value=>value||planRows.find(p=>p.active)?.id||'');}else setContact(null);
- }catch(e){setError(e instanceof Error?e.message:'Growth could not be loaded.')}finally{setLoading(false)}},[contactId]);
+ }catch(e){setError(userMessage(e,'Growth could not be loaded.'))}finally{setLoading(false)}},[contactId]);
  useEffect(()=>{void load()},[load]);
 
  async function createPlan(){if(!business)return;const price=Number(planPrice),credits=Number(planCredits||0);if(!planName.trim()||!Number.isFinite(price)||price<=0||!Number.isInteger(credits)||credits<0){setError('Enter a plan name, valid price and whole-number credits.');return;}setBusy('plan');setError('');setSuccess('');try{
   await createBusinessMembershipPlan({businessId:business.id,name:planName.trim(),description:planDescription.trim(),visibility,price,intervalUnit:planUnit,intervalCount:planCount,includedCredits:credits});
   setPlanName('');setPlanDescription('');setPlanPrice('');setPlanCredits('0');setSuccess('Membership plan created.');await load();
- }catch(e){setError(e instanceof Error?e.message:'Plan could not be created.')}finally{setBusy('')}}
+ }catch(e){setError(userMessage(e,'Plan could not be created.'))}finally{setBusy('')}}
  async function createPackage(){if(!business)return;const price=Number(packagePrice),credits=Number(packageCredits),expiry=packageExpiry.trim()?Number(packageExpiry):null;if(!packageName.trim()||!Number.isFinite(price)||price<=0||!Number.isInteger(credits)||credits<1||(expiry!==null&&(!Number.isInteger(expiry)||expiry<1))){setError('Enter a package name, valid price, credits and optional expiry days.');return;}setBusy('package');setError('');setSuccess('');try{
   await createBusinessPackage({businessId:business.id,name:packageName.trim(),visibility:'PUBLIC',price,creditCount:credits,expiresAfterDays:expiry});
   setPackageName('');setPackagePrice('');setPackageCredits('5');setPackageExpiry('');setSuccess('Prepaid package created.');await load();
- }catch(e){setError(e instanceof Error?e.message:'Package could not be created.')}finally{setBusy('')}}
+ }catch(e){setError(userMessage(e,'Package could not be created.'))}finally{setBusy('')}}
  async function invite(){if(!business||!contact)return;setBusy('invite');setError('');setSuccess('');try{
   if(custom){const price=Number(customPrice),credits=Number(customCredits||0);if(!customTitle.trim()||!Number.isFinite(price)||price<=0||!Number.isInteger(credits)||credits<0)throw new Error('Enter a custom plan title, price and valid credits.');
    await inviteCustomerToMembership({businessId:business.id,contactId:contact.id,customTitle:customTitle.trim(),customPrice:price,intervalUnit:customUnit,intervalCount:customCount,includedCredits:credits});
   }else{if(!selectedPlan)throw new Error('Choose a membership plan first.');await inviteCustomerToMembership({businessId:business.id,contactId:contact.id,planId:selectedPlan});}
   setSuccess('Approval request sent. Billing will not start unless the customer accepts in My Everest.');setCustomTitle('');setCustomPrice('');setCustomCredits('0');
- }catch(e){setError(e instanceof Error?e.message:'Membership invitation could not be sent.')}finally{setBusy('')}}
+ }catch(e){setError(userMessage(e,'Membership invitation could not be sent.'))}finally{setBusy('')}}
 
  return <SafeAreaView style={s.safe} edges={['top']}><View style={{flex:1}}><ScrollView contentContainerStyle={s.page}>
   <View style={s.head}><View><Text style={s.eyebrow}>Business mode · Growth</Text><Text style={s.title}>Recurring revenue</Text><Text style={s.copy}>Memberships, prepaid service packages and customer retention controls. Metrics below come from real membership, booking and payment records.</Text></View></View>

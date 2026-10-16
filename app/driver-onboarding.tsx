@@ -1,3 +1,4 @@
+import {userMessage} from '@/lib/errors';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
@@ -138,7 +139,7 @@ export default function DriverOnboarding() {
         const accepted=app.declarations.map(item=>item.declaration_key); setDeclarationKeys(accepted);
         try { setCompliance(await getDriverCompliance(app.id)); } catch { setCompliance(null); }
       }
-    } catch(e) { if(active)setError(e instanceof Error?e.message:'Unable to load driver onboarding.'); }
+    } catch(e) { if(active)setError(userMessage(e,'Unable to load driver onboarding.')); }
     finally { if(active)setLoading(false); }
   })();return()=>{active=false}},[]);
 
@@ -156,7 +157,7 @@ export default function DriverOnboarding() {
       if(result.canceled||!result.assets[0])return;
       await uploadDriverDocument({applicationId:application.id,vehicleId:application.vehicle?.id??null,documentType:type,asset:result.assets[0],expiresAt:meta?.expiresAt??null,documentNumber:meta?.documentNumber,issuingJurisdiction:meta?.issuingJurisdiction,documentSubtype:meta?.documentSubtype});
       await reload();
-    } catch(e) { setError(e instanceof Error?e.message:'Document upload failed.'); }
+    } catch(e) { setError(userMessage(e,'Document upload failed.')); }
     finally { setUploading(null); }
   }
 
@@ -172,7 +173,7 @@ export default function DriverOnboarding() {
   async function acceptDeclaration(key:string) {
     setError('');setBusy(true);
     try { await acceptDriverDeclaration(key); setDeclarationKeys(current=>current.includes(key)?current: [...current,key]); await reload(); }
-    catch(e){setError(e instanceof Error?e.message:'Declaration could not be recorded.');}
+    catch(e){setError(userMessage(e,'Declaration could not be recorded.'));}
     finally{setBusy(false);}
   }
   async function next() {
@@ -184,13 +185,13 @@ export default function DriverOnboarding() {
       const app=await reload();
       if(!app)throw new Error('Driver application is unavailable.');
       setStep(Math.min(STEPS.length-1,step+1));
-    } catch(e){setError(e instanceof Error?e.message:'Could not save this step.');}
+    } catch(e){setError(userMessage(e,'Could not save this step.'));}
     finally{setBusy(false);}
   }
   async function submit() {
     setError('');setBusy(true);
     try { await savePersonal(); await saveLicence(); await saveVehicle(); await submitDriverApplication(); const app=await reload(); setStep(9); if(app?.status==='SUBMITTED') setCompliance(await getDriverCompliance(app.id)); }
-    catch(e){setError(e instanceof Error?e.message:'Your application could not be submitted.');}
+    catch(e){setError(userMessage(e,'Your application could not be submitted.'));}
     finally{setBusy(false);}
   }
   async function back(){setError('');if(step>0)setStep(step-1);else router.back();}

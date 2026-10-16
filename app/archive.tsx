@@ -8,17 +8,18 @@ import {deletePost,listMyPosts,restorePost,type SocialPost} from '@/lib/social';
 import {deleteStory,listMyStoryArchive,type Story} from '@/lib/social-expansion';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 type Tab='POSTS'|'STORIES'|'CLIPS';
 export default function Archive(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
  const [tab,setTab]=useState<Tab>('POSTS');const [posts,setPosts]=useState<SocialPost[]>([]);const [stories,setStories]=useState<Story[]>([]);const [loading,setLoading]=useState(true);const [busy,setBusy]=useState('');const [error,setError]=useState('');
- async function load(){setError('');try{const [p,st]=await Promise.all([listMyPosts(80),listMyStoryArchive(100)]);setPosts(p.filter(x=>x.status==='HIDDEN'));setStories(st)}catch(e){setError(e instanceof Error?e.message:'Archive could not be loaded.')}finally{setLoading(false)}}
+ async function load(){setError('');try{const [p,st]=await Promise.all([listMyPosts(80),listMyStoryArchive(100)]);setPosts(p.filter(x=>x.status==='HIDDEN'));setStories(st)}catch(e){setError(userMessage(e,'Archive could not be loaded.'))}finally{setLoading(false)}}
  useEffect(()=>{void load()},[]);
  const shown=tab==='STORIES'?stories:posts.filter(x=>(x.content_format==='CLIP')===(tab==='CLIPS'));
- async function restore(post:SocialPost){if(busy)return;setBusy(post.id);try{await restorePost(post.id);setPosts(v=>v.filter(x=>x.id!==post.id));void haptic.success()}catch(e){setError(e instanceof Error?e.message:'Post could not be restored.')}finally{setBusy('')}}
- function removePost(post:SocialPost){Alert.alert('Delete permanently?','This removes the archived item from Everest Local.',[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:async()=>{setBusy(post.id);try{await deletePost(post.id);setPosts(v=>v.filter(x=>x.id!==post.id))}catch(e){setError(e instanceof Error?e.message:'Post could not be deleted.')}finally{setBusy('')}}}])}
- function removeStory(story:Story){Alert.alert('Delete story?','This removes the story from your archive and any Highlight using it.',[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:async()=>{setBusy(story.id);try{await deleteStory(story.id);setStories(v=>v.filter(x=>x.id!==story.id))}catch(e){setError(e instanceof Error?e.message:'Story could not be deleted.')}finally{setBusy('')}}}])}
+ async function restore(post:SocialPost){if(busy)return;setBusy(post.id);try{await restorePost(post.id);setPosts(v=>v.filter(x=>x.id!==post.id));void haptic.success()}catch(e){setError(userMessage(e,'Post could not be restored.'))}finally{setBusy('')}}
+ function removePost(post:SocialPost){Alert.alert('Delete permanently?','This removes the archived item from Everest Local.',[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:async()=>{setBusy(post.id);try{await deletePost(post.id);setPosts(v=>v.filter(x=>x.id!==post.id))}catch(e){setError(userMessage(e,'Post could not be deleted.'))}finally{setBusy('')}}}])}
+ function removeStory(story:Story){Alert.alert('Delete story?','This removes the story from your archive and any Highlight using it.',[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:async()=>{setBusy(story.id);try{await deleteStory(story.id);setStories(v=>v.filter(x=>x.id!==story.id))}catch(e){setError(userMessage(e,'Story could not be deleted.'))}finally{setBusy('')}}}])}
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page}>
   <View style={s.header}><Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={()=>router.back()} style={s.round}><Ionicons name="arrow-back" size={21} color={colors.text}/></Pressable><View style={{flex:1}}><Text style={s.kicker}>Private</Text><Text style={s.title}>Archive</Text></View><Pressable onPress={()=>router.push('/highlights')} style={s.highlight}><Text style={s.highlightText}>Highlights</Text></Pressable></View>
   <View style={s.note}><Ionicons name="archive-outline" size={18} color={colors.accent}/><Text style={s.noteText}>Only you can see this screen. Stories appear here after 24 hours. Archived Posts and Clips stay hidden until you restore them.</Text></View>

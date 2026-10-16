@@ -9,18 +9,19 @@ import {
  listCustomerCalendarConnections,syncCustomerCalendar,type CustomerCalendarConnection
 } from '@/lib/customer-calendar';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 export default function CustomerCalendar(){
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);
  const params=useLocalSearchParams<{connected?:string}>();
  const [rows,setRows]=useState<CustomerCalendarConnection[]>([]);const [loading,setLoading]=useState(true);const [working,setWorking]=useState('');const [error,setError]=useState('');const [notice,setNotice]=useState('');
- const load=useCallback(async()=>{setLoading(true);setError('');try{setRows(await listCustomerCalendarConnections())}catch(e){setError(e instanceof Error?e.message:'Calendar settings could not load.')}finally{setLoading(false)}},[]);
+ const load=useCallback(async()=>{setLoading(true);setError('');try{setRows(await listCustomerCalendarConnections())}catch(e){setError(userMessage(e,'Calendar settings could not load.'))}finally{setLoading(false)}},[]);
  useEffect(()=>{void load()},[load]);
  useEffect(()=>{if(params.connected==='google'){setNotice('Google Calendar connected. Sync once to import your busy time and add eligible Everest bookings.');void load()}},[params.connected,load]);
 
- async function work(key:string,fn:()=>Promise<unknown>,success?:string){if(working)return;setWorking(key);setError('');setNotice('');try{await fn();if(success)setNotice(success);await load()}catch(e){setError(e instanceof Error?e.message:'That calendar action could not be completed.')}finally{setWorking('')}}
+ async function work(key:string,fn:()=>Promise<unknown>,success?:string){if(working)return;setWorking(key);setError('');setNotice('');try{await fn();if(success)setNotice(success);await load()}catch(e){setError(userMessage(e,'That calendar action could not be completed.'))}finally{setWorking('')}}
  async function connectDevice(){await work('device-connect',connectDeviceCalendar,'Device calendar connected and synced.')}
- async function update(row:CustomerCalendarConnection,patch:Partial<Pick<CustomerCalendarConnection,'import_busy_time'|'export_marketplace_bookings'|'allow_ask_everest'>>){const previous=rows;setRows(current=>current.map(x=>x.id===row.id?{...x,...patch}:x));setWorking(row.id);setError('');try{await configureCustomerCalendar(row.id,patch)}catch(e){setRows(previous);setError(e instanceof Error?e.message:'Calendar preference could not be saved.')}finally{setWorking('')}}
+ async function update(row:CustomerCalendarConnection,patch:Partial<Pick<CustomerCalendarConnection,'import_busy_time'|'export_marketplace_bookings'|'allow_ask_everest'>>){const previous=rows;setRows(current=>current.map(x=>x.id===row.id?{...x,...patch}:x));setWorking(row.id);setError('');try{await configureCustomerCalendar(row.id,patch)}catch(e){setRows(previous);setError(userMessage(e,'Calendar preference could not be saved.'))}finally{setWorking('')}}
  async function disconnect(row:CustomerCalendarConnection){await work('disconnect-'+row.id,()=>row.provider==='GOOGLE_CALENDAR'?disconnectCustomerGoogleCalendar(row.id):disconnectDeviceCalendar(row.id),'Calendar disconnected.')}
  const google=rows.find(x=>x.provider==='GOOGLE_CALENDAR');
  const device=rows.find(x=>x.provider==='APPLE_DEVICE');

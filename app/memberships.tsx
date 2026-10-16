@@ -8,6 +8,7 @@ import {CustomerTabBar} from '@/components/CustomerTabBar';
 import {approveMembership,cancelMembershipAtPeriodEnd,getMembershipCredits,intervalLabel,listMyMemberships,listMyPackages,openMembershipPortal,resumeMembership,type CustomerMembership,type CustomerPackage} from '@/lib/growth';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type BusinessNameMap=Map<string,string>;
 const money=(value:number,currency='aud')=>new Intl.NumberFormat(undefined,{style:'currency',currency:currency.toUpperCase()}).format(value);
@@ -21,10 +22,10 @@ export default function MembershipWallet(){
   const [m,p]=await Promise.all([listMyMemberships(),listMyPackages()]);setMemberships(m);setPackages(p);setCredits(await getMembershipCredits(m.map(x=>x.id)));
   const ids=[...new Set([...m.map(x=>x.business_id),...p.map(x=>x.business_id)])];
   if(ids.length){const {data,error:e}=await supabase.from('businesses').select('id,name').in('id',ids);if(e)throw e;setBusinesses(new Map((data??[]).map(row=>[String(row.id),String(row.name)])))}else setBusinesses(new Map());
- }catch(e){setError(e instanceof Error?e.message:'Membership wallet could not be loaded.')}finally{setLoading(false);setRefreshing(false)}},[]);
+ }catch(e){setError(userMessage(e,'Membership wallet could not be loaded.'))}finally{setLoading(false);setRefreshing(false)}},[]);
  useEffect(()=>{void load()},[load]);
 
- async function act(id:string,fn:()=>Promise<unknown>){setBusy(id);setError('');try{await fn();await load(true)}catch(e){setError(e instanceof Error?e.message:'Action failed.')}finally{setBusy('')}}
+ async function act(id:string,fn:()=>Promise<unknown>){setBusy(id);setError('');try{await fn();await load(true)}catch(e){setError(userMessage(e,'Action failed.'))}finally{setBusy('')}}
  function cancel(m:CustomerMembership){Alert.alert('Cancel membership','Your membership will remain available until the current paid period ends. No new recurring charge will be created after that.',[{text:'Keep membership',style:'cancel'},{text:'Cancel at period end',style:'destructive',onPress:()=>void act(m.id,()=>cancelMembershipAtPeriodEnd(m.id))}])}
 
  return <SafeAreaView style={s.safe} edges={['top']}><View style={{flex:1}}><ScrollView contentContainerStyle={s.page} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>}>

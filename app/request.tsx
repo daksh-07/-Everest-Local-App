@@ -28,6 +28,7 @@ import {
 import { type ThemeColors, useAppTheme } from "@/lib/theme";
 import { startEverestLive, type LiveArrivalWindow } from "@/lib/everest-live";
 import { geocodeServiceAddress, resolveCustomerServiceLocation, serviceAddressLabel } from "@/lib/customer-location";
+import {userMessage} from '@/lib/errors';
 
 type LocationValue = {
   addressLine1: string;
@@ -270,9 +271,7 @@ export default function Request() {
       });
     } catch (e) {
       setError(
-        e instanceof Error
-          ? e.message
-          : "Precise location is unavailable. Enter the service address manually.",
+        userMessage(e,"Precise location is unavailable. Enter the service address manually."),
       );
     } finally {
       setLocating(false);
@@ -322,7 +321,7 @@ export default function Request() {
       }
       setLocation(next);
     } catch(e) {
-      setError(e instanceof Error?e.message:"The service address could not be confirmed.");
+      setError(userMessage(e,"The service address could not be confirmed."));
     } finally {
       setLocating(false);
     }

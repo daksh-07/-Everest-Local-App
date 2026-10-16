@@ -5,6 +5,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {deepLinkToSubscriptions,finishTransaction,getAvailablePurchases,useIAP,type Purchase} from 'expo-iap';
 import {APPLE_PRO_PRODUCT_ID,verifyApplePurchase} from '@/lib/apple-billing';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Props={
  businessId:string;
@@ -46,7 +47,7 @@ export function AppleSubscriptionControls({businessId,active,provider,onActivate
    setLocalError('');
    onActivated();
   }catch(error){
-   setLocalError(error instanceof Error?error.message:'Apple subscription verification failed.');
+   setLocalError(userMessage(error,'Apple subscription verification failed.'));
   }finally{
    setWorking(false);
   }
@@ -59,7 +60,7 @@ export function AppleSubscriptionControls({businessId,active,provider,onActivate
    await requestPurchase({request:{apple:{sku:APPLE_PRO_PRODUCT_ID}},type:'subs'});
   }catch(error){
    setWorking(false);
-   setLocalError(error instanceof Error?error.message:'Apple purchase could not be started.');
+   setLocalError(userMessage(error,'Apple purchase could not be started.'));
   }
  }
 
@@ -72,13 +73,13 @@ export function AppleSubscriptionControls({businessId,active,provider,onActivate
    await validateAndFinish(purchase);
   }catch(error){
    setWorking(false);
-   setLocalError(error instanceof Error?error.message:'Purchases could not be restored.');
+   setLocalError(userMessage(error,'Purchases could not be restored.'));
   }
  }
 
  async function manage(){
   try{await deepLinkToSubscriptions();}
-  catch(error){setLocalError(error instanceof Error?error.message:'Apple subscription settings could not be opened.');}
+  catch(error){setLocalError(userMessage(error,'Apple subscription settings could not be opened.'));}
  }
 
  if(active&&provider==='STRIPE'){

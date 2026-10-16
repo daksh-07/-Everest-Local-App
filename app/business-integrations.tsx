@@ -10,6 +10,7 @@ import {beginIntegrationOAuth,listIntegrationConnections,type IntegrationConnect
 import {getBusinessSubscription,hasEverestPro} from '@/lib/billing';
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type CatalogItem={
  category:'CALENDAR'|'COMMUNICATION'|'AI';
@@ -54,7 +55,7 @@ export default function BusinessIntegrations(){
    setConnections(nextConnections);
    setProActive(hasEverestPro(subscription));
   }catch(e){
-   setError(e instanceof Error?e.message:'Integrations could not be loaded.');
+   setError(userMessage(e,'Integrations could not be loaded.'));
   }finally{
    setLoading(false);
   }
@@ -70,7 +71,7 @@ export default function BusinessIntegrations(){
    const url=await beginIntegrationOAuth(business.id,provider);
    await Linking.openURL(url);
   }catch(e){
-   setError(e instanceof Error?e.message:'Connection could not be started.');
+   setError(userMessage(e,'Connection could not be started.'));
   }finally{
    setWorking('');
   }

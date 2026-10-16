@@ -15,6 +15,7 @@ import {SoundPicker} from '@/components/SoundPicker';
 import {PhotoSoundPreview} from '@/components/PhotoSoundPreview';
 import {draftFromReusableSound,publishDraftSound,setPhotoPostDuration,type DraftSound} from '@/lib/audio-studio';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Identity={kind:'PERSONAL';id:string;name:string}|{kind:'BUSINESS';id:string;name:string;business:BusinessWorkspace};
 type Listing={id:string;name:string};
@@ -50,7 +51,7 @@ export default function CreatePost(){
   const list:Identity[]=[{kind:'PERSONAL',id:user.id,name:profile?.full_name||'My profile'},...ctx.businesses.filter(b=>b.can_manage_catalog).map(b=>({kind:'BUSINESS' as const,id:b.id,name:b.name,business:b}))];
   setIdentities(list);const preferred=ctx.mode==='BUSINESS'&&ctx.active_business_id?list.find(i=>i.kind==='BUSINESS'&&i.id===ctx.active_business_id):list[0];setIdentity(preferred??list[0]);
   if(profile?.suburb||profile?.city){const profileLocation=[profile?.suburb,profile?.city&&profile.city!==profile.suburb?profile.city:'',profile?.state,profile?.country].filter(Boolean).join(', ');setLocation(current=>current.trim()?current:profileLocation);}
- }catch(e){setError(e instanceof Error?e.message:'Post composer could not be opened.')}finally{setLoading(false)}})();return()=>{active=false}},[]);
+ }catch(e){setError(userMessage(e,'Post composer could not be opened.'))}finally{setLoading(false)}})();return()=>{active=false}},[]);
 
  useEffect(()=>{let active=true;(async()=>{if(identity?.kind!=='BUSINESS'){setServices([]);setProducts([]);setServiceId(null);setProductId(null);return;}
   const [sr,pr]=await Promise.all([
@@ -60,7 +61,7 @@ export default function CreatePost(){
   if(!active)return;if(!sr.error)setServices((sr.data??[]) as Listing[]);if(!pr.error)setProducts((pr.data??[]) as Listing[]);setVisibility('PUBLIC');
  })();return()=>{active=false}},[identity]);
  useEffect(()=>{if(params.intent==='question')setType('QUESTION');else if(params.intent==='update')setType('UPDATE')},[params.intent]);
- useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active){if(next.source==='VOICEOVER')setVoiceover(next);else setSound(next)}}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Sound could not be loaded.')});return()=>{active=false}},[params.soundId]);
+ useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active){if(next.source==='VOICEOVER')setVoiceover(next);else setSound(next)}}).catch(e=>{if(active)setError(userMessage(e,'Sound could not be loaded.'))});return()=>{active=false}},[params.soundId]);
 
  const choices=identity?.kind==='BUSINESS'?businessChoices:personalChoices;
  const selectedChoice=choices.find(x=>x.type===type)??choices[0];
@@ -73,12 +74,12 @@ export default function CreatePost(){
   try{
    const r=await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],allowsMultipleSelection:true,selectionLimit:10-photos.length,quality:.86});
    if(!r.canceled&&r.assets.length){setPhotos(v=>[...v,...r.assets].slice(0,10));void haptic.selection();}
-  }catch(e){setError(e instanceof Error?e.message:'Photos could not be opened. Try again.');}
+  }catch(e){setError(userMessage(e,'Photos could not be opened. Try again.'));}
  }
  async function takePhoto(){
   if(photos.length>=10||Platform.OS==='web')return;setError('');
   const permission=await ImagePicker.requestCameraPermissionsAsync();if(!permission.granted){setError('Camera access is required to take a photo.');return;}
-  try{const r=await ImagePicker.launchCameraAsync({mediaTypes:['images'],quality:.86});if(!r.canceled&&r.assets[0]){setPhotos(v=>[...v,r.assets[0]].slice(0,10));void haptic.selection();}}catch(e){setError(e instanceof Error?e.message:'Camera could not be opened.');}
+  try{const r=await ImagePicker.launchCameraAsync({mediaTypes:['images'],quality:.86});if(!r.canceled&&r.assets[0]){setPhotos(v=>[...v,r.assets[0]].slice(0,10));void haptic.selection();}}catch(e){setError(userMessage(e,'Camera could not be opened.'));}
  }
  function chooseType(choice:ComposerChoice){setType(choice.type);setError('');void haptic.selection();}
  function removePhoto(index:number){setPhotos(v=>v.filter((_,x)=>x!==index));void haptic.light();}
@@ -97,7 +98,7 @@ export default function CreatePost(){
    await haptic.success();router.replace('/social');
   }catch(e){
    if(createdId){try{await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',createdId)}catch{void 0}}
-   void haptic.warning();setError(e instanceof Error?e.message:'Post could not be published.');
+   void haptic.warning();setError(userMessage(e,'Post could not be published.'));
   }finally{setBusy(false);setProgress('');}
  }
 

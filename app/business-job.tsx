@@ -11,6 +11,7 @@ import { getBookingServiceLocation,getOrCreateBookingConversation,updateBookingS
 import { supabase } from '@/lib/supabase';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
 import type { BookingStatus } from '@/lib/types';
+import {userMessage} from '@/lib/errors';
 
 type Job={id:string;request_id:string|null;business_id:string;price:number;scheduled_date:string|null;scheduled_time:string|null;status:BookingStatus;created_at:string};
 export default function BusinessJob(){
@@ -18,7 +19,7 @@ export default function BusinessJob(){
  const [job,setJob]=useState<Job|null>(null);const [serviceLocation,setServiceLocation]=useState<BookingServiceLocation|null>(null);const [record,setRecord]=useState<JobRecord|null>(null);const [checklist,setChecklist]=useState<JobChecklistItem[]>([]);const [item,setItem]=useState('');const [summary,setSummary]=useState('');const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [busy,setBusy]=useState('');const [error,setError]=useState('');
  const load=useCallback(async(refresh=false)=>{if(refresh)setRefreshing(true);else setLoading(true);setError('');try{const {data,error:jobError}=await supabase.from('bookings').select('id,request_id,business_id,price,scheduled_date,scheduled_time,status,created_at').eq('id',jobId).single();if(jobError)throw jobError;const [workspace,location]=await Promise.all([getJobWorkspace(jobId),getBookingServiceLocation(jobId).catch(()=>null)]);setJob(data as Job);setServiceLocation(location);setRecord(workspace.record);setChecklist(workspace.checklist);setSummary(workspace.record?.completion_summary??'')}catch{setError('Job workspace could not be loaded.')}finally{setLoading(false);setRefreshing(false)}},[jobId]);
  useEffect(()=>{void load()},[load]);
- async function run(key:string,work:()=>Promise<void>){if(busy)return;setBusy(key);setError('');try{await work();await load(true)}catch(e){setError(e instanceof Error?e.message:'That update could not be completed.')}finally{setBusy('')}}
+ async function run(key:string,work:()=>Promise<void>){if(busy)return;setBusy(key);setError('');try{await work();await load(true)}catch(e){setError(userMessage(e,'That update could not be completed.'))}finally{setBusy('')}}
  async function progress(status:'ON_MY_WAY'|'ARRIVED'){await run(status,async()=>{if(!record)await ensureJobWorkspace(jobId);await setJobProgress(jobId,status)})}
  async function advance(){if(!job)return;if(job.status==='CONFIRMED'){await run('advance',async()=>{await updateBookingStatus(job.id,'UPCOMING');await ensureJobWorkspace(job.id)});return}if(job.status==='UPCOMING'){await run('advance',async()=>{await updateBookingStatus(job.id,'IN_PROGRESS');await setJobProgress(job.id,'IN_PROGRESS')});return}if(job.status==='IN_PROGRESS'){if(checklist.some(value=>!value.is_complete)){setError('Complete the work checklist before finishing this job.');return}await run('advance',async()=>{await updateBookingStatus(job.id,'COMPLETED');await setJobProgress(job.id,'COMPLETED',summary)})}}
  if(loading)return <SafeAreaView style={s.safe}><ActivityIndicator color={colors.accent} style={{marginTop:70}}/></SafeAreaView>;

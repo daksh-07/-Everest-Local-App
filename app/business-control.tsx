@@ -9,6 +9,7 @@ import { ModeSwitcher } from '@/components/ModeSwitcher';
 import { getWorkspaceContext,type BusinessWorkspace } from '@/lib/workspace';
 import { supabase } from '@/lib/supabase';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Finance={pendingPayouts:number;pendingAmount:number;paidAmount:number;orders:number;products:number;services:number};
 type Row={label:string;icon:keyof typeof Ionicons.glyphMap;route:string;show:boolean;note?:string};
@@ -33,7 +34,7 @@ export default function BusinessControl(){
     paidAmount:rows.filter(row=>['PAID','COMPLETED','SUCCEEDED'].includes(String(row.status).toUpperCase())).reduce((sum,row)=>sum+Number(row.net_amount||0),0),
     orders:orders.count??0,products:products.count??0,services:services.count??0,
    });
-  }catch(e){setError(e instanceof Error?e.message:'Business controls could not be loaded.');}
+  }catch(e){setError(userMessage(e,'Business controls could not be loaded.'));}
   finally{setLoading(false);}
  },[]);
  useEffect(()=>{void load();},[load]);

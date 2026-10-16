@@ -193,7 +193,7 @@ export default function Assistant() {
       ]);
     } catch (e) {
       setError('Everest AI is temporarily unavailable. Your marketplace, bookings, orders and messages are still available.');
-      if (__DEV__) console.warn('[Ask Everest] request failed', e instanceof Error ? e.message : 'unknown error');
+      if (__DEV__) console.warn('[Ask Everest] request failed', e instanceof Error?e.message:'unknown error');
     } finally {
       busyRef.current = false;
       setBusy(false);

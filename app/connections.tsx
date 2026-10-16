@@ -8,11 +8,12 @@ import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {listConnectionRequests,listConnections,respondConnectionRequest,type ConnectionPerson,type ConnectionRequest} from '@/lib/connections';
 import {useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 export default function Connections(){
  const {colors:c}=useAppTheme(); const {userId}=useLocalSearchParams<{userId?:string}>(); const target=typeof userId==='string'?userId:undefined;
  const [tab,setTab]=useState<'CONNECTIONS'|'REQUESTS'>('CONNECTIONS'); const [items,setItems]=useState<ConnectionPerson[]>([]); const [requests,setRequests]=useState<ConnectionRequest[]>([]); const [q,setQ]=useState(''); const [loading,setLoading]=useState(true); const [error,setError]=useState('');
- async function load(){setLoading(true);setError('');try{const [a,b]=await Promise.all([listConnections(target),target?Promise.resolve([]):listConnectionRequests()]);setItems(a);setRequests(b)}catch(e){setError(e instanceof Error?e.message:'Connections could not be loaded.')}finally{setLoading(false)}}
+ async function load(){setLoading(true);setError('');try{const [a,b]=await Promise.all([listConnections(target),target?Promise.resolve([]):listConnectionRequests()]);setItems(a);setRequests(b)}catch(e){setError(userMessage(e,'Connections could not be loaded.'))}finally{setLoading(false)}}
  useEffect(()=>{void load()},[target]);
  const visible=useMemo(()=>items.filter(x=>(x.display_name??'').toLowerCase().includes(q.trim().toLowerCase())),[items,q]);
  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}><ScrollView contentContainerStyle={{padding:20,paddingBottom:60,maxWidth:760,width:'100%',alignSelf:'center'}}>

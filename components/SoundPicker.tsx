@@ -13,6 +13,7 @@ import {
 import {listEverestMusic,signedMusicUrl,type MusicTrack} from '@/lib/social-expansion';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 type Tab='MUSIC'|'ORIGINAL'|'UPLOAD'|'VOICEOVER';
 const PHOTO_DURATIONS=[5000,10000,15000,30000] as const;
@@ -33,7 +34,7 @@ export function SoundPicker({
  const previewPlayer=useAudioPlayer(null);const recorder=useAudioRecorder(RecordingPresets.HIGH_QUALITY);const recorderState=useAudioRecorderState(recorder,200);
 
  useEffect(()=>{if(!visible)return;let active=true;setLoading(true);setError('');
-  const timer=setTimeout(()=>{void listEverestMusic(query).then(rows=>{if(active)setTracks(rows)}).catch(e=>active&&setError(e instanceof Error?e.message:'Music could not be loaded.')).finally(()=>active&&setLoading(false))},query?220:0);
+  const timer=setTimeout(()=>{void listEverestMusic(query).then(rows=>{if(active)setTracks(rows)}).catch(e=>active&&setError(userMessage(e,'Music could not be loaded.'))).finally(()=>active&&setLoading(false))},query?220:0);
   return()=>{active=false;clearTimeout(timer)};
  },[visible,query]);
 
@@ -42,19 +43,19 @@ export function SoundPicker({
  async function preview(uri:string|null,startMs=0){
   if(!uri)return;setError('');
   try{previewPlayer.pause();previewPlayer.replace(uri);previewPlayer.volume=1;await previewPlayer.seekTo(Math.max(0,startMs)/1000);previewPlayer.play();}
-  catch(e){setError(e instanceof Error?e.message:'Sound preview is unavailable.')}
+  catch(e){setError(userMessage(e,'Sound preview is unavailable.'))}
  }
  async function chooseMusic(track:MusicTrack){
   setBusy(true);setError('');
   try{
    const uri=await signedMusicUrl(track.storage_path);
    const next=licensedMusicDraft(track,uri);onChange(next);void haptic.selection();if(uri)await preview(uri,0);
-  }catch(e){setError(e instanceof Error?e.message:'Music could not be selected.')}finally{setBusy(false)}
+  }catch(e){setError(userMessage(e,'Music could not be selected.'))}finally{setBusy(false)}
  }
  async function chooseUpload(){
   setBusy(true);setError('');
   try{const next=await pickUserAudio();if(next){onChange(next);void haptic.selection();if(next.previewUri)await preview(next.previewUri)}}
-  catch(e){setError(e instanceof Error?e.message:'Sound could not be opened.')}finally{setBusy(false)}
+  catch(e){setError(userMessage(e,'Sound could not be opened.'))}finally{setBusy(false)}
  }
  async function startVoiceover(){
   setError('');
@@ -63,7 +64,7 @@ export function SoundPicker({
    if(!permission.granted){setError('Microphone permission is required to record a voiceover.');return;}
    previewPlayer.pause();await setAudioModeAsync({allowsRecording:true,playsInSilentMode:true});
    await recorder.prepareToRecordAsync();recorder.record();void haptic.medium();
-  }catch(e){setError(e instanceof Error?e.message:'Voiceover recording could not start.')}
+  }catch(e){setError(userMessage(e,'Voiceover recording could not start.'))}
  }
  async function stopVoiceover(){
   try{
@@ -71,7 +72,7 @@ export function SoundPicker({
    await recorder.stop();await setAudioModeAsync({allowsRecording:false,playsInSilentMode:true});
    if(!recorder.uri){setError('Voiceover could not be saved.');return;}
    const next=voiceoverDraft(recorder.uri,durationMs);if(onVoiceoverChange)onVoiceoverChange(next);else onChange(next);void haptic.success();await preview(next.previewUri);
-  }catch(e){setError(e instanceof Error?e.message:'Voiceover could not be saved.')}
+  }catch(e){setError(userMessage(e,'Voiceover could not be saved.'))}
  }
  async function close(){
   previewPlayer.pause();

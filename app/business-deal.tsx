@@ -11,6 +11,7 @@ import {BusinessTabBar} from '@/components/BusinessTabBar';
 import {addCrmNote,completeCrmTask,createCrmTask,crmLabel,getCrmOpportunity,listCrmActivities,listCrmBookings,listCrmPipelineStages,listCrmQuotes,listCrmTasks,moveCrmOpportunityStage,type CrmActivity,type CrmBooking,type CrmOpportunity,type CrmPipelineStage,type CrmQuote,type CrmTask,type CrmTaskPriority,type CrmTaskType} from '@/lib/crm';
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 const money=(value:number,currency='AUD')=>new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:0}).format(value);
 const lostReasons=['Too expensive','No response','Chose competitor','Timing','Not qualified','Other'];
@@ -27,13 +28,13 @@ export default function BusinessDeal(){
   const opportunity=await getCrmOpportunity(current.id,id);if(!opportunity)throw new Error('Deal not found.');setDeal(opportunity);
   const [stageRows,taskRows,activityRows,quoteRows,bookingRows]=await Promise.all([listCrmPipelineStages(current.id,opportunity.pipeline_id),listCrmTasks(current.id,{opportunityId:id}),listCrmActivities(current.id,{opportunityId:id,limit:100}),listCrmQuotes(current.id,{opportunityId:id}),listCrmBookings(current.id,{opportunityId:id})]);
   setStages(stageRows);setTasks(taskRows);setActivities(activityRows);setQuotes(quoteRows);setBookings(bookingRows);
- }catch(e){setError(e instanceof Error?e.message:'Deal could not be loaded.');}finally{setLoading(false);}},[id]);
+ }catch(e){setError(userMessage(e,'Deal could not be loaded.'));}finally{setLoading(false);}},[id]);
  useEffect(()=>{void load();},[load]);
 
- async function move(stage:CrmPipelineStage){if(!business||!deal)return;setSelectedStage(stage);if(stage.stage_type==='LOST'){setMoveOpen(true);return;}setBusy(true);try{await moveCrmOpportunityStage(business.id,deal.id,stage.id);setMoveOpen(false);await load();}catch(e){setError(e instanceof Error?e.message:'Stage could not be changed.');}finally{setBusy(false);}}
- async function confirmLost(){if(!business||!deal||!selectedStage)return;setBusy(true);try{await moveCrmOpportunityStage(business.id,deal.id,selectedStage.id,lostReason);setMoveOpen(false);setLostReason('');await load();}catch(e){setError(e instanceof Error?e.message:'Deal could not be marked lost.');}finally{setBusy(false);}}
- async function saveNote(){if(!business||!deal||!note.trim())return;setBusy(true);try{await addCrmNote(business.id,deal.contact_id,note,deal.id);setNote('');setNoteOpen(false);await load();}catch(e){setError(e instanceof Error?e.message:'Note could not be saved.');}finally{setBusy(false);}}
- async function saveTask(){if(!business||!deal||!taskTitle.trim())return;setBusy(true);try{await createCrmTask({businessId:business.id,contactId:deal.contact_id,opportunityId:deal.id,title:taskTitle.trim(),type:taskType,dueAt:taskDue.toISOString(),priority:taskPriority});setTaskTitle('');setTaskOpen(false);await load();}catch(e){setError(e instanceof Error?e.message:'Task could not be created.');}finally{setBusy(false);}}
+ async function move(stage:CrmPipelineStage){if(!business||!deal)return;setSelectedStage(stage);if(stage.stage_type==='LOST'){setMoveOpen(true);return;}setBusy(true);try{await moveCrmOpportunityStage(business.id,deal.id,stage.id);setMoveOpen(false);await load();}catch(e){setError(userMessage(e,'Stage could not be changed.'));}finally{setBusy(false);}}
+ async function confirmLost(){if(!business||!deal||!selectedStage)return;setBusy(true);try{await moveCrmOpportunityStage(business.id,deal.id,selectedStage.id,lostReason);setMoveOpen(false);setLostReason('');await load();}catch(e){setError(userMessage(e,'Deal could not be marked lost.'));}finally{setBusy(false);}}
+ async function saveNote(){if(!business||!deal||!note.trim())return;setBusy(true);try{await addCrmNote(business.id,deal.contact_id,note,deal.id);setNote('');setNoteOpen(false);await load();}catch(e){setError(userMessage(e,'Note could not be saved.'));}finally{setBusy(false);}}
+ async function saveTask(){if(!business||!deal||!taskTitle.trim())return;setBusy(true);try{await createCrmTask({businessId:business.id,contactId:deal.contact_id,opportunityId:deal.id,title:taskTitle.trim(),type:taskType,dueAt:taskDue.toISOString(),priority:taskPriority});setTaskTitle('');setTaskOpen(false);await load();}catch(e){setError(userMessage(e,'Task could not be created.'));}finally{setBusy(false);}}
  if(loading)return <SafeAreaView style={st.safe}><ActivityIndicator color={colors.accent} style={{marginTop:80}}/></SafeAreaView>;
  if(!deal||!business)return <SafeAreaView style={st.safe}><Text style={st.error}>{error||'Deal not found.'}</Text></SafeAreaView>;
  const won=deal.status==='WON',lost=deal.status==='LOST';const openTasks=tasks.filter(t=>t.status==='OPEN');const currentStage=stages.find(s=>s.id===deal.stage_id);

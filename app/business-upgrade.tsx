@@ -8,6 +8,7 @@ import {getBusinessSubscription,hasEverestPro,openEverestProPortal,startEverestP
 import {getWorkspaceContext} from '@/lib/workspace';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {AppleSubscriptionControls} from '@/components/AppleSubscriptionControls';
+import {userMessage} from '@/lib/errors';
 
 export default function BusinessUpgrade(){
  const {colors}=useAppTheme();
@@ -30,7 +31,7 @@ export default function BusinessUpgrade(){
    if(!current.can_manage_finance){router.replace('/business-control');return;}
    setBusinessId(ctx.active_business_id);
    setSubscription(await getBusinessSubscription(ctx.active_business_id));
-  }catch(e){setError(e instanceof Error?e.message:'Subscription status could not be loaded.')}
+  }catch(e){setError(userMessage(e,'Subscription status could not be loaded.'))}
   finally{setLoading(false)}
  },[]);
 
@@ -47,7 +48,7 @@ export default function BusinessUpgrade(){
   try{
    if(active)await openEverestProPortal(businessId);
    else await startEverestProCheckout(businessId);
-  }catch(e){setError(e instanceof Error?e.message:'Billing could not be opened.')}
+  }catch(e){setError(userMessage(e,'Billing could not be opened.'))}
   finally{setWorking(false)}
  }
 

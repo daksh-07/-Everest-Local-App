@@ -7,6 +7,7 @@ import {router,useLocalSearchParams} from 'expo-router';
 import {ClipPlayer} from '@/components/ClipPlayer';
 import {listHighlightStories,listEverestMusic,type MusicTrack,type StoryCard} from '@/lib/social-expansion';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 const IMAGE_HIGHLIGHT_MS=6000;
 function itemDuration(story:StoryCard){
@@ -20,7 +21,7 @@ export default function HighlightViewer(){
  const progress=useRef(new Animated.Value(0)).current;const dragY=useRef(new Animated.Value(0)).current;const fraction=useRef(0);const progressStory=useRef('');
  const storiesRef=useRef<StoryCard[]>([]);const indexRef=useRef(0);storiesRef.current=stories;indexRef.current=index;
 
- useEffect(()=>{let active=true;(async()=>{try{if(!id)throw new Error('Highlight unavailable.');const [rows,tracks]=await Promise.all([listHighlightStories(id),listEverestMusic().catch(()=>[] as MusicTrack[])]);if(!active)return;setStories(rows);setMusic(Object.fromEntries(tracks.map(t=>[t.id,t])));if(!rows.length)setError('This Highlight has no available Stories.')}catch(e){if(active)setError(e instanceof Error?e.message:'Highlight could not be loaded.')}finally{if(active)setLoading(false)}})();return()=>{active=false}},[id]);
+ useEffect(()=>{let active=true;(async()=>{try{if(!id)throw new Error('Highlight unavailable.');const [rows,tracks]=await Promise.all([listHighlightStories(id),listEverestMusic().catch(()=>[] as MusicTrack[])]);if(!active)return;setStories(rows);setMusic(Object.fromEntries(tracks.map(t=>[t.id,t])));if(!rows.length)setError('This Highlight has no available Stories.')}catch(e){if(active)setError(userMessage(e,'Highlight could not be loaded.'))}finally{if(active)setLoading(false)}})();return()=>{active=false}},[id]);
 
  const story=stories[index];const track=story?.music_track_id?music[story.music_track_id]:null;
  function next(){const rows=storiesRef.current;const current=indexRef.current;if(current<rows.length-1)setIndex(current+1);else router.back()}

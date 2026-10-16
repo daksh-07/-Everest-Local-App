@@ -9,6 +9,7 @@ import {POST_PROMOTION_PLANS,createPostPromotionCheckout,estimatePostPromotionAu
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 export default function PromotePost(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
@@ -29,7 +30,7 @@ export default function PromotePost(){
    if(active){setCaption(data.caption??'Your Everest post');setLocation(data.location_label??'');}
    const estimates=await estimatePostPromotionAudience(postId).catch(()=>({} as Record<PromotionPlan,PromotionAudienceEstimate>));
    if(active)setAudience(estimates);
-  }catch(e){if(active)setError(e instanceof Error?e.message:'Promotion could not be opened.');}
+  }catch(e){if(active)setError(userMessage(e,'Promotion could not be opened.'));}
   finally{if(active)setLoading(false);}
  })();return()=>{active=false}},[postId]);
 
@@ -38,7 +39,7 @@ export default function PromotePost(){
   try{
    const result=await createPostPromotionCheckout({postId,plan,targetLabel:location||undefined});
    await Linking.openURL(result.checkoutUrl);
-  }catch(e){void haptic.warning();setError(e instanceof Error?e.message:'Promotion checkout could not be started.');}
+  }catch(e){void haptic.warning();setError(userMessage(e,'Promotion checkout could not be started.'));}
   finally{setBusy(false);}
  }
 

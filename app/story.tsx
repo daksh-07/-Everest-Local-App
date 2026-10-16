@@ -7,6 +7,7 @@ import {router,useLocalSearchParams} from 'expo-router';
 import {ClipPlayer} from '@/components/ClipPlayer';
 import {listActiveStories,listEverestMusic,type MusicTrack,type StoryCard} from '@/lib/social-expansion';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 const IMAGE_STORY_MS=6000;
 function storyDuration(story:StoryCard){
@@ -21,7 +22,7 @@ export default function StoryViewer(){
  const storiesRef=useRef<StoryCard[]>([]);const indexRef=useRef(0);
  storiesRef.current=stories;indexRef.current=index;
 
- useEffect(()=>{let active=true;(async()=>{try{const [rows,tracks]=await Promise.all([listActiveStories(80),listEverestMusic().catch(()=>[] as MusicTrack[])]);if(!active)return;setStories(rows);setMusic(Object.fromEntries(tracks.map(t=>[t.id,t])));const found=rows.findIndex(x=>x.id===id);setIndex(found>=0?found:0);if(!rows.length)setError('This story is no longer available.')}catch(e){if(active)setError(e instanceof Error?e.message:'Story could not be loaded.')}finally{if(active)setLoading(false)}})();return()=>{active=false}},[id]);
+ useEffect(()=>{let active=true;(async()=>{try{const [rows,tracks]=await Promise.all([listActiveStories(80),listEverestMusic().catch(()=>[] as MusicTrack[])]);if(!active)return;setStories(rows);setMusic(Object.fromEntries(tracks.map(t=>[t.id,t])));const found=rows.findIndex(x=>x.id===id);setIndex(found>=0?found:0);if(!rows.length)setError('This story is no longer available.')}catch(e){if(active)setError(userMessage(e,'Story could not be loaded.'))}finally{if(active)setLoading(false)}})();return()=>{active=false}},[id]);
 
  const story=stories[index];const track=story?.music_track_id?music[story.music_track_id]:null;
  function next(){const rows=storiesRef.current;const current=indexRef.current;if(current<rows.length-1)setIndex(current+1);else router.back()}

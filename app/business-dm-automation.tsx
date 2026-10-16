@@ -10,6 +10,7 @@ import {myBusiness} from '@/lib/catalog';
 import {addBusinessDmFaq,deleteBusinessDmFaq,getBusinessDmSettings,listBusinessDmFaqs,setBusinessDmAi,type BusinessDmFaq,type BusinessDmSettings} from '@/lib/business-dm';
 import {getBusinessSubscription,hasEverestPro} from '@/lib/billing';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 const STARTERS=[
  {question:'What is this made of?',answer:'Add the materials, ingredients or main components customers should know.',context_type:'PRODUCT' as const},
@@ -28,26 +29,26 @@ export default function BusinessDmAutomation(){
   try{setLoading(true);setError('');const b=await myBusiness();if(!b)throw new Error('Create a business profile first.');setBusinessId(b.id);
    const [f,st,sub]=await Promise.all([listBusinessDmFaqs(b.id),getBusinessDmSettings(b.id),getBusinessSubscription(b.id)]);
    setFaqs(f);setSettings(st);setPro(hasEverestPro(sub));
-  }catch(e){setError(e instanceof Error?e.message:'DM automation could not be loaded.')}finally{setLoading(false)}
+  }catch(e){setError(userMessage(e,'DM automation could not be loaded.'))}finally{setLoading(false)}
  }
  useEffect(()=>{void load()},[]);
 
  async function toggleAi(value:boolean){
   if(!businessId||busy)return;setBusy(true);setError('');setMessage('');
   try{await setBusinessDmAi(businessId,value,settings?.ai_tone??'HELPFUL');setSettings(current=>({business_id:businessId,ai_enabled:value,faq_enabled:current?.faq_enabled??true,ai_tone:current?.ai_tone??'HELPFUL',updated_at:new Date().toISOString()}));setMessage(value?'Everest AI replies enabled.':'Everest AI replies disabled.')}
-  catch(e){setError(e instanceof Error?e.message:'AI replies could not be updated.')}finally{setBusy(false)}
+  catch(e){setError(userMessage(e,'AI replies could not be updated.'))}finally{setBusy(false)}
  }
  async function add(){
   if(!businessId||busy||faqs.length>=10||!question.trim()||!answer.trim())return;setBusy(true);setError('');setMessage('');
   try{const row=await addBusinessDmFaq({businessId,contextType:context,question,answer,sortOrder:faqs.length});setFaqs(current=>[...current,row]);setQuestion('');setAnswer('');setMessage('Automated answer added.')}
-  catch(e){setError(e instanceof Error?e.message:'Answer could not be added.')}finally{setBusy(false)}
+  catch(e){setError(userMessage(e,'Answer could not be added.'))}finally{setBusy(false)}
  }
  async function addStarter(item:(typeof STARTERS)[number]){
   if(!businessId||busy||faqs.length>=10)return;setBusy(true);setError('');
   try{const row=await addBusinessDmFaq({businessId,contextType:item.context_type,question:item.question,answer:item.answer,sortOrder:faqs.length});setFaqs(current=>[...current,row])}
-  catch(e){setError(e instanceof Error?e.message:'Starter answer could not be added.')}finally{setBusy(false)}
+  catch(e){setError(userMessage(e,'Starter answer could not be added.'))}finally{setBusy(false)}
  }
- async function remove(id:string){if(busy)return;setBusy(true);try{await deleteBusinessDmFaq(id);setFaqs(current=>current.filter(x=>x.id!==id))}catch(e){setError(e instanceof Error?e.message:'Answer could not be removed.')}finally{setBusy(false)}}
+ async function remove(id:string){if(busy)return;setBusy(true);try{await deleteBusinessDmFaq(id);setFaqs(current=>current.filter(x=>x.id!==id))}catch(e){setError(userMessage(e,'Answer could not be removed.'))}finally{setBusy(false)}}
 
  if(loading)return <SafeAreaView style={s.safe}><ActivityIndicator color={c.text} style={{marginTop:80}}/></SafeAreaView>;
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">

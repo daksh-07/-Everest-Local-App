@@ -11,6 +11,7 @@ import {createCrmBooking,crmLabel,listBusinessContacts,listCrmBookings,listCrmOp
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 const durationOptions=[30,45,60,90,120,180,240];
 const statuses:CrmBookingStatus[]=['TENTATIVE','CONFIRMED','IN_PROGRESS','COMPLETED','CANCELLED','NO_SHOW'];
@@ -29,7 +30,7 @@ export default function BusinessCrmBooking(){
   const [contactRows,dealRows,quoteRows,bookingRows]=await Promise.all([listBusinessContacts(current.id),listCrmOpportunities(current.id),listCrmQuotes(current.id),listCrmBookings(current.id)]);setContacts(contactRows);setDeals(dealRows);setQuotes(quoteRows);
   if(params.id){const found=bookingRows.find(b=>b.id===params.id);if(!found)throw new Error('Booking not found.');setExisting(found);setContactId(found.contact_id);setOpportunityId(found.opportunity_id??'');setQuoteId(found.quote_id??'');setWhen(new Date(found.scheduled_start));setDuration(Math.max(15,Math.round((new Date(found.scheduled_end).getTime()-new Date(found.scheduled_start).getTime())/60000)));}
   else if(params.quoteId){const quote=quoteRows.find(q=>q.id===params.quoteId);if(quote){setContactId(quote.contact_id);setOpportunityId(quote.opportunity_id??'');setPrice(String(quote.total));setQuoteId(quote.id);if(quote.title)setService(quote.title);}}
- }catch(e){setError(e instanceof Error?e.message:'Booking could not be loaded.');}finally{setLoading(false);}},[params.id,params.quoteId]);
+ }catch(e){setError(userMessage(e,'Booking could not be loaded.'));}finally{setLoading(false);}},[params.id,params.quoteId]);
  useEffect(()=>{void load();},[load]);
  useEffect(()=>{if(opportunityId){const deal=deals.find(d=>d.id===opportunityId);if(deal){setContactId(deal.contact_id);if(!service)setService(deal.service_label||deal.title);}}},[opportunityId,deals,service]);
  useEffect(()=>{if(quoteId){const quote=quotes.find(q=>q.id===quoteId);if(quote){setContactId(quote.contact_id);setOpportunityId(quote.opportunity_id??opportunityId);if(!service)setService(quote.title||'Booked service');if(!price)setPrice(String(quote.total));}}},[quoteId,quotes,opportunityId,service,price]);
@@ -37,10 +38,10 @@ export default function BusinessCrmBooking(){
  async function checkNativeConflict(){if(!business)return null;const date=localDate(when),time=localTime(when);const {data,error:e}=await supabase.from('bookings').select('id,scheduled_date,scheduled_time,status').eq('business_id',business.id).eq('scheduled_date',date).in('status',['REQUESTED','PENDING_PAYMENT','CONFIRMED','UPCOMING','IN_PROGRESS']);if(e)throw e;const same=(data??[]).find(row=>row.scheduled_time&&String(row.scheduled_time).slice(0,5)===time);return same?'An Everest marketplace booking already starts at '+time+' on '+new Date(date+'T12:00:00').toLocaleDateString()+'.':null;}
  async function save(){if(!business||!contactId||!service.trim())return;const amount=price.trim()?Number(price):null;if(amount!==null&&(!Number.isFinite(amount)||amount<0)){setError('Enter a valid booking price.');return;}setBusy(true);setError('');
   try{const warning=await checkNativeConflict();if(warning&&!conflictAcknowledged){setConflict(warning);setBusy(false);return;}const id=await createCrmBooking({businessId:business.id,contactId,opportunityId:opportunityId||null,quoteId:quoteId||null,serviceLabel:service.trim(),scheduledStart:when.toISOString(),durationMinutes:duration,locationLabel:location,price:amount,status,notes});router.replace({pathname:'/business-crm-booking',params:{id}});}
-  catch(e){setError(e instanceof Error?e.message:'Booking could not be created.');}finally{setBusy(false);}
+  catch(e){setError(userMessage(e,'Booking could not be created.'));}finally{setBusy(false);}
  }
- async function changeStatus(next:CrmBookingStatus){if(!business||!existing)return;setBusy(true);try{await setCrmBookingStatus(business.id,existing.id,next);await load();}catch(e){setError(e instanceof Error?e.message:'Booking status could not be updated.');}finally{setBusy(false);}}
- async function reschedule(){if(!business||!existing)return;setBusy(true);setError('');try{const warning=await checkNativeConflict();if(warning&&!conflictAcknowledged){setConflict(warning);setBusy(false);return;}await rescheduleCrmBooking(business.id,existing.id,when.toISOString(),duration);setConflict('');setConflictAcknowledged(false);await load();}catch(e){setError(e instanceof Error?e.message:'Booking could not be rescheduled.');}finally{setBusy(false);}}
+ async function changeStatus(next:CrmBookingStatus){if(!business||!existing)return;setBusy(true);try{await setCrmBookingStatus(business.id,existing.id,next);await load();}catch(e){setError(userMessage(e,'Booking status could not be updated.'));}finally{setBusy(false);}}
+ async function reschedule(){if(!business||!existing)return;setBusy(true);setError('');try{const warning=await checkNativeConflict();if(warning&&!conflictAcknowledged){setConflict(warning);setBusy(false);return;}await rescheduleCrmBooking(business.id,existing.id,when.toISOString(),duration);setConflict('');setConflictAcknowledged(false);await load();}catch(e){setError(userMessage(e,'Booking could not be rescheduled.'));}finally{setBusy(false);}}
  if(loading)return <SafeAreaView style={st.safe}><ActivityIndicator color={colors.accent} style={{marginTop:80}}/></SafeAreaView>;
  const contact=contacts.find(c=>c.id===contactId),deal=deals.find(d=>d.id===opportunityId),quote=quotes.find(q=>q.id===quoteId);
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={st.page}>

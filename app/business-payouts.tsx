@@ -10,6 +10,7 @@ import {supabase} from '@/lib/supabase';
 import {getBusinessPayoutStatus,startBusinessPayoutOnboarding,type BusinessPayoutStatus} from '@/lib/stripe-connect';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 type LedgerRow={
  id:string;
@@ -48,7 +49,7 @@ export default function BusinessPayouts(){
    setStatus(connect);
    if(ledgerResult.error)throw ledgerResult.error;
    setLedger((ledgerResult.data??[]) as LedgerRow[]);
-  }catch(e){setError(e instanceof Error?e.message:'Payout details could not be loaded.');}
+  }catch(e){setError(userMessage(e,'Payout details could not be loaded.'));}
   finally{setLoading(false);setRefreshing(false);}
  },[]);
 
@@ -60,7 +61,7 @@ export default function BusinessPayouts(){
   try{
    void haptic.selection();
    await startBusinessPayoutOnboarding(business.id);
-  }catch(e){setError(e instanceof Error?e.message:'Stripe payout setup could not be opened.');}
+  }catch(e){setError(userMessage(e,'Stripe payout setup could not be opened.'));}
   finally{setBusy(false);}
  }
 

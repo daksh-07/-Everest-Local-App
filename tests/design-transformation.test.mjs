@@ -226,3 +226,23 @@ test('every icon-only button has an accessible name',()=>{
  }
  assert.deepEqual(offenders,[]);
 });
+
+test('errors shown to people never expose database or runtime internals',async()=>{
+ const {userMessage}=await import('../lib/errors.ts');
+ const fallback='That couldn’t be saved.';
+ assert.equal(userMessage(new Error('Insufficient stock'),fallback),'Insufficient stock','our own RPC messages pass through');
+ assert.equal(userMessage(new Error('Choose a time at least one hour from now.'),fallback),'Choose a time at least one hour from now.');
+ for(const raw of ['new row violates row-level security policy for table "bookings"','duplicate key value violates unique constraint "x"','PGRST116: JSON object requested, multiple (or no) rows returned','column "foo" does not exist','permission denied for function send_quote',"Cannot read properties of undefined (reading 'id')",'42501'])assert.equal(userMessage(new Error(raw),fallback),fallback,raw);
+ assert.match(userMessage(new TypeError('Failed to fetch'),fallback),/offline/);
+ assert.match(userMessage(new Error('JWT expired'),fallback),/Sign in again/);
+ assert.equal(userMessage({message:'Cart is empty'},fallback),'Cart is empty','PostgREST error objects are not Error instances');
+ assert.equal(userMessage(null,fallback),fallback);
+});
+
+test('screens route caught errors through userMessage instead of printing e.message',()=>{
+ const files=fs.readdirSync('app').filter(f=>f.endsWith('.tsx')).map(f=>'app/'+f).concat(fs.readdirSync('components').filter(f=>f.endsWith('.tsx')).map(f=>'components/'+f));
+ // Allowed: auth's own error classifier and a dev-only console warning.
+ const allowed=new Set(['app/auth.tsx','app/assistant.tsx']);
+ const offenders=files.filter(f=>!allowed.has(f)&&/(\w+) instanceof Error\s*\?\s*\1\.message\s*:/.test(read(f)));
+ assert.deepEqual(offenders,[]);
+});

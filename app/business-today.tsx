@@ -15,6 +15,7 @@ import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {useExperience} from '@/lib/experience';
 import {formatDay,formatStatus,formatTime} from '@/lib/format';
+import {userMessage} from '@/lib/errors';
 
 type Priority={kind:'OVERDUE'|'NEW_LEAD'|'QUOTE'|'JOB'|'STALE'|'MESSAGE';title:string;subtitle:string;action:string;run:()=>void};
 type Snapshot={newLeads:number;openDeals:number;pipelineValue:number;overdue:number;quotesWaiting:number;jobsToday:number;activeJobs:number;unread:number;stale:number;orders:number;revenue:number|null;completed:number};
@@ -57,7 +58,7 @@ export default function BusinessToday(){
   const viewed=crmQuotes.find(q=>q.status==='VIEWED');if(viewed)priorities.push({kind:'QUOTE',title:'Quote #'+viewed.quote_number+' was viewed',subtitle:'Waiting for a customer decision',action:'View quote',run:()=>router.push({pathname:'/business-crm-quote',params:{id:viewed.id}})});
   const staleDeal=stale.find(d=>!d.next_task);if(staleDeal)priorities.push(dealPriority('STALE',staleDeal,'No activity for 3+ days and no next task'));
   setPriority(priorities.slice(0,6));
- }catch(e){setError(e instanceof Error?e.message:'Business activity could not be loaded right now.');}finally{setLoading(false);setRefreshing(false);}},[]);
+ }catch(e){setError(userMessage(e,'Business activity could not be loaded right now.'));}finally{setLoading(false);setRefreshing(false);}},[]);
  useEffect(()=>{void load();},[load]);
  function taskPriority(task:CrmTask):Priority{return{kind:'OVERDUE',title:task.task,subtitle:'Overdue since '+formatDay(task.due_at)+(formatTime(new Date(task.due_at).toTimeString())?' · '+formatTime(new Date(task.due_at).toTimeString()):''),action:'Open tasks',run:()=>router.push({pathname:'/business-crm',params:{view:'TASKS'}})}}
  function dealPriority(kind:'NEW_LEAD'|'STALE',deal:CrmOpportunity,subtitle:string):Priority{return{kind,title:deal.title,subtitle,action:'Open deal',run:()=>router.push({pathname:'/business-deal',params:{id:deal.id}})}}

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { getSavedItems, toggleSavedBusiness, toggleSavedProduct, type SavedBusiness, type SavedProduct } from '@/lib/marketplace';
+import {userMessage} from '@/lib/errors';
 
 export default function Saved() {
   const [businesses, setBusinesses] = useState<SavedBusiness[]>([]);
@@ -21,7 +22,7 @@ export default function Saved() {
       setBusinesses(result.businesses);
       setProducts(result.products);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'We could not load your saved items right now.');
+      setError(userMessage(e,'We could not load your saved items right now.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -33,14 +34,14 @@ export default function Saved() {
   async function removeBusiness(id: string) {
     setBusy(id); setError('');
     try { await toggleSavedBusiness(id, false); setBusinesses(items => items.filter(item => item.id !== id)); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Could not remove this business.'); }
+    catch (e) { setError(userMessage(e,'Could not remove this business.')); }
     finally { setBusy(''); }
   }
 
   async function removeProduct(id: string) {
     setBusy(id); setError('');
     try { await toggleSavedProduct(id, false); setProducts(items => items.filter(item => item.id !== id)); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Could not remove this product.'); }
+    catch (e) { setError(userMessage(e,'Could not remove this product.')); }
     finally { setBusy(''); }
   }
 

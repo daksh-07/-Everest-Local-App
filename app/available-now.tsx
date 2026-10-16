@@ -7,6 +7,7 @@ import {router} from 'expo-router';
 import {resolveCustomerLocality} from '@/lib/customer-location';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Business={id:string;name:string;logo_url:string|null;suburb:string|null;city:string|null;state:string|null;verification_status:string};
 export default function AvailableNow(){
@@ -27,7 +28,7 @@ export default function AvailableNow(){
    const ids=[...local.keys()];const {data:available,error:aError}=await supabase.from('business_availability').select('business_id,available_until').eq('status','AVAILABLE_NOW').in('business_id',ids);
    if(aError)throw aError;const now=Date.now();const active=new Set((available??[]).filter(row=>!row.available_until||new Date(row.available_until).getTime()>now).map(row=>row.business_id));
    setItems([...local.values()].filter(b=>active.has(b.id)));
-  }catch(e){setError(e instanceof Error?e.message:'Available businesses could not be loaded.');}finally{setLoading(false);setRefreshing(false);}
+  }catch(e){setError(userMessage(e,'Available businesses could not be loaded.'));}finally{setLoading(false);setRefreshing(false);}
  },[]);
  useEffect(()=>{void load();},[load]);
  return <SafeAreaView style={st.safe} edges={['top']}><ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>} contentContainerStyle={st.page}>
