@@ -45,6 +45,7 @@ const feedPosts=[
  feedPost('p3',uid,businesses[2].id,'Before and after: full ceramic-safe hand wash in Fitzroy this morning.','BEFORE_AFTER',1600),
 ];
 const rpcFixtures={
+ get_booking_service_location:()=>[{request_id:'r2',address_line1:'14 Errol Street',suburb:'North Melbourne',city:'Melbourne',state:'VIC',postal_code:'3051',country:'AU',service_address_label:'14 Errol Street, North Melbourne VIC 3051',latitude:-37.8027,longitude:144.9497}],
  list_discovery_feed:()=>feedPosts,
  list_personal_conversations_v2:body=>body?.p_requests?[]:personalConversations,
  list_personal_messages_v2:()=>personalMessages,
@@ -78,6 +79,8 @@ const screens={
  'business-calendar':{path:'/business-calendar',signedIn:true,business:true},
  'business-inbox':{path:'/business-inbox',signedIn:true,business:true},
  'business-crm':{path:'/business-crm',signedIn:true,business:true},
+ 'business-job':{path:'/business-job?id=b2',signedIn:true,business:true},
+ 'business-job-new':{path:'/business-job?id=b3',signedIn:true,business:true},
  saved:{path:'/saved',signedIn:true},
  'service-areas':{path:'/service-areas',signedIn:true,business:true},
  'business-verification':{path:'/business-verification',signedIn:true,business:true},
@@ -117,6 +120,8 @@ function rows(table,isBusiness){
   case 'post_reactions':return [{post_id:'p1',user_id:other},{post_id:'p1',user_id:uid},{post_id:'p2',user_id:uid}];
   case 'post_comments':return [{post_id:'p1'},{post_id:'p1'},{post_id:'p3'}];
   case 'verified_work_posts':return [{post_id:'p3'}];
+  case 'booking_job_records':return isBusiness?[{booking_id:'b2',business_id:biz,customer_id:other,arrival_status:'ARRIVED',arrival_eta:null,completion_summary:'',started_at:minutesAgo(40),completed_at:null,updated_at:minutesAgo(12)}]:[];
+  case 'booking_job_checklist_items':return isBusiness?[{id:'k1',booking_id:'b2',business_id:biz,label:'Trim front hedge to 1.2 m',is_complete:true,position:1,completed_at:minutesAgo(20)},{id:'k2',booking_id:'b2',business_id:biz,label:'Trim back hedge and shape corners',is_complete:true,position:2,completed_at:minutesAgo(8)},{id:'k3',booking_id:'b2',business_id:biz,label:'Remove all green waste',is_complete:false,position:3,completed_at:null}]:[];
   case 'conversations':return isBusiness?[
    {id:'bc1',request_id:'r2',booking_id:'b2',quote_id:null,created_at:minutesAgo(600),messages:[{id:'bm1',body:'Gate code is 4471 — the side gate sticks a little.',created_at:minutesAgo(12),read_at:null,sender_id:other},{id:'bm2',body:'Running about ten minutes late?',created_at:minutesAgo(9),read_at:null,sender_id:other}]},
    {id:'bc2',request_id:'r3',booking_id:null,quote_id:'q1',created_at:minutesAgo(2000),messages:[{id:'bm3',body:'Thanks — I’ll confirm the quote tonight.',created_at:minutesAgo(1500),read_at:minutesAgo(1400),sender_id:other}]},

@@ -257,3 +257,18 @@ test('icon labels name the action, not the glyph, where the icon is ambiguous',(
  assert.match(read('app/messages.tsx'),/accessibilityLabel="Close search"/);
  assert.match(read('app/business-calendar.tsx'),/'Previous day'/);
 });
+
+test('job workspace: formatted header, visible lifecycle, gated and confirmed completion',()=>{
+ const job=read('app/business-job.tsx');
+ assert.doesNotMatch(job,/toFixed\(2\)|replaceAll\('_',' '\)|scheduled_time\?\.slice\(0,5\)/,'no raw dates, times, money or enums');
+ assert.match(job,/formatSchedule\(job\.scheduled_date,job\.scheduled_time\)/);
+ assert.match(job,/const STEPS:/);
+ assert.match(job,/disabled=\{!!busy\|\|blockedByChecklist\}/,'completion is blocked until the checklist is done');
+ assert.match(job,/if\(job\.status==='IN_PROGRESS'\)setConfirmComplete\(true\);else void advance\(\)/,'completing asks first');
+ assert.match(job,/<ConfirmSheet visible=\{confirmComplete\} title="Complete this job\?"/);
+ // Lifecycle calls are unchanged; the screen does not read customer or request tables.
+ assert.match(job,/updateBookingStatus\(job\.id,'COMPLETED'\)/);
+ assert.doesNotMatch(job,/from\('(service_requests|profiles|public_profiles)'\)/);
+ assert.ok(fs.existsSync('docs/design/proposals/business-job-summary-rpc.sql'),'the safe backend change is documented, not applied');
+ assert.ok(!fs.readdirSync('supabase/migrations').some(f=>f.includes('business_job_summary')),'proposal is not in migrations');
+});
