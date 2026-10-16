@@ -2,10 +2,11 @@ import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import { AppState, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {Ionicons} from '@expo/vector-icons';
-import {usePathname,router} from 'expo-router';
+import {usePathname,router,useGlobalSearchParams} from 'expo-router';
 import {supabase} from '@/lib/supabase';
 import {getEverestLiveState,type EverestLiveState} from '@/lib/everest-live';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {useChatThreadOpen} from '@/lib/chat-focus';
 
 type ActiveLiveRequest={
   id:string;
@@ -15,6 +16,8 @@ type ActiveLiveRequest={
   live_expires_at:string|null;
 };
 
+// Screens with their own bottom action bar (composer, purchase, checkout) or focused flows.
+const HIDDEN_ROUTES=new Set(['/everest-live','/request','/cart','/product','/auth','/create','/create-post','/create-story','/create-clip','/assistant','/booking','/instant-book']);
 const ACTIVE_STATUSES=['SEARCHING','NOTIFYING','RESPONSES_AVAILABLE','PROVIDER_SELECTED','NO_PROVIDER_FOUND'];
 const POLL_MS=30_000;
 const PLAYER_MAX_WIDTH=620;
@@ -24,6 +27,9 @@ const REALTIME_COALESCE_MS=180;
 
 export function EverestLiveMiniPlayer(){
   const pathname=usePathname();
+  const params=useGlobalSearchParams<{personalId?:string;marketId?:string;conversationId?:string}>();
+  const threadOpen=useChatThreadOpen();
+  const inThread=threadOpen||(pathname==='/messages'&&Boolean(params.personalId||params.marketId||params.conversationId));
   const {colors}=useAppTheme();
   const {width}=useWindowDimensions();
   // Absolute + maxWidth anchors left on wide screens; centre it over the tab bar explicitly.
@@ -106,7 +112,7 @@ export function EverestLiveMiniPlayer(){
     };
   },[load,scheduleLoad]);
 
-  const visible=Boolean(request)&&pathname!=='/everest-live'&&pathname!=='/request';
+  const visible=Boolean(request)&&!HIDDEN_ROUTES.has(pathname)&&!inThread;
   if(!request||!visible)return null;
 
   const status=state?.live_status??request.live_status;

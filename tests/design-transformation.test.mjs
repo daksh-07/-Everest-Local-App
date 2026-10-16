@@ -76,3 +76,12 @@ test('business opportunity screens act only for the active workspace business',(
  assert.doesNotMatch(opp,/from\('opportunities'\)\.select\([^)]*\)\.eq\('status','OPEN'\)/,'no unscoped opportunity list');
  assert.match(search,/\.eq\('business_id',workspace\.active_business_id\)/);
 });
+
+test('messages: readable controls, sentence case, and no overlay over an open thread',()=>{
+ const chat=read('app/messages.tsx');const player=read('components/EverestLiveMiniPlayer.tsx');
+ assert.doesNotMatch(chat,/fontSize:(8|9|10)[,.}]/,'no text below 11px in Messages');
+ assert.doesNotMatch(chat,/>ACCEPT<|>DECLINE<|>BLOCK<|>REPORT<|YOUR EVEREST CIRCLE|'TODAY'|'YESTERDAY'/);
+ assert.match(chat,/setChatThreadOpen\(visible&&Boolean\(selectedPersonal\|\|selectedMarket\)\)/);
+ assert.match(player,/useChatThreadOpen\(\)/);
+ for(const route of ["'/cart'","'/product'","'/auth'"])assert.ok(player.includes(route),'mini player hidden on '+route);
+});
