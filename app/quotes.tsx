@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -10,9 +10,8 @@ import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import type {Quote} from '@/lib/types';
 import {formatDay,formatMoney,formatSchedule} from '@/lib/format';
-import {ScreenHeader} from '@/components/ui';
+import {ConfirmSheet,ScreenHeader} from '@/components/ui';
 import {haptic} from '@/lib/haptics';
-import {useReducedMotion} from '@/lib/motion';
 
 type Biz={id:string;name:string;logo_url:string|null;verification_status:string};
 type QuoteRow=Quote&{businesses:Biz|Biz[]|null};
@@ -22,7 +21,7 @@ type Ranked={quote:QuoteRow;business:Biz|null;score:number;distance:number|null;
 
 export default function Quotes(){
  const {requestId}=useLocalSearchParams<{requestId?:string}>();const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
- const [items,setItems]=useState<Ranked[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [showAll,setShowAll]=useState(false);const [accepting,setAccepting]=useState<string|null>(null);const [messaging,setMessaging]=useState<string|null>(null);const [error,setError]=useState('');const [reviewing,setReviewing]=useState<string|null>(null);const reducedMotion=useReducedMotion();const loadRef=useRef(false);
+ const [items,setItems]=useState<Ranked[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [showAll,setShowAll]=useState(false);const [accepting,setAccepting]=useState<string|null>(null);const [messaging,setMessaging]=useState<string|null>(null);const [error,setError]=useState('');const [reviewing,setReviewing]=useState<string|null>(null);const loadRef=useRef(false);
  const load=useCallback(async(refresh=false)=>{if(loadRef.current)return;loadRef.current=true;if(refresh)setRefreshing(true);else setLoading(true);setError('');
   try{
    const {data:{user}}=await supabase.auth.getUser();if(!user){router.replace('/auth');return;}
@@ -73,23 +72,10 @@ export default function Quotes(){
    </View>;})}
   {!showAll&&valid.length>3?<Pressable accessibilityRole="button" onPress={()=>setShowAll(true)} style={s.seeAll}><Text style={s.seeAllText}>See all {valid.length} quotes</Text></Pressable>:null}
  </ScrollView>
- <Modal visible={Boolean(confirming)} transparent animationType={reducedMotion?'none':'slide'} onRequestClose={()=>{if(!accepting)setReviewing(null)}}>
-  <View style={s.sheetOverlay}><Pressable accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={()=>{if(!accepting)setReviewing(null)}}/>
-   {confirming?<SafeAreaView edges={['bottom']} style={s.sheet}>
-    <View style={s.handle}/>
-    <Text accessibilityRole="header" style={s.sheetTitle}>Accept this quote?</Text>
-    <Text style={s.sheetBusiness}>{confirming.business?.name??'Business'}</Text>
-    <View style={s.sheetRows}>
-     <View style={s.sheetRow}><Text style={s.sheetLabel}>Total</Text><Text tabular style={s.sheetValueStrong}>{formatMoney(confirming.quote.total)}</Text></View>
-     <View style={s.sheetRow}><Text style={s.sheetLabel}>Deposit</Text><Text tabular style={s.sheetValue}>{Number(confirming.quote.deposit)>0?formatMoney(confirming.quote.deposit):'None'}</Text></View>
-     <View style={s.sheetRow}><Text style={s.sheetLabel}>When</Text><Text style={s.sheetValue}>{when(confirming.quote)}</Text></View>
-    </View>
-    <Text style={s.sheetNote}>Accepting creates your booking with this business and declines your other open quotes for this request. If payment is required, you’ll pay from the booking.</Text>
-    <Pressable accessibilityRole="button" disabled={!!accepting} onPress={()=>void accept(confirming.quote.id)} style={({pressed})=>[s.confirm,!!accepting&&s.disabled,pressed&&s.pressed]}>{accepting?<ActivityIndicator color={colors.onBrand}/>:<Text style={s.confirmText}>Accept quote · {formatMoney(confirming.quote.total)}</Text>}</Pressable>
-    <Pressable accessibilityRole="button" disabled={!!accepting} onPress={()=>setReviewing(null)} style={s.cancel}><Text style={s.cancelText}>Not now</Text></Pressable>
-   </SafeAreaView>:null}
-  </View>
- </Modal>
+ <ConfirmSheet visible={Boolean(confirming)} title="Accept this quote?" subtitle={confirming?.business?.name??'Business'} busy={!!accepting}
+  rows={confirming?[{label:'Total',value:formatMoney(confirming.quote.total),strong:true},{label:'Deposit',value:Number(confirming.quote.deposit)>0?formatMoney(confirming.quote.deposit):'None'},{label:'When',value:when(confirming.quote)}]:[]}
+  note="Accepting creates your booking with this business and declines your other open quotes for this request. If payment is required, you’ll pay from the booking."
+  confirmLabel={confirming?`Accept quote · ${formatMoney(confirming.quote.total)}`:'Accept quote'} onConfirm={()=>{if(confirming)void accept(confirming.quote.id)}} onCancel={()=>setReviewing(null)}/>
  </SafeAreaView>;
 }
 const createStyles=(c:ThemeColors)=>StyleSheet.create({
@@ -105,8 +91,4 @@ const createStyles=(c:ThemeColors)=>StyleSheet.create({
  actions:{flexDirection:'row',gap:8,marginTop:16},primary:{flex:1,minHeight:48,borderRadius:14,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'},primaryText:{fontSize:15,fontWeight:'600',color:c.onBrand},outline:{minHeight:48,borderRadius:14,borderWidth:StyleSheet.hairlineWidth,borderColor:c.border,paddingHorizontal:18,alignItems:'center',justifyContent:'center'},outlineText:{fontSize:15,fontWeight:'600',color:c.text},disabled:{opacity:.5},
  seeAll:{minHeight:48,alignItems:'center',justifyContent:'center',marginTop:12},seeAllText:{fontSize:15,fontWeight:'600',color:c.accent},
  empty:{alignItems:'center',paddingHorizontal:24,paddingVertical:30,backgroundColor:c.elevated,borderRadius:16,marginTop:16},emptyTitle:{fontSize:17,fontWeight:'600',color:c.text,marginTop:10},emptyCopy:{fontSize:14,lineHeight:20,color:c.textSecondary,textAlign:'center',marginTop:6,maxWidth:420},
- sheetOverlay:{flex:1,justifyContent:'flex-end',backgroundColor:c.overlay},sheet:{backgroundColor:c.canvas,borderTopLeftRadius:24,borderTopRightRadius:24,paddingHorizontal:20,paddingTop:8,paddingBottom:12,width:'100%',maxWidth:620,alignSelf:'center'},handle:{width:36,height:4,borderRadius:2,backgroundColor:c.border,alignSelf:'center',marginBottom:16},
- sheetTitle:{fontSize:22,lineHeight:28,fontWeight:'700',color:c.text},sheetBusiness:{fontSize:15,lineHeight:21,color:c.textSecondary,marginTop:2},
- sheetRows:{marginTop:16,borderRadius:14,backgroundColor:c.surface,borderWidth:StyleSheet.hairlineWidth,borderColor:c.border},sheetRow:{minHeight:48,paddingHorizontal:14,flexDirection:'row',alignItems:'center',justifyContent:'space-between',borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:c.border},sheetLabel:{fontSize:15,color:c.textSecondary},sheetValue:{fontSize:15,fontWeight:'500',color:c.text,flexShrink:1,textAlign:'right'},sheetValueStrong:{fontSize:17,fontWeight:'700',color:c.text},
- sheetNote:{fontSize:13,lineHeight:19,color:c.textSecondary,marginTop:12},confirm:{minHeight:52,borderRadius:16,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginTop:16},confirmText:{fontSize:16,fontWeight:'600',color:c.onBrand},cancel:{minHeight:48,alignItems:'center',justifyContent:'center',marginTop:4},cancelText:{fontSize:15,fontWeight:'600',color:c.text},
 });

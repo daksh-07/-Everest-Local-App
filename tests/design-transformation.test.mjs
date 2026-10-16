@@ -112,3 +112,24 @@ test('business profile is a storefront with working actions',()=>{
  assert.doesNotMatch(profile,/📍|🖥|VERIFIED BUSINESS|POST REQUEST|VIEW SERVICES|toFixed\(2\)/);
  assert.match(profile,/<ScreenHeader /);
 });
+
+test('Everest Live: consequential actions confirm first, and reconnecting never hides server state',async()=>{
+ const live=read('app/everest-live.tsx');
+ assert.doesNotMatch(live,/onPress=\{\(\)=>void choose\(q\.id\)\}/,'booking needs confirmation');
+ assert.doesNotMatch(live,/onPress=\{\(\)=>void cancel\(\)\}/,'cancel needs confirmation');
+ assert.match(live,/onConfirm=\{\(\)=>\{if\(q\)void choose\(q\.id\)\}\}/);
+ assert.match(live,/onConfirm=\{\(\)=>void cancel\(\)\}/);
+ assert.match(live,/Quotes you’ve received for it can no longer be accepted/);
+ assert.doesNotMatch(live,/CHOOSE & BOOK|CANCEL SEARCH|EVEREST LIVE|READY</);
+ const {livePresentation}=await import('../lib/live-presentation.ts');
+ const state=livePresentation('RESPONSES_AVAILABLE',true);
+ assert.equal(state.title,'Your responses are ready');
+ assert.equal(state.searching,false);
+ assert.match(state.connection,/Reconnecting/);
+ assert.equal(livePresentation('NOTIFYING').connection,null);
+});
+
+test('web Live map remounts when points arrive so markers are measured',()=>{
+ const map=read('components/LiveSearchMap.web.tsx');
+ assert.match(map,/key="live-map-empty"/);assert.match(map,/key="live-map" onLayout=\{onLayout\}/);
+});

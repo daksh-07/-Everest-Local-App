@@ -110,8 +110,13 @@ test('Everest Live requires the confirmed precise pin and uses real map points',
  assert.match(screen,/LiveSearchMap/);
  assert.match(nativeMap,/MapView/);
  assert.match(nativeMap,/Circle/);
- assert.match(webMap,/basemaps\.cartocdn\.com\/dark_all/);
- assert.match(webMap,/OpenStreetMap contributors · © CARTO/);
+ // Keyless CARTO tiles now render 'API KEY REQUIRED'; the basemap is configured, never hard-coded,
+ // and attribution appears only with tiles that actually loaded from that provider.
+ assert.doesNotMatch(webMap,/basemaps\.cartocdn\.com/);
+ assert.match(webMap,/process\.env\.EXPO_PUBLIC_LIVE_MAP_TILE_URL/);
+ assert.match(webMap,/TILE_TEMPLATE&&TILE_ATTRIBUTION\?/);
+ // The search ring is drawn at the real radius for the zoom level.
+ assert.match(webMap,/radiusPx=radiusKm\*1000\/metersPerPixel\(customer\.latitude,zoom\)/);
  assert.doesNotMatch(nativeMap,/Math\.random|mock|fake/i);
  assert.doesNotMatch(webMap,/Math\.random|mockProvider|fakeProvider/i);
 });

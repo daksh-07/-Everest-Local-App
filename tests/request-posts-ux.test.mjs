@@ -72,7 +72,7 @@ test('customer quote UX is ranked but requires explicit selection',()=>{
  assert.match(quotes,/Review & accept/);
  assert.match(quotes,/setReviewing\(quote\.id\)/);
  assert.match(quotes,/declines your other open quotes/);
- assert.match(quotes,/onPress=\{\(\)=>void accept\(confirming\.quote\.id\)\}/);
+ assert.match(quotes,/onConfirm=\{\(\)=>\{if\(confirming\)void accept\(confirming\.quote\.id\)\}\}/);
  assert.match(quotes,/acceptQuote\(id\)/);
  assert.doesNotMatch(quotes,/VIEW \/ CHOOSE|EVEREST RECOMMENDED|BEST VALUE/);
  assert.doesNotMatch(quotes,/auto.?accept/i);
