@@ -34,8 +34,10 @@ export function formatMoney(value:number|string|null|undefined,{currency='AUD',l
  return new Intl.NumberFormat(locale,{style:'currency',currency,minimumFractionDigits:2,maximumFractionDigits:2}).format(amount);
 }
 
-/** Server enums such as PENDING_PAYMENT become sentence case: "Pending payment". */
+const ACRONYMS=new Set(['VIP','CRM','ABN','GST','ETA','DM','AI','SMS','ID']);
+/** Server enums such as PENDING_PAYMENT become sentence case: "Pending payment". Acronyms stay upper case. */
 export function formatStatus(value:string|null|undefined,fallback='Pending'){
- const text=(value??'').replaceAll('_',' ').trim().toLowerCase();
- return text?text[0].toUpperCase()+text.slice(1):fallback;
+ const words=(value??'').replaceAll('_',' ').trim().split(/\s+/).filter(Boolean);
+ if(!words.length)return fallback;
+ return words.map((word,index)=>{const upper=word.toUpperCase();if(ACRONYMS.has(upper))return upper;const lower=word.toLowerCase();return index===0?lower[0].toUpperCase()+lower.slice(1):lower}).join(' ');
 }
