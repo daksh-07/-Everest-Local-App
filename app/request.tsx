@@ -28,6 +28,7 @@ import {
 import { type ThemeColors, useAppTheme } from "@/lib/theme";
 import { startEverestLive, type LiveArrivalWindow } from "@/lib/everest-live";
 import { geocodeServiceAddress, resolveCustomerServiceLocation, serviceAddressLabel } from "@/lib/customer-location";
+import {userMessage} from '@/lib/errors';
 
 type LocationValue = {
   addressLine1: string;
@@ -270,9 +271,7 @@ export default function Request() {
       });
     } catch (e) {
       setError(
-        e instanceof Error
-          ? e.message
-          : "Precise location is unavailable. Enter the service address manually.",
+        userMessage(e,"Precise location is unavailable. Enter the service address manually."),
       );
     } finally {
       setLocating(false);
@@ -322,7 +321,7 @@ export default function Request() {
       }
       setLocation(next);
     } catch(e) {
-      setError(e instanceof Error?e.message:"The service address could not be confirmed.");
+      setError(userMessage(e,"The service address could not be confirmed."));
     } finally {
       setLocating(false);
     }
@@ -591,7 +590,7 @@ export default function Request() {
             onPress={() => router.replace("/activity")}
             style={s.primary}
           >
-            <Text style={s.primaryText}>VIEW ACTIVITY</Text>
+            <Text style={s.primaryText}>View activity</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -700,7 +699,7 @@ export default function Request() {
                   <ActivityIndicator color={colors.accent} />
                 ) : (
                   <View style={s.selected}>
-                    <Text style={s.eyebrow}>SELECTED SERVICE</Text>
+                    <Text style={s.eyebrow}>Selected service</Text>
                     <Text style={s.selectedName}>{serviceName}</Text>
                   </View>
                 )}
@@ -800,7 +799,7 @@ export default function Request() {
                               color={colors.onBrand}
                             />
                             <Text style={s.primaryText}>
-                              {locating ? "LOCATING…" : "USE PRECISE LOCATION"}
+                              {locating ? "Locating…" : "Use precise location"}
                             </Text>
                           </Pressable>
                           {location.suburb ? (
@@ -815,7 +814,7 @@ export default function Request() {
                             </Pressable>
                           ) : null}
                         </View>
-                        <Text style={s.or}>OR ENTER THE SERVICE ADDRESS</Text>
+                        <Text style={s.or}>Or enter the service address</Text>
                         <TextInput
                           value={location.addressLine1}
                           onChangeText={(v) => setManual("addressLine1", v)}
@@ -867,7 +866,7 @@ export default function Request() {
                             onPress={() => void confirmLocation()}
                             style={s.outline}
                           >
-                            <Text style={s.outlineText}>{locating?"LOCATING ADDRESS…":"CONFIRM PRECISE ADDRESS"}</Text>
+                            <Text style={s.outlineText}>{locating?"Locating address…":"Confirm precise address"}</Text>
                           </Pressable>
                         ) : null}
                       </>
@@ -884,7 +883,7 @@ export default function Request() {
                           }
                           style={s.textButton}
                         >
-                          <Text style={s.textButtonText}>CHANGE LOCATION</Text>
+                          <Text style={s.textButtonText}>Change location</Text>
                         </Pressable>
                       </>
                     )}
@@ -1085,7 +1084,7 @@ export default function Request() {
                       {photos.map((p, i) => (
                         <View key={p.assetId ?? p.uri} style={s.photoWrap}>
                           <Image source={{ uri: p.uri }} style={s.photo} />
-                          <Pressable
+                          <Pressable accessibilityLabel="Close"
                             accessibilityRole="button"
                             onPress={() =>
                               setPhotos((items) =>
@@ -1106,7 +1105,7 @@ export default function Request() {
                   Tap any row to edit it before Everest starts matching.
                 </Text>
                 <Review
-                  label="SERVICE TYPE"
+                  label="Service type"
                   value={
                     serviceName || selectedDefinition?.name || "Not selected"
                   }
@@ -1114,7 +1113,7 @@ export default function Request() {
                   colors={colors}
                 />
                 <Review
-                  label="JOB DETAILS"
+                  label="Job details"
                   value={description}
                   onPress={() => setStep(1)}
                   colors={colors}
@@ -1203,10 +1202,10 @@ export default function Request() {
                   flex: 1,
                   transform: [{ scale: pressed && !reduced ? 0.98 : 1 }],
                 },
-                !canContinue && s.disabled,
+                !canContinue && s.primaryDisabled,
               ]}
             >
-              <Text style={s.primaryText}>CONTINUE</Text>
+              <Text style={[s.primaryText, !canContinue && s.primaryTextDisabled]}>Continue</Text>
             </Pressable>
           ) : (
             <Pressable
@@ -1221,9 +1220,9 @@ export default function Request() {
                 <Text style={s.primaryText}>
                   {live
                     ? pendingLiveRequestId
-                      ? "RETRY LIVE SEARCH"
-                      : "START LIVE SEARCH"
-                    : "POST REQUEST"}
+                      ? "Retry live search"
+                      : "Start live search"
+                    : "Post request"}
                 </Text>
               )}
             </Pressable>
@@ -1296,7 +1295,6 @@ function Review({
           style={{
             fontSize: 12,
             fontWeight: "900",
-            letterSpacing: 1,
             color: colors.muted,
           }}
         >
@@ -1396,7 +1394,6 @@ const styles = (c: ThemeColors) =>
     eyebrow: {
       fontSize: 12,
       fontWeight: "900",
-      letterSpacing: 1.2,
       color: c.muted,
     },
     selectedName: {
@@ -1479,7 +1476,6 @@ const styles = (c: ThemeColors) =>
     or: {
       fontSize: 12,
       fontWeight: "900",
-      letterSpacing: 1,
       color: c.muted,
       textAlign: "center",
       marginTop: 17,
@@ -1588,10 +1584,11 @@ const styles = (c: ThemeColors) =>
     primaryText: {
       fontSize: 14,
       fontWeight: "900",
-      letterSpacing: 0.6,
       color: c.onBrand,
     },
     disabled: { opacity: 0.5 },
+    primaryDisabled: { backgroundColor: c.disabled },
+    primaryTextDisabled: { color: c.onDisabled },
     success: {
       flex: 1,
       padding: 28,

@@ -1,11 +1,13 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import { AppState, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
-import {Ionicons} from '@expo/vector-icons';
-import {usePathname,router} from 'expo-router';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {Ionicons} from '@/components/ui/Icon';
+import {usePathname,router,useGlobalSearchParams} from 'expo-router';
 import {supabase} from '@/lib/supabase';
 import {getEverestLiveState,type EverestLiveState} from '@/lib/everest-live';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {useChatThreadOpen,useImmersiveMedia} from '@/lib/chat-focus';
 
 type ActiveLiveRequest={
   id:string;
@@ -15,13 +17,28 @@ type ActiveLiveRequest={
   live_expires_at:string|null;
 };
 
+// Screens with their own bottom action bar (composer, purchase, checkout) or focused flows.
+const HIDDEN_ROUTES=new Set(['/everest-live','/request','/cart','/product','/auth','/create','/create-post','/create-story','/create-clip','/assistant','/booking','/instant-book','/story','/highlight','/sound']);
+// Routes that render a bottom tab bar; elsewhere the player sits just above the safe area.
+const TAB_BAR_ROUTES=new Set(['/account','/activity','/bookings','/business-availability','/business-calendar','/business-control','/business-crm-booking','/business-crm-quote','/business-crm','/business-customer','/business-customers','/business-deal','/business-growth-p1','/business-growth','/business-inbox','/business-integrations','/business-job','/business-jobs','/business-leads','/business-my-work','/business-operations','/business-today','/','/memberships','/messages','/promote-post','/social']);
 const ACTIVE_STATUSES=['SEARCHING','NOTIFYING','RESPONSES_AVAILABLE','PROVIDER_SELECTED','NO_PROVIDER_FOUND'];
 const POLL_MS=30_000;
+const PLAYER_MAX_WIDTH=620;
+// Local session read only; no network round trip per poll.
+async function sessionUserId(){const {data}=await supabase.auth.getSession();return data.session?.user.id??null}
 const REALTIME_COALESCE_MS=180;
 
 export function EverestLiveMiniPlayer(){
   const pathname=usePathname();
+  const params=useGlobalSearchParams<{personalId?:string;marketId?:string;conversationId?:string}>();
+  const threadOpen=useChatThreadOpen();
+  const immersive=useImmersiveMedia();
+  const inThread=threadOpen||(pathname==='/messages'&&Boolean(params.personalId||params.marketId||params.conversationId));
   const {colors}=useAppTheme();
+  const {width}=useWindowDimensions();
+  const insets=useSafeAreaInsets();
+  // Absolute + maxWidth anchors left on wide screens; centre it over the tab bar explicitly.
+  const inset=Math.max(12,(width-PLAYER_MAX_WIDTH)/2);
   const s=useMemo(()=>styles(colors),[colors]);
   const [request,setRequest]=useState<ActiveLiveRequest|null>(null);
   const [state,setState]=useState<EverestLiveState|null>(null);
@@ -36,9 +53,13 @@ export function EverestLiveMiniPlayer(){
     try{
       do{
         rerun.current=false;
+        // RLS also lets admins read every request, so scope explicitly to the signed-in customer.
+        const customerId=await sessionUserId();
+        if(!customerId){if(mounted.current){setRequest(null);setState(null)}continue;}
         const {data,error}=await supabase
           .from('service_requests')
           .select('id,description,live_status,live_radius_km,live_expires_at')
+          .eq('customer_id',customerId)
           .eq('is_live',true)
           .in('live_status',ACTIVE_STATUSES)
           .order('live_started_at',{ascending:false})
@@ -78,19 +99,28 @@ export function EverestLiveMiniPlayer(){
   useEffect(()=>{
     const timer=setInterval(()=>{if(AppState.currentState==='active')void load()},POLL_MS);
     const app=AppState.addEventListener('change',value=>{if(value==='active')scheduleLoad()});
-    const channel=supabase.channel('everest-live-mini-player')
-      .on('postgres_changes',{event:'*',schema:'public',table:'service_requests'},scheduleLoad)
-      .on('postgres_changes',{event:'*',schema:'public',table:'quotes'},scheduleLoad)
-      .subscribe();
+    let channel:ReturnType<typeof supabase.channel>|null=null;let disposed=false;
+    void sessionUserId().then(customerId=>{
+      if(disposed||!customerId)return;
+      const filter=`customer_id=eq.${customerId}`;
+      channel=supabase.channel('everest-live-mini-player')
+        .on('postgres_changes',{event:'*',schema:'public',table:'service_requests',filter},scheduleLoad)
+        .on('postgres_changes',{event:'*',schema:'public',table:'quotes',filter},scheduleLoad)
+        .subscribe();
+    });
     return()=>{
+      disposed=true;
       clearInterval(timer);
       app.remove();
       if(debounce.current){clearTimeout(debounce.current);debounce.current=null}
-      void supabase.removeChannel(channel);
+      if(channel)void supabase.removeChannel(channel);
     };
   },[load,scheduleLoad]);
 
-  if(!request||pathname==='/everest-live'||pathname==='/request')return null;
+  // Business mode is a separate workspace; the customer's own search returns in Customer mode.
+  // /business-profile is the customer-facing storefront, so the player stays there.
+  const visible=Boolean(request)&&!HIDDEN_ROUTES.has(pathname)&&!(pathname.startsWith('/business')&&pathname!=='/business-profile')&&!inThread&&!immersive;
+  if(!request||!visible)return null;
 
   const status=state?.live_status??request.live_status;
   const responses=state?.quote_count??0;
@@ -108,22 +138,18 @@ export function EverestLiveMiniPlayer(){
 
   return <Pressable
     accessibilityRole="button"
-    accessibilityLabel="Open active Everest Live request"
+    accessibilityLabel={`Open active Everest Live request. ${paused?'Search paused':primary}`}
     onPress={()=>router.push(`/everest-live?requestId=${request.id}`)}
-    style={({pressed})=>[s.wrap,pressed&&s.pressed]}>
+    style={({pressed})=>[s.wrap,{left:inset,right:inset,bottom:TAB_BAR_ROUTES.has(pathname)?88:Math.max(12,insets.bottom+8)},pressed&&s.pressed]}>
     <View style={s.iconWrap}>
       <View style={[s.dot,paused&&s.dotPaused]}/>
-      <Ionicons name="radio-outline" size={20} color={colors.accent}/>
+      <Ionicons name="radio-outline" size={20} color={colors.onSecondaryContainer}/>
     </View>
     <View style={s.copy}>
       <View style={s.row}>
-        <Text numberOfLines={1} style={s.title}>Everest Live · {request.description}</Text>
-        <View style={s.radiusPill}><Text style={s.radius}>{Math.round(radius)} KM</Text></View>
+        <Text numberOfLines={1} style={s.title}>{request.description}</Text>
       </View>
-      <View style={s.statusRow}>
-        <Text numberOfLines={1} style={s.status}>{paused?'Search paused':primary}</Text>
-        <Text style={s.hint}>Tap to open</Text>
-      </View>
+      <Text numberOfLines={1} style={s.status}>Everest Live · {paused?'Search paused':primary} · {Math.round(radius)} km</Text>
     </View>
     <Ionicons name="chevron-up" size={17} color={colors.muted}/>
   </Pressable>;
@@ -131,21 +157,17 @@ export function EverestLiveMiniPlayer(){
 
 const styles=(c:ThemeColors)=>StyleSheet.create({
   wrap:{
-    position:'absolute',left:12,right:12,bottom:88,minHeight:74,maxWidth:720,alignSelf:'center',
-    borderRadius:21,borderWidth:1,borderColor:c.border,backgroundColor:c.elevated,
-    paddingHorizontal:13,paddingVertical:10,flexDirection:'row',alignItems:'center',gap:10,
-    shadowColor:'#000',shadowOpacity:.16,shadowRadius:18,shadowOffset:{width:0,height:8},elevation:10
+    position:'absolute',bottom:88,minHeight:60,
+    borderRadius:16,borderWidth:StyleSheet.hairlineWidth,borderColor:c.border,backgroundColor:c.elevated,
+    paddingHorizontal:12,paddingVertical:9,flexDirection:'row',alignItems:'center',gap:11,
+    shadowColor:'#000',shadowOpacity:.14,shadowRadius:16,shadowOffset:{width:0,height:6},elevation:10
   },
-  pressed:{transform:[{scale:.992}],opacity:.92},
-  iconWrap:{width:42,height:42,borderRadius:15,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},
-  dot:{position:'absolute',right:7,top:7,width:7,height:7,borderRadius:4,backgroundColor:c.success},
-  dotPaused:{backgroundColor:c.accent},
+  pressed:{opacity:.86},
+  iconWrap:{width:38,height:38,borderRadius:12,backgroundColor:c.secondaryContainer,alignItems:'center',justifyContent:'center'},
+  dot:{position:'absolute',right:6,top:6,width:7,height:7,borderRadius:4,backgroundColor:c.secondary},
+  dotPaused:{backgroundColor:c.warning},
   copy:{flex:1,minWidth:0},
   row:{flexDirection:'row',alignItems:'center',gap:8},
-  title:{flex:1,fontSize:12,fontWeight:'900',color:c.text},
-  radiusPill:{borderRadius:999,backgroundColor:c.accentSoft,paddingHorizontal:7,paddingVertical:4},
-  radius:{fontSize:8,fontWeight:'900',letterSpacing:.45,color:c.accent},
-  statusRow:{flexDirection:'row',alignItems:'center',gap:8,marginTop:4},
-  status:{fontSize:11,fontWeight:'800',color:c.textSecondary,flex:1},
-  hint:{fontSize:8,fontWeight:'800',color:c.muted}
+  title:{flex:1,fontSize:14,lineHeight:19,fontWeight:'600',color:c.text},
+  status:{fontSize:13,lineHeight:18,color:c.textSecondary,marginTop:1},
 });

@@ -50,7 +50,7 @@ test('request privacy and secure media are server enforced',()=>{
 });
 
 test('post publishing is real and business identity is server checked',()=>{
- assert.match(post,/PUBLISH POST/);
+ assert.match(post,/PUBLISH POST/i);
  assert.match(post,/uploadPostMedia/);
  assert.match(post,/Camera/);
  assert.match(post,/Add photos/);
@@ -67,9 +67,14 @@ test('post publishing is real and business identity is server checked',()=>{
 test('customer quote UX is ranked but requires explicit selection',()=>{
  assert.match(quotes,/Best options for you/);
  assert.match(quotes,/slice\(0,3\)/);
- assert.match(quotes,/SEE ALL/);
- assert.match(quotes,/VIEW \/ CHOOSE/);
+ assert.match(quotes,/See all \{valid\.length\} quotes/);
+ // Accepting declines the other quotes and books, so it needs a confirmation step that says so.
+ assert.match(quotes,/Review & accept/);
+ assert.match(quotes,/setReviewing\(quote\.id\)/);
+ assert.match(quotes,/declines your other open quotes/);
+ assert.match(quotes,/onConfirm=\{\(\)=>\{if\(confirming\)void accept\(confirming\.quote\.id\)\}\}/);
  assert.match(quotes,/acceptQuote\(id\)/);
+ assert.doesNotMatch(quotes,/VIEW \/ CHOOSE|EVEREST RECOMMENDED|BEST VALUE/);
  assert.doesNotMatch(quotes,/auto.?accept/i);
 });
 

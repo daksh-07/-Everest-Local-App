@@ -1,8 +1,9 @@
+import {userMessage} from '@/lib/errors';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Alert, Image, Modal, PanResponder, Pressable, ScrollView, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {universalSearch,type UniversalKind,type UniversalResult} from '@/lib/universal-search';
@@ -196,8 +197,13 @@ export default function Search(){
       if(profileError)throw profileError;
       const pattern=query.trim()?('%'+query.trim()+'%'):null;
       if(profile?.role==='BUSINESS'||profile?.role==='ADMIN'){
+        // RLS admits admins and other businesses' members; show only the active business's matches.
+        const {getWorkspaceContext}=await import('@/lib/workspace');
+        const workspace=await getWorkspaceContext();
+        if(workspace.mode!=='BUSINESS'||!workspace.active_business_id){if(version.current===current)setJobs([]);return;}
         let request=supabase.from('opportunities')
           .select('id,status,service_requests!inner(id,description,suburb,city,state,budget,preferred_date)')
+          .eq('business_id',workspace.active_business_id)
           .eq('status','OPEN')
           .order('created_at',{ascending:false})
           .limit(50);
@@ -221,7 +227,7 @@ export default function Search(){
         if(version.current===current)setJobs((data??[]) as JobResult[]);
       }
     }catch(e){
-      if(version.current===current)setError(e instanceof Error?e.message:'Jobs could not be loaded.');
+      if(version.current===current)setError(userMessage(e,'Jobs could not be loaded.'));
     }finally{
       if(version.current===current)setLoading(false);
     }
@@ -256,7 +262,7 @@ export default function Search(){
       });
       router.push('/saved-searches');
     }catch(e){
-      setError(e instanceof Error?e.message:'Could not save this search.');
+      setError(userMessage(e,'Could not save this search.'));
     }finally{
       setSavingSearch(false);
     }
@@ -391,7 +397,7 @@ export default function Search(){
               style={{minHeight:44,paddingHorizontal:14,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
             >
               <Ionicons name="options-outline" size={16} color={c.text}/>
-              <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>FILTER</Text>
+              <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>Filter</Text>
               {photoOnly||sortMode!=='RELEVANCE'?<View style={{width:6,height:6,borderRadius:3,backgroundColor:c.brand}}/>:null}
             </Pressable>
             <Pressable
@@ -400,7 +406,7 @@ export default function Search(){
               style={{flex:1,minHeight:44,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
             >
               <Ionicons name="bookmark-outline" size={16} color={c.text}/>
-              <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>{savingSearch?'SAVING…':'SAVE THIS SEARCH'}</Text>
+              <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>{savingSearch?'Saving…':'Save this search'}</Text>
             </Pressable>
           </View>
         ):null}
@@ -465,7 +471,7 @@ export default function Search(){
                   {[job.suburb,job.city,job.state].filter(Boolean).join(', ')||'Local job'}
                   {job.budget!=null?' · Budget $'+Number(job.budget).toFixed(0):''}
                 </Text>
-                <Text style={{fontSize:12,fontWeight:'900',color:c.accent,marginTop:5}}>JOB</Text>
+                <Text style={{fontSize:12,fontWeight:'900',color:c.accent,marginTop:5}}>Job</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.muted}/>
             </Pressable>
@@ -573,7 +579,7 @@ export default function Search(){
               </Pressable>
             </View>
 
-            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>SEARCH IN</Text>
+            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>Search in</Text>
             <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
               {tabs.map(x=>(
                 <Pressable
@@ -586,7 +592,7 @@ export default function Search(){
               ))}
             </View>
 
-            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>RESULT QUALITY</Text>
+            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>Result quality</Text>
             <Pressable
               disabled={tab==='JOB'}
               onPress={()=>setPhotoOnly(value=>!value)}
@@ -602,7 +608,7 @@ export default function Search(){
               <Ionicons name={photoOnly?'checkmark-circle':'ellipse-outline'} size={22} color={photoOnly?c.accent:c.muted}/>
             </Pressable>
 
-            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>SORT</Text>
+            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>Sort</Text>
             <View style={{flexDirection:'row',gap:8}}>
               {([
                 ['RELEVANCE','Most relevant'],

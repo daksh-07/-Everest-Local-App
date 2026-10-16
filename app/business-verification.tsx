@@ -1,3 +1,4 @@
+import {useThemedStyles,type ThemeColors} from '@/lib/theme';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
@@ -41,7 +42,7 @@ function submissionErrorMessage(error: unknown): string {
   }
 }
 
-export default function BusinessVerification() {
+export default function BusinessVerification() {const s=useThemedStyles(create_s);
   const [business, setBusiness] = useState<Business | null>(null);
   const [abn, setAbn] = useState('');
   const [loading, setLoading] = useState(true);
@@ -113,7 +114,7 @@ export default function BusinessVerification() {
   return (
     <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.page}>
-        <Text style={s.eyebrow}>BUSINESS VERIFICATION</Text>
+        <Text style={s.eyebrow}>Business verification</Text>
         <Text style={s.title}>Verify your business</Text>
 
         {loading ? <ActivityIndicator /> : business ? (
@@ -163,7 +164,7 @@ export default function BusinessVerification() {
                   <Text style={s.pendingCopy}>Your business is verified. Connect Stripe and a bank account before paid services or products can go live.</Text>
                 </View>
                 <Pressable onPress={() => router.push('/business-payouts')} style={s.button}>
-                  <Text style={s.buttonText}>SET UP PAYMENTS & PAYOUTS</Text>
+                  <Text style={s.buttonText}>Set up payments & payouts</Text>
                 </Pressable>
               </>
             ) : (
@@ -172,7 +173,7 @@ export default function BusinessVerification() {
                 onPress={() => void submit()}
                 style={[s.button, (busy || !abnValid) ? s.buttonDisabled : null]}
               >
-                <Text style={s.buttonText}>{busy ? 'CHECKING ABR…' : pending ? 'RECHECK ABR' : 'CHECK ABN & SUBMIT'}</Text>
+                <Text style={s.buttonText}>{busy ? 'Checking ABR…' : pending ? 'Recheck ABR' : 'Check ABN & submit'}</Text>
               </Pressable>
             )}
           </>
@@ -190,29 +191,29 @@ export default function BusinessVerification() {
   );
 }
 
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8f7f4' },
+const create_s=(c:ThemeColors)=>StyleSheet.create({
+  safe: { flex: 1, backgroundColor:c.canvas },
   page: { padding: 20, paddingBottom: 50 },
-  eyebrow: { fontSize: 12, fontWeight: '900', letterSpacing: 2, color: '#777' },
+  eyebrow: { fontSize: 12, fontWeight: '900', color:c.textSecondary },
   title: { fontSize: 31, fontWeight: '900', marginTop: 7, marginBottom: 22 },
-  card: { backgroundColor: '#151515', borderRadius: 20, padding: 20 },
-  name: { fontSize: 17, fontWeight: '800', color: '#fff' },
-  status: { fontSize: 12, fontWeight: '900', letterSpacing: 1, color: '#aaa', marginTop: 8 },
-  meta: { fontSize: 12, lineHeight: 18, color: '#777', marginTop: 6 },
-  pendingCard: { backgroundColor: '#eeece7', borderRadius: 16, padding: 16, marginTop: 14 },
+  card: { backgroundColor:c.primaryContainer, borderRadius: 20, padding: 20 },
+  name: { fontSize: 17, fontWeight: '700', color:c.onPrimaryContainer },
+  status: { fontSize: 13, fontWeight: '700', color:c.onPrimaryContainer, marginTop: 8 },
+  meta: { fontSize: 13, lineHeight: 19, color:c.text, marginTop: 6 },
+  pendingCard: { backgroundColor:c.soft, borderRadius: 16, padding: 16, marginTop: 14 },
   pendingTitle: { fontSize: 14, fontWeight: '900' },
-  pendingCopy: { fontSize: 14, lineHeight: 20, color: '#666', marginTop: 5 },
-  verifiedNext: { backgroundColor: '#eeece7', borderRadius: 16, padding: 16, marginTop: 18 },
-  label: { fontSize: 14, fontWeight: '900', letterSpacing: 1.2, color: '#777', marginTop: 20, marginBottom: 7 },
-  input: { height: 52, borderRadius: 14, borderWidth: 1, borderColor: '#dfdcd5', backgroundColor: '#fff', paddingHorizontal: 15 },
-  inputError: { borderColor: '#b42318' },
-  inputValid: { borderColor: '#245b35' },
-  note: { fontSize: 12, color: '#777', lineHeight: 17, marginTop: 12 },
-  button: { height: 52, borderRadius: 14, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center', marginTop: 18 },
+  pendingCopy: { fontSize: 14, lineHeight: 20, color:c.textSecondary, marginTop: 5 },
+  verifiedNext: { backgroundColor:c.soft, borderRadius: 16, padding: 16, marginTop: 18 },
+  label: { fontSize: 14, fontWeight: '900', color:c.textSecondary, marginTop: 20, marginBottom: 7 },
+  input: { height: 52, borderRadius: 14, borderWidth: 1, borderColor:c.border, backgroundColor:c.surface, paddingHorizontal: 15 },
+  inputError: { borderColor:c.danger },
+  inputValid: { borderColor:c.success },
+  note: { fontSize: 12, color:c.textSecondary, lineHeight: 17, marginTop: 12 },
+  button: { height: 52, borderRadius: 14, backgroundColor:c.brand, alignItems: 'center', justifyContent: 'center', marginTop: 18 },
   buttonDisabled: { opacity: 0.45 },
-  buttonText: { color: '#fff', fontSize: 14, fontWeight: '900' },
-  empty: { backgroundColor: '#fff', borderRadius: 19, padding: 28, alignItems: 'center' },
-  error: { fontSize: 14, color: '#b42318', marginTop: 12 },
-  valid: { fontSize: 12, color: '#245b35', marginTop: 8 },
-  message: { fontSize: 12, color: '#245b35', marginTop: 12 },
+  buttonText: { color:c.onBrand, fontSize: 14, fontWeight: '900' },
+  empty: { backgroundColor:c.surface, borderRadius: 19, padding: 28, alignItems: 'center' },
+  error: { fontSize: 14, color:c.danger, marginTop: 12 },
+  valid: { fontSize: 12, color:c.success, marginTop: 8 },
+  message: { fontSize: 12, color:c.success, marginTop: 12 },
 });

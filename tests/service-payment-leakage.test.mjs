@@ -87,7 +87,7 @@ test('paid booking lifecycle blocks stale checkout cancellation and unverified b
 test('marketplace booking cannot complete with unpaid Everest balance',()=>{
  assert.match(migration,/p_next='COMPLETED' and balance_due>0/);
  assert.match(migration,/Outstanding Everest balance must be paid/);
- assert.match(booking,/PAY \$\$\{paymentSummary\.balance_due\.toFixed\(2\)\} BALANCE/);
+ assert.match(booking,/`Pay \$\{formatMoney\(paymentSummary\.balance_due\)\} balance`/);
 });
 
 test('likely off-platform payment solicitation is auditable and users see payment safety',()=>{

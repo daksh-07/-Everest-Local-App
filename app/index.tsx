@@ -1,17 +1,17 @@
 import {MotionPressable as Pressable} from '@/components/ui/MotionPressable';
 import {useEffect,useMemo,useRef,useState} from 'react';
 // Production deployment retry 2026-09-26
-import { Animated, AppState, Image, Modal, Pressable as NativePressable, RefreshControl, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, AppState, Image, RefreshControl, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {PagerAwareScrollView as ScrollView} from '@/components/PagerAwareScrollView';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router} from 'expo-router';
 import {CustomerTabBar} from '@/components/CustomerTabBar';
 import {ServiceCategoryGrid} from '@/components/ServiceCategoryGrid';
 import {useCustomerRouteHost} from '@/lib/customer-pager';
 import {PostMediaImage} from '@/components/PostMediaImage';
-import {ErrorBanner} from '@/components/ui';
+import {ErrorBanner,SectionHeader} from '@/components/ui';
 import {AmbientEdge} from '@/components/AmbientEdge';
 import {haptic} from '@/lib/haptics';
 import {MOTION,ease,useReducedMotion} from '@/lib/motion';
@@ -19,8 +19,8 @@ import {listPublicPosts,type SocialPost} from '@/lib/social';
 import {signedPostMediaResilient} from '@/lib/request-post-media';
 import {searchShop,signedProductMediaBatch,type ShopProduct} from '@/lib/product-commerce';
 import {supabase} from '@/lib/supabase';
-import {type ThemeColors,useAppTheme} from '@/lib/theme';
-import {ui} from '@/lib/ui';
+import {type ThemeColors,uiTokens,useAppTheme} from '@/lib/theme';
+import {formatDay,formatMoney,formatSchedule,formatStatus} from '@/lib/format';
 import {geocodeCustomerLocality,resolveCustomerLocality,saveLocalityToProfile,type CustomerLocality} from '@/lib/customer-location';
 import {useExperience} from '@/lib/experience';
 import {getCurrentWeather,type CurrentWeather} from '@/lib/weather';
@@ -29,19 +29,8 @@ type IconName=keyof typeof Ionicons.glyphMap;
 type BusinessPreview={id:string;name:string;logo_url:string|null;verification_status:string;suburb:string|null;city:string|null;state:string|null};
 type ProductPreview=ShopProduct&{imageUrl:string|null};
 type ContextCard={kind:'booking'|'request';title:string;detail:string;route:'/bookings'|'/requests'};
-const homeMenuItems:ReadonlyArray<{label:string;copy:string;icon:IconName;route:string}>=[
- {label:'Find services',copy:'Search local services and businesses',icon:'search-outline',route:'/search?tab=SERVICE'},
- {label:'Request quotes',copy:'Describe a job once and compare responses',icon:'document-text-outline',route:'/request'},
- {label:'Everest Live',copy:'Find an available business nearby now',icon:'radio-outline',route:'/request?live=1'},
- {label:'Shop local',copy:'Browse products from nearby businesses',icon:'bag-handle-outline',route:'/shop'},
- {label:'Ask Everest',copy:'Get help with local tasks and decisions',icon:'sparkles-outline',route:'/assistant'},
- {label:'Local feed',copy:'See Stories, posts and Clips around Everest',icon:'people-outline',route:'/social'},
- {label:'Bookings',copy:'Track upcoming and completed jobs',icon:'calendar-outline',route:'/bookings'},
- {label:'Orders',copy:'Track product purchases and delivery',icon:'cube-outline',route:'/orders'},
-];
 function greeting(){const h=new Date().getHours();return h<12?'Good morning':h<18?'Good afternoon':'Good evening'}
 function initials(name:string){return name.trim().split(/\s+/).slice(0,2).map(v=>v[0]?.toUpperCase()).join('')||'EL'}
-function currency(value:number){return String.fromCharCode(36)+Number(value).toFixed(2)}
 function weatherIcon(weather:CurrentWeather):IconName{
  switch(weather.condition){
   case 'CLEAR':return weather.isDay?'sunny-outline':'moon-outline';
@@ -57,11 +46,11 @@ function weatherIcon(weather:CurrentWeather):IconName{
 export default function Home(){const hosted=useCustomerRouteHost();return hosted?null:<HomeScreen/>}
 export function HomeScreen({visible=true}:{visible?:boolean}={}){
  const experience=useExperience();
- const {colors:c}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const s=useMemo(()=>styles(c,desktop),[c,desktop]);const osReducedMotion=useReducedMotion();const reduced=osReducedMotion||experience.mode==='CLASSIC';
+ const {colors:c}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const compact=width<360;const s=useMemo(()=>styles(c,desktop),[c,desktop]);const osReducedMotion=useReducedMotion();const reduced=osReducedMotion||experience.mode==='CLASSIC';
  const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Set location');
  const [unread,setUnread]=useState(0);const [businesses,setBusinesses]=useState<BusinessPreview[]>([]);const [products,setProducts]=useState<ProductPreview[]>([]);const [posts,setPosts]=useState<SocialPost[]>([]);const [postMedia,setPostMedia]=useState<Record<string,string[]>>({});
  const [mediaWarning,setMediaWarning]=useState('');const [loadError,setLoadError]=useState('');const [weather,setWeather]=useState<CurrentWeather|null>(null);const [weatherLoading,setWeatherLoading]=useState(false);
- const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [locating,setLocating]=useState(false);const [navHidden,setNavHidden]=useState(false);const [menuOpen,setMenuOpen]=useState(false);
+ const [context,setContext]=useState<ContextCard|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [locating,setLocating]=useState(false);const [navHidden,setNavHidden]=useState(false);
  useEffect(()=>{if(!visible)return;let mounted=true;void import('@/lib/workspace').then(({getWorkspaceContext})=>getWorkspaceContext()).then(workspace=>{if(mounted&&workspace.mode==='BUSINESS'&&workspace.active_business_id)router.replace('/business-today')}).catch(()=>undefined);return()=>{mounted=false}},[visible]);
  const enter=useRef(new Animated.Value(reduced?1:0)).current;const lastScrollY=useRef(0);const weatherCoordinates=useRef<{latitude:number;longitude:number}|null>(null);
 
@@ -161,7 +150,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
     setUnread(notifications.count??0);
     if(booking.data){
      const b=booking.data;
-     setContext({kind:'booking',title:'Upcoming booking',detail:b.scheduled_date?b.scheduled_date+(b.scheduled_time?' · '+String(b.scheduled_time).slice(0,5):''):b.status.replaceAll('_',' '),route:'/bookings'});
+     setContext({kind:'booking',title:'Upcoming booking',detail:b.scheduled_date?formatSchedule(b.scheduled_date,b.scheduled_time):formatStatus(b.status),route:'/bookings'});
     }else if(request.data){
      setContext({kind:'request',title:'Active request',detail:String(request.data.description||request.data.status),route:'/requests'});
     }else setContext(null);
@@ -203,7 +192,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
   await signPostPhotos(feed);
   const initialSigned=await signedProductMediaBatch(shop.map(product=>product.primary_image_path),6*3600).catch(()=>({} as Record<string,string|null>));
   setProducts(shop.map(product=>({...product,imageUrl:product.primary_image_path?initialSigned[product.primary_image_path]??null:null})));
-  if(booking.data){const b=booking.data;setContext({kind:'booking',title:'Upcoming booking',detail:b.scheduled_date?b.scheduled_date+(b.scheduled_time?' · '+String(b.scheduled_time).slice(0,5):''):b.status.replaceAll('_',' '),route:'/bookings'})}
+  if(booking.data){const b=booking.data;setContext({kind:'booking',title:'Upcoming booking',detail:b.scheduled_date?formatSchedule(b.scheduled_date,b.scheduled_time):formatStatus(b.status),route:'/bookings'})}
   else if(request.data)setContext({kind:'request',title:'Active request',detail:String(request.data.description||request.data.status),route:'/requests'});
 
   const locality=await resolveCustomerLocality({requestIfUndetermined:false}).catch(()=>null);
@@ -226,67 +215,129 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  useEffect(()=>{if(reduced){enter.setValue(1);return}Animated.timing(enter,{toValue:1,duration:MOTION.standard,easing:ease,useNativeDriver:true}).start()},[enter,reduced]);
  const appear={opacity:enter,transform:[{translateY:enter.interpolate({inputRange:[0,1],outputRange:[reduced?0:8,0]})}]};
  const go=(route:string)=>{void haptic.selection();router.push(route as never)};
- const menuGo=(route:string)=>{setMenuOpen(false);go(route)};
- const hello=name?greeting()+', '+name.split(' ')[0]:'What’s happening nearby?';
+ const hello=name?greeting()+', '+name.split(' ')[0]:'What do you need today?';
  const classic=experience.mode==='CLASSIC';
+ const hasPlace=suburb!=='Set location';
+ const weatherText=weather?`${Math.round(weather.temperatureC)}°`:weatherLoading?'…':'';
+ const t=experience.tokens;
 
  return <View style={s.root}><SafeAreaView edges={['top','left','right']} style={s.safe}>
-  <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void refreshHome()} tintColor={c.accent} colors={[c.accent]}/>} scrollEventThrottle={16} onScroll={e=>{const y=Math.max(0,e.nativeEvent.contentOffset.y);const delta=y-lastScrollY.current;if(y<24)setNavHidden(false);else if(delta>8)setNavHidden(true);else if(delta<-6)setNavHidden(false);lastScrollY.current=y}} contentContainerStyle={[s.page,{paddingHorizontal:desktop?28:experience.tokens.spacing.screen}]}>
+  <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void refreshHome()} tintColor={c.accent} colors={[c.accent]}/>} scrollEventThrottle={16} onScroll={e=>{const y=Math.max(0,e.nativeEvent.contentOffset.y);const delta=y-lastScrollY.current;if(y<24)setNavHidden(false);else if(delta>8)setNavHidden(true);else if(delta<-6)setNavHidden(false);lastScrollY.current=y}} contentContainerStyle={[s.page,{paddingHorizontal:desktop?28:t.spacing.screen}]}>
    <Animated.View style={appear}>
-    <View style={s.topbar}><View style={{flex:1}}><Text style={s.brand}>EVEREST LOCAL</Text><Pressable onPress={()=>void refreshLocality(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityLabel={weather?`Update your location. ${weather.label}, ${Math.round(weather.temperatureC)} degrees`:'Update your location and weather'}><Ionicons name={locating?'locate':'location-outline'} size={13} color={c.muted}/><Text numberOfLines={1} style={s.place}>{locating?'Finding you…':suburb}</Text>{suburb!=='Set location'?<View style={s.weatherInline}><Ionicons name={weather?weatherIcon(weather):'partly-sunny-outline'} size={14} color={c.muted}/><Text style={s.weatherTemp}>{weather?`${Math.round(weather.temperatureC)}°`:weatherLoading?'…':'--°'}</Text></View>:null}<Ionicons name="chevron-down" size={11} color={c.muted}/></Pressable></View>
-     <Pressable onPress={()=>{void haptic.selection();setMenuOpen(true)}} style={({pressed})=>[s.iconButton,pressed&&s.press]} accessibilityLabel="Open Everest menu"><Ionicons name="menu" size={22} color={c.text}/></Pressable>
-     <Pressable onPress={()=>go('/notifications')} style={({pressed})=>[s.iconButton,pressed&&s.press]} accessibilityLabel="Notifications"><Ionicons name="notifications-outline" size={20} color={c.text}/>{unread>0?<View style={s.dot}/>:null}</Pressable>
-     <Pressable onPress={()=>go('/account')} style={({pressed})=>[s.avatar,pressed&&s.press]} accessibilityLabel="Open account">{avatar?<Image source={{uri:avatar}} style={s.avatarImage}/>:<Text style={s.avatarText}>{initials(name||'Everest Local')}</Text>}</Pressable>
+    <View style={s.topbar}>
+     <Pressable onPress={()=>void refreshLocality(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityRole="button" accessibilityLabel={hasPlace?`Location: ${suburb}${weather?`. ${weather.label}, ${Math.round(weather.temperatureC)} degrees`:''}. Update location`:'Set your location'}>
+      <Ionicons name={locating?'locate':'location'} size={16} color={c.accent}/>
+      <Text numberOfLines={1} style={s.place}>{locating?'Finding you…':hasPlace?suburb:'Set your location'}</Text>
+      <Ionicons name="chevron-down" size={14} color={c.textSecondary}/>
+      {hasPlace&&weatherText?<View style={s.weatherInline}><Ionicons name={weather?weatherIcon(weather):'partly-sunny-outline'} size={15} color={c.textSecondary}/><Text tabular style={s.weatherTemp}>{weatherText}</Text></View>:null}
+     </Pressable>
+     <Pressable onPress={()=>go('/notifications')} style={({pressed})=>[s.iconButton,pressed&&s.press]} accessibilityRole="button" accessibilityLabel={unread>0?`Notifications, ${unread} unread`:'Notifications'}><Ionicons name="notifications-outline" size={22} color={c.text}/>{unread>0?<View style={s.dot}/>:null}</Pressable>
+     <Pressable onPress={()=>go('/account')} style={({pressed})=>[s.avatar,pressed&&s.press]} accessibilityRole="button" accessibilityLabel="Open account">{avatar?<Image source={{uri:avatar}} style={s.avatarImage}/>:name?<Text style={s.avatarText}>{initials(name)}</Text>:<Ionicons name="person-outline" size={18} color={c.text}/>}</Pressable>
     </View>
-    <View style={s.heroGrid}><View style={s.heroPanel}>
-     <Text variant="hero" style={[s.greeting,{fontSize:experience.tokens.typography.hero,lineHeight:experience.tokens.typography.hero*1.18}]}>{classic?'What would you like to do?':name?hello:'What do you need today?'}</Text><Text style={[s.heroCopy,{fontSize:experience.tokens.typography.body,lineHeight:experience.tokens.typography.body*experience.tokens.typography.lineHeight}]}>{classic?'Find a business, book a service or shop nearby.':'Book local services, request quotes and shop from nearby businesses.'}</Text>
-     <Pressable onPress={()=>go('/search')} style={({pressed})=>[s.search,s.searchGlow,{height:classic?experience.tokens.controls.minHeight+10:58,borderRadius:experience.tokens.shape.medium,borderWidth:experience.tokens.surfaces.borderWidth,borderColor:c.border},pressed&&s.searchPressed]} accessibilityRole="search"><View style={[s.searchIcon,{borderRadius:experience.tokens.shape.small}]}><Ionicons name="search" size={20} color={c.text}/></View><Text style={[s.searchText,{fontSize:experience.tokens.typography.body}]}>{classic?'Search for a service, business, or product':'Search your local area'}</Text><Ionicons name="options-outline" size={18} color={c.muted}/></Pressable>
-     <View style={s.quickIntentRow}>
-      <Pressable onPress={()=>go('/request')} style={({pressed})=>[s.quickIntent,s.quickIntentPrimary,pressed&&s.actionPressed]} accessibilityRole="button" accessibilityLabel="Request a Quote"><View style={{flex:1,minWidth:0}}><Text numberOfLines={2} style={s.quickIntentPrimaryTitle}>Request quotes</Text></View><Ionicons name="arrow-forward" size={17} color={c.onBrand}/></Pressable>
-      <AmbientEdge borderRadius={experience.tokens.shape.medium} tone="live" style={s.quickLiveGlow}><Pressable onPress={()=>go('/request?live=1')} style={({pressed})=>[s.quickIntent,s.quickIntentLive,pressed&&s.actionPressed]} accessibilityRole="button" accessibilityLabel="Find someone now with Everest Live"><View style={s.quickIntentIcon}><Ionicons name="radio-outline" size={18} color={c.success}/></View><View style={{flex:1,minWidth:0}}><Text numberOfLines={2} style={s.quickIntentTitle}>Need it now?</Text><Text style={s.liveIntentCopy}>Everest Live</Text></View></Pressable></AmbientEdge>
-     </View>
 
-     {context?<Pressable onPress={()=>go(context.route)} style={({pressed})=>[s.context,pressed&&s.press]}><View style={s.contextIcon}><Ionicons name={context.kind==='booking'?'calendar-outline':'document-text-outline'} size={19} color={c.accent}/></View><View style={{flex:1}}><Text style={s.contextLabel}>CONTINUE WHERE YOU LEFT OFF</Text><Text style={s.contextTitle}>{context.title}</Text><Text numberOfLines={1} style={s.contextDetail}>{context.detail}</Text></View><Ionicons name="chevron-forward" size={18} color={c.muted}/></Pressable>:null}
-    </View></View>
-    <View style={s.sectionHeader}><SectionTitle title="Browse categories" compact/><Pressable accessibilityRole="button" accessibilityLabel="Explore all services" style={s.sectionAction} onPress={()=>go('/search?tab=SERVICE')}><Text style={s.seeAll}>All services</Text></Pressable></View>
+    <View style={s.hero}>
+     <Text variant="hero" style={[s.greeting,classic&&{fontSize:t.typography.hero,lineHeight:Math.round(t.typography.hero*1.18)}]}>{classic?'What would you like to do?':hello}</Text>
+     {!name||classic?<Text style={s.heroCopy}>{classic?'Find a business, book a service or shop nearby.':'Book local services, request quotes and shop from nearby businesses.'}</Text>:null}
+     <View style={[s.search,{minHeight:classic?t.controls.minHeight+12:56,borderRadius:t.shape.medium,borderWidth:t.surfaces.borderWidth}]}>
+      <Pressable onPress={()=>go('/search')} style={({pressed})=>[s.searchMain,pressed&&s.searchPressed]} accessibilityRole="search" accessibilityLabel="Search services, businesses and products"><Ionicons name="search" size={20} color={c.text}/><Text numberOfLines={1} style={s.searchText}>{classic?'Search for a service, business, or product':'Search your local area'}</Text></Pressable>
+      <View style={s.searchDivider}/>
+      <Pressable onPress={()=>go('/assistant')} style={({pressed})=>[s.askButton,pressed&&s.press]} accessibilityRole="button" accessibilityLabel="Ask Everest for help" hitSlop={4}><Ionicons name="sparkles-outline" size={19} color={c.accent}/><Text style={s.askText}>Ask</Text></Pressable>
+     </View>
+     <View style={[s.quickIntentRow,compact&&s.quickIntentStack]}>
+      <Pressable onPress={()=>go('/request')} style={({pressed})=>[s.quickIntent,s.quickIntentPrimary,{borderRadius:t.shape.medium},pressed&&s.actionPressed]} accessibilityRole="button" accessibilityLabel="Request a Quote"><View style={s.intentCopy}><Text numberOfLines={1} style={s.quickIntentPrimaryTitle}>Request quotes</Text><Text numberOfLines={1} style={s.quickIntentPrimaryCopy}>Describe it once</Text></View><Ionicons name="arrow-forward" size={18} color={c.onBrand}/></Pressable>
+      <AmbientEdge borderRadius={t.shape.medium} tone="live" style={[s.quickLiveGlow,compact&&s.quickLiveStacked]}><Pressable onPress={()=>go('/request?live=1')} style={({pressed})=>[s.quickIntent,s.quickIntentLive,{borderRadius:t.shape.medium},pressed&&s.actionPressed]} accessibilityRole="button" accessibilityLabel="Find someone now with Everest Live"><View style={s.intentCopy}><Text numberOfLines={1} style={s.quickIntentTitle}>Need it now?</Text><View style={s.liveRow}><View style={s.liveDot}/><Text numberOfLines={1} style={s.liveIntentCopy}>Everest Live</Text></View></View><Ionicons name="radio-outline" size={19} color={c.secondaryText}/></Pressable></AmbientEdge>
+     </View>
+     {context?<Pressable onPress={()=>go(context.route)} style={({pressed})=>[s.context,{borderRadius:t.shape.medium},pressed&&s.press]} accessibilityRole="button" accessibilityLabel={`Continue: ${context.title}, ${context.detail}`}><View style={s.contextIcon}><Ionicons name={context.kind==='booking'?'calendar':'document-text'} size={18} color={c.accent}/></View><View style={{flex:1,minWidth:0}}><Text style={s.contextLabel}>Continue where you left off</Text><Text numberOfLines={1} style={s.contextTitle}>{context.title}</Text><Text numberOfLines={1} style={s.contextDetail}>{context.detail}</Text></View><Ionicons name="chevron-forward" size={18} color={c.muted}/></Pressable>:null}
+    </View>
+
+    <SectionHeader title="Browse services" action={{label:'All services',accessibilityLabel:'Explore all services',onPress:()=>go('/search?tab=SERVICE')}}/>
     <ServiceCategoryGrid onSelect={query=>go('/search?q='+encodeURIComponent(query)+'&tab=SERVICE')}/>
     {loadError?<ErrorBanner message={loadError} onRetry={()=>void refreshHome()}/>:null}
 
-    <View style={s.sectionHeader}><View><SectionTitle title="Discover businesses" compact/><Text style={s.localityCaption}>{suburb==='Set location'?'Browse businesses on Everest':'Choose a business and check its service area'}</Text></View><View style={s.sectionLinks}><Pressable style={s.sectionAction} onPress={()=>go('/available-now')}><Text style={s.availableLink}>Available now</Text></Pressable><Pressable style={s.sectionAction} onPress={()=>go('/search?tab=BUSINESS')}><Text style={s.seeAll}>See all</Text></Pressable></View></View>
-    {loading?<BusinessSkeleton colors={c}/>:businesses.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.businessRow}>{businesses.map(b=><Pressable key={b.id} onPress={()=>go('/business-profile?id='+b.id)} style={({pressed})=>[s.businessCard,pressed&&s.cardPressed]}>{b.logo_url?<Image source={{uri:b.logo_url}} style={s.businessImage}/>:<View style={s.businessFallback}><Ionicons name="business-outline" size={24} color={c.accent}/></View>}<View style={s.businessBody}><View style={s.businessTitleRow}><Text numberOfLines={1} style={s.businessName}>{b.name}</Text>{b.verification_status==='VERIFIED'?<Ionicons name="checkmark-circle" size={14} color={c.accent}/>:null}</View><Text numberOfLines={1} style={s.businessMeta}>{[b.suburb,b.city,b.state].filter(Boolean).join(', ')||'Local business'}</Text></View></Pressable>)}</ScrollView>:<Pressable onPress={()=>go('/search?tab=BUSINESS')} style={s.emptyLine}><Text style={s.emptyText}>Explore local businesses on Everest</Text><Ionicons name="arrow-forward" size={17} color={c.muted}/></Pressable>}
-    {products.length?<><View style={s.sectionHeader}><View><SectionTitle title="Shop local" compact/><Text style={s.localityCaption}>Products from businesses on Everest</Text></View><Pressable style={s.sectionAction} onPress={()=>go('/shop')}><Text style={s.seeAll}>See all</Text></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.productRow}>{products.map(product=><Pressable key={product.id} onPress={()=>go('/product?id='+product.id)} style={({pressed})=>[s.productCard,pressed&&s.cardPressed]}>{product.imageUrl?<Image source={{uri:product.imageUrl}} style={s.productImage}/>:<View style={s.productFallback}><Ionicons name="bag-handle-outline" size={24} color={c.accent}/></View>}<View style={s.productBody}><Text numberOfLines={2} style={s.productName}>{product.name}</Text><Text style={s.productPrice}>{currency(product.sale_price??product.price)}</Text><Text numberOfLines={1} style={s.productMeta}>{product.business_name}{product.suburb?' · '+product.suburb:''}</Text></View></Pressable>)}</ScrollView></>:null}
+    <SectionHeader title="Local businesses" caption={hasPlace?'Check each business’s service area before booking':'Businesses on Everest'} secondaryAction={{label:'Available now',onPress:()=>go('/available-now')}} action={{label:'See all',accessibilityLabel:'See all businesses',onPress:()=>go('/search?tab=BUSINESS')}}/>
+    {loading?<BusinessSkeleton colors={c}/>:businesses.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.rail}>{businesses.map(b=>{const place=[b.suburb,b.city].filter(Boolean).join(', ')||b.state||'Local business';const verified=b.verification_status==='VERIFIED';return <Pressable key={b.id} onPress={()=>go('/business-profile?id='+b.id)} style={({pressed})=>[s.businessCard,{borderRadius:t.shape.medium},pressed&&s.cardPressed]} accessibilityRole="button" accessibilityLabel={`${b.name}${verified?', verified':''}, ${place}`}>{b.logo_url?<Image source={{uri:b.logo_url}} style={s.businessImage}/>:<View style={s.businessFallback}><Text style={s.monogram}>{initials(b.name)}</Text></View>}<View style={s.cardBody}><View style={s.businessTitleRow}><Text numberOfLines={1} style={s.cardTitle}>{b.name}</Text>{verified?<Ionicons name="checkmark-circle" size={15} color={c.accent}/>:null}</View><Text numberOfLines={1} style={s.cardMeta}>{place}</Text></View></Pressable>})}</ScrollView>:<Pressable onPress={()=>go('/search?tab=BUSINESS')} style={({pressed})=>[s.emptyLine,{borderRadius:t.shape.medium},pressed&&s.press]} accessibilityRole="button"><Text style={s.emptyText}>Explore local businesses on Everest</Text><Ionicons name="arrow-forward" size={17} color={c.muted}/></Pressable>}
+
+    <SectionHeader title="Shop local" caption="Products from businesses on Everest" action={{label:'See all',accessibilityLabel:'See all products',onPress:()=>go('/shop')}}/>
+    {products.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.rail}>{products.map(product=>{const onSale=product.sale_price!==null&&product.sale_price!==undefined&&product.sale_price<product.price;return <Pressable key={product.id} onPress={()=>go('/product?id='+product.id)} style={({pressed})=>[s.productCard,pressed&&s.cardPressed]} accessibilityRole="button" accessibilityLabel={`${product.name}, ${formatMoney(product.sale_price??product.price)}, from ${product.business_name}`}>{product.imageUrl?<Image source={{uri:product.imageUrl}} style={[s.productImage,{borderRadius:t.shape.medium}]}/>:<View style={[s.productImage,s.productFallback,{borderRadius:t.shape.medium}]}><Ionicons name="bag-handle-outline" size={24} color={c.muted}/></View>}<View style={s.productBody}><Text numberOfLines={2} style={s.productName}>{product.name}</Text><View style={s.priceRow}><Text tabular style={s.productPrice}>{formatMoney(product.sale_price??product.price)}</Text>{onSale?<Text tabular style={s.wasPrice}>{formatMoney(product.price)}</Text>:null}</View><Text numberOfLines={1} style={s.cardMeta}>{product.business_name}{product.suburb?' · '+product.suburb:''}</Text></View></Pressable>})}</ScrollView>:loading?null:<Pressable onPress={()=>go('/shop')} style={({pressed})=>[s.emptyLine,{borderRadius:t.shape.medium},pressed&&s.press]} accessibilityRole="button"><Text style={s.emptyText}>Browse products from local businesses</Text><Ionicons name="arrow-forward" size={17} color={c.muted}/></Pressable>}
+
     {posts.length?<>
-    {mediaWarning?<View style={{marginTop:14,minHeight:44,borderRadius:14,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:9}}><Ionicons name="image-outline" size={17} color={c.danger}/><Text style={{flex:1,fontSize:12,lineHeight:17,color:c.textSecondary}}>{mediaWarning}</Text></View>:null}
-    <View style={s.sectionHeader}><SectionTitle title="From around Everest" compact/><Pressable style={s.sectionAction} onPress={()=>go('/social')}><Text style={s.seeAll}>Open discovery</Text></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.postRow}>{posts.map(p=>{const image=postMedia[p.id]?.[0];return <Pressable key={p.id} onPress={()=>go('/social?postId='+p.id)} style={({pressed})=>[s.postCard,pressed&&s.cardPressed]}>{image?<PostMediaImage postId={p.id} uri={image} style={s.postImage}/>:null}<View style={s.postBody}><Text style={s.postType}>{p.post_type.replaceAll('_',' ')}</Text><Text numberOfLines={3} style={s.postCopy}>{p.caption||'New activity on Everest'}</Text><Text style={s.postDate}>{new Date(p.created_at).toLocaleDateString()}</Text></View></Pressable>})}</ScrollView></>:null}
-    <View style={s.communityRow}><View style={{flex:1}}><Text style={s.sideTitle}>Your neighbourhood, shared</Text><Text style={s.localityCaption}>A local update, question or recommendation.</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Create a local post" onPress={()=>go('/create')} style={s.communityAction}><Ionicons name="add" size={19} color={c.text}/><Text style={s.communityActionText}>Post</Text></Pressable></View>
+     <SectionHeader title="From around Everest" action={{label:'Open discovery',onPress:()=>go('/social')}}/>
+     {mediaWarning?<View style={s.mediaWarning}><Ionicons name="image-outline" size={17} color={c.danger}/><Text style={s.mediaWarningText}>{mediaWarning}</Text></View>:null}
+     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.rail}>{posts.map(p=>{const image=postMedia[p.id]?.[0];return <Pressable key={p.id} onPress={()=>go('/social?postId='+p.id)} style={({pressed})=>[s.postCard,{borderRadius:t.shape.medium},pressed&&s.cardPressed]} accessibilityRole="button">{image?<PostMediaImage postId={p.id} uri={image} style={s.postImage}/>:null}<View style={s.cardBody}><Text style={s.postType}>{formatStatus(p.post_type,'Post')}</Text><Text numberOfLines={3} style={s.postCopy}>{p.caption||'New activity on Everest'}</Text><Text style={s.cardMeta}>{formatDay(p.created_at)}</Text></View></Pressable>})}</ScrollView>
+    </>:null}
+    <View style={s.communityRow}><View style={{flex:1}}><Text style={s.communityTitle}>Your neighbourhood, shared</Text><Text style={s.communityCopy}>Post a local update, question or recommendation.</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Create a local post" onPress={()=>go('/create')} style={({pressed})=>[s.communityAction,pressed&&s.press]}><Ionicons name="add" size={19} color={c.text}/><Text style={s.communityActionText}>Post</Text></Pressable></View>
    </Animated.View><View style={{height:118}}/>
   </ScrollView><CustomerTabBar active="/" hidden={navHidden}/>
-  <Modal visible={menuOpen} transparent animationType={reduced?'none':'fade'} onRequestClose={()=>setMenuOpen(false)}>
-   <View style={s.menuOverlay}>
-    <NativePressable accessibilityRole="button" accessibilityLabel="Close Everest menu" onPress={()=>setMenuOpen(false)} style={StyleSheet.absoluteFill}/>
-    <SafeAreaView edges={['top','bottom']} style={s.menuSheet}>
-     <View style={s.menuHead}><View><Text style={s.menuEyebrow}>EVEREST LOCAL</Text><Text style={s.menuTitle}>Everything, one tap away</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Close menu" onPress={()=>setMenuOpen(false)} style={s.menuClose}><Ionicons name="close" size={20} color={c.text}/></Pressable></View>
-     <Text style={s.menuCopy}>Find services, manage your plans and explore your community.</Text>
-     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.menuList}>{homeMenuItems.map(item=><Pressable key={item.label} onPress={()=>menuGo(item.route)} style={({pressed})=>[s.menuItem,pressed&&s.menuItemPressed]} accessibilityRole="button"><View style={s.menuItemIcon}><Ionicons name={item.icon} size={20} color={item.label==='Everest Live'?c.success:c.accent}/></View><View style={{flex:1,minWidth:0}}><Text style={s.menuItemTitle}>{item.label}</Text><Text numberOfLines={2} style={s.menuItemCopy}>{item.copy}</Text></View><Ionicons name="chevron-forward" size={18} color={c.muted}/></Pressable>)}</ScrollView>
-    </SafeAreaView>
-   </View>
-  </Modal>
  </SafeAreaView></View>;
 }
 
-function SectionTitle({title,compact=false}:{title:string;compact?:boolean}){const {colors}=useAppTheme();return <Text variant="section" style={{fontSize:20,lineHeight:26,color:colors.text,marginTop:compact?0:28,marginBottom:compact?0:12}}>{title}</Text>}
-function BusinessSkeleton({colors:c}:{colors:ThemeColors}){return <View style={{flexDirection:'row',gap:10}}>{[0,1].map(i=><View key={i} style={{width:188,height:166,borderRadius:20,backgroundColor:c.soft,opacity:.7}}/>)}</View>}
+function BusinessSkeleton({colors:c}:{colors:ThemeColors}){return <View style={{flexDirection:'row',gap:12}} accessibilityLabel="Loading businesses">{[0,1].map(i=><View key={i} style={{width:200,height:170,borderRadius:16,backgroundColor:c.soft}}/>)}</View>}
 const styles=(c:ThemeColors,desktop:boolean)=>StyleSheet.create({
- root:{flex:1,backgroundColor:c.canvas},safe:{flex:1,backgroundColor:'transparent'},page:{width:'100%',maxWidth:ui.contentMaxWidth,alignSelf:'center',paddingHorizontal:desktop?28:18,paddingTop:2},
- topbar:{flexDirection:'row',alignItems:'center',gap:9,minHeight:48},brand:{fontSize:12,fontWeight:'900',letterSpacing:1.7,color:c.text},placeRow:{minHeight:32,flexDirection:'row',alignItems:'center',gap:4,marginTop:3},place:{fontSize:12,fontWeight:'700',color:c.muted,maxWidth:130},weatherInline:{minHeight:24,flexDirection:'row',alignItems:'center',gap:4,marginLeft:5},weatherTemp:{fontSize:12,fontWeight:'900',color:c.text,fontVariant:['tabular-nums']},iconButton:{width:44,height:44,borderRadius:21,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},dot:{position:'absolute',right:9,top:8,width:7,height:7,borderRadius:4,backgroundColor:c.brand,borderWidth:1,borderColor:c.canvas},avatar:{width:42,height:42,borderRadius:21,backgroundColor:c.elevated,alignItems:'center',justifyContent:'center',overflow:'hidden',borderWidth:1,borderColor:c.border},avatarImage:{width:42,height:42},avatarText:{fontSize:12,fontWeight:'900',color:c.text},
- communityRow:{marginTop:28,paddingVertical:18,borderTopWidth:1,borderTopColor:c.border,flexDirection:'row',alignItems:'center',gap:12},communityAction:{minHeight:44,paddingHorizontal:12,flexDirection:'row',alignItems:'center',gap:5},communityActionText:{fontSize:14,fontWeight:'700',color:c.text},heroGrid:{flexDirection:desktop?'row':'column',gap:desktop?20:0,alignItems:'stretch',marginTop:desktop?24:12},heroPanel:{flexGrow:desktop?1.15:0,flexShrink:desktop?1:0,flexBasis:desktop?0:'auto',minWidth:0,padding:desktop?0:0},sidePanel:{flexGrow:desktop?.85:0,flexShrink:desktop?1:0,flexBasis:desktop?0:'auto',minWidth:0,paddingTop:desktop?20:0,marginTop:desktop?0:24},heroEyebrow:{fontSize:12,fontWeight:'700',letterSpacing:1.1,color:c.accent,marginTop:desktop?0:16},greeting:{fontSize:desktop?40:34,lineHeight:desktop?46:40,fontWeight:'700',letterSpacing:0,color:c.text,marginTop:10},heroCopy:{fontSize:desktop?14:13,lineHeight:21,color:c.textSecondary,marginTop:8,maxWidth:620},searchGlow:{marginTop:18},search:{height:58,borderRadius:18,backgroundColor:c.soft,flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:13},searchPressed:{transform:[{scale:.985}],opacity:.86},searchIcon:{width:36,height:36,alignItems:'center',justifyContent:'center'},searchText:{flex:1,fontSize:14,color:c.textSecondary},quickIntentRow:{flexDirection:'row',flexWrap:'wrap',gap:10,marginTop:13},quickIntent:{minHeight:56,borderRadius:12,flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:10,paddingVertical:10},quickIntentPrimary:{flex:1,minWidth:125,backgroundColor:c.brand},quickLiveGlow:{flex:1,minWidth:125},quickIntentLive:{height:'100%',backgroundColor:c.elevated},quickIntentIcon:{width:20,height:28,alignItems:'center',justifyContent:'center'},quickIntentPrimaryTitle:{fontSize:13,lineHeight:18,fontWeight:'800',color:c.onBrand},quickIntentTitle:{fontSize:12,fontWeight:'800',color:c.text},liveTitleRow:{flexDirection:'row',alignItems:'center',gap:7},liveIntentTitle:{fontWeight:'800',color:c.text},liveIntentCopy:{fontSize:12,lineHeight:17,color:c.textSecondary,marginTop:3},liveBadge:{borderRadius:999,backgroundColor:c.success,paddingHorizontal:7,paddingVertical:3},liveBadgeText:{fontSize:7,fontWeight:'800',letterSpacing:.8,color:c.canvas},trustRow:{flexDirection:'row',flexWrap:'wrap',gap:12,marginTop:15,paddingVertical:4},
- context:{marginTop:16,minHeight:70,backgroundColor:c.elevated,flexDirection:'row',alignItems:'center',gap:11,padding:13,borderRadius:14},contextIcon:{width:40,height:40,borderRadius:20,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},contextLabel:{fontSize:14,fontWeight:'700',letterSpacing:.4,color:c.muted},contextTitle:{fontSize:14,fontWeight:'800',color:c.text,marginTop:2},contextDetail:{fontSize:12,color:c.muted,marginTop:3},
- sideHeading:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-end',marginTop:desktop?0:26},sideEyebrow:{fontSize:12,fontWeight:'900',letterSpacing:1.1,color:c.accent},sideTitle:{fontSize:18,fontWeight:'900',color:c.text,marginTop:3},composerShell:{marginTop:10,borderRadius:20,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,padding:12,shadowColor:'#000',shadowOpacity:.08,shadowRadius:18,shadowOffset:{width:0,height:8}},
- composerHead:{flexDirection:'row',alignItems:'center',gap:10},composerAvatar:{width:42,height:42,borderRadius:21,overflow:'hidden',backgroundColor:c.soft,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},composerAvatarImage:{width:42,height:42},composerAvatarText:{fontSize:12,fontWeight:'900',color:c.text},
- composerInput:{flex:1,minHeight:46,borderRadius:16,backgroundColor:c.elevated,borderWidth:1,borderColor:c.border,paddingHorizontal:14,justifyContent:'center'},composerPlaceholder:{fontSize:12,color:c.textSecondary},
- composerActions:{marginTop:10,minHeight:48,borderTopWidth:1,borderTopColor:c.border,flexDirection:'row',alignItems:'center',paddingTop:8},composerAction:{flex:1,minHeight:44,borderRadius:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6},composerActionText:{fontSize:14,fontWeight:'900',color:c.text},composerDivider:{width:1,height:20,backgroundColor:c.border},
- shortcutLabel:{fontSize:14,fontWeight:'900',letterSpacing:1.1,color:c.muted,marginTop:18,marginBottom:8},actionGrid:{gap:8},action:{minHeight:62,borderRadius:16,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,paddingHorizontal:12,flexDirection:'row',alignItems:'center',gap:10},actionPressed:{transform:[{scale:.985}],backgroundColor:c.soft},actionIcon:{width:36,height:36,borderRadius:12,backgroundColor:c.accentSoft,alignItems:'center',justifyContent:'center'},actionTitle:{fontSize:12,fontWeight:'900',color:c.text},actionCopy:{fontSize:14,color:c.muted,marginTop:2},
- sectionAction:{minHeight:44,justifyContent:'center'},sectionHeader:{marginTop:28,marginBottom:13,gap:12,flexWrap:'wrap',flexDirection:'row',alignItems:'center',justifyContent:'space-between'},sectionLinks:{minHeight:44,flexDirection:'row',alignItems:'center',gap:12},availableLink:{fontSize:12,fontWeight:'700',color:c.accent},localityCaption:{fontSize:12,color:c.muted,marginTop:4},seeAll:{fontSize:12,fontWeight:'700',color:c.accent},businessRow:{gap:12,paddingRight:12},businessCard:{width:188,borderRadius:13,overflow:'hidden',backgroundColor:c.surface},businessImage:{width:'100%',height:121},businessFallback:{height:121,alignItems:'center',justifyContent:'center',backgroundColor:c.soft},businessBody:{padding:12},businessTitleRow:{flexDirection:'row',alignItems:'center',gap:5},businessName:{fontSize:14,fontWeight:'800',color:c.text,flex:1},businessMeta:{fontSize:12,color:c.muted,marginTop:5},emptyLine:{minHeight:58,backgroundColor:c.elevated,paddingHorizontal:14,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},emptyText:{fontSize:14,fontWeight:'700',color:c.text},
- productRow:{gap:12,paddingRight:12},productCard:{width:168,borderRadius:13,overflow:'hidden',backgroundColor:c.surface},productImage:{width:'100%',height:158,backgroundColor:c.soft},productFallback:{height:158,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},productBody:{padding:11},productName:{fontSize:12,lineHeight:17,fontWeight:'700',color:c.text,minHeight:34},productPrice:{fontSize:14,fontWeight:'800',color:c.text,marginTop:6},productMeta:{fontSize:12,color:c.muted,marginTop:4},postRow:{gap:12,paddingRight:12},postCard:{width:232,minHeight:138,borderRadius:13,overflow:'hidden',backgroundColor:c.surface},postImage:{width:'100%',height:171,backgroundColor:c.soft},postBody:{padding:13},postType:{fontSize:12,fontWeight:'700',letterSpacing:.6,color:c.accent},postCopy:{fontSize:14,lineHeight:20,fontWeight:'600',color:c.text,marginTop:7},postDate:{fontSize:12,color:c.muted,marginTop:10},menuOverlay:{flex:1,backgroundColor:c.overlay,alignItems:'flex-end'},menuSheet:{width:'88%',maxWidth:390,height:'100%',backgroundColor:c.canvas,paddingHorizontal:18},menuHead:{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:14,paddingTop:8},menuEyebrow:{fontSize:12,fontWeight:'900',letterSpacing:1.4,color:c.accent},menuTitle:{fontSize:22,lineHeight:28,fontWeight:'900',letterSpacing:-.4,color:c.text,marginTop:5},menuClose:{width:44,height:44,borderRadius:15,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},menuCopy:{fontSize:14,lineHeight:20,color:c.textSecondary,marginTop:9,marginBottom:14},menuList:{paddingBottom:28,gap:8},menuItem:{minHeight:68,borderRadius:15,backgroundColor:c.surface,padding:11,flexDirection:'row',alignItems:'center',gap:11},menuItemPressed:{opacity:.7},menuItemIcon:{width:30,height:42,alignItems:'center',justifyContent:'center'},menuItemTitle:{fontSize:13,fontWeight:'900',color:c.text},menuItemCopy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:3},
- categoryRow:{gap:9,paddingRight:12},category:{width:82,alignItems:'center',paddingVertical:5},categoryIcon:{width:54,height:54,borderRadius:18,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},categoryText:{fontSize:12,fontWeight:'800',color:c.text,marginTop:7},press:{opacity:.68},cardPressed:{opacity:.78},
+ root:{flex:1,backgroundColor:c.canvas},safe:{flex:1,backgroundColor:'transparent'},page:{width:'100%',maxWidth:uiTokens.layout.contentMaxWidth,alignSelf:'center',paddingTop:4},
+ topbar:{flexDirection:'row',alignItems:'center',gap:4,minHeight:52},
+ placeRow:{flex:1,minHeight:44,flexDirection:'row',alignItems:'center',gap:5,paddingRight:8},
+ place:{fontSize:16,lineHeight:21,fontWeight:'600',color:c.text,flexShrink:1},
+ weatherInline:{flexDirection:'row',alignItems:'center',gap:4,marginLeft:8,paddingLeft:10,borderLeftWidth:StyleSheet.hairlineWidth,borderLeftColor:c.border},
+ weatherTemp:{fontSize:14,fontWeight:'500',color:c.textSecondary},
+ iconButton:{width:44,height:44,borderRadius:22,alignItems:'center',justifyContent:'center'},
+ dot:{position:'absolute',right:11,top:10,width:8,height:8,borderRadius:4,backgroundColor:c.danger,borderWidth:1.5,borderColor:c.canvas},
+ avatar:{width:36,height:36,marginLeft:4,borderRadius:18,backgroundColor:c.elevated,alignItems:'center',justifyContent:'center',overflow:'hidden'},avatarImage:{width:36,height:36},avatarText:{fontSize:13,fontWeight:'600',color:c.text},
+ hero:{marginTop:desktop?20:8,maxWidth:desktop?720:undefined},
+ greeting:{fontSize:desktop?36:28,lineHeight:desktop?42:34,color:c.text},
+ heroCopy:{fontSize:15,lineHeight:22,color:c.textSecondary,marginTop:6,maxWidth:560},
+ search:{marginTop:18,backgroundColor:c.surface,borderColor:c.border,flexDirection:'row',alignItems:'stretch',overflow:'hidden'},
+ searchMain:{flex:1,flexDirection:'row',alignItems:'center',gap:12,paddingLeft:16,paddingRight:8},
+ searchPressed:{backgroundColor:c.soft},
+ searchText:{flex:1,fontSize:16,color:c.textSecondary},
+ searchDivider:{width:StyleSheet.hairlineWidth,marginVertical:12,backgroundColor:c.border},
+ askButton:{minWidth:72,paddingHorizontal:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6},
+ askText:{fontSize:14,fontWeight:'600',color:c.accent},
+ quickIntentRow:{flexDirection:'row',gap:10,marginTop:12},quickIntentStack:{flexDirection:'column'},quickLiveStacked:{flex:0,minHeight:60},
+ quickIntent:{flex:1,minHeight:60,flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:14,paddingVertical:10},
+ intentCopy:{flex:1,minWidth:0},
+ quickIntentPrimary:{backgroundColor:c.brand},
+ quickLiveGlow:{flex:1},
+ quickIntentLive:{flex:1,height:'100%',backgroundColor:c.surface,borderWidth:StyleSheet.hairlineWidth,borderColor:c.border},
+ quickIntentPrimaryTitle:{fontSize:15,lineHeight:20,fontWeight:'600',color:c.onBrand},
+ quickIntentPrimaryCopy:{fontSize:13,lineHeight:17,color:c.onBrand,opacity:.78,marginTop:1},
+ quickIntentTitle:{fontSize:15,lineHeight:20,fontWeight:'600',color:c.text},
+ liveRow:{flexDirection:'row',alignItems:'center',gap:6,marginTop:1},liveDot:{width:6,height:6,borderRadius:3,backgroundColor:c.secondary},
+ liveIntentCopy:{fontSize:13,lineHeight:17,color:c.textSecondary},
+ actionPressed:{opacity:.84},
+ context:{marginTop:12,minHeight:68,backgroundColor:c.elevated,flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:14,paddingVertical:12},
+ contextIcon:{width:38,height:38,borderRadius:19,backgroundColor:c.accentSoft,alignItems:'center',justifyContent:'center'},
+ contextLabel:{fontSize:12,lineHeight:16,fontWeight:'500',color:c.textSecondary},
+ contextTitle:{fontSize:15,lineHeight:20,fontWeight:'600',color:c.text,marginTop:1},
+ contextDetail:{fontSize:13,lineHeight:18,color:c.textSecondary},
+ rail:{gap:12,paddingRight:16},
+ businessCard:{width:200,overflow:'hidden',backgroundColor:c.surface,borderWidth:StyleSheet.hairlineWidth,borderColor:c.border},
+ businessImage:{width:'100%',height:112},
+ businessFallback:{height:112,alignItems:'center',justifyContent:'center',backgroundColor:c.elevated},
+ monogram:{fontSize:26,lineHeight:32,fontWeight:'600',color:c.accent},
+ cardBody:{paddingHorizontal:12,paddingVertical:11},
+ businessTitleRow:{flexDirection:'row',alignItems:'center',gap:5},
+ cardTitle:{flex:1,fontSize:15,lineHeight:20,fontWeight:'600',color:c.text},
+ cardMeta:{fontSize:13,lineHeight:18,color:c.textSecondary,marginTop:3},
+ emptyLine:{minHeight:56,backgroundColor:c.elevated,paddingHorizontal:16,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
+ emptyText:{fontSize:15,fontWeight:'500',color:c.text},
+ productCard:{width:156},
+ productImage:{width:156,height:156,backgroundColor:c.soft},
+ productFallback:{alignItems:'center',justifyContent:'center'},
+ productBody:{paddingTop:8},
+ productName:{fontSize:14,lineHeight:19,fontWeight:'500',color:c.text,minHeight:38},
+ priceRow:{flexDirection:'row',alignItems:'baseline',gap:6,marginTop:4},
+ productPrice:{fontSize:15,lineHeight:20,fontWeight:'600',color:c.text},
+ wasPrice:{fontSize:13,color:c.textSecondary,textDecorationLine:'line-through'},
+ mediaWarning:{marginBottom:12,minHeight:44,borderRadius:12,backgroundColor:c.elevated,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:9},
+ mediaWarningText:{flex:1,fontSize:13,lineHeight:18,color:c.textSecondary},
+ postCard:{width:236,overflow:'hidden',backgroundColor:c.surface,borderWidth:StyleSheet.hairlineWidth,borderColor:c.border},
+ postImage:{width:'100%',height:168,backgroundColor:c.soft},
+ postType:{fontSize:12,lineHeight:16,fontWeight:'600',color:c.accent},
+ postCopy:{fontSize:14,lineHeight:20,color:c.text,marginTop:5},
+ communityRow:{marginTop:32,paddingVertical:18,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:c.border,flexDirection:'row',alignItems:'center',gap:12},
+ communityTitle:{fontSize:16,lineHeight:21,fontWeight:'600',color:c.text},
+ communityCopy:{fontSize:13,lineHeight:18,color:c.textSecondary,marginTop:2},
+ communityAction:{minHeight:44,paddingHorizontal:14,borderRadius:22,backgroundColor:c.elevated,flexDirection:'row',alignItems:'center',gap:5},
+ communityActionText:{fontSize:14,fontWeight:'600',color:c.text},
+ press:{opacity:.68},cardPressed:{opacity:.8},
 });

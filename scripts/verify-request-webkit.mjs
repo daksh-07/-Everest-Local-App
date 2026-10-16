@@ -43,7 +43,7 @@ try{
   await page.goto(base+'/request');
   const search=page.getByRole('textbox',{name:'Search services'});
   await search.waitFor();await page.getByRole('button',{name:'Car Detailing',exact:true}).waitFor();
-  const next=page.getByRole('button',{name:'CONTINUE',exact:true});
+  const next=page.getByRole('button',{name:'Continue',exact:true});
   assert.equal(await next.isDisabled(),true);
   assert.equal(await page.getByTestId('service-results').count(),0);
   assert.equal(await page.getByRole('textbox',{name:'Suburb',exact:true}).count(),0);
@@ -76,17 +76,17 @@ try{
   await page.screenshot({path:`${artifacts}/location-${width}.png`});
   assert.equal(await page.getByRole('textbox',{name:'Search services'}).count(),0);
   assert.equal(await page.getByRole('textbox',{name:'Job details'}).count(),0);
-  await page.getByRole('textbox',{name:'Street address',exact:true}).fill('12 Railway Street');await page.getByRole('button',{name:'CONFIRM PRECISE ADDRESS',exact:true}).click();await next.click();
+  await page.getByRole('textbox',{name:'Street address',exact:true}).fill('12 Railway Street');await page.getByRole('button',{name:'Confirm precise address',exact:true}).click();await next.click();
   await page.getByText('When do you need it?',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Edit service type',exact:true}).click();
   await page.getByTestId('selected-service').waitFor();assert.equal(await details.inputValue(),'Full interior and exterior detail for my sedan.');
-  await next.click();await next.click();await page.getByRole('button',{name:'POST REQUEST',exact:true}).click();
+  await next.click();await next.click();await page.getByRole('button',{name:'Post request',exact:true}).click();
   await page.getByText('We’re finding the best businesses near you.',{exact:true}).waitFor();
   assert.equal(posted.length,1);assert.equal(posted[0].p_service_definition_id,'detail');assert.equal(posted[0].p_category_id,'auto');assert.equal(posted[0].p_location_confirmed,true);assert.equal(posted[0].p_delivery_mode,'LOCAL');assert.equal(posted[0].p_address_line1,'12 Railway Street');assert.ok(String(posted[0].p_idempotency_key).length>=16);
   assert.equal(taxonomyLoads,1);
   assert.equal(await page.evaluate(()=>globalThis.document.documentElement.scrollWidth>globalThis.innerWidth),false);
   assert.deepEqual(errors,[]);
-  await page.goto(base+'/request');await page.getByRole('textbox',{name:'Search services'}).fill('website');await page.getByRole('button',{name:'Select Web Development',exact:true}).click();await details.fill('Build a small business website.');await next.click();await page.getByText('Remote request — no GPS or local address is required.',{exact:true}).waitFor();await next.click();await page.getByRole('button',{name:'POST REQUEST',exact:true}).click();await page.getByText('We’re finding the best businesses near you.',{exact:true}).waitFor();assert.equal(posted[1].p_delivery_mode,'REMOTE');assert.equal(posted[1].p_suburb,null);
+  await page.goto(base+'/request');await page.getByRole('textbox',{name:'Search services'}).fill('website');await page.getByRole('button',{name:'Select Web Development',exact:true}).click();await details.fill('Build a small business website.');await next.click();await page.getByText('Remote request — no GPS or local address is required.',{exact:true}).waitFor();await next.click();await page.getByRole('button',{name:'Post request',exact:true}).click();await page.getByText('We’re finding the best businesses near you.',{exact:true}).waitFor();assert.equal(posted[1].p_delivery_mode,'REMOTE');assert.equal(posted[1].p_suburb,null);
   console.log(`PASS ${width}px: bounded search, selection, back/edit persistence, isolated steps, local/remote submission payloads, no page errors`);
   await context.close();
  }

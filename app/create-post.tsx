@@ -1,9 +1,10 @@
+import {HeaderTextAction} from '@/components/ui/ScreenHeader';
 import {useEffect,useMemo,useState} from 'react';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router,useLocalSearchParams} from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import {createPost,type PostType} from '@/lib/social';
@@ -15,6 +16,7 @@ import {SoundPicker} from '@/components/SoundPicker';
 import {PhotoSoundPreview} from '@/components/PhotoSoundPreview';
 import {draftFromReusableSound,publishDraftSound,setPhotoPostDuration,type DraftSound} from '@/lib/audio-studio';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Identity={kind:'PERSONAL';id:string;name:string}|{kind:'BUSINESS';id:string;name:string;business:BusinessWorkspace};
 type Listing={id:string;name:string};
@@ -50,7 +52,7 @@ export default function CreatePost(){
   const list:Identity[]=[{kind:'PERSONAL',id:user.id,name:profile?.full_name||'My profile'},...ctx.businesses.filter(b=>b.can_manage_catalog).map(b=>({kind:'BUSINESS' as const,id:b.id,name:b.name,business:b}))];
   setIdentities(list);const preferred=ctx.mode==='BUSINESS'&&ctx.active_business_id?list.find(i=>i.kind==='BUSINESS'&&i.id===ctx.active_business_id):list[0];setIdentity(preferred??list[0]);
   if(profile?.suburb||profile?.city){const profileLocation=[profile?.suburb,profile?.city&&profile.city!==profile.suburb?profile.city:'',profile?.state,profile?.country].filter(Boolean).join(', ');setLocation(current=>current.trim()?current:profileLocation);}
- }catch(e){setError(e instanceof Error?e.message:'Post composer could not be opened.')}finally{setLoading(false)}})();return()=>{active=false}},[]);
+ }catch(e){setError(userMessage(e,'Post composer could not be opened.'))}finally{setLoading(false)}})();return()=>{active=false}},[]);
 
  useEffect(()=>{let active=true;(async()=>{if(identity?.kind!=='BUSINESS'){setServices([]);setProducts([]);setServiceId(null);setProductId(null);return;}
   const [sr,pr]=await Promise.all([
@@ -60,7 +62,7 @@ export default function CreatePost(){
   if(!active)return;if(!sr.error)setServices((sr.data??[]) as Listing[]);if(!pr.error)setProducts((pr.data??[]) as Listing[]);setVisibility('PUBLIC');
  })();return()=>{active=false}},[identity]);
  useEffect(()=>{if(params.intent==='question')setType('QUESTION');else if(params.intent==='update')setType('UPDATE')},[params.intent]);
- useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active){if(next.source==='VOICEOVER')setVoiceover(next);else setSound(next)}}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Sound could not be loaded.')});return()=>{active=false}},[params.soundId]);
+ useEffect(()=>{if(!params.soundId)return;let active=true;void draftFromReusableSound(params.soundId).then(next=>{if(active){if(next.source==='VOICEOVER')setVoiceover(next);else setSound(next)}}).catch(e=>{if(active)setError(userMessage(e,'Sound could not be loaded.'))});return()=>{active=false}},[params.soundId]);
 
  const choices=identity?.kind==='BUSINESS'?businessChoices:personalChoices;
  const selectedChoice=choices.find(x=>x.type===type)??choices[0];
@@ -73,12 +75,12 @@ export default function CreatePost(){
   try{
    const r=await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],allowsMultipleSelection:true,selectionLimit:10-photos.length,quality:.86});
    if(!r.canceled&&r.assets.length){setPhotos(v=>[...v,...r.assets].slice(0,10));void haptic.selection();}
-  }catch(e){setError(e instanceof Error?e.message:'Photos could not be opened. Try again.');}
+  }catch(e){setError(userMessage(e,'Photos could not be opened. Try again.'));}
  }
  async function takePhoto(){
   if(photos.length>=10||Platform.OS==='web')return;setError('');
   const permission=await ImagePicker.requestCameraPermissionsAsync();if(!permission.granted){setError('Camera access is required to take a photo.');return;}
-  try{const r=await ImagePicker.launchCameraAsync({mediaTypes:['images'],quality:.86});if(!r.canceled&&r.assets[0]){setPhotos(v=>[...v,r.assets[0]].slice(0,10));void haptic.selection();}}catch(e){setError(e instanceof Error?e.message:'Camera could not be opened.');}
+  try{const r=await ImagePicker.launchCameraAsync({mediaTypes:['images'],quality:.86});if(!r.canceled&&r.assets[0]){setPhotos(v=>[...v,r.assets[0]].slice(0,10));void haptic.selection();}}catch(e){setError(userMessage(e,'Camera could not be opened.'));}
  }
  function chooseType(choice:ComposerChoice){setType(choice.type);setError('');void haptic.selection();}
  function removePhoto(index:number){setPhotos(v=>v.filter((_,x)=>x!==index));void haptic.light();}
@@ -97,19 +99,19 @@ export default function CreatePost(){
    await haptic.success();router.replace('/social');
   }catch(e){
    if(createdId){try{await supabase.from('posts').update({status:'REMOVED',updated_at:new Date().toISOString()}).eq('id',createdId)}catch{void 0}}
-   void haptic.warning();setError(e instanceof Error?e.message:'Post could not be published.');
+   void haptic.warning();setError(userMessage(e,'Post could not be published.'));
   }finally{setBusy(false);setProgress('');}
  }
 
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">
   <View style={s.header}>
-   <Pressable onPress={()=>router.back()} style={s.headerIcon}><Ionicons name="close" size={24} color={colors.text}/></Pressable>
+   <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={()=>router.back()} style={s.headerIcon}><Ionicons name="close" size={24} color={colors.text}/></Pressable>
    <Text style={s.headerTitle}>Create post</Text>
-   <Pressable disabled={busy||loading} onPress={()=>void publish()} style={[s.postTop,(busy||loading)&&s.dim]}><Text style={s.postTopText}>{busy?'POSTING':'POST'}</Text></Pressable>
+   <HeaderTextAction label="Post" busyLabel="Posting" busy={busy} disabled={loading} onPress={()=>void publish()}/>
   </View>
 
   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:60}}/>:<>
-   <Text style={s.eyebrow}>POSTING AS</Text>
+   <Text style={s.eyebrow}>Posting as</Text>
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.identityRail}>
     {identities.map(i=>{const selected=i.id===identity?.id&&i.kind===identity?.kind;return <Pressable key={i.kind+i.id} onPress={()=>{setIdentity(i);setType(i.kind==='BUSINESS'?'COMPLETED_WORK':'UPDATE');setShowServicePicker(false);setShowProductPicker(false);void haptic.selection();}} style={[s.identityPill,selected&&s.identityPillActive]}>
      <View style={[s.identityPillIcon,selected&&s.identityPillIconActive]}><Ionicons name={i.kind==='BUSINESS'?'business-outline':'person-outline'} size={18} color={selected?colors.onBrand:colors.text}/></View>
@@ -122,7 +124,7 @@ export default function CreatePost(){
     <View style={s.composerFooter}><Text style={s.counter}>{caption.length}/3000</Text></View>
    </View>
 
-   <Text style={s.sectionTitle}>POST TYPE</Text>
+   <Text style={s.sectionTitle}>Post type</Text>
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.intentRail}>
     {choices.map(choice=><Pressable key={choice.type} onPress={()=>chooseType(choice)} style={[s.intentCard,type===choice.type&&s.intentCardActive]}>
      <Ionicons name={choice.icon} size={19} color={type===choice.type?colors.onBrand:colors.text}/>
@@ -131,12 +133,12 @@ export default function CreatePost(){
    </ScrollView>
    <Text style={s.intentHint}>{selectedChoice.hint}</Text>
 
-   <Text style={s.sectionTitle}>MEDIA</Text>
+   <Text style={s.sectionTitle}>Media</Text>
    {photos.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.photoRow}>{photos.map((p,i)=><View key={p.assetId??p.uri} style={s.photoWrap}>
     <Image source={{uri:p.uri}} style={s.photo}/>
-    {i===0?<View style={s.cover}><Text style={s.coverText}>COVER</Text></View>:null}
-    <Pressable onPress={()=>removePhoto(i)} style={s.remove}><Ionicons name="close" size={15} color="#fff"/></Pressable>
-    <View style={s.reorder}>{i>0?<Pressable onPress={()=>move(i,-1)}><Ionicons name="chevron-back-circle" size={25} color="#fff"/></Pressable>:<View/>}{i<photos.length-1?<Pressable onPress={()=>move(i,1)}><Ionicons name="chevron-forward-circle" size={25} color="#fff"/></Pressable>:null}</View>
+    {i===0?<View style={s.cover}><Text style={s.coverText}>Cover</Text></View>:null}
+    <Pressable accessibilityRole="button" accessibilityLabel={`Remove photo ${i+1}`} onPress={()=>removePhoto(i)} style={s.remove}><Ionicons name="close" size={15} color="#fff"/></Pressable>
+    <View style={s.reorder}>{i>0?<Pressable accessibilityRole="button" accessibilityLabel={`Move photo ${i+1} earlier`} hitSlop={10} onPress={()=>move(i,-1)}><Ionicons name="chevron-back-circle" size={25} color="#fff"/></Pressable>:<View/>}{i<photos.length-1?<Pressable accessibilityRole="button" accessibilityLabel={`Move photo ${i+1} later`} hitSlop={10} onPress={()=>move(i,1)}><Ionicons name="chevron-forward-circle" size={25} color="#fff"/></Pressable>:null}</View>
    </View>)}</ScrollView>:<Pressable onPress={()=>void pickLibrary()} style={s.mediaHero}>
     <View style={s.mediaHeroIcon}><Ionicons name="images-outline" size={27} color={colors.accent}/></View>
     <Text style={s.mediaHeroTitle}>Add photos</Text><Text style={s.mediaHeroCopy}>Show the work, moment or place. Up to 10 photos.</Text>
@@ -148,7 +150,7 @@ export default function CreatePost(){
    {photos[0]&&(sound||voiceover)?<PhotoSoundPreview imageUri={photos[0].uri} sound={sound} voiceover={voiceover} durationMs={photoDuration} onEditSound={()=>setSoundOpen(true)}/>:null}
 
    <View style={s.addToPost}>
-    <Text style={s.addTitle}>POST DETAILS</Text>
+    <Text style={s.addTitle}>Post details</Text>
     <Pressable onPress={()=>{if(!photos.length){setError('Add a photo first, then choose its sound.');return}setError('');setSoundOpen(true)}} style={[s.detailRow,!photos.length&&{opacity:.5}]}><View style={s.detailIcon}><Ionicons name={sound?.source==='VOICEOVER'?'mic-outline':sound?.source==='USER_UPLOAD'?'cloud-upload-outline':'musical-notes-outline'} size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.detailText}>{sound?sound.title:voiceover?'Voiceover added':'Add sound'}</Text><Text style={s.musicArtist}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase())+(voiceover?' · voiceover also added':''):(voiceover?'Voiceover · tap to add music or upload':photos.length?'Music · Upload · Voiceover':'Add a photo first')}</Text></View>{(sound||voiceover)?<View style={s.soundDuration}><Text style={s.soundDurationText}>{photoDuration/1000}s</Text></View>:null}<Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>
     <Pressable onPress={()=>setShowDetails(v=>!v)} style={s.detailRow}><View style={s.detailIcon}><Ionicons name="location-outline" size={19} color={colors.text}/></View><Text style={s.detailText}>{location||'Location'}</Text><Ionicons name={showDetails?'chevron-up':'chevron-down'} size={18} color={colors.muted}/></Pressable>
     {showDetails?<View style={s.detailPanel}><TextInput value={location} onChangeText={setLocation} maxLength={120} placeholder="Add suburb or area (optional)" placeholderTextColor={colors.muted} style={[s.input,Platform.OS==='web'&&({outlineStyle:'none'} as object)]}/>{identity?.kind==='PERSONAL'?<View style={s.visibilityRow}><Text style={s.detailLabel}>Audience</Text><Pressable onPress={()=>setVisibility(visibility==='PUBLIC'?'FOLLOWERS':'PUBLIC')} style={s.audience}><Ionicons name={visibility==='PUBLIC'?'globe-outline':'people-outline'} size={16} color={colors.text}/><Text style={s.audienceText}>{visibility==='PUBLIC'?'Public':'Connections'}</Text></Pressable></View>:null}</View>:null}
@@ -165,7 +167,7 @@ export default function CreatePost(){
 
    {progress?<Text style={s.note}>{progress}</Text>:null}{error?<Text style={s.error}>{error}</Text>:null}
    <SoundPicker visible={soundOpen} value={sound} onChange={setSound} voiceover={voiceover} onVoiceoverChange={setVoiceover} onClose={()=>setSoundOpen(false)} photoMode photoDurationMs={photoDuration} onPhotoDurationChange={setPhotoDuration}/>
-   <Pressable disabled={busy} onPress={()=>void publish()} style={[s.primary,busy&&s.dim]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<><Ionicons name="paper-plane-outline" size={18} color={colors.onBrand}/><Text style={s.primaryText}>PUBLISH POST</Text></>}</Pressable>
+   <Pressable disabled={busy} onPress={()=>void publish()} style={[s.primary,busy&&s.dim]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<><Ionicons name="paper-plane-outline" size={18} color={colors.onBrand}/><Text style={s.primaryText}>Publish post</Text></>}</Pressable>
   </>}
  </ScrollView></SafeAreaView>;
 }
@@ -173,18 +175,18 @@ export default function CreatePost(){
 const styles=(c:ThemeColors)=>StyleSheet.create({
  safe:{flex:1,backgroundColor:c.canvas},page:{paddingHorizontal:16,paddingBottom:70,maxWidth:720,width:'100%',alignSelf:'center'},
  header:{height:62,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},headerIcon:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:'transparent'},
- headerTitle:{fontSize:20,fontWeight:'900',letterSpacing:-.45,color:c.text},postTop:{minHeight:38,paddingHorizontal:10,borderRadius:19,backgroundColor:'transparent',alignItems:'center',justifyContent:'center'},postTopText:{fontSize:12,fontWeight:'900',letterSpacing:.9,color:c.accent},dim:{opacity:.5},
- eyebrow:{fontSize:12,fontWeight:'900',letterSpacing:2,color:c.muted,marginTop:15,marginBottom:10},
+ headerTitle:{fontSize:20,fontWeight:'900',letterSpacing:-.45,color:c.text},postTop:{minHeight:38,paddingHorizontal:10,borderRadius:19,backgroundColor:'transparent',alignItems:'center',justifyContent:'center'},postTopText:{fontSize:12,fontWeight:'900',color:c.accent},dim:{opacity:.5},
+ eyebrow:{fontSize:12,fontWeight:'900',color:c.muted,marginTop:15,marginBottom:10},
  identityRail:{gap:9,paddingRight:12},identityPill:{minHeight:52,maxWidth:260,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:12,flexDirection:'row',alignItems:'center',gap:9},identityPillActive:{borderColor:c.brand,backgroundColor:c.soft},identityPillIcon:{width:34,height:34,borderRadius:12,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},identityPillIconActive:{backgroundColor:c.brand},identityPillText:{fontSize:12,fontWeight:'900',color:c.text,maxWidth:190},identityPillTextActive:{color:c.text},
  identityLine:{flexDirection:'row',alignItems:'center',gap:11,paddingVertical:14},avatar:{width:42,height:42,borderRadius:21,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},identityName:{fontSize:14,fontWeight:'900',color:c.text},identityMeta:{fontSize:12,color:c.muted,marginTop:2},
  switcher:{gap:6},switchChip:{borderWidth:1,borderColor:c.border,borderRadius:16,minHeight:32,paddingHorizontal:11,alignItems:'center',justifyContent:'center',maxWidth:100},switchText:{fontSize:12,fontWeight:'800',color:c.text},
- sectionTitle:{fontSize:12,fontWeight:'900',letterSpacing:1.8,color:c.muted,marginTop:20,marginBottom:10},intentRail:{gap:8,paddingRight:12},intentCard:{minHeight:44,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:7},intentCardActive:{backgroundColor:c.soft,borderColor:c.brand},intentText:{fontSize:12,fontWeight:'900',color:c.text},intentTextActive:{color:c.text},intentHint:{fontSize:12,lineHeight:17,color:c.muted,marginTop:7},
+ sectionTitle:{fontSize:12,fontWeight:'900',color:c.muted,marginTop:20,marginBottom:10},intentRail:{gap:8,paddingRight:12},intentCard:{minHeight:44,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:7},intentCardActive:{backgroundColor:c.soft,borderColor:c.brand},intentText:{fontSize:12,fontWeight:'900',color:c.text},intentTextActive:{color:c.text},intentHint:{fontSize:12,lineHeight:17,color:c.muted,marginTop:7},
  composerCard:{marginTop:10,borderWidth:1,borderColor:c.border,borderRadius:20,backgroundColor:c.surface,overflow:'hidden',shadowColor:'#000',shadowOpacity:.1,shadowRadius:14,shadowOffset:{width:0,height:7}},caption:{minHeight:118,fontSize:17,lineHeight:25,color:c.text,textAlignVertical:'top',paddingHorizontal:16,paddingTop:16,paddingBottom:6,borderWidth:0},composerFooter:{height:28,paddingHorizontal:14,alignItems:'flex-end',justifyContent:'center'},counter:{fontSize:12,color:c.muted},
  mediaHero:{minHeight:102,borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',padding:14},mediaHeroIcon:{width:42,height:42,borderRadius:21,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},mediaHeroTitle:{fontSize:14,fontWeight:'900',color:c.text,marginTop:7},mediaHeroCopy:{fontSize:14,lineHeight:20,color:c.muted,textAlign:'center',marginTop:2},
- photoRow:{gap:10,paddingRight:12},photoWrap:{width:220,height:220,borderRadius:18,overflow:'hidden',position:'relative',backgroundColor:c.surface},photo:{width:'100%',height:'100%'},cover:{position:'absolute',left:9,top:9,borderRadius:10,backgroundColor:'rgba(0,0,0,.72)',paddingHorizontal:8,paddingVertical:5},coverText:{fontSize:12,fontWeight:'900',letterSpacing:.8,color:'#fff'},remove:{position:'absolute',top:8,right:8,width:30,height:30,borderRadius:15,backgroundColor:'rgba(0,0,0,.72)',alignItems:'center',justifyContent:'center'},reorder:{position:'absolute',bottom:9,left:9,right:9,flexDirection:'row',justifyContent:'space-between'},
+ photoRow:{gap:10,paddingRight:12},photoWrap:{width:220,height:220,borderRadius:18,overflow:'hidden',position:'relative',backgroundColor:c.surface},photo:{width:'100%',height:'100%'},cover:{position:'absolute',left:9,top:9,borderRadius:10,backgroundColor:'rgba(0,0,0,.72)',paddingHorizontal:8,paddingVertical:5},coverText:{fontSize:12,fontWeight:'900',color:'#fff'},remove:{position:'absolute',top:8,right:8,width:30,height:30,borderRadius:15,backgroundColor:'rgba(0,0,0,.72)',alignItems:'center',justifyContent:'center'},reorder:{position:'absolute',bottom:9,left:9,right:9,flexDirection:'row',justifyContent:'space-between'},
  mediaActions:{flexDirection:'row',gap:9,marginTop:10},mediaButton:{flex:1,minHeight:48,borderWidth:1,borderColor:c.border,borderRadius:16,backgroundColor:c.surface,paddingHorizontal:14,flexDirection:'row',gap:8,alignItems:'center',justifyContent:'center'},mediaText:{fontSize:12,fontWeight:'900',color:c.text},
- addToPost:{marginTop:22,borderWidth:1,borderColor:c.border,borderRadius:20,backgroundColor:c.surface,overflow:'hidden'},addTitle:{fontSize:12,fontWeight:'900',letterSpacing:1.6,color:c.muted,paddingHorizontal:15,paddingTop:15,paddingBottom:8},detailRow:{minHeight:52,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:10,borderTopWidth:1,borderTopColor:c.border},detailIcon:{width:34,height:34,borderRadius:17,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},detailText:{fontSize:12,fontWeight:'700',color:c.text},musicArtist:{fontSize:12,color:c.muted,marginTop:2},soundDuration:{height:26,borderRadius:13,backgroundColor:c.soft,paddingHorizontal:8,alignItems:'center',justifyContent:'center'},soundDurationText:{fontSize:12,fontWeight:'900',color:c.text},detailPanel:{paddingHorizontal:13,paddingBottom:12},input:{minHeight:48,borderWidth:1,borderColor:c.border,borderRadius:13,backgroundColor:c.input,color:c.text,paddingHorizontal:13,fontSize:16},visibilityRow:{marginTop:10,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},detailLabel:{fontSize:14,fontWeight:'800',color:c.muted},audience:{minHeight:36,borderRadius:18,borderWidth:1,borderColor:c.border,paddingHorizontal:11,flexDirection:'row',alignItems:'center',gap:6},audienceText:{fontSize:12,fontWeight:'800',color:c.text},
+ addToPost:{marginTop:22,borderWidth:1,borderColor:c.border,borderRadius:20,backgroundColor:c.surface,overflow:'hidden'},addTitle:{fontSize:12,fontWeight:'900',color:c.muted,paddingHorizontal:15,paddingTop:15,paddingBottom:8},detailRow:{minHeight:52,paddingHorizontal:13,flexDirection:'row',alignItems:'center',gap:10,borderTopWidth:1,borderTopColor:c.border},detailIcon:{width:34,height:34,borderRadius:17,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},detailText:{fontSize:12,fontWeight:'700',color:c.text},musicArtist:{fontSize:12,color:c.muted,marginTop:2},soundDuration:{height:26,borderRadius:13,backgroundColor:c.soft,paddingHorizontal:8,alignItems:'center',justifyContent:'center'},soundDurationText:{fontSize:12,fontWeight:'900',color:c.text},detailPanel:{paddingHorizontal:13,paddingBottom:12},input:{minHeight:48,borderWidth:1,borderColor:c.border,borderRadius:13,backgroundColor:c.input,color:c.text,paddingHorizontal:13,fontSize:16},visibilityRow:{marginTop:10,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},detailLabel:{fontSize:14,fontWeight:'800',color:c.muted},audience:{minHeight:36,borderRadius:18,borderWidth:1,borderColor:c.border,paddingHorizontal:11,flexDirection:'row',alignItems:'center',gap:6},audienceText:{fontSize:12,fontWeight:'800',color:c.text},
  linkRail:{gap:7,paddingHorizontal:12,paddingBottom:12},linkChip:{minHeight:36,borderRadius:18,borderWidth:1,borderColor:c.border,paddingHorizontal:12,alignItems:'center',justifyContent:'center'},linkChipActive:{borderColor:c.brand,backgroundColor:c.soft},linkText:{fontSize:12,fontWeight:'900',color:c.text},
  afterWork:{marginTop:14,borderRadius:16,backgroundColor:c.soft,padding:14,flexDirection:'row',gap:10,alignItems:'flex-start'},afterWorkTitle:{fontSize:12,fontWeight:'900',color:c.text},afterWorkCopy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:3},
- note:{fontSize:12,lineHeight:17,color:c.muted,marginTop:12},error:{fontSize:14,lineHeight:20,color:c.danger,marginTop:13},primary:{minHeight:56,borderRadius:18,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginTop:20,flexDirection:'row',gap:8},primaryText:{fontSize:14,fontWeight:'900',letterSpacing:.7,color:c.onBrand}
+ note:{fontSize:12,lineHeight:17,color:c.muted,marginTop:12},error:{fontSize:14,lineHeight:20,color:c.danger,marginTop:13},primary:{minHeight:56,borderRadius:18,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginTop:20,flexDirection:'row',gap:8},primaryText:{fontSize:14,fontWeight:'900',color:c.onBrand}
 });

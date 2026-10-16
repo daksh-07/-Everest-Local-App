@@ -5,12 +5,11 @@ import { AppText as Text } from '@/components/ui/AppText';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
-import { DraggableAskEverest } from '@/components/DraggableAskEverest';
 import { BusinessOpportunityAlert } from '@/components/BusinessOpportunityAlert';
 import { EverestLiveMiniPlayer } from '@/components/EverestLiveMiniPlayer';
 import type { AccessContext } from '@/lib/access';
 import { ThemeProvider,useAppTheme } from '@/lib/theme';
-import {dark as darkPalette} from '@/lib/theme-colors';
+import {dark as darkPalette,light as lightPalette} from '@/lib/theme-colors';
 import {useReducedMotion} from '@/lib/motion';
 import {ExperienceProvider} from '@/lib/experience';
 import {GlobalSwipeNavigator} from '@/components/GlobalSwipeNavigator';
@@ -28,14 +27,14 @@ const deliveryRoutes = new Set(['/delivery','/driver-dashboard']);
 const driverApplicationRoutes = new Set(['/driver-onboarding']);
 
 function StartupError({ onRetry }: { onRetry: () => void }) {
-  const {colors}=useAppTheme();return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>EVEREST LOCAL</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>We could not load your account access right now. Please retry.</Text><Pressable onPress={onRetry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>RETRY</Text></Pressable></View>;
+  const {colors}=useAppTheme();return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>Everest Local</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>We could not load your account access right now. Please retry.</Text><Pressable onPress={onRetry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>Retry</Text></Pressable></View>;
 }
 function sanitizeDebug(value: string) { return value.replace(/https?:\/\/[^\s)]+/gi,'[url]').replace(/(anon[_-]?key|service[_-]?role|secret|password|token)=?[^\s&]+/gi,'$1=[redacted]'); }
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
-  const dark=useColorScheme()==='dark';const colors=dark?{canvas:darkPalette.canvas,text:darkPalette.text,muted:darkPalette.muted}:{canvas:'#f8f7f4',text:'#171715',muted:'#77736c'};
+  const dark=useColorScheme()==='dark';const colors=dark?{canvas:darkPalette.canvas,text:darkPalette.text,muted:darkPalette.muted}:{canvas:lightPalette.canvas,text:lightPalette.text,muted:lightPalette.textSecondary};
   const pathname=usePathname();const message=sanitizeDebug(error?.message||String(error)||'Unknown runtime error.');const stack=sanitizeDebug(error?.stack||'');
   if(typeof console!=='undefined') console.error('[Everest Local runtime error]',{pathname,name:error?.name,message,stack});
-  return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>EVEREST LOCAL</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>The app hit an unexpected problem. Retry to continue.</Text><Pressable onPress={retry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>RETRY</Text></Pressable></View>;
+  return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>Everest Local</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>The app hit an unexpected problem. Retry to continue.</Text><Pressable onPress={retry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>Retry</Text></Pressable></View>;
 }
 function ThemedRootLayout() {
   const pathname=usePathname();const nav=useRouter();
@@ -109,8 +108,8 @@ function ThemedRootLayout() {
   },[pathname,authInitialized,supabaseConfigured,sessionUserId,access,startupError,nav]);
 
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
-  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><GlobalSwipeNavigator key={sessionUserId??'guest'}><Stack screenOptions={{headerShown:false,animation:reducedMotion?'none':Platform.OS==='ios'?'default':'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}><Stack.Screen name="create" options={{presentation:'transparentModal',animation:reducedMotion?'none':'fade',contentStyle:{backgroundColor:'transparent'}}}/></Stack></GlobalSwipeNavigator>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="auto" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}{sessionUserId?<BusinessOpportunityAlert/>:null}{sessionUserId?<EverestLiveMiniPlayer/>:null}<DraggableAskEverest pathname={pathname}/><PwaInstallPrompt/></View>;
+  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><GlobalSwipeNavigator key={sessionUserId??'guest'}><Stack screenOptions={{headerShown:false,animation:reducedMotion?'none':Platform.OS==='ios'?'default':'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}><Stack.Screen name="create" options={{presentation:'transparentModal',animation:reducedMotion?'none':'fade',contentStyle:{backgroundColor:'transparent'}}}/></Stack></GlobalSwipeNavigator>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="auto" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}{sessionUserId?<BusinessOpportunityAlert/>:null}{sessionUserId?<EverestLiveMiniPlayer/>:null}<PwaInstallPrompt/></View>;
 }
 export default function RootLayout(){return <GestureHandlerRootView style={styles.root}><FontProvider><ThemeProvider><ExperienceProvider><ThemedRootLayout/></ExperienceProvider></ThemeProvider></FontProvider></GestureHandlerRootView>}
 
-const styles=StyleSheet.create({root:{flex:1},overlay:{position:'absolute',top:0,right:0,bottom:0,left:0,zIndex:5000,elevation:40},errorScreen:{flex:1,backgroundColor:'#f8f7f4',padding:24,justifyContent:'center',alignItems:'center'},eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:2,color:'#777'},errorTitle:{maxWidth:520,marginTop:10,fontSize:25,lineHeight:31,fontWeight:'900',textAlign:'center'},errorCopy:{maxWidth:520,marginTop:10,color:'#777',fontSize:13,lineHeight:20,textAlign:'center'},retryButton:{marginTop:20,paddingVertical:12,paddingHorizontal:16},retry:{fontSize:12,fontWeight:'900',letterSpacing:.8}});
+const styles=StyleSheet.create({root:{flex:1},overlay:{position:'absolute',top:0,right:0,bottom:0,left:0,zIndex:5000,elevation:40},errorScreen:{flex:1,backgroundColor:lightPalette.canvas,padding:24,justifyContent:'center',alignItems:'center'},eyebrow:{fontSize:12,fontWeight:'700',color:lightPalette.textSecondary},errorTitle:{maxWidth:520,marginTop:10,fontSize:25,lineHeight:31,fontWeight:'900',textAlign:'center'},errorCopy:{maxWidth:520,marginTop:10,color:lightPalette.textSecondary,fontSize:13,lineHeight:20,textAlign:'center'},retryButton:{marginTop:20,paddingVertical:12,paddingHorizontal:16},retry:{fontSize:12,fontWeight:'900'}});

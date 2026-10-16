@@ -99,8 +99,8 @@ test('local requests require and persist a precise geocoded service address',()=
  assert.match(preciseMigration,/service_address_label text/);
  assert.match(preciseMigration,/p_latitude is null or p_longitude is null/);
  assert.match(preciseMigration,/A precise service location is required for local service/);
- assert.match(request,/USE PRECISE LOCATION/);
- assert.match(request,/CONFIRM PRECISE ADDRESS/);
+ assert.match(request,/USE PRECISE LOCATION/i);
+ assert.match(request,/CONFIRM PRECISE ADDRESS/i);
  assert.match(request,/serviceAddressLabel/);
 });
 
@@ -110,8 +110,13 @@ test('Everest Live requires the confirmed precise pin and uses real map points',
  assert.match(screen,/LiveSearchMap/);
  assert.match(nativeMap,/MapView/);
  assert.match(nativeMap,/Circle/);
- assert.match(webMap,/basemaps\.cartocdn\.com\/dark_all/);
- assert.match(webMap,/OpenStreetMap contributors · © CARTO/);
+ // Keyless CARTO tiles now render 'API KEY REQUIRED'; the basemap is configured, never hard-coded,
+ // and attribution appears only with tiles that actually loaded from that provider.
+ assert.doesNotMatch(webMap,/basemaps\.cartocdn\.com/);
+ assert.match(webMap,/process\.env\.EXPO_PUBLIC_LIVE_MAP_TILE_URL/);
+ assert.match(webMap,/TILE_TEMPLATE&&TILE_ATTRIBUTION\?/);
+ // The search ring is drawn at the real radius for the zoom level.
+ assert.match(webMap,/radiusPx=radiusKm\*1000\/metersPerPixel\(customer\.latitude,zoom\)/);
  assert.doesNotMatch(nativeMap,/Math\.random|mock|fake/i);
  assert.doesNotMatch(webMap,/Math\.random|mockProvider|fakeProvider/i);
 });
@@ -141,7 +146,7 @@ test('selected business gets exact booked address, not pre-booking candidates',(
  assert.match(fn,/b\.status::text<>'CANCELLED'/);
  assert.match(fn,/r\.service_address_label,r\.latitude,r\.longitude/);
  assert.match(businessJob,/getBookingServiceLocation/);
- assert.match(businessJob,/OPEN DIRECTIONS/);
+ assert.match(businessJob,/OPEN DIRECTIONS/i);
 });
 
 test('Live offers expose real ETA without exposing the customer home address',()=>{

@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import type {LiveMapPoint} from '@/lib/everest-live';
 import {useAppTheme} from '@/lib/theme';
 
@@ -14,4 +14,4 @@ export function LiveSearchMap({customer,businesses,radiusKm}:{customer:LiveMapPo
   <Text style={[s.copy,{color:colors.muted}]}>{businesses.length} mapped · {Math.max(1,Math.round(radiusKm))} km search</Text>
  </View>;
 }
-const s=StyleSheet.create({root:{...StyleSheet.absoluteFillObject,borderWidth:1,alignItems:'center',justifyContent:'center'},title:{fontSize:13,fontWeight:'900',marginTop:8},copy:{fontSize:10,marginTop:4}});
+const s=StyleSheet.create({root:{...StyleSheet.absoluteFillObject,borderWidth:1,alignItems:'center',justifyContent:'center'},title:{fontSize:13,fontWeight:'900',marginTop:8},copy:{fontSize:12,marginTop:4}});

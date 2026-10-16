@@ -15,7 +15,7 @@ test('paid memberships require customer-owned explicit checkout approval',()=>{
  assert.match(migration,/where id=p_membership_id and customer_id=auth\.uid\(\) for update/);
  assert.match(billing,/action==='START_MEMBERSHIP'/);
  assert.match(billing,/mode:'subscription'/);
- assert.match(wallet,/REVIEW & APPROVE/);
+ assert.match(wallet,/REVIEW & APPROVE/i);
  assert.match(businessGrowth,/This action never charges them/);
  assert.doesNotMatch(migration,/grant (insert|update|delete) on public\.customer_memberships to authenticated/i);
 });
@@ -86,7 +86,7 @@ test('public plans are self-service without bypassing explicit consent',()=>{
  assert.match(migration,/p0\.visibility='PUBLIC'/);
  assert.match(migration,/status in \('INVITED','INCOMPLETE','TRIALING','ACTIVE','PAST_DUE','PAUSED','CANCEL_AT_PERIOD_END'\)/);
  assert.match(growth,/createPublicMembershipEnrollment/);
- assert.match(profile,/JOIN & REVIEW BILLING/);
+ assert.match(profile,/JOIN & REVIEW BILLING/i);
  assert.match(profile,/approveMembership\(membershipId\)/);
- assert.match(profile,/BUY PACKAGE/);
+ assert.match(profile,/BUY PACKAGE/i);
 });

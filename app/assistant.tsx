@@ -3,7 +3,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollVie
 import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { router } from 'expo-router';
 import { supabase, supabaseConfigured } from '@/lib/supabase';
 import { useAppTheme, type ThemeColors } from '@/lib/theme';
@@ -193,7 +193,7 @@ export default function Assistant() {
       ]);
     } catch (e) {
       setError('Everest AI is temporarily unavailable. Your marketplace, bookings, orders and messages are still available.');
-      if (__DEV__) console.warn('[Ask Everest] request failed', e instanceof Error ? e.message : 'unknown error');
+      if (__DEV__) console.warn('[Ask Everest] request failed', e instanceof Error?e.message:'unknown error');
     } finally {
       busyRef.current = false;
       setBusy(false);
@@ -310,7 +310,7 @@ export default function Assistant() {
                     )}
 
                     <View style={message.role === 'user' ? s.userBubble : s.assistantBubble}>
-                      {message.role === 'assistant' && <Text style={s.assistantLabel}>EVEREST</Text>}
+                      {message.role === 'assistant' && <Text style={s.assistantLabel}>Everest</Text>}
                       <Text style={message.role === 'user' ? s.userText : s.assistantText}>{message.text}</Text>
 
                       {!!message.actions?.length && (
@@ -486,7 +486,6 @@ const createStyles = (c: ThemeColors) =>
       color:c.accent,
       fontSize: 12,
       fontWeight: '900',
-      letterSpacing: 1.8,
       marginBottom: 10,
     },
     heroTitle: {
@@ -588,7 +587,6 @@ const createStyles = (c: ThemeColors) =>
       color: c.muted,
       fontSize: 14,
       fontWeight: '900',
-      letterSpacing: 1.35,
       marginBottom: 7,
     },
     userText: { color: c.text, fontSize: 15, lineHeight: 21 },

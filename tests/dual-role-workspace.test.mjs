@@ -38,7 +38,7 @@ test('workspace architecture preserves customer and business modes',()=>{
 test('business navigation is operationally distinct and work-first',()=>{
  for(const label of ['Today','Jobs','Calendar','Inbox','Business']) assert.match(tabbar,new RegExp("label:'"+label+"'"));
  assert.doesNotMatch(tabbar,/route:'\/business-crm',label:'CRM'/);
- assert.match(control,/SALES & CRM/);
+ assert.match(control,/SALES & CRM/i);
 });
 
 test('business surfaces scope queries to active business',()=>{
@@ -49,7 +49,7 @@ test('business surfaces scope queries to active business',()=>{
 });
 
 test('business inbox explicitly excludes personal chat surface',()=>{
- assert.match(inbox,/Personal chats stay in Customer Mode/);
+ assert.match(inbox,/Personal chats stay in Customer mode/i);
  assert.match(inbox,/from\('conversations'\)/);
  assert.doesNotMatch(inbox,/personal_conversations/);
 });

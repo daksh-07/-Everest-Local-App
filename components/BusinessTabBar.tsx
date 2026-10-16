@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { router } from 'expo-router';
 import { useEffect,useMemo,useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -67,4 +67,4 @@ export function BusinessTabBar({active}:{active:BusinessActiveRoute}){
   <View style={[s.bar,{minHeight:t.navigation.height}]}>{items.map(item=>{const selected=item.route===selectedRoute;return <Pressable key={item.route} accessibilityRole="tab" accessibilityState={{selected}} aria-selected={selected} accessibilityLabel={item.label} onPress={()=>{if(!selected){void haptic.selection();router.replace(item.route)}}} style={({pressed})=>[s.item,{minHeight:t.controls.touchTarget,borderRadius:t.shape.small,backgroundColor:selected&&mode==='PULSE'?colors.accentSoft:'transparent'},pressed&&s.pressed]}><Ionicons name={selected?item.activeIcon:item.icon} size={t.navigation.iconSize} color={selected?colors.accent:colors.muted}/><Text style={[s.label,{fontSize:t.navigation.labelSize,color:selected?colors.text:colors.muted},selected&&s.active]}>{item.label}</Text></Pressable>})}</View>
  </View>;
 }
-const s=StyleSheet.create({shell:{position:'absolute',left:0,right:0,bottom:0,zIndex:50,borderTopWidth:1},bar:{minHeight:64,paddingVertical:6,width:'100%',maxWidth:980,alignSelf:'center',flexDirection:'row',justifyContent:'space-around',alignItems:'center'},item:{flex:1,minWidth:0,minHeight:56,alignItems:'center',justifyContent:'center',paddingHorizontal:5},pressed:{opacity:.58},label:{maxWidth:'100%',textAlign:'center',fontSize:10,lineHeight:14,fontWeight:'700',marginTop:3},active:{fontWeight:'900'}});
+const s=StyleSheet.create({shell:{position:'absolute',left:0,right:0,bottom:0,zIndex:50,borderTopWidth:1},bar:{minHeight:64,paddingVertical:6,width:'100%',maxWidth:980,alignSelf:'center',flexDirection:'row',justifyContent:'space-around',alignItems:'center'},item:{flex:1,minWidth:0,minHeight:56,alignItems:'center',justifyContent:'center',paddingHorizontal:5},pressed:{opacity:.58},label:{maxWidth:'100%',textAlign:'center',fontSize:12,lineHeight:14,fontWeight:'700',marginTop:3},active:{fontWeight:'900'}});

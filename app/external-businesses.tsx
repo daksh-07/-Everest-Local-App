@@ -2,11 +2,12 @@ import {useEffect,useState} from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {supabase} from '@/lib/supabase';
 import {useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Result={source:'google_places';externalId:string;referenceId:string;name:string;address:string};
 type RequestRow={id:string;description:string;suburb:string|null;city:string|null;state:string|null;preferred_date:string|null;preferred_time:string|null};
@@ -23,17 +24,17 @@ export default function ExternalBusinesses(){
    if(e)throw e;
    setEnabled(data?.enabled===true);setEnquiriesEnabled(data?.enquiriesEnabled===true);
    setItems(Array.isArray(data?.businesses)?data.businesses:[]);
-  }catch(e){setError(e instanceof Error?e.message:'External business search is unavailable.')}
+  }catch(e){setError(userMessage(e,'External business search is unavailable.'))}
   finally{setLoading(false)}
  }
  return <SafeAreaView style={{flex:1,backgroundColor:c.canvas}}>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,paddingBottom:60,maxWidth:760,width:'100%',alignSelf:'center'}}>
-   <View style={{flexDirection:'row',alignItems:'center',gap:14}}><Pressable onPress={()=>router.back()}><Ionicons name="arrow-back" size={23} color={c.text}/></Pressable><Text style={{fontSize:24,fontWeight:'900',color:c.text}}>External businesses</Text></View>
+   <View style={{flexDirection:'row',alignItems:'center',gap:14}}><Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={()=>router.back()}><Ionicons name="arrow-back" size={23} color={c.text}/></Pressable><Text style={{fontSize:24,fontWeight:'900',color:c.text}}>External businesses</Text></View>
    <Text style={{fontSize:12,lineHeight:18,color:c.muted,marginTop:8}}>Search businesses outside Everest. Results are clearly separated and searching never contacts a business.</Text>
-   <View style={{flexDirection:'row',gap:8,marginTop:18}}><TextInput value={q} onChangeText={setQ} onSubmitEditing={()=>void search()} placeholder="Business or service" placeholderTextColor={c.muted} style={{flex:1,minHeight:48,borderRadius:14,borderWidth:1,borderColor:c.border,backgroundColor:c.input,color:c.text,paddingHorizontal:14,fontSize:16}}/><Pressable onPress={()=>void search()} style={{minWidth:48,borderRadius:14,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}}><Ionicons name="search" size={20} color={c.onBrand}/></Pressable></View>
+   <View style={{flexDirection:'row',gap:8,marginTop:18}}><TextInput value={q} onChangeText={setQ} onSubmitEditing={()=>void search()} placeholder="Business or service" placeholderTextColor={c.muted} style={{flex:1,minHeight:48,borderRadius:14,borderWidth:1,borderColor:c.border,backgroundColor:c.input,color:c.text,paddingHorizontal:14,fontSize:16}}/><Pressable accessibilityRole="button" accessibilityLabel="Search" onPress={()=>void search()} style={{minWidth:48,borderRadius:14,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}}><Ionicons name="search" size={20} color={c.onBrand}/></Pressable></View>
    {loading?<ActivityIndicator style={{marginTop:35}} color={c.text}/>:enabled===false?<Text style={{fontSize:12,color:c.muted,marginTop:24}}>External discovery is currently disabled by its production feature gate.</Text>:items.map(x=><View key={x.referenceId} style={{marginTop:10,padding:14,borderRadius:16,borderWidth:1,borderColor:c.border,backgroundColor:c.surface}}>
-    <Text style={{fontSize:14,fontWeight:'900',color:c.text}}>{x.name}</Text><Text style={{fontSize:11,lineHeight:17,color:c.muted,marginTop:4}}>{x.address}</Text><Text style={{fontSize:9,fontWeight:'900',color:c.accent,marginTop:8}}>NOT YET ON EVEREST</Text>
-    {enquiriesEnabled?<Pressable onPress={()=>{setSelected(x);void supabase.rpc('record_external_business_selection',{p_reference_id:x.referenceId})}} style={{alignSelf:'flex-start',marginTop:10,paddingHorizontal:12,paddingVertical:9,borderRadius:10,backgroundColor:c.brand}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>REQUEST QUOTE</Text></Pressable>:null}
+    <Text style={{fontSize:14,fontWeight:'900',color:c.text}}>{x.name}</Text><Text style={{fontSize:11,lineHeight:17,color:c.muted,marginTop:4}}>{x.address}</Text><Text style={{fontSize:12,fontWeight:'900',color:c.accent,marginTop:8}}>Not yet on Everest</Text>
+    {enquiriesEnabled?<Pressable onPress={()=>{setSelected(x);void supabase.rpc('record_external_business_selection',{p_reference_id:x.referenceId})}} style={{alignSelf:'flex-start',marginTop:10,paddingHorizontal:12,paddingVertical:9,borderRadius:10,backgroundColor:c.brand}}><Text style={{fontSize:12,fontWeight:'900',color:c.onBrand}}>Request quote</Text></Pressable>:null}
    </View>)}
    {error?<Text style={{fontSize:12,color:c.danger,marginTop:14}}>{error}</Text>:null}
   </ScrollView>
@@ -68,13 +69,13 @@ function ExternalEnquiryDialog({business,onClose}:{business:Result|null;onClose:
    <Text style={{fontSize:16,fontWeight:'900',color:c.text,marginTop:18}}>{business?.name}</Text><Text style={{fontSize:12,lineHeight:18,color:c.muted,marginTop:4}}>{business?.address}</Text>
    <Text style={{fontSize:11,lineHeight:17,color:c.muted,marginTop:8}}>External business · Not yet on Everest. Everest does not verify or endorse this business.</Text>
    <Text style={{fontSize:14,fontWeight:'900',color:c.text,marginTop:24,marginBottom:10}}>Choose your request</Text>
-   {requests.map(item=><Pressable key={item.id} onPress={()=>setChosen(item.id)} style={{padding:13,borderRadius:14,borderWidth:1,borderColor:chosen===item.id?c.brand:c.border,backgroundColor:c.surface,marginBottom:8}}><Text style={{fontSize:12,lineHeight:18,color:c.text}}>{item.description}</Text><Text style={{fontSize:10,color:c.muted,marginTop:3}}>{[item.suburb,item.city,item.state].filter(Boolean).join(', ')} · {item.preferred_date??'Flexible date'}{item.preferred_time?' · '+item.preferred_time:''}</Text></Pressable>)}
-   {!requests.length?<><Text style={{fontSize:12,color:c.muted}}>Create a service request first, then return here.</Text><Pressable onPress={()=>{onClose();router.push('/request')}} style={{alignSelf:'flex-start',marginTop:12,paddingHorizontal:14,paddingVertical:10,borderRadius:11,backgroundColor:c.brand}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>CREATE REQUEST</Text></Pressable></>:null}
+   {requests.map(item=><Pressable key={item.id} onPress={()=>setChosen(item.id)} style={{padding:13,borderRadius:14,borderWidth:1,borderColor:chosen===item.id?c.brand:c.border,backgroundColor:c.surface,marginBottom:8}}><Text style={{fontSize:12,lineHeight:18,color:c.text}}>{item.description}</Text><Text style={{fontSize:12,color:c.muted,marginTop:3}}>{[item.suburb,item.city,item.state].filter(Boolean).join(', ')} · {item.preferred_date??'Flexible date'}{item.preferred_time?' · '+item.preferred_time:''}</Text></Pressable>)}
+   {!requests.length?<><Text style={{fontSize:12,color:c.muted}}>Create a service request first, then return here.</Text><Pressable onPress={()=>{onClose();router.push('/request')}} style={{alignSelf:'flex-start',marginTop:12,paddingHorizontal:14,paddingVertical:10,borderRadius:11,backgroundColor:c.brand}}><Text style={{fontSize:12,fontWeight:'900',color:c.onBrand}}>Create request</Text></Pressable></>:null}
    {request?<><Text style={{fontSize:14,fontWeight:'900',color:c.text,marginTop:24,marginBottom:8}}>Information shared</Text><Text style={{fontSize:11,lineHeight:17,color:c.muted}}>Only the selected request snapshot and contact details you explicitly choose below are shared. Photos and your full Everest profile are not shared.</Text>
     {email?<Pressable onPress={()=>setShareEmail(v=>!v)} style={{padding:13,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginTop:10}}><Text style={{fontSize:12,fontWeight:'800',color:c.text}}>{shareEmail?'☑':'☐'} Share email: {email}</Text></Pressable>:null}
     {phone?<Pressable onPress={()=>setSharePhone(v=>!v)} style={{padding:13,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginTop:8}}><Text style={{fontSize:12,fontWeight:'800',color:c.text}}>{sharePhone?'☑':'☐'} Share phone: {phone}</Text></Pressable>:null}
     <Text style={{fontSize:11,lineHeight:17,color:c.muted,marginTop:12}}>Authorising saves this enquiry for this external business. Search itself never contacts them. Delivery remains subject to the existing external messaging feature gates and verified-recipient rules.</Text>
-    <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void authorise()} style={{alignSelf:'flex-start',marginTop:14,paddingHorizontal:15,paddingVertical:11,borderRadius:11,backgroundColor:c.brand}}><Text style={{fontSize:9,fontWeight:'900',color:c.onBrand}}>{busy?'SAVING…':'AUTHORISE THIS ENQUIRY'}</Text></Pressable></>:null}
+    <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void authorise()} style={{alignSelf:'flex-start',marginTop:14,paddingHorizontal:15,paddingVertical:11,borderRadius:11,backgroundColor:c.brand}}><Text style={{fontSize:12,fontWeight:'900',color:c.onBrand}}>{busy?'Saving…':'Authorise this enquiry'}</Text></Pressable></>:null}
    {error?<Text style={{fontSize:12,color:c.danger,marginTop:12}}>{error}</Text>:null}
   </ScrollView></SafeAreaView>
  </Modal>

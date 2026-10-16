@@ -35,12 +35,13 @@ test('business portal exposes operational progress without bypassing booking aut
  assert.match(businessPortal,/updateBookingStatus\(job\.id,'IN_PROGRESS'\)/);
  assert.match(businessPortal,/updateBookingStatus\(job\.id,'COMPLETED'\)/);
  assert.match(businessPortal,/Complete the work checklist before finishing this job/);
- assert.match(businessPortal,/Only choose a status when it is true/);
+ assert.match(businessPortal,/Only choose it when it’s true/);
 });
 
 test('home has one clear matching action and local trust cues',()=>{
  assert.match(home,/Request quotes/);
  assert.match(home,/Book local services, request quotes and shop from nearby businesses\./);
  assert.doesNotMatch(home,/<Trust /);
- assert.match(home,/CONTINUE WHERE YOU LEFT OFF/);
+ assert.match(home,/Continue where you left off/);
+ assert.doesNotMatch(home,/CONTINUE WHERE YOU LEFT OFF/);
 });

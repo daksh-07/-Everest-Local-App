@@ -2,7 +2,7 @@ import {useCallback,useMemo,useState} from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {router} from 'expo-router';
 import {useFocusEffect} from '@react-navigation/native';
 import {myBusiness} from '@/lib/catalog';
@@ -10,6 +10,7 @@ import {supabase} from '@/lib/supabase';
 import {getBusinessPayoutStatus,startBusinessPayoutOnboarding,type BusinessPayoutStatus} from '@/lib/stripe-connect';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 type LedgerRow={
  id:string;
@@ -48,7 +49,7 @@ export default function BusinessPayouts(){
    setStatus(connect);
    if(ledgerResult.error)throw ledgerResult.error;
    setLedger((ledgerResult.data??[]) as LedgerRow[]);
-  }catch(e){setError(e instanceof Error?e.message:'Payout details could not be loaded.');}
+  }catch(e){setError(userMessage(e,'Payout details could not be loaded.'));}
   finally{setLoading(false);setRefreshing(false);}
  },[]);
 
@@ -60,7 +61,7 @@ export default function BusinessPayouts(){
   try{
    void haptic.selection();
    await startBusinessPayoutOnboarding(business.id);
-  }catch(e){setError(e instanceof Error?e.message:'Stripe payout setup could not be opened.');}
+  }catch(e){setError(userMessage(e,'Stripe payout setup could not be opened.'));}
   finally{setBusy(false);}
  }
 
@@ -76,14 +77,14 @@ export default function BusinessPayouts(){
    showsVerticalScrollIndicator={false}>
    <View style={s.header}>
     <Pressable accessibilityLabel="Go back" onPress={()=>router.back()} style={s.iconButton}><Ionicons name="chevron-back" size={21} color={colors.text}/></Pressable>
-    <View style={{flex:1}}><Text style={s.eyebrow}>BUSINESS PAYOUTS</Text><Text style={s.title}>Payments & bank</Text></View>
+    <View style={{flex:1}}><Text style={s.eyebrow}>Business payouts</Text><Text style={s.title}>Payments & bank</Text></View>
    </View>
 
    {loading?<ActivityIndicator color={colors.accent} style={{marginTop:70}}/>:!business?<View style={s.empty}><Text style={s.emptyTitle}>No business profile</Text><Text style={s.copy}>Create a business before setting up payments.</Text></View>:<>
     <View style={[s.hero,ready&&s.heroReady]}>
      <View style={[s.heroIcon,ready&&s.heroIconReady]}><Ionicons name={ready?'checkmark':'card-outline'} size={24} color={ready?colors.onBrand:colors.accent}/></View>
      <View style={{flex:1,minWidth:0}}>
-      <Text style={s.heroKicker}>{ready?'READY TO SELL':'PAYOUT SETUP REQUIRED'}</Text>
+      <Text style={s.heroKicker}>{ready?'Ready to sell':'Payout setup required'}</Text>
       <Text style={s.heroTitle}>{ready?'Stripe payouts connected':'Connect a bank account before going live'}</Text>
       <Text style={s.heroCopy}>{ready
        ?'Customers can pay through Everest. Stripe sends your business share to your connected Stripe balance and pays out to your bank on Stripe’s schedule.'
@@ -99,8 +100,8 @@ export default function BusinessPayouts(){
     </View>
 
     {!ready?<Pressable disabled={busy||business.verification_status!=='VERIFIED'} onPress={()=>void onboard()} style={[s.primary,(busy||business.verification_status!=='VERIFIED')&&s.disabled]}>
-     {busy?<ActivityIndicator color={colors.onBrand}/>:<><Ionicons name="open-outline" size={17} color={colors.onBrand}/><Text style={s.primaryText}>{status?.stripe_connected_account_id?'CONTINUE STRIPE SETUP':'SET UP PAYOUTS WITH STRIPE'}</Text></>}
-    </Pressable>:<Pressable onPress={()=>void load(true)} style={s.secondary}><Ionicons name="refresh" size={16} color={colors.text}/><Text style={s.secondaryText}>REFRESH STRIPE STATUS</Text></Pressable>}
+     {busy?<ActivityIndicator color={colors.onBrand}/>:<><Ionicons name="open-outline" size={17} color={colors.onBrand}/><Text style={s.primaryText}>{status?.stripe_connected_account_id?'Continue Stripe setup':'Set up payouts with Stripe'}</Text></>}
+    </Pressable>:<Pressable onPress={()=>void load(true)} style={s.secondary}><Ionicons name="refresh" size={16} color={colors.text}/><Text style={s.secondaryText}>Refresh Stripe status</Text></Pressable>}
 
     {business.verification_status!=='VERIFIED'?<View style={s.notice}><Ionicons name="shield-checkmark-outline" size={20} color={colors.accent}/><View style={{flex:1}}><Text style={s.noticeTitle}>Business verification first</Text><Text style={s.copy}>Complete Everest business verification before Stripe payout onboarding.</Text><Pressable onPress={()=>router.push('/business-verification')}><Text style={s.link}>OPEN VERIFICATION →</Text></Pressable></View></View>:null}
 
@@ -116,17 +117,17 @@ export default function BusinessPayouts(){
      <View style={{flex:1}}><Text style={s.infoTitle}>Low-cost payment model</Text><Text style={s.copy}>Payments are created directly on the business Stripe account. Everest collects its marketplace commission as an application fee; Stripe processing fees are charged separately to the connected business account.</Text></View>
     </View>
 
-    <View style={s.sectionHead}><View><Text style={s.sectionEyebrow}>EVEREST SALES</Text><Text style={s.sectionTitle}>Payment summary</Text></View></View>
+    <View style={s.sectionHead}><View><Text style={s.sectionEyebrow}>Everest sales</Text><Text style={s.sectionTitle}>Payment summary</Text></View></View>
     <View style={s.summary}>
-     <View style={s.summaryItem}><Text style={s.summaryValue}>{money(totalGross)}</Text><Text style={s.summaryLabel}>PROCESSED</Text></View>
-     <View style={s.summaryDivider}/><View style={s.summaryItem}><Text style={s.summaryValue}>{money(totalEverest)}</Text><Text style={s.summaryLabel}>EVEREST FEES</Text></View>
+     <View style={s.summaryItem}><Text style={s.summaryValue}>{money(totalGross)}</Text><Text style={s.summaryLabel}>Processed</Text></View>
+     <View style={s.summaryDivider}/><View style={s.summaryItem}><Text style={s.summaryValue}>{money(totalEverest)}</Text><Text style={s.summaryLabel}>Everest fees</Text></View>
      <View style={s.summaryDivider}/><View style={s.summaryItem}><Text style={s.summaryValue}>{money(totalBusiness)}</Text><Text style={s.summaryLabel}>BUSINESS SHARE*</Text></View>
     </View>
     <Text style={s.footnote}>*Business share is before Stripe’s payment-processing fees. Stripe deducts those fees from the connected account under this payment model.</Text>
 
-    <View style={s.sectionHead}><View><Text style={s.sectionEyebrow}>RECENT ACTIVITY</Text><Text style={s.sectionTitle}>Everest payments</Text></View></View>
+    <View style={s.sectionHead}><View><Text style={s.sectionEyebrow}>Recent activity</Text><Text style={s.sectionTitle}>Everest payments</Text></View></View>
     {ledger.length?ledger.map(row=><View style={s.ledger} key={row.id}>
-     <View style={s.ledgerTop}><View><Text style={s.ledgerType}>{row.source_type==='PRODUCT_ORDER'?'PRODUCT ORDER':'SERVICE PAYMENT'}</Text><Text style={s.ledgerDate}>{new Date(row.created_at).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}</Text></View><Text style={s.ledgerGross}>{money(row.fee_base_amount,row.currency)}</Text></View>
+     <View style={s.ledgerTop}><View><Text style={s.ledgerType}>{row.source_type==='PRODUCT_ORDER'?'Product order':'Service payment'}</Text><Text style={s.ledgerDate}>{new Date(row.created_at).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}</Text></View><Text style={s.ledgerGross}>{money(row.fee_base_amount,row.currency)}</Text></View>
      <View style={s.ledgerLine}><Text style={s.ledgerLabel}>Everest fee</Text><Text style={s.ledgerValue}>−{money(row.marketplace_fee,row.currency)}</Text></View>
      <View style={s.ledgerLine}><Text style={s.ledgerLabel}>Business share before Stripe fee</Text><Text style={s.ledgerNet}>{money(row.provider_net,row.currency)}</Text></View>
      <View style={s.badge}><Text style={s.badgeText}>{row.status.replaceAll('_',' ')}</Text></View>
@@ -149,14 +150,14 @@ function Status({label,ok,colors}:{label:string;ok:boolean;colors:ThemeColors}){
 const styles=(c:ThemeColors)=>StyleSheet.create({
  safe:{flex:1,backgroundColor:c.canvas},page:{paddingHorizontal:18,paddingTop:8,paddingBottom:60,maxWidth:760,width:'100%',alignSelf:'center'},
  header:{flexDirection:'row',alignItems:'center',gap:12,minHeight:64},iconButton:{width:42,height:42,borderRadius:21,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},
- eyebrow:{fontSize:12,fontWeight:'900',letterSpacing:1.5,color:c.accent},title:{fontSize:27,fontWeight:'900',letterSpacing:-.6,color:c.text,marginTop:2},
- hero:{marginTop:16,borderRadius:24,borderWidth:1,borderColor:c.border,backgroundColor:c.elevated,padding:17,flexDirection:'row',gap:12},heroReady:{backgroundColor:c.soft},heroIcon:{width:48,height:48,borderRadius:16,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},heroIconReady:{backgroundColor:c.brand},heroKicker:{fontSize:12,fontWeight:'900',letterSpacing:1.2,color:c.accent},heroTitle:{fontSize:17,fontWeight:'900',color:c.text,marginTop:4},heroCopy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:5},
+ eyebrow:{fontSize:12,fontWeight:'900',color:c.accent},title:{fontSize:27,fontWeight:'900',letterSpacing:-.6,color:c.text,marginTop:2},
+ hero:{marginTop:16,borderRadius:24,borderWidth:1,borderColor:c.border,backgroundColor:c.elevated,padding:17,flexDirection:'row',gap:12},heroReady:{backgroundColor:c.soft},heroIcon:{width:48,height:48,borderRadius:16,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},heroIconReady:{backgroundColor:c.brand},heroKicker:{fontSize:12,fontWeight:'900',color:c.accent},heroTitle:{fontSize:17,fontWeight:'900',color:c.text,marginTop:4},heroCopy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:5},
  statusGrid:{flexDirection:'row',flexWrap:'wrap',gap:8,marginTop:12},
- primary:{minHeight:52,borderRadius:15,backgroundColor:c.brand,marginTop:14,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8,paddingHorizontal:14},primaryText:{fontSize:14,fontWeight:'900',letterSpacing:.5,color:c.onBrand},secondary:{minHeight:50,borderRadius:15,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginTop:14,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7},secondaryText:{fontSize:14,fontWeight:'900',color:c.text},disabled:{opacity:.45},
+ primary:{minHeight:52,borderRadius:15,backgroundColor:c.brand,marginTop:14,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8,paddingHorizontal:14},primaryText:{fontSize:14,fontWeight:'900',color:c.onBrand},secondary:{minHeight:50,borderRadius:15,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,marginTop:14,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7},secondaryText:{fontSize:14,fontWeight:'900',color:c.text},disabled:{opacity:.45},
  notice:{marginTop:12,borderRadius:17,backgroundColor:c.soft,padding:14,flexDirection:'row',gap:10},noticeTitle:{fontSize:12,fontWeight:'900',color:c.text},copy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:3},link:{fontSize:12,fontWeight:'900',color:c.accent,marginTop:9},
  info:{marginTop:12,borderRadius:17,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:14,flexDirection:'row',gap:10},infoIcon:{width:38,height:38,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},infoTitle:{fontSize:12,fontWeight:'900',color:c.text},
- sectionHead:{marginTop:28,marginBottom:10},sectionEyebrow:{fontSize:12,fontWeight:'900',letterSpacing:1.4,color:c.accent},sectionTitle:{fontSize:20,fontWeight:'900',color:c.text,marginTop:3},
- summary:{minHeight:92,borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,flexDirection:'row',alignItems:'center',paddingHorizontal:8},summaryItem:{flex:1,alignItems:'center'},summaryValue:{fontSize:14,fontWeight:'900',color:c.text},summaryLabel:{fontSize:14,fontWeight:'900',letterSpacing:.8,color:c.muted,marginTop:5,textAlign:'center'},summaryDivider:{width:1,height:38,backgroundColor:c.border},footnote:{fontSize:12,lineHeight:17,color:c.muted,marginTop:8},
- ledger:{borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:14,marginBottom:9},ledgerTop:{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:10},ledgerType:{fontSize:12,fontWeight:'900',letterSpacing:.9,color:c.accent},ledgerDate:{fontSize:12,color:c.muted,marginTop:3},ledgerGross:{fontSize:16,fontWeight:'900',color:c.text},ledgerLine:{flexDirection:'row',justifyContent:'space-between',gap:12,marginTop:9},ledgerLabel:{fontSize:14,color:c.muted,flex:1},ledgerValue:{fontSize:12,fontWeight:'800',color:c.text},ledgerNet:{fontSize:12,fontWeight:'900',color:c.text},badge:{alignSelf:'flex-start',backgroundColor:c.soft,borderRadius:10,paddingHorizontal:8,paddingVertical:5,marginTop:10},badgeText:{fontSize:7,fontWeight:'900',letterSpacing:.6,color:c.text},
+ sectionHead:{marginTop:28,marginBottom:10},sectionEyebrow:{fontSize:12,fontWeight:'900',color:c.accent},sectionTitle:{fontSize:20,fontWeight:'900',color:c.text,marginTop:3},
+ summary:{minHeight:92,borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,flexDirection:'row',alignItems:'center',paddingHorizontal:8},summaryItem:{flex:1,alignItems:'center'},summaryValue:{fontSize:14,fontWeight:'900',color:c.text},summaryLabel:{fontSize:14,fontWeight:'900',color:c.muted,marginTop:5,textAlign:'center'},summaryDivider:{width:1,height:38,backgroundColor:c.border},footnote:{fontSize:12,lineHeight:17,color:c.muted,marginTop:8},
+ ledger:{borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:14,marginBottom:9},ledgerTop:{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:10},ledgerType:{fontSize:12,fontWeight:'900',color:c.accent},ledgerDate:{fontSize:12,color:c.muted,marginTop:3},ledgerGross:{fontSize:16,fontWeight:'900',color:c.text},ledgerLine:{flexDirection:'row',justifyContent:'space-between',gap:12,marginTop:9},ledgerLabel:{fontSize:14,color:c.muted,flex:1},ledgerValue:{fontSize:12,fontWeight:'800',color:c.text},ledgerNet:{fontSize:12,fontWeight:'900',color:c.text},badge:{alignSelf:'flex-start',backgroundColor:c.soft,borderRadius:10,paddingHorizontal:8,paddingVertical:5,marginTop:10},badgeText:{fontSize:12,fontWeight:'900',color:c.text},
  empty:{borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:24,alignItems:'center'},emptyTitle:{fontSize:14,fontWeight:'900',color:c.text,marginTop:7},error:{fontSize:14,color:c.danger,marginTop:14,textAlign:'center'},
 });

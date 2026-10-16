@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import type { ComponentProps } from 'react';
 import { ActivityIndicator, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
@@ -26,8 +26,10 @@ export function AppButton({
   const {colors:c}=useAppTheme();
   const {tokens:t}=useExperience();
   const isDisabled=disabled||busy;
+  // A disabled primary uses the disabled roles (≥3:1) rather than a faded brand fill, which reads as
+  // muddy blue in dark mode and can be mistaken for an enabled secondary action. Busy keeps the brand fill.
   const palette=variant==='primary'
-    ?{background:c.brand,border:c.brand,text:c.onBrand}
+    ?(disabled&&!busy?{background:c.disabled,border:c.disabled,text:c.onDisabled}:{background:c.brand,border:c.brand,text:c.onBrand})
     :variant==='danger'
       ?{background:c.soft,border:c.danger,text:c.danger}
       :variant==='secondary'
@@ -43,7 +45,7 @@ export function AppButton({
       styles.base,
       {backgroundColor:palette.background,borderColor:palette.border,minHeight:t.controls.minHeight,borderRadius:t.shape.medium},
       fullWidth&&styles.full,
-      isDisabled&&styles.disabled,
+      isDisabled&&!(variant==='primary'&&disabled&&!busy)&&styles.disabled,
       pressed&&!isDisabled&&styles.pressed,
       style,
     ]}

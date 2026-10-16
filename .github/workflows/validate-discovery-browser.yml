@@ -35,6 +35,13 @@ on:
       - 'lib/universal-search.ts'
       - 'scripts/verify-discovery-foundation.mjs'
       - 'scripts/verify-search-discovery.mjs'
+      - 'scripts/verify-business-job.mjs'
+      - 'scripts/verify-public-profile.mjs'
+      - 'app/public-user.tsx'
+      - 'lib/connections.ts'
+      - 'app/business-job.tsx'
+      - 'lib/job-operations.ts'
+      - 'components/ui/ConfirmSheet.tsx'
       - '.github/workflows/validate-discovery-browser.yml'
 
 permissions:
@@ -94,6 +101,8 @@ jobs:
           fi
           node scripts/verify-discovery-foundation.mjs
           node scripts/verify-search-discovery.mjs
+          node scripts/verify-business-job.mjs
+          node scripts/verify-public-profile.mjs
           EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/refinement node scripts/verify-visual-refinement.mjs
           EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/typography node scripts/verify-typography-browser.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

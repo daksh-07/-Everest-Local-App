@@ -1,10 +1,11 @@
 import {useEffect,useMemo,useState} from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {deepLinkToSubscriptions,finishTransaction,getAvailablePurchases,useIAP,type Purchase} from 'expo-iap';
 import {APPLE_PRO_PRODUCT_ID,verifyApplePurchase} from '@/lib/apple-billing';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Props={
  businessId:string;
@@ -46,7 +47,7 @@ export function AppleSubscriptionControls({businessId,active,provider,onActivate
    setLocalError('');
    onActivated();
   }catch(error){
-   setLocalError(error instanceof Error?error.message:'Apple subscription verification failed.');
+   setLocalError(userMessage(error,'Apple subscription verification failed.'));
   }finally{
    setWorking(false);
   }
@@ -59,7 +60,7 @@ export function AppleSubscriptionControls({businessId,active,provider,onActivate
    await requestPurchase({request:{apple:{sku:APPLE_PRO_PRODUCT_ID}},type:'subs'});
   }catch(error){
    setWorking(false);
-   setLocalError(error instanceof Error?error.message:'Apple purchase could not be started.');
+   setLocalError(userMessage(error,'Apple purchase could not be started.'));
   }
  }
 
@@ -72,13 +73,13 @@ export function AppleSubscriptionControls({businessId,active,provider,onActivate
    await validateAndFinish(purchase);
   }catch(error){
    setWorking(false);
-   setLocalError(error instanceof Error?error.message:'Purchases could not be restored.');
+   setLocalError(userMessage(error,'Purchases could not be restored.'));
   }
  }
 
  async function manage(){
   try{await deepLinkToSubscriptions();}
-  catch(error){setLocalError(error instanceof Error?error.message:'Apple subscription settings could not be opened.');}
+  catch(error){setLocalError(userMessage(error,'Apple subscription settings could not be opened.'));}
  }
 
  if(active&&provider==='STRIPE'){
@@ -99,14 +100,14 @@ export function AppleSubscriptionControls({businessId,active,provider,onActivate
 
   {active?
    <Pressable onPress={()=>void manage()} style={st.primary}>
-    <Text style={st.primaryText}>MANAGE APPLE SUBSCRIPTION</Text><Ionicons name="open-outline" size={15} color={colors.onBrand}/>
+    <Text style={st.primaryText}>Manage Apple subscription</Text><Ionicons name="open-outline" size={15} color={colors.onBrand}/>
    </Pressable>
    :
    <>
     <Pressable disabled={working} onPress={()=>void subscribe()} style={[st.primary,working&&{opacity:.65}]}>
-     {working?<ActivityIndicator color={colors.onBrand}/>:<><Text style={st.primaryText}>SUBSCRIBE WITH APPLE</Text><Ionicons name="logo-apple" size={16} color={colors.onBrand}/></>}
+     {working?<ActivityIndicator color={colors.onBrand}/>:<><Text style={st.primaryText}>Subscribe with Apple</Text><Ionicons name="logo-apple" size={16} color={colors.onBrand}/></>}
     </Pressable>
-    <Pressable disabled={working} onPress={()=>void restore()} style={st.secondary}><Text style={st.secondaryText}>RESTORE PURCHASES</Text></Pressable>
+    <Pressable disabled={working} onPress={()=>void restore()} style={st.secondary}><Text style={st.secondaryText}>Restore purchases</Text></Pressable>
    </>
   }
 
@@ -119,13 +120,13 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  wrap:{marginTop:18,borderWidth:1,borderColor:c.border,borderRadius:18,backgroundColor:c.surface,padding:15},
  appleRow:{flexDirection:'row',gap:11,alignItems:'center'},
  appleTitle:{fontSize:13,fontWeight:'900',color:c.text},
- appleCopy:{fontSize:10,lineHeight:15,color:c.muted,marginTop:2},
+ appleCopy:{fontSize:12,lineHeight:15,color:c.muted,marginTop:2},
  primary:{height:50,borderRadius:15,alignItems:'center',justifyContent:'center',marginTop:14,backgroundColor:c.brand,flexDirection:'row',gap:8},
- primaryText:{fontSize:9,fontWeight:'900',color:c.onBrand,letterSpacing:.5},
+ primaryText:{fontSize:12,fontWeight:'900',color:c.onBrand},
  secondary:{height:43,borderWidth:1,borderColor:c.border,borderRadius:13,alignItems:'center',justifyContent:'center',marginTop:9},
- secondaryText:{fontSize:9,fontWeight:'900',color:c.text,letterSpacing:.4},
- success:{fontSize:10,lineHeight:15,color:c.accent,marginTop:10},
- error:{fontSize:10,lineHeight:15,color:c.danger,marginTop:10},
+ secondaryText:{fontSize:12,fontWeight:'900',color:c.text},
+ success:{fontSize:12,lineHeight:15,color:c.accent,marginTop:10},
+ error:{fontSize:12,lineHeight:15,color:c.danger,marginTop:10},
  note:{marginTop:18,borderWidth:1,borderColor:c.border,borderRadius:16,backgroundColor:c.soft,padding:14,flexDirection:'row',gap:9,alignItems:'center'},
- noteText:{fontSize:10,lineHeight:16,color:c.muted,flex:1},
+ noteText:{fontSize:12,lineHeight:16,color:c.muted,flex:1},
 });

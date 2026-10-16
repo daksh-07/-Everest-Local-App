@@ -76,7 +76,7 @@ if(!before){
  const page=await context.newPage();
  await page.route('**/fonts/*.woff2',route=>route.abort('failed'));
  await page.goto(base,{waitUntil:'domcontentloaded'});
- await page.getByLabel('Open Everest menu',{exact:true}).waitFor();
+ await page.getByLabel('Search services, businesses and products',{exact:true}).waitFor();
  await page.getByText('What do you need today?',{exact:true}).waitFor();
  assert.equal(await page.getByRole('button',{name:/^Find .* services$/}).count(),8,'Discovery stays usable when fonts fail');
  await page.screenshot({path:`${output}/font-fallback-390.png`});

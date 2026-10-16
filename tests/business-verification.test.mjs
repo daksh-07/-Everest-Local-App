@@ -161,7 +161,7 @@ test('admin verification RPC remains available to authenticated callers but enfo
 
 test('client presents pending state instead of a dead submit control', () => {
   assert.match(screen, /under review/i);
-  assert.match(screen, /CHECK ABN & SUBMIT/);
+  assert.match(screen, /CHECK ABN & SUBMIT/i);
   assert.match(screen, /Australian Business Register/);
 });
 

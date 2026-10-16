@@ -11,12 +11,13 @@ export const uiTokens={
   radius:{sm:10,md:14,lg:20,xl:24,pill:999},
   control:{compact:44,standard:48,large:52},
   typography:{caption:12,small:13,body:16,title:20,display:31},
+  layout:{contentMaxWidth:1180,navMaxWidth:760},
 } as const;
 
 const STORAGE_KEY='everest-local-theme';
-// Everest pairs warm ivory and neutral grey with soft beige and charcoal.
-// Accent highlights stay restrained; semantic red, blue and green carry status.
-// Green is reserved for semantic status such as live, available and success.
+// Everest Electric: neutral canvases let photography lead; blue marks actions and selection,
+// teal identifies Everest Live, coral is a sparing discovery accent. Status colours are separate
+// from brand colours and always appear with text or an icon (see lib/theme-colors.ts).
 const ThemeContext=createContext<AppTheme|null>(null);
 
 function valid(value:string|null):value is ThemePreference{return value==='SYSTEM'||value==='LIGHT'||value==='DARK'}
@@ -29,8 +30,12 @@ export function ThemeProvider({children}:{children:ReactNode}){
  useEffect(()=>{let active=true;void readPreference().then(value=>{if(active){setValue(value);setReady(true)}});return()=>{active=false}},[]);
  const setPreference=async(value:ThemePreference)=>{setValue(value);await writePreference(value)};
  const isDark=preference==='DARK'||(preference==='SYSTEM'&&system==='dark');
- useEffect(()=>{if(Platform.OS!=='web'||typeof document==='undefined')return;const canvas=isDark?dark.canvas:light.canvas;document.documentElement.style.setProperty('--everest-canvas',canvas);document.documentElement.style.setProperty('--everest-text',isDark?dark.text:light.text);document.documentElement.style.backgroundColor=canvas;document.body.style.backgroundColor=canvas;document.documentElement.style.colorScheme=isDark?'dark':'light';document.querySelector('meta[name="theme-color"]')?.setAttribute('content',canvas)},[isDark]);
+ useEffect(()=>{if(Platform.OS!=='web'||typeof document==='undefined')return;const canvas=isDark?dark.canvas:light.canvas;document.documentElement.style.setProperty('--everest-canvas',canvas);document.documentElement.style.setProperty('--everest-text',isDark?dark.text:light.text);document.documentElement.style.setProperty('--everest-focus',isDark?dark.focus:light.focus);document.documentElement.style.backgroundColor=canvas;document.body.style.backgroundColor=canvas;document.documentElement.style.colorScheme=isDark?'dark':'light';document.querySelector('meta[name="theme-color"]')?.setAttribute('content',canvas)},[isDark]);
  const value=useMemo(()=>({preference,isDark,colors:isDark?dark:light,setPreference,ready}),[preference,isDark,ready]);
  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 export function useAppTheme(){const value=useContext(ThemeContext);if(!value)throw new Error('useAppTheme must be used inside ThemeProvider');return value}
+/** Memoised themed StyleSheet: `const s=useThemedStyles(createStyles)` with `createStyles=(c:ThemeColors)=>StyleSheet.create({...})`. */
+export function useThemedStyles<T>(factory:(colors:ThemeColors)=>T):T{const {colors}=useAppTheme();return useMemo(()=>factory(colors),[colors,factory])}
+/** Theme colours when a provider exists, otherwise undefined (root error boundaries render outside it). */
+export function useOptionalThemeColors():ThemeColors|undefined{return useContext(ThemeContext)?.colors}

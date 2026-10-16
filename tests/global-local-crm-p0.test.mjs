@@ -33,13 +33,15 @@ test('forged business ids and private CRM exposure are blocked',()=>{
 });
 
 test('duplicate detection warns and does not silently merge',()=>{
- assert.match(migration,/find_business_contact_duplicates/);assert.match(customers,/Possible duplicate/);assert.match(customers,/never merge ambiguous contacts automatically/);assert.match(customers,/KEEP SEPARATE ANYWAY/);assert.match(v2,/crm_merge_contacts/);
+ assert.match(migration,/find_business_contact_duplicates/);assert.match(customers,/Possible duplicate/);assert.match(customers,/never merge ambiguous contacts automatically/);assert.match(customers,/KEEP SEPARATE ANYWAY/i);assert.match(v2,/crm_merge_contacts/);
 });
 
 test('Customer 360 is tabbed and separates contacts from sales objects',()=>{
- assert.match(customer,/CUSTOMER 360/);for(const label of ['OVERVIEW','TIMELINE','DEALS','QUOTES','BOOKINGS','PAYMENTS','NOTES','TASKS'])assert.match(customer,new RegExp(label));
+ // Tabbed record (Overview, Activity, Work, Tasks); every record type stays reachable inside a view.
+ for(const view of ['OVERVIEW','ACTIVITY','WORK','TASKS'])assert.match(customer,new RegExp(`key:'${view}'`));
+ for(const kind of ["kind:'Booking'","kind:'Quote'","kind:'Deal'","kind:'Payment'","title:'Note'",'activities.map','openTasks'])assert.ok(customer.includes(kind),kind+' remains reachable');
  assert.match(customer,/listCrmOpportunities/);assert.match(customer,/listCrmQuotes/);assert.match(customer,/listCrmBookings/);assert.match(customer,/crm_notes/);assert.match(customer,/from\('bookings'\).*customer_id/s);assert.match(customer,/from\('quotes'\).*customer_id/s);
- assert.match(tab,/label:'Jobs'/);assert.match(tab,/Calendar/);assert.match(control,/SALES & CRM/);assert.match(control,/CRM workspace/);
+ assert.match(tab,/label:'Jobs'/);assert.match(tab,/Calendar/);assert.match(control,/SALES & CRM/i);assert.match(control,/CRM workspace/);
 });
 
 test('verified completed-work provenance cannot be directly forged by authenticated clients',()=>{

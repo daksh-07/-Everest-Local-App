@@ -2,13 +2,14 @@ import { useCallback,useEffect,useMemo,useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { router } from 'expo-router';
 import { BusinessTabBar } from '@/components/BusinessTabBar';
 import { ModeSwitcher } from '@/components/ModeSwitcher';
 import { getWorkspaceContext,type BusinessWorkspace } from '@/lib/workspace';
 import { supabase } from '@/lib/supabase';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
+import {userMessage} from '@/lib/errors';
 
 type Finance={pendingPayouts:number;pendingAmount:number;paidAmount:number;orders:number;products:number;services:number};
 type Row={label:string;icon:keyof typeof Ionicons.glyphMap;route:string;show:boolean;note?:string};
@@ -33,7 +34,7 @@ export default function BusinessControl(){
     paidAmount:rows.filter(row=>['PAID','COMPLETED','SUCCEEDED'].includes(String(row.status).toUpperCase())).reduce((sum,row)=>sum+Number(row.net_amount||0),0),
     orders:orders.count??0,products:products.count??0,services:services.count??0,
    });
-  }catch(e){setError(e instanceof Error?e.message:'Business controls could not be loaded.');}
+  }catch(e){setError(userMessage(e,'Business controls could not be loaded.'));}
   finally{setLoading(false);}
  },[]);
  useEffect(()=>{void load();},[load]);
@@ -74,18 +75,18 @@ export default function BusinessControl(){
  ];
 
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}><ScrollView contentContainerStyle={st.page} showsVerticalScrollIndicator={false}>
-  <View style={st.header}><View><Text style={st.mode}>BUSINESS MODE</Text><Text style={st.name}>{business?.name??'Business'}</Text></View><ModeSwitcher compact/></View>
+  <View style={st.header}><View><Text style={st.mode}>Business mode</Text><Text style={st.name}>{business?.name??'Business'}</Text></View><ModeSwitcher compact/></View>
   <View style={st.heading}><View style={{flex:1}}><Text style={st.title}>Business</Text><Text style={st.copy}>Jobs and daily operations come first. Sales, CRM, money and public-business tools stay organised behind this workspace and remain permission-gated.</Text></View><View style={st.roleBadge}><Text style={st.roleBadgeText}>{role||'MEMBER'}</Text></View></View>
   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:40}}/>:<>
    {business&&<Pressable onPress={()=>router.push({pathname:'/business-profile',params:{id:business.id,preview:'1'}})} style={st.preview}><View style={st.previewIcon}><Ionicons name="eye-outline" size={20} color={colors.accent}/></View><View style={{flex:1}}><Text style={st.previewTitle}>View public business</Text><Text style={st.copy}>See what customers see. This does not grant editing access.</Text></View><Ionicons name="arrow-forward" size={18} color={colors.text}/></Pressable>}
-   {!verified&&business?.can_manage_settings?<View style={st.restricted}><Text style={st.restrictedTitle}>Setup in progress</Text><Text style={st.copy}>Verification is {business.verification_status.toLowerCase()}. Marketplace operations stay restricted until the business is verified.</Text><Pressable onPress={()=>router.push('/business-verification')} style={st.verify}><Text style={st.verifyText}>OPEN VERIFICATION</Text></Pressable></View>:null}
-   {business?.can_view_finance&&(finance.pendingPayouts>0||finance.paidAmount>0)&&<View style={st.finance}><View style={st.sectionHead}><Text style={st.sectionLabel}>FINANCE</Text><Ionicons name="lock-closed-outline" size={15} color={colors.muted}/></View><View style={st.financeRow}>{finance.pendingPayouts>0&&<View><Text style={st.money}>${finance.pendingAmount.toFixed(2)}</Text><Text style={st.moneyLabel}>Pending payouts</Text></View>}{finance.paidAmount>0&&<View><Text style={st.money}>${finance.paidAmount.toFixed(2)}</Text><Text style={st.moneyLabel}>Recorded paid payouts</Text></View>}</View></View>}
+   {!verified&&business?.can_manage_settings?<View style={st.restricted}><Text style={st.restrictedTitle}>Setup in progress</Text><Text style={st.copy}>Verification is {business.verification_status.toLowerCase()}. Marketplace operations stay restricted until the business is verified.</Text><Pressable onPress={()=>router.push('/business-verification')} style={st.verify}><Text style={st.verifyText}>Open verification</Text></Pressable></View>:null}
+   {business?.can_view_finance&&(finance.pendingPayouts>0||finance.paidAmount>0)&&<View style={st.finance}><View style={st.sectionHead}><Text style={st.sectionLabel}>Finance</Text><Ionicons name="lock-closed-outline" size={15} color={colors.muted}/></View><View style={st.financeRow}>{finance.pendingPayouts>0&&<View><Text style={st.money}>${finance.pendingAmount.toFixed(2)}</Text><Text style={st.moneyLabel}>Pending payouts</Text></View>}{finance.paidAmount>0&&<View><Text style={st.money}>${finance.paidAmount.toFixed(2)}</Text><Text style={st.moneyLabel}>Recorded paid payouts</Text></View>}</View></View>}
    {(business?.can_manage_catalog||business?.can_view_orders)&&<View style={st.stats}>{business?.can_manage_catalog?<><View><Text style={st.statN}>{finance.services}</Text><Text style={st.statL}>Services</Text></View><View><Text style={st.statN}>{finance.products}</Text><Text style={st.statL}>Products</Text></View></>:null}{business?.can_view_orders?<View><Text style={st.statN}>{finance.orders}</Text><Text style={st.statL}>Orders</Text></View>:null}</View>}
-   <Section label="WORK & OPERATIONS" rows={operationsRows} verified={verified} colors={colors}/>
-   {salesRows.some(x=>x.show)?<Section label="SALES & CRM" rows={salesRows} verified={verified} colors={colors}/>:null}
+   <Section label="Work & operations" rows={operationsRows} verified={verified} colors={colors}/>
+   {salesRows.some(x=>x.show)?<Section label="Sales & CRM" rows={salesRows} verified={verified} colors={colors}/>:null}
    {moneyRows.some(x=>x.show)?<Section label="MONEY" rows={moneyRows} verified={verified} colors={colors}/>:null}
-   {publicRows.some(x=>x.show)?<Section label="PUBLIC BUSINESS" rows={publicRows} verified={verified} colors={colors}/>:null}
-   <Section label="TRUST & SETTINGS" rows={trustRows} verified={verified} colors={colors}/>
+   {publicRows.some(x=>x.show)?<Section label="Public business" rows={publicRows} verified={verified} colors={colors}/>:null}
+   <Section label="Trust & settings" rows={trustRows} verified={verified} colors={colors}/>
   </>}
   {error&&<Text style={st.error}>{error}</Text>}
  </ScrollView><BusinessTabBar active="/business-control"/></View></SafeAreaView>;
@@ -97,11 +98,11 @@ function Section({label,rows,verified,colors}:{label:string;rows:Row[];verified:
  return <View style={s.section}><Text style={s.sectionLabel}>{label}</Text><View style={s.sectionCard}>{visible.map(row=><Pressable key={row.label} onPress={()=>router.push(row.route as never)} style={s.row}><View style={s.rowIcon}><Ionicons name={row.icon} size={19} color={colors.text}/></View><View style={{flex:1}}><Text style={s.rowText}>{row.label}</Text>{row.note?<Text style={s.rowNote}>{row.note}</Text>:null}</View><Ionicons name="chevron-forward" size={17} color={colors.muted}/></Pressable>)}</View></View>;
 }
 const styles=(c:ThemeColors)=>StyleSheet.create({
- safe:{flex:1,backgroundColor:c.canvas},page:{padding:20,paddingBottom:110,maxWidth:800,width:'100%',alignSelf:'center'},header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},mode:{fontSize:12,fontWeight:'900',letterSpacing:1.3,color:c.muted},name:{fontSize:15,fontWeight:'900',color:c.text,marginTop:2},
- heading:{marginTop:22,flexDirection:'row',alignItems:'flex-end',gap:12},title:{fontSize:33,fontWeight:'900',color:c.text},copy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:5},roleBadge:{maxWidth:145,borderRadius:999,backgroundColor:c.soft,paddingHorizontal:10,paddingVertical:7},roleBadgeText:{fontSize:7,fontWeight:'900',letterSpacing:.8,color:c.text,textAlign:'center'},
+ safe:{flex:1,backgroundColor:c.canvas},page:{padding:20,paddingBottom:110,maxWidth:800,width:'100%',alignSelf:'center'},header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},mode:{fontSize:12,fontWeight:'900',color:c.muted},name:{fontSize:15,fontWeight:'900',color:c.text,marginTop:2},
+ heading:{marginTop:22,flexDirection:'row',alignItems:'flex-end',gap:12},title:{fontSize:33,fontWeight:'900',color:c.text},copy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:5},roleBadge:{maxWidth:145,borderRadius:999,backgroundColor:c.soft,paddingHorizontal:10,paddingVertical:7},roleBadgeText:{fontSize:12,fontWeight:'900',color:c.text,textAlign:'center'},
  preview:{borderRadius:20,borderWidth:1,borderColor:c.border,backgroundColor:c.elevated,padding:15,marginTop:18,flexDirection:'row',alignItems:'center',gap:11},previewIcon:{width:42,height:42,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},previewTitle:{fontSize:15,fontWeight:'900',color:c.text},
  finance:{borderRadius:19,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:17,marginTop:14},sectionHead:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},financeRow:{flexDirection:'row',gap:28,marginTop:9},money:{fontSize:22,fontWeight:'900',color:c.text},moneyLabel:{fontSize:14,color:c.muted,marginTop:3},
  stats:{flexDirection:'row',justifyContent:'space-around',borderRadius:18,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,padding:16,marginTop:12},statN:{fontSize:22,fontWeight:'900',color:c.text,textAlign:'center'},statL:{fontSize:12,color:c.muted,textAlign:'center',marginTop:2},
- section:{marginTop:24},sectionLabel:{fontSize:14,fontWeight:'900',letterSpacing:1.3,color:c.muted,marginBottom:8},sectionCard:{borderRadius:19,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,overflow:'hidden'},row:{minHeight:62,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'center',gap:11,paddingHorizontal:13},rowIcon:{width:38,height:38,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},rowText:{fontSize:12,fontWeight:'900',color:c.text},rowNote:{fontSize:12,color:c.muted,marginTop:2},
+ section:{marginTop:24},sectionLabel:{fontSize:14,fontWeight:'900',color:c.muted,marginBottom:8},sectionCard:{borderRadius:19,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,overflow:'hidden'},row:{minHeight:62,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'center',gap:11,paddingHorizontal:13},rowIcon:{width:38,height:38,borderRadius:13,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},rowText:{fontSize:12,fontWeight:'900',color:c.text},rowNote:{fontSize:12,color:c.muted,marginTop:2},
  error:{fontSize:14,color:c.danger,marginTop:12},restricted:{backgroundColor:c.elevated,borderWidth:1,borderColor:c.border,borderRadius:18,padding:17,marginTop:14},restrictedTitle:{fontSize:16,fontWeight:'900',color:c.text},verify:{height:44,borderRadius:13,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginTop:13},verifyText:{fontSize:12,fontWeight:'900',color:c.onBrand}
 });

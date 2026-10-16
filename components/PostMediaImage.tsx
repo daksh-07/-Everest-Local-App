@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, View, type ImageResizeMode, type ImageStyle, type StyleProp } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons} from '@/components/ui/Icon';
 import {signedPostMedia} from '@/lib/request-post-media';
 import {useAppTheme} from '@/lib/theme';
 
@@ -14,4 +14,4 @@ export function PostMediaImage({postId,uri,index=0,style,resizeMode='cover'}:{po
  return <View style={[style,styles.frame]}>{state==='retrying'?<View style={[StyleSheet.absoluteFill,styles.loading,{backgroundColor:colors.soft}]}><ActivityIndicator color={colors.accent}/></View>:null}<Image source={{uri:source}} resizeMode={resizeMode} style={StyleSheet.absoluteFill} onError={()=>void retry()}/></View>;
 }
 
-const styles=StyleSheet.create({frame:{overflow:'hidden'},loading:{alignItems:'center',justifyContent:'center',zIndex:2},fallback:{alignItems:'center',justifyContent:'center',gap:5},copy:{fontSize:11,fontWeight:'800'},retry:{fontSize:9,fontWeight:'900'},});
+const styles=StyleSheet.create({frame:{overflow:'hidden'},loading:{alignItems:'center',justifyContent:'center',zIndex:2},fallback:{alignItems:'center',justifyContent:'center',gap:5},copy:{fontSize:11,fontWeight:'800'},retry:{fontSize:12,fontWeight:'900'},});

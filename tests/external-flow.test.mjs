@@ -29,7 +29,7 @@ test('customer authorisation has ownership, fresh identity, suppression and abus
  assert.match(migration,/created_at>now\(\)-interval '30 days'/);
  assert.match(migration,/unique\(request_id,reference_id\)/);
  assert.match(migration,/request_snapshot jsonb not null/);
- assert.match(externalDirectory,/AUTHORISE THIS ENQUIRY/);
+ assert.match(externalDirectory,/AUTHORISE THIS ENQUIRY/i);
  assert.match(externalDirectory,/p_share_email:shareEmail,p_share_phone:sharePhone/);
  assert.match(externalDirectory,/record_external_business_selection/);
 });
