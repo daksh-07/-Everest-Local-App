@@ -113,7 +113,7 @@ export default function BusinessVerification() {
   return (
     <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.page}>
-        <Text style={s.eyebrow}>BUSINESS VERIFICATION</Text>
+        <Text style={s.eyebrow}>Business verification</Text>
         <Text style={s.title}>Verify your business</Text>
 
         {loading ? <ActivityIndicator /> : business ? (
@@ -163,7 +163,7 @@ export default function BusinessVerification() {
                   <Text style={s.pendingCopy}>Your business is verified. Connect Stripe and a bank account before paid services or products can go live.</Text>
                 </View>
                 <Pressable onPress={() => router.push('/business-payouts')} style={s.button}>
-                  <Text style={s.buttonText}>SET UP PAYMENTS & PAYOUTS</Text>
+                  <Text style={s.buttonText}>Set up payments & payouts</Text>
                 </Pressable>
               </>
             ) : (
@@ -172,7 +172,7 @@ export default function BusinessVerification() {
                 onPress={() => void submit()}
                 style={[s.button, (busy || !abnValid) ? s.buttonDisabled : null]}
               >
-                <Text style={s.buttonText}>{busy ? 'CHECKING ABR…' : pending ? 'RECHECK ABR' : 'CHECK ABN & SUBMIT'}</Text>
+                <Text style={s.buttonText}>{busy ? 'Checking ABR…' : pending ? 'Recheck ABR' : 'Check ABN & submit'}</Text>
               </Pressable>
             )}
           </>
@@ -193,17 +193,17 @@ export default function BusinessVerification() {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f8f7f4' },
   page: { padding: 20, paddingBottom: 50 },
-  eyebrow: { fontSize: 12, fontWeight: '900', letterSpacing: 2, color: '#777' },
+  eyebrow: { fontSize: 12, fontWeight: '900', color: '#777' },
   title: { fontSize: 31, fontWeight: '900', marginTop: 7, marginBottom: 22 },
   card: { backgroundColor: '#151515', borderRadius: 20, padding: 20 },
   name: { fontSize: 17, fontWeight: '800', color: '#fff' },
-  status: { fontSize: 12, fontWeight: '900', letterSpacing: 1, color: '#aaa', marginTop: 8 },
+  status: { fontSize: 12, fontWeight: '900', color: '#aaa', marginTop: 8 },
   meta: { fontSize: 12, lineHeight: 18, color: '#777', marginTop: 6 },
   pendingCard: { backgroundColor: '#eeece7', borderRadius: 16, padding: 16, marginTop: 14 },
   pendingTitle: { fontSize: 14, fontWeight: '900' },
   pendingCopy: { fontSize: 14, lineHeight: 20, color: '#666', marginTop: 5 },
   verifiedNext: { backgroundColor: '#eeece7', borderRadius: 16, padding: 16, marginTop: 18 },
-  label: { fontSize: 14, fontWeight: '900', letterSpacing: 1.2, color: '#777', marginTop: 20, marginBottom: 7 },
+  label: { fontSize: 14, fontWeight: '900', color: '#777', marginTop: 20, marginBottom: 7 },
   input: { height: 52, borderRadius: 14, borderWidth: 1, borderColor: '#dfdcd5', backgroundColor: '#fff', paddingHorizontal: 15 },
   inputError: { borderColor: '#b42318' },
   inputValid: { borderColor: '#245b35' },

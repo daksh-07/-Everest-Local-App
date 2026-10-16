@@ -310,7 +310,7 @@ export default function Assistant() {
                     )}
 
                     <View style={message.role === 'user' ? s.userBubble : s.assistantBubble}>
-                      {message.role === 'assistant' && <Text style={s.assistantLabel}>EVEREST</Text>}
+                      {message.role === 'assistant' && <Text style={s.assistantLabel}>Everest</Text>}
                       <Text style={message.role === 'user' ? s.userText : s.assistantText}>{message.text}</Text>
 
                       {!!message.actions?.length && (
@@ -486,7 +486,6 @@ const createStyles = (c: ThemeColors) =>
       color:c.accent,
       fontSize: 12,
       fontWeight: '900',
-      letterSpacing: 1.8,
       marginBottom: 10,
     },
     heroTitle: {
@@ -588,7 +587,6 @@ const createStyles = (c: ThemeColors) =>
       color: c.muted,
       fontSize: 14,
       fontWeight: '900',
-      letterSpacing: 1.35,
       marginBottom: 7,
     },
     userText: { color: c.text, fontSize: 15, lineHeight: 21 },

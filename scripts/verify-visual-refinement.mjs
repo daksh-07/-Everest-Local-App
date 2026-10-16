@@ -55,17 +55,17 @@ try{
   const {context,page,errors}=await fixture(screen,width,theme);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`${screen} ${width} ${theme} overflow`);
   if(!before&&screen==='notifications'){
-   const button=page.getByText('MARK ALL READ',{exact:true});const bounds=await button.locator('..').boundingBox();assert.ok(bounds.height>=44&&bounds.x+bounds.width<=width+1,'Read all fits with 44px target');
+   const button=page.getByText('Mark all read',{exact:true});const bounds=await button.locator('..').boundingBox();assert.ok(bounds.height>=44&&bounds.x+bounds.width<=width+1,'Read all fits with 44px target');
   }
   if([320,390,1440].includes(width))await capture(page,`${screen}-${width}-${theme.toLowerCase()}`);
-  assert.deepEqual(errors,[]);results.push({screen,width,theme,...screen==='notifications'?{readAllBounds:await page.getByText('MARK ALL READ',{exact:true}).locator('..').boundingBox()}: {}});await context.close();
+  assert.deepEqual(errors,[]);results.push({screen,width,theme,...screen==='notifications'?{readAllBounds:await page.getByText('Mark all read',{exact:true}).locator('..').boundingBox()}: {}});await context.close();
  }
  for(const screen of screens.filter(x=>['bookings','orders','notifications','business'].includes(x)))for(const state of ['loading','error',...screen==='business'?[]:['empty']]){
   const {context,page,errors,release,recover}=await fixture(screen,390,'LIGHT',state);
   await capture(page,`${screen}-${state}`);
   if(state==='loading'){release();await page.getByText(headings[screen],{exact:true}).filter({visible:true}).first().waitFor()}
   if(state==='error'){
-   recover();const retry=page.getByText(screen==='bookings'?'Try again':screen==='orders'||screen==='business'?'Try again':'RETRY',{exact:true});await retry.click();
+   recover();const retry=page.getByText(screen==='bookings'?'Try again':screen==='orders'||screen==='business'?'Try again':'Retry',{exact:true});await retry.click();
    await page.getByText(headings[screen],{exact:true}).filter({visible:true}).first().waitFor();
   }
   assert.deepEqual(errors,[]);await context.close();

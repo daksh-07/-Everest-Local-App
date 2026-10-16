@@ -396,7 +396,7 @@ export default function Search(){
               style={{minHeight:44,paddingHorizontal:14,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
             >
               <Ionicons name="options-outline" size={16} color={c.text}/>
-              <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>FILTER</Text>
+              <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>Filter</Text>
               {photoOnly||sortMode!=='RELEVANCE'?<View style={{width:6,height:6,borderRadius:3,backgroundColor:c.brand}}/>:null}
             </Pressable>
             <Pressable
@@ -405,7 +405,7 @@ export default function Search(){
               style={{flex:1,minHeight:44,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
             >
               <Ionicons name="bookmark-outline" size={16} color={c.text}/>
-              <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>{savingSearch?'SAVING…':'SAVE THIS SEARCH'}</Text>
+              <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>{savingSearch?'Saving…':'Save this search'}</Text>
             </Pressable>
           </View>
         ):null}
@@ -470,7 +470,7 @@ export default function Search(){
                   {[job.suburb,job.city,job.state].filter(Boolean).join(', ')||'Local job'}
                   {job.budget!=null?' · Budget $'+Number(job.budget).toFixed(0):''}
                 </Text>
-                <Text style={{fontSize:12,fontWeight:'900',color:c.accent,marginTop:5}}>JOB</Text>
+                <Text style={{fontSize:12,fontWeight:'900',color:c.accent,marginTop:5}}>Job</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.muted}/>
             </Pressable>
@@ -578,7 +578,7 @@ export default function Search(){
               </Pressable>
             </View>
 
-            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>SEARCH IN</Text>
+            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>Search in</Text>
             <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
               {tabs.map(x=>(
                 <Pressable
@@ -591,7 +591,7 @@ export default function Search(){
               ))}
             </View>
 
-            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>RESULT QUALITY</Text>
+            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>Result quality</Text>
             <Pressable
               disabled={tab==='JOB'}
               onPress={()=>setPhotoOnly(value=>!value)}
@@ -607,7 +607,7 @@ export default function Search(){
               <Ionicons name={photoOnly?'checkmark-circle':'ellipse-outline'} size={22} color={photoOnly?c.accent:c.muted}/>
             </Pressable>
 
-            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>SORT</Text>
+            <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>Sort</Text>
             <View style={{flexDirection:'row',gap:8}}>
               {([
                 ['RELEVANCE','Most relevant'],

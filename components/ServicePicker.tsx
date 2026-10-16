@@ -141,7 +141,7 @@ export function ServicePicker({
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
             <Ionicons name="checkmark-circle" size={18} color={c.accent} />
-            <Text style={[s.label, { color:c.accent }]}>SELECTED SERVICE</Text>
+            <Text style={[s.label, { color:c.accent }]}>Selected service</Text>
           </View>
           <Text style={[s.selectedName, text]}>{selected.name}</Text>
           <Text style={[s.meta, { color: c.textSecondary }]}>
@@ -157,7 +157,7 @@ export function ServicePicker({
             }}
             style={s.change}
           >
-            <Text style={[s.label, { color:c.accent }]}>CHANGE</Text>
+            <Text style={[s.label, { color:c.accent }]}>Change</Text>
             <Ionicons name="swap-horizontal" size={16} color={c.accent} />
           </Pressable>
         </View>
@@ -432,7 +432,7 @@ const s = StyleSheet.create({
     fontWeight: "800",
     marginTop: 14,
   },
-  label: { fontSize: 11, fontWeight: "800", letterSpacing: 1 },
+  label: { fontSize: 11, fontWeight: "800" },
   change: {
     alignSelf: "flex-start",
     minHeight: 44,

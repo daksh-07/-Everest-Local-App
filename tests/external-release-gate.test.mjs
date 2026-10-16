@@ -24,8 +24,8 @@ test('external directory remains disabled from launch search while its isolated 
   assert.doesNotMatch(search, /Search businesses outside Everest/);
   assert.doesNotMatch(search, /external-businesses/);
   assert.doesNotMatch(search, /functions\.invoke\('external-discovery'/);
-  assert.match(directory, /NOT YET ON EVEREST/);
-  assert.match(directory, /AUTHORISE THIS ENQUIRY/);
+  assert.match(directory, /NOT YET ON EVEREST/i);
+  assert.match(directory, /AUTHORISE THIS ENQUIRY/i);
 });
 
 test('pgcrypto compatibility helpers are locked away from API roles', () => {

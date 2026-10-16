@@ -99,8 +99,8 @@ test('local requests require and persist a precise geocoded service address',()=
  assert.match(preciseMigration,/service_address_label text/);
  assert.match(preciseMigration,/p_latitude is null or p_longitude is null/);
  assert.match(preciseMigration,/A precise service location is required for local service/);
- assert.match(request,/USE PRECISE LOCATION/);
- assert.match(request,/CONFIRM PRECISE ADDRESS/);
+ assert.match(request,/USE PRECISE LOCATION/i);
+ assert.match(request,/CONFIRM PRECISE ADDRESS/i);
  assert.match(request,/serviceAddressLabel/);
 });
 
@@ -146,7 +146,7 @@ test('selected business gets exact booked address, not pre-booking candidates',(
  assert.match(fn,/b\.status::text<>'CANCELLED'/);
  assert.match(fn,/r\.service_address_label,r\.latitude,r\.longitude/);
  assert.match(businessJob,/getBookingServiceLocation/);
- assert.match(businessJob,/OPEN DIRECTIONS/);
+ assert.match(businessJob,/OPEN DIRECTIONS/i);
 });
 
 test('Live offers expose real ETA without exposing the customer home address',()=>{

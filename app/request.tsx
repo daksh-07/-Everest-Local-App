@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
-import { formatMoney,formatStatus } from '@/lib/format';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -801,7 +800,7 @@ export default function Request() {
                               color={colors.onBrand}
                             />
                             <Text style={s.primaryText}>
-                              {locating ? "LOCATING…" : "USE PRECISE LOCATION"}
+                              {locating ? "Locating…" : "Use precise location"}
                             </Text>
                           </Pressable>
                           {location.suburb ? (
@@ -868,7 +867,7 @@ export default function Request() {
                             onPress={() => void confirmLocation()}
                             style={s.outline}
                           >
-                            <Text style={s.outlineText}>{locating?"LOCATING ADDRESS…":"CONFIRM PRECISE ADDRESS"}</Text>
+                            <Text style={s.outlineText}>{locating?"Locating address…":"Confirm precise address"}</Text>
                           </Pressable>
                         ) : null}
                       </>
@@ -1107,7 +1106,7 @@ export default function Request() {
                   Tap any row to edit it before Everest starts matching.
                 </Text>
                 <Review
-                  label="SERVICE TYPE"
+                  label="Service type"
                   value={
                     serviceName || selectedDefinition?.name || "Not selected"
                   }
@@ -1115,7 +1114,7 @@ export default function Request() {
                   colors={colors}
                 />
                 <Review
-                  label="JOB DETAILS"
+                  label="Job details"
                   value={description}
                   onPress={() => setStep(1)}
                   colors={colors}
@@ -1222,9 +1221,9 @@ export default function Request() {
                 <Text style={s.primaryText}>
                   {live
                     ? pendingLiveRequestId
-                      ? "RETRY LIVE SEARCH"
-                      : "START LIVE SEARCH"
-                    : "POST REQUEST"}
+                      ? "Retry live search"
+                      : "Start live search"
+                    : "Post request"}
                 </Text>
               )}
             </Pressable>
@@ -1297,7 +1296,6 @@ function Review({
           style={{
             fontSize: 12,
             fontWeight: "900",
-            letterSpacing: 1,
             color: colors.muted,
           }}
         >
@@ -1397,7 +1395,6 @@ const styles = (c: ThemeColors) =>
     eyebrow: {
       fontSize: 12,
       fontWeight: "900",
-      letterSpacing: 1.2,
       color: c.muted,
     },
     selectedName: {
@@ -1480,7 +1477,6 @@ const styles = (c: ThemeColors) =>
     or: {
       fontSize: 12,
       fontWeight: "900",
-      letterSpacing: 1,
       color: c.muted,
       textAlign: "center",
       marginTop: 17,
@@ -1589,7 +1585,6 @@ const styles = (c: ThemeColors) =>
     primaryText: {
       fontSize: 14,
       fontWeight: "900",
-      letterSpacing: 0.6,
       color: c.onBrand,
     },
     disabled: { opacity: 0.5 },

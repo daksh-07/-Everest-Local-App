@@ -133,10 +133,10 @@ export function BusinessOpportunityAlert(){
    <View style={[s.handle,{backgroundColor:colors.border}]}/>
    <View style={s.heading}>
     <View style={{flex:1}}>
-     <Text style={[s.eyebrow,{color:colors.accent}]}>{item.is_live?'EVEREST LIVE REQUEST':'NEW JOB NEAR YOU'}</Text>
+     <Text style={[s.eyebrow,{color:colors.accent}]}>{item.is_live?'Everest Live request':'New job near you'}</Text>
      <Text numberOfLines={2} style={[s.title,{color:colors.text}]}>{r?.description||'New customer request'}</Text>
     </View>
-    <View style={[s.live,{backgroundColor:colors.accentSoft}]}><View style={[s.liveDot,{backgroundColor:colors.success}]}/><Text style={[s.liveText,{color:colors.accent}]}>LIVE</Text></View>
+    <View style={[s.live,{backgroundColor:colors.accentSoft}]}><View style={[s.liveDot,{backgroundColor:colors.success}]}/><Text style={[s.liveText,{color:colors.accent}]}>Live</Text></View>
    </View>
    <View style={s.metaRow}>
     {location?<Text style={[s.meta,{color:colors.muted}]}>📍 {location}</Text>:null}
@@ -147,8 +147,8 @@ export function BusinessOpportunityAlert(){
    </View>
    <Text style={[s.note,{color:colors.muted}]}>Interested opens a fast quote. It does not confirm a booking, and the customer’s exact address stays private until booking. The request stays in Opportunities if you ignore it.</Text>
    <View style={s.actions}>
-    <Pressable onPress={()=>void decline()} style={[s.secondary,{borderColor:colors.border}]}><Text style={[s.secondaryText,{color:colors.text}]}>PASS</Text></Pressable>
-    <Pressable onPress={view} style={[s.primary,{backgroundColor:colors.brand}]}><Text style={[s.primaryText,{color:colors.onBrand}]}>INTERESTED</Text></Pressable>
+    <Pressable onPress={()=>void decline()} style={[s.secondary,{borderColor:colors.border}]}><Text style={[s.secondaryText,{color:colors.text}]}>Pass</Text></Pressable>
+    <Pressable onPress={view} style={[s.primary,{backgroundColor:colors.brand}]}><Text style={[s.primaryText,{color:colors.onBrand}]}>Interested</Text></Pressable>
    </View>
   </Animated.View>
  </View>;
@@ -159,17 +159,17 @@ const s=StyleSheet.create({
  sheet:{width:'100%',maxWidth:760,minHeight:270,borderTopLeftRadius:28,borderTopRightRadius:28,borderWidth:1,paddingHorizontal:20,paddingTop:10,paddingBottom:28,shadowColor:'#000',shadowOpacity:.18,shadowRadius:22,shadowOffset:{width:0,height:-8},elevation:24},
  handle:{width:38,height:4,borderRadius:4,alignSelf:'center',marginBottom:18},
  heading:{flexDirection:'row',gap:12,alignItems:'flex-start'},
- eyebrow:{fontSize:9,fontWeight:'900',letterSpacing:1.4},
+ eyebrow:{fontSize:12,fontWeight:'900'},
  title:{fontSize:20,lineHeight:25,fontWeight:'900',marginTop:6},
  live:{paddingHorizontal:9,paddingVertical:6,borderRadius:999,flexDirection:'row',alignItems:'center',gap:5},
  liveDot:{width:6,height:6,borderRadius:3},
- liveText:{fontSize:8,fontWeight:'900',letterSpacing:1},
+ liveText:{fontSize:12,fontWeight:'900'},
  metaRow:{flexDirection:'row',flexWrap:'wrap',gap:12,marginTop:15},
  meta:{fontSize:11,fontWeight:'700'},
- note:{fontSize:10,lineHeight:15,marginTop:13},
+ note:{fontSize:12,lineHeight:15,marginTop:13},
  actions:{flexDirection:'row',gap:9,marginTop:17},
  secondary:{flex:1,minHeight:49,borderWidth:1,borderRadius:14,alignItems:'center',justifyContent:'center',paddingHorizontal:8},
- secondaryText:{fontSize:9,fontWeight:'900'},
+ secondaryText:{fontSize:12,fontWeight:'900'},
  primary:{flex:1.25,minHeight:49,borderRadius:14,alignItems:'center',justifyContent:'center',paddingHorizontal:8},
- primaryText:{fontSize:9,fontWeight:'900'}
+ primaryText:{fontSize:12,fontWeight:'900'}
 });

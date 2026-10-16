@@ -60,10 +60,10 @@ export default function BusinessUpgrade(){
 
    <View style={st.hero}>
     <View style={st.crown}><Ionicons name="diamond" size={27} color={colors.onBrand}/></View>
-    <Text style={st.eyebrow}>PREMIUM BUSINESS TOOLS</Text>
+    <Text style={st.eyebrow}>Premium business tools</Text>
     <Text style={st.title}>{active?'Everest Pro is active':'Unlock '+feature}</Text>
     <Text style={st.copy}>{active?'Your business has access to Everest Pro features while the subscription remains active.':appleIapEnabled?'Subscribe securely through your Apple Account. Everest Pro renews automatically until cancelled.':'Gmail and Everest AI require an active Everest Pro subscription. Billing is recurring, not a one-time purchase.'}</Text>
-    {active?<View style={st.activeBadge}><Ionicons name="checkmark-circle" size={14} color={colors.accent}/><Text style={st.activeText}>ACTIVE SUBSCRIPTION</Text></View>:null}
+    {active?<View style={st.activeBadge}><Ionicons name="checkmark-circle" size={14} color={colors.accent}/><Text style={st.activeText}>Active subscription</Text></View>:null}
    </View>
 
    <View style={st.card}>
@@ -81,13 +81,13 @@ export default function BusinessUpgrade(){
      <View style={st.notice}><Ionicons name="phone-portrait-outline" size={18} color={colors.accent}/><Text style={st.noticeText}>{active?'Your existing Everest Pro access remains active. Subscription management is not offered through this store build.':'Everest Pro purchasing is not offered through this store build yet. Core marketplace and business tools remain available.'}</Text></View>
      :
      <Pressable disabled={working} onPress={()=>void billing()} style={[st.primary,working&&{opacity:.65}]}>
-      {working?<ActivityIndicator color={colors.onBrand}/>:<><Text style={st.primaryText}>{active?'MANAGE SUBSCRIPTION':'START EVEREST PRO SUBSCRIPTION'}</Text><Ionicons name="arrow-forward" size={15} color={colors.onBrand}/></>}
+      {working?<ActivityIndicator color={colors.onBrand}/>:<><Text style={st.primaryText}>{active?'Manage subscription':'Start Everest Pro subscription'}</Text><Ionicons name="arrow-forward" size={15} color={colors.onBrand}/></>}
      </Pressable>
     }
    </>}
 
    {error?<View style={st.errorBox}><Ionicons name="alert-circle-outline" size={17} color={colors.danger}/><Text style={st.error}>{error}</Text></View>:null}
-   <Pressable onPress={()=>router.back()} style={st.secondary}><Text style={st.secondaryText}>BACK TO INTEGRATIONS</Text></Pressable>
+   <Pressable onPress={()=>router.back()} style={st.secondary}><Text style={st.secondaryText}>Back to integrations</Text></Pressable>
   </ScrollView>
  </SafeAreaView>
 }
@@ -103,7 +103,7 @@ const benefitStyles=StyleSheet.create({
  row:{flexDirection:'row',gap:12,paddingVertical:15,borderBottomWidth:1},
  icon:{width:40,height:40,borderRadius:13,alignItems:'center',justifyContent:'center'},
  title:{fontSize:13,fontWeight:'900'},
- copy:{fontSize:10,lineHeight:16,marginTop:3},
+ copy:{fontSize:12,lineHeight:16,marginTop:3},
 });
 
 const styles=(c:ThemeColors)=>StyleSheet.create({
@@ -114,18 +114,18 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  headerTitle:{fontSize:14,fontWeight:'900',color:c.text},
  hero:{marginTop:30,alignItems:'center',paddingHorizontal:12},
  crown:{width:62,height:62,borderRadius:21,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:17},
- eyebrow:{fontSize:8,fontWeight:'900',letterSpacing:1.5,color:c.accent},
+ eyebrow:{fontSize:12,fontWeight:'900',color:c.accent},
  title:{fontSize:31,fontWeight:'900',letterSpacing:-.8,color:c.text,textAlign:'center',marginTop:7},
  copy:{fontSize:11,lineHeight:18,color:c.muted,textAlign:'center',marginTop:9,maxWidth:520},
  activeBadge:{marginTop:13,borderRadius:999,backgroundColor:c.soft,paddingHorizontal:11,paddingVertical:7,flexDirection:'row',alignItems:'center',gap:6},
- activeText:{fontSize:8,fontWeight:'900',letterSpacing:.7,color:c.accent},
+ activeText:{fontSize:12,fontWeight:'900',color:c.accent},
  card:{marginTop:28,borderWidth:1,borderColor:c.border,borderRadius:22,backgroundColor:c.surface,paddingHorizontal:17,overflow:'hidden'},
  notice:{marginTop:16,borderWidth:1,borderColor:c.border,borderRadius:16,backgroundColor:c.soft,padding:14,flexDirection:'row',gap:9,alignItems:'flex-start'},
- noticeText:{fontSize:10,lineHeight:16,color:c.muted,flex:1},
+ noticeText:{fontSize:12,lineHeight:16,color:c.muted,flex:1},
  primary:{height:50,borderRadius:15,alignItems:'center',justifyContent:'center',marginTop:18,backgroundColor:c.brand,flexDirection:'row',gap:8},
- primaryText:{fontSize:9,fontWeight:'900',color:c.onBrand,letterSpacing:.5},
+ primaryText:{fontSize:12,fontWeight:'900',color:c.onBrand},
  secondary:{height:46,borderWidth:1,borderColor:c.border,borderRadius:14,alignItems:'center',justifyContent:'center',marginTop:12,backgroundColor:c.surface},
- secondaryText:{fontSize:9,fontWeight:'900',color:c.text,letterSpacing:.5},
+ secondaryText:{fontSize:12,fontWeight:'900',color:c.text},
  errorBox:{marginTop:14,borderWidth:1,borderColor:c.danger,borderRadius:14,padding:12,flexDirection:'row',alignItems:'center',gap:8},
- error:{fontSize:10,lineHeight:15,color:c.danger,flex:1},
+ error:{fontSize:12,lineHeight:15,color:c.danger,flex:1},
 });

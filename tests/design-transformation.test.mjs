@@ -142,3 +142,18 @@ test('shopping screens show stock honestly and format money once',()=>{
  for(const [name,source] of [['product',product],['cart',cart],['orders',orders]])assert.doesNotMatch(source,/toFixed\(2\)|EVEREST LOCAL|fontSize:8,/,name);
  assert.match(orders,/<ScreenHeader title="Orders"/);
 });
+
+test('app copy stays sentence case and legible',async()=>{
+ const {formatStatus}=await import('../lib/format.ts');
+ assert.equal(formatStatus('VIP'),'VIP');assert.equal(formatStatus('NEW_LEAD'),'New lead');
+ const files=fs.readdirSync('app').filter(f=>f.endsWith('.tsx')).map(f=>'app/'+f).concat(fs.readdirSync('components').filter(f=>f.endsWith('.tsx')).map(f=>'components/'+f));
+ const acronyms=/^(ABN|ABR|ACN|CTP|VIN|CRM|AUD|GST|ETA|ID|DM|AI|PWA|URL|SMS|QR|FAQ|SKU|PDF|CSV|API|MFA|PIN|KM|OK|[A-Z]{2,3})$/;
+ const offenders=[];
+ for(const file of files){
+  const source=read(file);
+  // Multi-word ALL-CAPS JSX text (e.g. >OPEN JOBS<) and sub-11px text.
+  for(const m of source.matchAll(/>([A-Z][A-Z0-9 &·…'’/→+?!.,:%$()-]*[A-Z0-9…?!).%])</g)){const words=m[1].trim().split(/\s+/).filter(w=>/[A-Z]{2,}/.test(w)&&!acronyms.test(w.replace(/[^A-Z]/g,'')));if(m[1].includes(' ')&&words.length>1)offenders.push(file+': '+m[1])}
+  for(const m of source.matchAll(/fontSize:\s*(\d+(?:\.\d+)?)(?=\s*[,}])/g))if(Number(m[1])<11)offenders.push(file+': fontSize '+m[1]);
+ }
+ assert.deepEqual(offenders,[]);
+});

@@ -54,7 +54,7 @@ test('business followers are paginated and privacy filtered',()=>{
  assert.match(migration,/profile_visibility,'PUBLIC'\)<>'PRIVATE'/);
  assert.match(migration,/not public\.users_blocked\(auth\.uid\(\),pp\.id\)/);
  assert.match(followers,/PAGE_SIZE=25/);
- assert.match(followers,/LOAD MORE/);
+ assert.match(followers,/LOAD MORE/i);
  assert.match(followers,/public-user\?id=/);
  assert.match(businessProfile,/business-followers\?businessId=/);
 });

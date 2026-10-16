@@ -64,7 +64,7 @@ test('tasks are typed, date-time based and surfaced by Today',()=>{
 
 test('professional quotes calculate totals server-side and do not fake delivery',()=>{
  assert.match(migration,/crm_create_quote/);assert.match(migration,/calc_subtotal/);assert.match(migration,/calc_total/);assert.match(migration,/Deposit exceeds total/);assert.match(migration,/crm_quote_items/);
- assert.match(quote,/server recalculates totals on save/);assert.match(quote,/Mark sent/);assert.match(quote,/does not pretend Everest delivered a message/);assert.match(quote,/CONVERT TO BOOKING/);
+ assert.match(quote,/server recalculates totals on save/);assert.match(quote,/Mark sent/);assert.match(quote,/does not pretend Everest delivered a message/);assert.match(quote,/CONVERT TO BOOKING/i);
 });
 
 test('CRM bookings detect overlap and preserve native marketplace authority',()=>{
@@ -87,7 +87,7 @@ test('contact merge preserves dependent CRM objects and archives the secondary r
 test('business navigation is work-first while CRM remains a separate workspace',()=>{
  for(const label of ['Today','Jobs','Calendar','Inbox','Business'])assert.match(tabs,new RegExp("label:'"+label+"'"));
  assert.doesNotMatch(tabs,/label:'Leads'/);assert.doesNotMatch(tabs,/label:'Customers'/);assert.doesNotMatch(tabs,/route:'\/business-crm',label:'CRM'/);
- assert.match(businessControl,/SALES & CRM/);assert.match(businessControl,/CRM workspace/);
+ assert.match(businessControl,/SALES & CRM/i);assert.match(businessControl,/CRM workspace/);
  // Work comes first: today's counts and the attention queue render before Sales & CRM.
  assert.match(today,/'Jobs today'/);assert.match(today,/Needs attention/);assert.match(today,/Sales & CRM/);
  assert.ok(today.indexOf('Needs attention')<today.indexOf('>Sales & CRM<'),'attention queue must precede CRM');
@@ -104,5 +104,5 @@ test('calendar aggregates CRM bookings, Everest bookings, tasks and blocked time
 });
 
 test('reports and stale-deal views use recorded values rather than fabricated forecasts',()=>{
- assert.match(command,/CRM performance/);assert.match(command,/No probability or revenue is inferred when it is missing/);assert.match(command,/Lead sources/);assert.match(command,/STALE/);assert.match(today,/No activity for 3\+ days and no next task/);
+ assert.match(command,/CRM performance/);assert.match(command,/No probability or revenue is inferred when it is missing/);assert.match(command,/Lead sources/);assert.match(command,/STALE/i);assert.match(today,/No activity for 3\+ days and no next task/);
 });

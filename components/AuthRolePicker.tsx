@@ -13,7 +13,7 @@ const options: Array<{ role: AuthRole; title: string; copy: string; icon: 'perso
 export function AuthRolePicker({ selectedRole, onChange }: { selectedRole: AuthRole | null; onChange: (role: AuthRole) => void }) {
   return (
     <View style={s.wrap}>
-      <Text style={s.eyebrow}>HOW ARE YOU USING EVEREST LOCAL?</Text>
+      <Text style={s.eyebrow}>How are you using Everest Local?</Text>
       <Text style={s.title}>Choose your mode.</Text>
       {options.map(option => {
         const selected = option.role === selectedRole;
@@ -42,7 +42,7 @@ export function AuthRolePicker({ selectedRole, onChange }: { selectedRole: AuthR
 
 const s = StyleSheet.create({
   wrap: { marginBottom: 24 },
-  eyebrow: { color: '#77736c', fontSize: 9, fontWeight: '900', letterSpacing: 1.4 },
+  eyebrow: { color: '#77736c', fontSize:12, fontWeight: '900' },
   title: { color: '#151515', fontSize: 22, fontWeight: '900', marginTop: 5, marginBottom: 11 },
   card: { minHeight: 78, borderRadius: 17, borderWidth: 1, borderColor: '#dfdcd5', backgroundColor: '#fff', padding: 12, flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   selected: { borderColor: '#151515', backgroundColor: '#f1f0ec' },

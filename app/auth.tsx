@@ -18,7 +18,7 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
         <Text style={s.copy}>
           {presentAuthError(error, 'Unable to open sign in. Please try again.')}
         </Text>
-        <PrimaryButton label="TRY AGAIN" onPress={retry} />
+        <PrimaryButton label="Try again" onPress={retry} />
       </View>
     </View>
   );
@@ -54,7 +54,7 @@ function presentAuthError(error: unknown, fallback: string) {
 function Brand() {
   return (
     <View style={s.brand}>
-      <Text style={s.brandName}>EVEREST LOCAL</Text>
+      <Text style={s.brandName}>Everest Local</Text>
       <View style={s.brandRule} />
       <Text style={s.brandTagline}>Everything local. One place.</Text>
     </View>
@@ -401,7 +401,7 @@ export default function Auth() {
           : 'Create one account for requests, bookings, orders and messages.';
   const showSocial = mode === 'login' || mode === 'signup';
   const primaryLabel =
-    mode === 'login' ? 'SIGN IN' : mode === 'signup' ? 'CREATE ACCOUNT' : mode === 'reset' ? 'SEND RESET LINK' : 'UPDATE PASSWORD';
+    mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Create account' : mode === 'reset' ? 'Send reset link' : 'Update password';
 
   return (
     <SafeAreaView style={s.safe}>
@@ -441,7 +441,7 @@ export default function Auth() {
                 <Text style={s.socialNote}>Fast, secure sign-in</Text>
                 <View style={s.divider}>
                   <View style={s.line} />
-                  <Text style={s.or}>OR CONTINUE WITH EMAIL</Text>
+                  <Text style={s.or}>Or continue with email</Text>
                   <View style={s.line} />
                 </View>
               </>
@@ -599,7 +599,6 @@ const s = StyleSheet.create({
     color: '#151515',
     fontSize: 15,
     fontWeight: '900',
-    letterSpacing: 2.5,
   },
   brandRule: {
     width: 28,
@@ -708,7 +707,6 @@ const s = StyleSheet.create({
     color: '#8b8881',
     fontSize: 12,
     fontWeight: '900',
-    letterSpacing: 1,
   },
   field: {
     minHeight: 56,
@@ -812,7 +810,6 @@ const s = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '900',
-    letterSpacing: 0.9,
   },
   disabledButton: {
     opacity: 0.55,
@@ -840,7 +837,6 @@ const s = StyleSheet.create({
     color: '#aaa69e',
     fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 1.3,
     textAlign: 'center',
     marginTop: 34,
   },

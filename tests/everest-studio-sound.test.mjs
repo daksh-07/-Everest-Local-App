@@ -37,7 +37,7 @@ test('Add Sound exposes music original upload and voiceover',()=>{
  for(const label of ['Music','Original','Upload','Voiceover'])assert.match(soundPicker,new RegExp("'"+label+"'"));
  assert.match(soundPicker,/requestRecordingPermissionsAsync/);
  assert.match(soundPicker,/pickUserAudio/);
- assert.match(soundPicker,/USE ORIGINAL ONLY/);
+ assert.match(soundPicker,/USE ORIGINAL ONLY/i);
 });
 
 test('clips and photo posts publish generalized sound tracks',()=>{
@@ -52,6 +52,6 @@ test('Explore hydrates generalized sound tracks and reusable sound navigation',(
  assert.match(social,/listPostAudioTracks/);
  assert.match(social,/PostSoundPlayer/);
  assert.match(social,/\/sound\?id=/);
- assert.match(soundPage,/USE IN CLIP/);
- assert.match(soundPage,/USE WITH PHOTO/);
+ assert.match(soundPage,/USE IN CLIP/i);
+ assert.match(soundPage,/USE WITH PHOTO/i);
 });

@@ -66,5 +66,5 @@ const s=StyleSheet.create({
  businessOuter:{position:'absolute',width:34,height:34,borderRadius:17,borderWidth:1.4,backgroundColor:'rgba(5,12,10,.88)',alignItems:'center',justifyContent:'center',shadowColor:'#000',shadowOpacity:.34,shadowRadius:8},
  businessInner:{width:25,height:25,borderRadius:13,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:'rgba(255,255,255,.08)'},
  attribution:{position:'absolute',right:7,bottom:5,backgroundColor:'rgba(0,0,0,.58)',borderRadius:6,paddingHorizontal:6,paddingVertical:3},
- attributionText:{fontSize:10,color:'rgba(255,255,255,.86)'}
+ attributionText:{fontSize:12,color:'rgba(255,255,255,.86)'}
 });

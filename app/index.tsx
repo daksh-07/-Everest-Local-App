@@ -313,7 +313,7 @@ const styles=(c:ThemeColors,desktop:boolean)=>StyleSheet.create({
  businessCard:{width:200,overflow:'hidden',backgroundColor:c.surface,borderWidth:StyleSheet.hairlineWidth,borderColor:c.border},
  businessImage:{width:'100%',height:112},
  businessFallback:{height:112,alignItems:'center',justifyContent:'center',backgroundColor:c.elevated},
- monogram:{fontSize:26,lineHeight:32,fontWeight:'600',color:c.accent,letterSpacing:.5},
+ monogram:{fontSize:26,lineHeight:32,fontWeight:'600',color:c.accent},
  cardBody:{paddingHorizontal:12,paddingVertical:11},
  businessTitleRow:{flexDirection:'row',alignItems:'center',gap:5},
  cardTitle:{flex:1,fontSize:15,lineHeight:20,fontWeight:'600',color:c.text},

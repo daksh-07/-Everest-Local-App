@@ -38,10 +38,10 @@ test('variants are exact cart and checkout identities',()=>{
 
 test('seller wizard is media-first and draft friendly',()=>{
  for(const step of ['Photos','Basics','Price','Options','Stock','Fulfilment','Details','Preview'])assert.match(editor,new RegExp(step));
- assert.match(editor,/SAVE DRAFT/);
- assert.match(editor,/TAKE PHOTO/);
- assert.match(editor,/VARIANT PHOTO/);
- assert.match(editor,/OPEN CUSTOMER PREVIEW/);
+ assert.match(editor,/SAVE DRAFT/i);
+ assert.match(editor,/TAKE PHOTO/i);
+ assert.match(editor,/VARIANT PHOTO/i);
+ assert.match(editor,/OPEN CUSTOMER PREVIEW/i);
 });
 
 test('customer product page is variant and stock aware',()=>{

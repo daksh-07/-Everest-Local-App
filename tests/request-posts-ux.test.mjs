@@ -50,7 +50,7 @@ test('request privacy and secure media are server enforced',()=>{
 });
 
 test('post publishing is real and business identity is server checked',()=>{
- assert.match(post,/PUBLISH POST/);
+ assert.match(post,/PUBLISH POST/i);
  assert.match(post,/uploadPostMedia/);
  assert.match(post,/Camera/);
  assert.match(post,/Add photos/);

@@ -21,7 +21,7 @@ export default function Create(){
   <SafeAreaView edges={['bottom']} style={s.sheet}>
    <View style={s.handle}/>
    <View style={s.header}>
-    <View style={{flex:1}}><Text style={s.kicker}>CREATE ON EVEREST</Text><Text style={s.title}>Share something local</Text><Text style={s.subtitle}>Choose a format. You can change audience, location and music on the next screen.</Text></View>
+    <View style={{flex:1}}><Text style={s.kicker}>Create on Everest</Text><Text style={s.title}>Share something local</Text><Text style={s.subtitle}>Choose a format. You can change audience, location and music on the next screen.</Text></View>
     <Pressable onPress={()=>router.back()} accessibilityLabel="Close" style={s.close}><Ionicons name="close" size={21} color={colors.text}/></Pressable>
    </View>
    <View style={s.grid}>{choices.map(item=><Pressable key={item.title} onPress={()=>choose(item.route)} style={({pressed})=>[s.card,pressed&&s.cardPressed]}>
@@ -39,7 +39,7 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  sheet:{width:'100%',maxWidth:760,alignSelf:'center',backgroundColor:c.canvas,borderTopLeftRadius:30,borderTopRightRadius:30,borderWidth:1,borderBottomWidth:0,borderColor:c.border,paddingHorizontal:18,paddingTop:10,paddingBottom:14,shadowColor:'#000',shadowOpacity:.22,shadowRadius:28,shadowOffset:{width:0,height:-10}},
  handle:{width:42,height:4,borderRadius:2,backgroundColor:c.border,alignSelf:'center',marginBottom:16},
  header:{flexDirection:'row',alignItems:'flex-start',gap:14},
- kicker:{fontSize:12,fontWeight:'900',letterSpacing:1.6,color:c.accent},
+ kicker:{fontSize:12,fontWeight:'900',color:c.accent},
  title:{fontSize:25,lineHeight:30,fontWeight:'900',letterSpacing:-.45,color:c.text,marginTop:4},
  subtitle:{maxWidth:540,fontSize:14,lineHeight:20,color:c.muted,marginTop:6},
  close:{width:42,height:42,borderRadius:15,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center'},
