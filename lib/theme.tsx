@@ -15,9 +15,9 @@ export const uiTokens={
 } as const;
 
 const STORAGE_KEY='everest-local-theme';
-// Everest pairs warm ivory and neutral grey with soft beige and charcoal.
-// Accent highlights stay restrained; semantic red, blue and green carry status.
-// Green is reserved for semantic status such as live, available and success.
+// Everest Electric: neutral canvases let photography lead; blue marks actions and selection,
+// teal identifies Everest Live, coral is a sparing discovery accent. Status colours are separate
+// from brand colours and always appear with text or an icon (see lib/theme-colors.ts).
 const ThemeContext=createContext<AppTheme|null>(null);
 
 function valid(value:string|null):value is ThemePreference{return value==='SYSTEM'||value==='LIGHT'||value==='DARK'}
