@@ -111,7 +111,13 @@ test('business profile is a storefront with working actions',()=>{
  const profile=read('app/business-profile.tsx');
  // tab=SERVICES is not a Search tab (it silently fell back to Top); the CTA now targets this business.
  assert.doesNotMatch(profile,/tab=SERVICES/);
- assert.match(profile,/services\.length===1\)router\.push\(`\/request\?serviceId=\$\{services\[0\]\.id\}`\)/);
+ // One service: the CTA opens that service's detail sheet, whose actions target this exact service.
+ assert.match(profile,/if\(services\.length===1\)setServiceSheet\(services\[0\]\)/);
+ assert.match(profile,/onQuote=\{item=>\{setServiceSheet\(null\);router\.push\(`\/request\?serviceId=\$\{item\.id\}`\)\}\}/);
+ assert.match(profile,/onBook=\{item=>\{setServiceSheet\(null\);router\.push\(`\/instant-book\?serviceId=\$\{item\.id\}/);
+ // Sheet copy does not claim payment happens at instant booking (it happens on the booking screen).
+ assert.doesNotMatch(profile,/takes payment/);
+ assert.doesNotMatch(profile,/No public posts yet|No active products listed/,'empty public sections are hidden, not announced');
  assert.doesNotMatch(profile,/📍|🖥|VERIFIED BUSINESS|POST REQUEST|VIEW SERVICES|toFixed\(2\)/);
  assert.match(profile,/<ScreenHeader /);
 });

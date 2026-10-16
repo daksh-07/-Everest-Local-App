@@ -83,6 +83,7 @@ const screens={
  'business-job-new':{path:'/business-job?id=b3',signedIn:true,business:true},
  'business-customer':{path:'/business-customer?id=ct1',signedIn:true,business:true},
  'business-customer-new':{path:'/business-customer?id=ct2',signedIn:true,business:true},
+ 'business-profile-service':{path:'/business-profile?id='+biz,signedIn:true,click:'Garden maintenance'},
  saved:{path:'/saved',signedIn:true},
  'service-areas':{path:'/service-areas',signedIn:true,business:true},
  'business-verification':{path:'/business-verification',signedIn:true,business:true},
@@ -168,6 +169,8 @@ for(const key of selected){const screen=screens[key];if(!screen)continue;
   });
   await page.goto(base+screen.path,{waitUntil:'networkidle'}).catch(()=>undefined);
   await page.waitForTimeout(1200);
+  // Optional interaction before capture: tap the first control whose accessible name contains `click`.
+  if(screen.click){await page.getByRole('button',{name:screen.click}).first().click().catch(()=>errors.push('click target not found: '+screen.click));await page.waitForTimeout(700)}
   const file=`${output}/${key}-${theme.toLowerCase()}-${w}x${h}.png`;
   await page.screenshot({path:file,fullPage:process.env.EVEREST_QA_FULL==='1'});
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
