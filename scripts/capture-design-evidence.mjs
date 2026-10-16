@@ -104,7 +104,7 @@ for(const key of selected){const screen=screens[key];if(!screen)continue;
    if(url.pathname.includes('/rpc/')){
     if(table==='get_my_access_context')return route.fulfill({json:{profile_role:screen.business?'BUSINESS':'CUSTOMER',is_business_member:!!screen.business,is_verified_business:!!screen.business,business_id:screen.business?biz:null,business_name:screen.business?businesses[0].name:null}});
     if(table==='get_my_workspace_context')return route.fulfill({json:{mode:screen.business?'BUSINESS':'CUSTOMER',active_business_id:screen.business?biz:null,businesses:screen.business?[{...businesses[0],member_role:'OWNER',status:'ACTIVE'}]:[]}});
-    if(rpcFixtures[table]){let body=null;try{body=request.postDataJSON()}catch{}return route.fulfill({json:rpcFixtures[table](body)})}
+    if(rpcFixtures[table]){let body=null;try{body=request.postDataJSON()}catch{body=null}return route.fulfill({json:rpcFixtures[table](body)})}
     if(table.includes('shop')||table.includes('product'))return route.fulfill({json:products});
     return route.fulfill({json:[]});
    }
