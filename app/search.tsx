@@ -196,8 +196,13 @@ export default function Search(){
       if(profileError)throw profileError;
       const pattern=query.trim()?('%'+query.trim()+'%'):null;
       if(profile?.role==='BUSINESS'||profile?.role==='ADMIN'){
+        // RLS admits admins and other businesses' members; show only the active business's matches.
+        const {getWorkspaceContext}=await import('@/lib/workspace');
+        const workspace=await getWorkspaceContext();
+        if(workspace.mode!=='BUSINESS'||!workspace.active_business_id){if(version.current===current)setJobs([]);return;}
         let request=supabase.from('opportunities')
           .select('id,status,service_requests!inner(id,description,suburb,city,state,budget,preferred_date)')
+          .eq('business_id',workspace.active_business_id)
           .eq('status','OPEN')
           .order('created_at',{ascending:false})
           .limit(50);
