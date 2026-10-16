@@ -7,7 +7,8 @@ import {useAppTheme} from '@/lib/theme';
 
 const TILE=256;
 // CARTO's keyless basemaps now return 'API KEY REQUIRED' placeholder tiles, and OpenStreetMap's
-// public tile servers do not permit production app traffic. A provider is opt-in: set
+// public tiles are best-effort with no SLA and may be withdrawn for commercial services (OSMF tile
+// usage policy), which points such apps to an alternative provider. A provider is opt-in: set
 // EXPO_PUBLIC_LIVE_MAP_TILE_URL to a template with {z}/{x}/{y} (and any key it needs) and
 // EXPO_PUBLIC_LIVE_MAP_ATTRIBUTION to its required credit. Without it the map is schematic:
 // the same projected positions on a neutral grid, with no tiles and no borrowed attribution.
