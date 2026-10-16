@@ -1,58 +1,60 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
+import { useAppTheme } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme-colors';
 
 export type AuthRole = 'CUSTOMER' | 'BUSINESS' | 'DELIVERY_DRIVER';
 
 const options: Array<{ role: AuthRole; title: string; copy: string; icon: 'person-outline' | 'business-outline' | 'car-outline' }> = [
   { role: 'CUSTOMER', title: 'Customer', copy: 'Find services, hire local businesses and buy products.', icon: 'person-outline' },
   { role: 'BUSINESS', title: 'Business', copy: 'Get customers, manage services, products, bookings and orders.', icon: 'business-outline' },
-  { role: 'DELIVERY_DRIVER', title: 'Apply as a Delivery Driver', copy: 'Submit verification details. Approval is required before any delivery access is granted.', icon: 'car-outline' },
+  { role: 'DELIVERY_DRIVER', title: 'Driver', copy: 'Apply to deliver. Approval is required before any delivery access is granted.', icon: 'car-outline' },
 ];
 
+/** Compact "Continue as" segmented control. Customer is preselected, so most people never touch it;
+ * the selected role's one-line description keeps the driver approval rule visible. */
 export function AuthRolePicker({ selectedRole, onChange }: { selectedRole: AuthRole | null; onChange: (role: AuthRole) => void }) {
+  const { colors } = useAppTheme();
+  const s = useMemo(() => createStyles(colors), [colors]);
+  const selected = options.find(option => option.role === selectedRole);
+  // Below 360pt the three labels need the full segment width; icons are decorative.
+  const showIcons = useWindowDimensions().width >= 360;
   return (
     <View style={s.wrap}>
-      <Text style={s.eyebrow}>How are you using Everest Local?</Text>
-      <Text style={s.title}>Choose your mode.</Text>
-      {options.map(option => {
-        const selected = option.role === selectedRole;
-        return (
-          <Pressable
-            key={option.role}
-            onPress={() => onChange(option.role)}
-            accessibilityRole="button"
-            accessibilityState={{ selected }}
-            style={({ pressed }) => [s.card, selected && s.selected, pressed && s.pressed]}
-          >
-            <View style={[s.icon, selected && s.selectedIcon]}>
-              <Ionicons name={option.icon} size={21} color={selected ? '#fff' : '#151515'} />
-            </View>
-            <View style={s.copyWrap}>
-              <Text style={s.cardTitle}>{option.title}</Text>
-              <Text style={s.copy}>{option.copy}</Text>
-            </View>
-            <View style={[s.radio, selected && s.radioSelected]}>{selected && <View style={s.dot} />}</View>
-          </Pressable>
-        );
-      })}
+      <Text nativeID="auth-role-label" style={s.label}>Continue as</Text>
+      <View accessibilityRole="radiogroup" accessibilityLabelledBy="auth-role-label" style={s.track}>
+        {options.map(option => {
+          const active = option.role === selectedRole;
+          return (
+            <Pressable
+              key={option.role}
+              onPress={() => onChange(option.role)}
+              accessibilityRole="radio"
+              accessibilityLabel={option.title}
+              accessibilityState={{ selected: active, checked: active }}
+              style={({ pressed }) => [s.segment, active && s.segmentActive, pressed && !active && s.pressed]}
+            >
+              {showIcons ? <Ionicons name={option.icon} size={17} color={active ? colors.text : colors.textSecondary} /> : null}
+              <Text numberOfLines={1} style={[s.segmentText, active && s.segmentTextActive]}>{option.title}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {selected ? <Text accessibilityLiveRegion="polite" style={s.copy}>{selected.copy}</Text> : null}
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  wrap: { marginBottom: 24 },
-  eyebrow: { color: '#77736c', fontSize:12, fontWeight: '900' },
-  title: { color: '#151515', fontSize: 22, fontWeight: '900', marginTop: 5, marginBottom: 11 },
-  card: { minHeight: 78, borderRadius: 17, borderWidth: 1, borderColor: '#dfdcd5', backgroundColor: '#fff', padding: 12, flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  selected: { borderColor: '#151515', backgroundColor: '#f1f0ec' },
-  pressed: { opacity: 0.82 },
-  icon: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#f0eee9', alignItems: 'center', justifyContent: 'center' },
-  selectedIcon: { backgroundColor: '#151515' },
-  copyWrap: { flex: 1, minWidth: 0, marginHorizontal: 12 },
-  cardTitle: { color: '#151515', fontSize: 14, fontWeight: '900' },
-  copy: { color: '#77736c', fontSize: 11, lineHeight: 16, marginTop: 3 },
-  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: '#bcb8b0', alignItems: 'center', justifyContent: 'center' },
-  radioSelected: { borderColor: '#151515' },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#151515' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  wrap: { marginBottom: 20 },
+  label: { color: c.textSecondary, fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  track: { flexDirection: 'row', padding: 3, borderRadius: 14, backgroundColor: c.soft, gap: 3 },
+  segment: { flex: 1, minHeight: 44, borderRadius: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 6 },
+  segmentActive: { backgroundColor: c.surface, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+  pressed: { opacity: 0.7 },
+  segmentText: { color: c.textSecondary, fontSize: 14, fontWeight: '600', flexShrink: 1 },
+  segmentTextActive: { color: c.text },
+  copy: { color: c.textSecondary, fontSize: 13, lineHeight: 19, marginTop: 8 },
 });

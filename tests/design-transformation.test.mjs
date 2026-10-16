@@ -157,3 +157,19 @@ test('app copy stays sentence case and legible',async()=>{
  }
  assert.deepEqual(offenders,[]);
 });
+
+test('sign-in leads with authentication, keeps role routing, and follows the theme',()=>{
+ const auth=read('app/auth.tsx');const picker=read('components/AuthRolePicker.tsx');
+ // The role still drives post-auth routing (business onboarding, driver application).
+ assert.match(auth,/routeAfterAuth\(intent \?\? 'CUSTOMER'\)/);
+ assert.match(auth,/signInWithProvider\(provider, intent\)/);
+ assert.match(picker,/accessibilityRole="radio"/);
+ assert.match(picker,/Approval is required before any delivery access is granted/);
+ // Reset asks for an email only; the old screen also rendered a password field.
+ assert.match(auth,/mode !== 'reset' && \(\s*<IconField\s+icon="lock-closed-outline"/);
+ assert.match(auth,/router\.push\('\/terms'\)/);assert.match(auth,/router\.push\('\/privacy'\)/);
+ for(const [name,source] of [['auth',auth],['picker',picker]]){
+  assert.match(source,/useAppTheme\(\)/,name+' follows light/dark theme');
+  assert.doesNotMatch(source,/#f8f7f4|#151515|Choose your mode/,name);
+ }
+});
