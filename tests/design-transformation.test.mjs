@@ -85,3 +85,21 @@ test('messages: readable controls, sentence case, and no overlay over an open th
  assert.match(player,/useChatThreadOpen\(\)/);
  for(const route of ["'/cart'","'/product'","'/auth'"])assert.ok(player.includes(route),'mini player hidden on '+route);
 });
+
+test('mini player anchors above a tab bar only where one exists',()=>{
+ const player=read('components/EverestLiveMiniPlayer.tsx');
+ const declared=new Set([...player.match(/TAB_BAR_ROUTES=new Set\(\[([^\]]*)\]/)[1].matchAll(/'([^']+)'/g)].map(m=>m[1]));
+ for(const file of fs.readdirSync('app').filter(f=>f.endsWith('.tsx'))){
+  const source=read('app/'+file);if(!/<CustomerTabBar|<BusinessTabBar/.test(source))continue;
+  const route=file==='index.tsx'?'/':'/'+file.replace(/\.tsx$/,'');
+  assert.ok(declared.has(route),route+' renders a tab bar but is missing from TAB_BAR_ROUTES');
+ }
+});
+
+test('requests, quotes and bookings use the shared header and formatted values',()=>{
+ for(const screen of ['app/requests.tsx','app/quotes.tsx','app/bookings.tsx']){
+  const source=read(screen);
+  assert.match(source,/<ScreenHeader /,screen+' has a back-capable header');
+  assert.doesNotMatch(source,/EVEREST LOCAL|MY EVEREST|toFixed\(2\)|replaceAll\('_',' '\)/,screen);
+ }
+});

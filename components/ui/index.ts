@@ -6,3 +6,4 @@ export * from './LoadingState';
 export * from './Skeleton';
 export * from './StatusBadge';
 export * from './SectionHeader';
+export * from './ScreenHeader';
