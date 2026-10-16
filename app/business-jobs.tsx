@@ -1,7 +1,8 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
-import {formatStatus} from '@/lib/format';
+import {formatMoney,formatSchedule,formatStatus} from '@/lib/format';
+import {StatusBadge,type StatusTone} from '@/components/ui';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
@@ -18,8 +19,6 @@ type Job={id:string;request_id:string|null;business_id:string;price:number|null;
 type Counts={TODAY:number;UPCOMING:number;ACTIVE:number;COMPLETED:number};
 
 const dateKey=(d=new Date())=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
-const money=(n:number)=>new Intl.NumberFormat(undefined,{style:'currency',currency:'AUD'}).format(n);
-const label=(v:string)=>v.replaceAll('_',' ').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 
 export default function BusinessJobs(){
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);
@@ -68,7 +67,7 @@ export default function BusinessJobs(){
    const {data,error:queryError}=await query;
    if(queryError)throw queryError;
    setItems((data??[]) as Job[]);
-  }catch(e){setError(e instanceof Error?e.message:'Jobs could not be loaded.')}
+  }catch{setError('Jobs couldn’t load. Check your connection and try again.')}
   finally{setLoading(false);setRefreshing(false)}
  },[tab]);
 
@@ -85,39 +84,52 @@ export default function BusinessJobs(){
  }
 
  const verified=business?.verification_status==='VERIFIED';
+ const tone=(status:BookingStatus):StatusTone=>status==='IN_PROGRESS'?'info':status==='COMPLETED'?'success':status==='CANCELLED'?'danger':'neutral';
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}>
   <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>} contentContainerStyle={st.page} showsVerticalScrollIndicator={false}>
-   <View style={st.header}><View style={{flex:1}}><Text style={st.mode}>Business mode</Text><Text style={st.name}>{business?.name??'Business'}</Text></View><ModeSwitcher compact/></View>
-   <View style={st.titleRow}><View style={{flex:1}}><Text style={st.title}>Jobs</Text><Text style={st.copy}>Booked work lives here. New customer requests stay in Incoming Work until you respond.</Text></View><Pressable onPress={()=>router.push('/business-leads')} style={st.incoming}><Ionicons name="flash-outline" size={15} color={colors.accent}/><Text style={st.incomingText}>New work</Text></Pressable></View>
+   <View style={st.header}><View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={st.name}>{business?.name??'Business'}</Text><Text style={st.mode}>Business mode</Text></View><ModeSwitcher compact/></View>
+   <View style={st.titleRow}><Text accessibilityRole="header" variant="title" style={st.title}>Jobs</Text><Pressable accessibilityRole="button" accessibilityLabel="New work: customer requests waiting for a response" onPress={()=>router.push('/business-leads')} style={({pressed})=>[st.incoming,pressed&&{opacity:.7}]}><Ionicons name="flash-outline" size={16} color={colors.accent}/><Text style={st.incomingText}>New work</Text></Pressable></View>
+   <Text style={st.copy}>Booked work. Requests you haven’t answered stay in New work.</Text>
 
-   {!verified&&business?<View style={st.restricted}><Text style={st.restrictedTitle}>Jobs are restricted</Text><Text style={st.copy}>Complete business verification before operating customer bookings.</Text></View>:null}
+   {!verified&&business?<View style={st.restricted}><Text style={st.restrictedTitle}>Jobs are locked until you’re verified</Text><Text style={st.copy}>Complete business verification before operating customer bookings.</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/business-verification')} style={st.restrictedAction}><Text style={st.restrictedActionText}>Continue verification</Text></Pressable></View>:null}
 
-   {verified?<><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.tabs}>
-    {(['TODAY','UPCOMING','ACTIVE','COMPLETED'] as const).map(value=><Pressable key={value} onPress={()=>setTab(value)} style={[st.tab,tab===value&&st.tabOn]}><Text style={[st.tabText,tab===value&&st.tabTextOn]}>{formatStatus(value)}</Text><Text style={[st.tabCount,tab===value&&st.tabCountOn]}>{counts[value]}</Text></Pressable>)}
+   {verified?<><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.tabs} accessibilityRole="tablist">
+    {(['TODAY','UPCOMING','ACTIVE','COMPLETED'] as const).map(value=><Pressable key={value} accessibilityRole="tab" accessibilityState={{selected:tab===value}} accessibilityLabel={`${TAB_LABEL[value]}, ${counts[value]}`} onPress={()=>setTab(value)} style={[st.tab,tab===value&&st.tabOn]}><Text style={[st.tabText,tab===value&&st.tabTextOn]}>{TAB_LABEL[value]}</Text><Text tabular style={[st.tabCount,tab===value&&st.tabCountOn]}>{counts[value]}</Text></Pressable>)}
    </ScrollView>
 
    {loading?<ActivityIndicator color={colors.accent} style={{marginTop:45}}/>:items.length?<View style={st.list}>{items.map(job=>{
-    const isToday=job.scheduled_date===dateKey();
-    return <Pressable onPress={()=>router.push({pathname:'/business-job',params:{id:job.id}})} style={({pressed})=>[st.card,pressed&&{opacity:.72}]} key={job.id}>
-     <View style={st.dateBlock}><Text style={st.day}>{job.scheduled_date?new Date(job.scheduled_date+'T12:00:00').toLocaleDateString(undefined,{day:'numeric'}):'—'}</Text><Text style={st.month}>{job.scheduled_date?new Date(job.scheduled_date+'T12:00:00').toLocaleDateString(undefined,{month:'short'}).toUpperCase():'DATE'}</Text></View>
-     <View style={st.jobBody}><View style={st.row}><View style={[st.statusDot,{backgroundColor:job.status==='IN_PROGRESS'?colors.brand:colors.muted}]}/><Text style={st.status}>{label(job.status)}</Text>{isToday?<Text style={st.today}>Today</Text>:null}</View><Text style={st.when}>{job.scheduled_time?job.scheduled_time.slice(0,5):'Time to confirm'}</Text><Text style={st.meta}>Checklist · arrival updates · completion record</Text>
-      <View style={st.actions}>{job.request_id?<Pressable disabled={!!busy} onPress={event=>{event.stopPropagation();void message(job)}} style={st.secondary}><Ionicons name="chatbubble-outline" size={14} color={colors.text}/><Text style={st.secondaryText}>{busy==='message:'+job.id?'Opening…':'MESSAGE'}</Text></Pressable>:null}<Pressable onPress={event=>{event.stopPropagation();router.push({pathname:'/business-job',params:{id:job.id}})}} style={st.primary}><Text style={st.primaryText}>Open job</Text><Ionicons name="arrow-forward" size={14} color={colors.onBrand}/></Pressable></View>
+    const date=job.scheduled_date?new Date(job.scheduled_date+'T12:00:00'):null;
+    const when=formatSchedule(job.scheduled_date,job.scheduled_time)||'Time to confirm';
+    return <Pressable accessibilityRole="button" accessibilityLabel={`${when}, ${formatStatus(job.status)}${job.price!=null?', '+formatMoney(job.price):''}. Open job`} onPress={()=>router.push({pathname:'/business-job',params:{id:job.id}})} style={({pressed})=>[st.card,pressed&&{opacity:.72}]} key={job.id}>
+     <View style={st.dateBlock}><Text tabular style={st.day}>{date?date.toLocaleDateString('en-AU',{day:'numeric'}):'—'}</Text><Text style={st.month}>{date?date.toLocaleDateString('en-AU',{month:'short'}):'Date'}</Text></View>
+     <View style={st.jobBody}>
+      <View style={st.row}><Text numberOfLines={1} style={st.when}>{when}</Text>{job.price!=null?<Text tabular style={st.price}>{formatMoney(job.price)}</Text>:null}</View>
+      <View style={st.badgeRow}><StatusBadge label={formatStatus(job.status)} tone={tone(job.status)}/></View>
+      <View style={st.actions}>{job.request_id?<Pressable accessibilityRole="button" accessibilityLabel="Message customer" disabled={!!busy} onPress={event=>{event.stopPropagation();void message(job)}} style={({pressed})=>[st.secondary,pressed&&{opacity:.7}]}><Ionicons name="chatbubble-outline" size={15} color={colors.text}/><Text style={st.secondaryText}>{busy==='message:'+job.id?'Opening…':'Message'}</Text></Pressable>:null}<View style={st.openHint}><Text style={st.openHintText}>Open job</Text><Ionicons name="chevron-forward" size={16} color={colors.textSecondary}/></View></View>
      </View>
-     {job.price!=null?<Text style={st.price}>{money(Number(job.price))}</Text>:null}
     </Pressable>
-   })}</View>:<View style={st.empty}><View style={st.emptyIcon}><Ionicons name={tab==='COMPLETED'?'checkmark-circle-outline':'briefcase-outline'} size={23} color={colors.accent}/></View><View style={{flex:1}}><Text style={st.emptyTitle}>{tab==='TODAY'?'No booked work today.':tab==='ACTIVE'?'Nothing is in progress.':tab==='UPCOMING'?'No upcoming booked jobs.':'No completed jobs yet.'}</Text><Text style={st.copy}>{tab==='TODAY'?'New accepted work will appear here automatically.':'Pull down to refresh or check Incoming Work.'}</Text></View></View>}</>:null}
+   })}</View>:<View style={st.empty}><View style={st.emptyIcon}><Ionicons name={tab==='COMPLETED'?'checkmark-circle-outline':'briefcase-outline'} size={23} color={colors.accent}/></View><View style={{flex:1}}><Text style={st.emptyTitle}>{tab==='TODAY'?'No booked work today':tab==='ACTIVE'?'Nothing in progress':tab==='UPCOMING'?'No upcoming jobs':'No completed jobs yet'}</Text><Text style={st.copy}>{tab==='TODAY'?'Accepted work appears here automatically.':'Pull down to refresh, or check New work.'}</Text></View></View>}</>:null}
 
-   {error?<View style={st.errorBox}><Ionicons name="alert-circle-outline" size={16} color={colors.danger}/><Text style={st.error}>{error}</Text></View>:null}
+   {error?<View style={st.errorBox} accessibilityRole="alert"><Ionicons name="alert-circle-outline" size={16} color={colors.danger}/><Text style={st.error}>{error}</Text><Pressable accessibilityRole="button" onPress={()=>void load()} style={st.retry}><Text style={st.retryText}>Try again</Text></Pressable></View>:null}
   </ScrollView>
   <BusinessTabBar active="/business-jobs"/>
  </View></SafeAreaView>;
 }
 
+const TAB_LABEL:Record<Tab,string>={TODAY:'Today',UPCOMING:'Upcoming',ACTIVE:'In progress',COMPLETED:'Completed'};
+
 const styles=(c:ThemeColors)=>StyleSheet.create({
- safe:{flex:1,backgroundColor:c.canvas},page:{padding:20,paddingBottom:110,maxWidth:820,width:'100%',alignSelf:'center'},header:{flexDirection:'row',alignItems:'center',gap:10},mode:{fontSize:12,fontWeight:'900',color:c.muted},name:{fontSize:15,fontWeight:'900',color:c.text,marginTop:2},
- titleRow:{marginTop:24,flexDirection:'row',alignItems:'flex-end',gap:12},title:{fontSize:34,fontWeight:'900',color:c.text},copy:{fontSize:14,lineHeight:20,color:c.muted,marginTop:5},incoming:{height:40,borderRadius:12,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:11,flexDirection:'row',alignItems:'center',gap:6},incomingText:{fontSize:12,fontWeight:'900',color:c.text},
- tabs:{gap:7,paddingTop:20,paddingBottom:13},tab:{minWidth:92,height:45,borderRadius:14,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:11,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:7},tabOn:{backgroundColor:c.elevated,borderColor:c.brand},tabText:{fontSize:12,fontWeight:'900',color:c.muted},tabTextOn:{color:c.text},tabCount:{fontSize:12,fontWeight:'900',color:c.muted},tabCountOn:{color:c.accent},
- list:{marginTop:1},card:{minHeight:132,borderBottomWidth:1,borderBottomColor:c.border,flexDirection:'row',alignItems:'flex-start',paddingVertical:16,gap:13},dateBlock:{width:52,height:57,borderRadius:15,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center'},day:{fontSize:19,fontWeight:'900',color:c.text},month:{fontSize:12,fontWeight:'900',color:c.muted,marginTop:1},jobBody:{flex:1},row:{flexDirection:'row',alignItems:'center',gap:6},statusDot:{width:6,height:6,borderRadius:3},status:{fontSize:12,fontWeight:'900',color:c.muted},today:{fontSize:12,fontWeight:'900',color:c.accent},when:{fontSize:18,fontWeight:'900',color:c.text,marginTop:7},meta:{fontSize:12,color:c.muted,marginTop:3},price:{fontSize:14,fontWeight:'900',color:c.text,marginTop:3},
- actions:{flexDirection:'row',gap:7,marginTop:12},primary:{minHeight:39,borderRadius:11,backgroundColor:c.brand,paddingHorizontal:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6},primaryText:{fontSize:14,fontWeight:'900',color:c.onBrand},secondary:{minHeight:39,borderRadius:11,borderWidth:1,borderColor:c.border,paddingHorizontal:11,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6},secondaryText:{fontSize:14,fontWeight:'900',color:c.text},
- empty:{backgroundColor:c.surface,borderRadius:18,borderWidth:1,borderColor:c.border,padding:18,marginTop:7,flexDirection:'row',gap:12,alignItems:'center'},emptyIcon:{width:44,height:44,borderRadius:15,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},emptyTitle:{fontSize:14,fontWeight:'900',color:c.text},restricted:{backgroundColor:c.elevated,borderWidth:1,borderColor:c.border,borderRadius:18,padding:17,marginTop:18},restrictedTitle:{fontSize:16,fontWeight:'900',color:c.text},errorBox:{marginTop:12,borderWidth:1,borderColor:c.danger,borderRadius:13,padding:11,flexDirection:'row',alignItems:'center',gap:7},error:{fontSize:14,color:c.danger,flex:1},
+ safe:{flex:1,backgroundColor:c.canvas},page:{paddingHorizontal:20,paddingTop:8,paddingBottom:110,maxWidth:820,width:'100%',alignSelf:'center'},
+ header:{minHeight:48,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:10},name:{fontSize:15,fontWeight:'700',color:c.text},mode:{fontSize:13,color:c.textSecondary,marginTop:1},
+ titleRow:{marginTop:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12},title:{color:c.text},copy:{fontSize:15,lineHeight:21,color:c.textSecondary,marginTop:4},
+ incoming:{minHeight:44,borderRadius:22,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:14,flexDirection:'row',alignItems:'center',gap:6},incomingText:{fontSize:14,fontWeight:'600',color:c.text},
+ tabs:{gap:8,paddingTop:18,paddingBottom:8},tab:{minHeight:44,borderRadius:22,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,paddingHorizontal:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8},tabOn:{backgroundColor:c.text,borderColor:c.text},tabText:{fontSize:14,fontWeight:'600',color:c.text},tabTextOn:{color:c.canvas},tabCount:{fontSize:13,fontWeight:'600',color:c.textSecondary},tabCountOn:{color:c.canvas},
+ list:{marginTop:4},card:{borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:c.border,flexDirection:'row',alignItems:'flex-start',paddingVertical:16,gap:14},
+ dateBlock:{width:52,height:56,borderRadius:14,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},day:{fontSize:20,lineHeight:24,fontWeight:'700',color:c.text},month:{fontSize:12,fontWeight:'600',color:c.textSecondary},
+ jobBody:{flex:1,minWidth:0},row:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:10},when:{flex:1,fontSize:16,fontWeight:'600',color:c.text},price:{fontSize:16,fontWeight:'700',color:c.text},badgeRow:{marginTop:6},
+ actions:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8,marginTop:10},secondary:{minHeight:44,borderRadius:22,borderWidth:1,borderColor:c.border,paddingHorizontal:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6},secondaryText:{fontSize:14,fontWeight:'600',color:c.text},
+ openHint:{flexDirection:'row',alignItems:'center',gap:2,marginLeft:'auto'},openHintText:{fontSize:14,fontWeight:'600',color:c.textSecondary},
+ empty:{backgroundColor:c.surface,borderRadius:18,borderWidth:1,borderColor:c.border,padding:18,marginTop:8,flexDirection:'row',gap:12,alignItems:'center'},emptyIcon:{width:44,height:44,borderRadius:15,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},emptyTitle:{fontSize:16,fontWeight:'600',color:c.text},
+ restricted:{backgroundColor:c.surface,borderWidth:1,borderColor:c.border,borderRadius:18,padding:18,marginTop:18},restrictedTitle:{fontSize:17,fontWeight:'700',color:c.text},restrictedAction:{alignSelf:'flex-start',minHeight:44,borderRadius:22,backgroundColor:c.brand,paddingHorizontal:16,justifyContent:'center',marginTop:14},restrictedActionText:{fontSize:15,fontWeight:'600',color:c.onBrand},
+ errorBox:{marginTop:12,borderWidth:1,borderColor:c.danger,borderRadius:14,padding:12,flexDirection:'row',alignItems:'center',gap:8},error:{flex:1,fontSize:14,lineHeight:20,color:c.danger},retry:{minHeight:44,justifyContent:'center',paddingHorizontal:8},retryText:{fontSize:14,fontWeight:'600',color:c.text},
 });

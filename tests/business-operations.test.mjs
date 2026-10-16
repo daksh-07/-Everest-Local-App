@@ -144,7 +144,7 @@ test('owner job queue is work-first and field workers cannot use the all-jobs su
  for(const label of ["'TODAY'","'UPCOMING'","'ACTIVE'","'COMPLETED'"])assert.match(jobs,new RegExp(label));
  assert.match(jobs,/if\(!current\.can_view_all_jobs\)/);
  assert.match(jobs,/router\.replace\('\/business-my-work'\)/);
- assert.match(jobs,/Booked work lives here/);
+ assert.match(jobs,/Booked work. Requests you haven’t answered stay in New work/);
  assert.match(jobs,/business-leads/);
  assert.match(migration,/bookings_participant_access[\s\S]*JOB_VIEW_ALL[\s\S]*can_operate_business_booking/);
 });

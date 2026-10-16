@@ -116,7 +116,9 @@ export function EverestLiveMiniPlayer(){
     };
   },[load,scheduleLoad]);
 
-  const visible=Boolean(request)&&!HIDDEN_ROUTES.has(pathname)&&!inThread;
+  // Business mode is a separate workspace; the customer's own search returns in Customer mode.
+  // /business-profile is the customer-facing storefront, so the player stays there.
+  const visible=Boolean(request)&&!HIDDEN_ROUTES.has(pathname)&&!(pathname.startsWith('/business')&&pathname!=='/business-profile')&&!inThread;
   if(!request||!visible)return null;
 
   const status=state?.live_status??request.live_status;

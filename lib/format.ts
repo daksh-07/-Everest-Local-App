@@ -41,3 +41,11 @@ export function formatStatus(value:string|null|undefined,fallback='Pending'){
  if(!words.length)return fallback;
  return words.map((word,index)=>{const upper=word.toUpperCase();if(ACRONYMS.has(upper))return upper;const lower=word.toLowerCase();return index===0?lower[0].toUpperCase()+lower.slice(1):lower}).join(' ');
 }
+
+/** List timestamp: "2:30 pm" today, otherwise "Yesterday" or "Tue 14 Oct". */
+export function formatWhen(value:string|null|undefined,{now=new Date(),locale=DEFAULT_LOCALE}:{now?:Date;locale?:string}={}){
+ if(!value)return '';const date=new Date(value);if(Number.isNaN(date.getTime()))return '';
+ if(startOfDay(date)===startOfDay(now))return formatTime(`${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`,{locale});
+ const local=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
+ return formatDay(local,{now,locale});
+}

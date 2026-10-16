@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {formatDay,formatMoney,formatSchedule,formatStatus,formatTime} from '../lib/format.ts';
+import {formatDay,formatMoney,formatSchedule,formatStatus,formatTime,formatWhen} from '../lib/format.ts';
 
 const read=path=>fs.readFileSync(path,'utf8');
 const now=new Date(2026,9,16,12,0);
@@ -25,6 +25,9 @@ test('times, schedules, money and statuses are formatted without raw server valu
  assert.equal(formatMoney(null),'');assert.equal(formatMoney('x'),'');
  assert.equal(formatStatus('PENDING_PAYMENT'),'Pending payment');
  assert.equal(formatStatus(''),'Pending');
+ assert.equal(formatWhen(new Date(2026,9,16,9,5).toISOString(),{now}),'9:05 am');
+ assert.equal(formatWhen(new Date(2026,9,15,9,5).toISOString(),{now}),'Yesterday');
+ assert.equal(formatWhen(null),'');
 });
 
 test('Live mini player only shows the signed-in customer’s own request',()=>{
@@ -172,4 +175,20 @@ test('sign-in leads with authentication, keeps role routing, and follows the the
   assert.match(source,/useAppTheme\(\)/,name+' follows light/dark theme');
   assert.doesNotMatch(source,/#f8f7f4|#151515|Choose your mode/,name);
  }
+});
+
+test('business jobs and inbox read as work lists without leaking raw errors',()=>{
+ const jobs=read('app/business-jobs.tsx');const inbox=read('app/business-inbox.tsx');const player=read('components/EverestLiveMiniPlayer.tsx');
+ // The old rows repeated a fixed "Checklist · arrival updates · completion record" line on every job.
+ assert.doesNotMatch(jobs,/Checklist · arrival updates/);
+ assert.doesNotMatch(jobs,/'MESSAGE'|toUpperCase\(\)/);
+ assert.match(jobs,/formatSchedule\(job\.scheduled_date,job\.scheduled_time\)/);
+ for(const [name,source] of [['jobs',jobs],['inbox',inbox]]){
+  assert.doesNotMatch(source,/e instanceof Error\?e\.message/,name+' shows a readable error, not a database message');
+  assert.match(source,/accessibilityRole="alert"/,name);
+  assert.match(source,/\.eq\('business_id',current\.id\)/,name+' stays scoped to the active business');
+ }
+ assert.match(inbox,/formatWhen\(/);
+ // The customer's Live search pill stays out of the Business workspace, but not off the public storefront.
+ assert.match(player,/pathname\.startsWith\('\/business'\)&&pathname!=='\/business-profile'/);
 });

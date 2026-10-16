@@ -49,7 +49,7 @@ test('business surfaces scope queries to active business',()=>{
 });
 
 test('business inbox explicitly excludes personal chat surface',()=>{
- assert.match(inbox,/Personal chats stay in Customer Mode/);
+ assert.match(inbox,/Personal chats stay in Customer mode/i);
  assert.match(inbox,/from\('conversations'\)/);
  assert.doesNotMatch(inbox,/personal_conversations/);
 });
