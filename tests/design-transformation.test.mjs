@@ -272,3 +272,14 @@ test('job workspace: formatted header, visible lifecycle, gated and confirmed co
  assert.ok(fs.existsSync('docs/design/proposals/business-job-summary-rpc.sql'),'the safe backend change is documented, not applied');
  assert.ok(!fs.readdirSync('supabase/migrations').some(f=>f.includes('business_job_summary')),'proposal is not in migrations');
 });
+
+test('customer card: four views, next-up, formatted values, same scoped CRM reads',()=>{
+ const c=read('app/business-customer.tsx');
+ assert.match(c,/const VIEWS:ReadonlyArray<\{key:View360;label:string\}>=\[\{key:'OVERVIEW'.*'ACTIVITY'.*'WORK'.*'TASKS'/s);
+ assert.doesNotMatch(c,/toLocaleString\(\)|toLocaleDateString\(\)|slice\(0,2\)\.toUpperCase\(\)|Customer 360/);
+ assert.match(c,/initialsOf\(contact\.display_name\)/);
+ assert.match(c,/<Text style=\{v\.nextLabel\}>Next up<\/Text>/);
+ // Marketplace history stays limited to the active business and the linked account.
+ assert.match(c,/from\('bookings'\)\.select\('id,status,price,scheduled_date,created_at,completed_at'\)\.eq\('business_id',current\.id\)\.eq\('customer_id',c\.linked_everest_user_id\)/);
+ assert.match(read('lib/initials.ts'),/export function initialsOf/);
+});

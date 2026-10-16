@@ -94,8 +94,9 @@ test('business navigation is work-first while CRM remains a separate workspace',
 });
 
 test('Customer 360 is a tabbed record instead of one giant sales-state page',()=>{
- for(const tab of ['OVERVIEW','TIMELINE','DEALS','QUOTES','BOOKINGS','PAYMENTS','NOTES','TASKS'])assert.match(customer,new RegExp("'"+tab+"'"));
- assert.match(customer,/Lifetime value/);assert.match(customer,/Open deals/);assert.match(customer,/Everest linked/);assert.doesNotMatch(customer,/updateLeadStatus/);
+ for(const view of ['OVERVIEW','ACTIVITY','WORK','TASKS'])assert.match(customer,new RegExp("'"+view+"'"));
+ assert.match(customer,/view==='WORK'\?/);assert.match(customer,/view==='ACTIVITY'\?/);
+ assert.match(customer,/Lifetime value/);assert.match(customer,/Open deals/);assert.match(customer,/label="Everest account"/);assert.doesNotMatch(customer,/updateLeadStatus/);
 });
 
 test('calendar aggregates CRM bookings, Everest bookings, tasks and blocked time',()=>{

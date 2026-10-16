@@ -1,3 +1,4 @@
+import {initialsOf} from '@/lib/initials';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Alert, Animated, Image, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
@@ -51,7 +52,6 @@ function dateLabel(value:string){
  if(d.toDateString()===yesterday.toDateString())return 'Yesterday';
  return d.toLocaleDateString([],{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==today.getFullYear()?{year:'numeric'}:{})});
 }
-function initialsOf(name:string|null|undefined){return (name??'Everest member').trim().split(/\s+/).slice(0,2).map(part=>part[0]?.toUpperCase()).join('')||'E'}
 function sameDay(a:string,b:string){return new Date(a).toDateString()===new Date(b).toDateString()}
 function scrollThreadToEndAfterLayout(ref:React.MutableRefObject<ScrollView|null>,animated:boolean){
  const run=()=>ref.current?.scrollToEnd({animated});
