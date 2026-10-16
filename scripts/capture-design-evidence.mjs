@@ -48,6 +48,7 @@ const rpcFixtures={
  get_public_user_profile:body=>body?.p_user==='99999999-9999-4999-8999-999999999999'?({id:body.p_user,display_name:'Marcus Lee',username:null,avatar_url:null,bio:null,website_url:null,suburb:null,joined_at:minutesAgo(60*24*3),connection_count:0,mutual_count:0,connection_state:'NONE'}):({id:other,display_name:'Priya Shah',username:'priyashah',avatar_url:null,bio:'Gardener, dog walker and long-time North Melbourne local. Ask me for trade recommendations.',website_url:'https://example.invalid',suburb:'North Melbourne',joined_at:minutesAgo(60*24*420),connection_count:38,mutual_count:4,connection_state:'CONNECTED'}),
  get_booking_service_location:()=>[{request_id:'r2',address_line1:'14 Errol Street',suburb:'North Melbourne',city:'Melbourne',state:'VIC',postal_code:'3051',country:'AU',service_address_label:'14 Errol Street, North Melbourne VIC 3051',latitude:-37.8027,longitude:144.9497}],
  list_discovery_feed:()=>feedPosts,
+ list_discovery_clips:()=>[feedPost('cl1',biz===biz?uid:uid,biz,'60-second hedge reshape — before and after.','BEFORE_AFTER',90,{content_format:'CLIP'}),feedPost('cl2',other,null,'Saturday at the Errol St market.','EXPERIENCE',400,{content_format:'CLIP'})],
  list_personal_conversations_v2:body=>body?.p_requests?[]:personalConversations,
  list_personal_messages_v2:()=>personalMessages,
  get_everest_live_state:()=>[{request_id:'r1',live_status:process.env.EVEREST_QA_LIVE_STATUS||'NOTIFYING',radius_km:3,radius_stage:1,expires_at:minutesAgo(-20),eligible_count:4,notified_count:2,viewed_count:1,responding_count:0,quote_count:2}],
@@ -91,6 +92,7 @@ const screens={
  'create-story':{path:'/create-story',signedIn:true},
  'create-clip':{path:'/create-clip',signedIn:true},
  story:{path:'/story?id=st1',signedIn:true},
+ 'social-clips':{path:'/social',signedIn:true,click:'Clips'},
  saved:{path:'/saved',signedIn:true},
  'service-areas':{path:'/service-areas',signedIn:true,business:true},
  'business-verification':{path:'/business-verification',signedIn:true,business:true},
@@ -179,7 +181,7 @@ for(const key of selected){const screen=screens[key];if(!screen)continue;
   await page.goto(base+screen.path,{waitUntil:'networkidle'}).catch(()=>undefined);
   await page.waitForTimeout(1200);
   // Optional interaction before capture: tap the first control whose accessible name contains `click`.
-  if(screen.click){await page.getByRole('button',{name:screen.click}).first().click().catch(()=>errors.push('click target not found: '+screen.click));await page.waitForTimeout(700)}
+  if(screen.click){const target=page.getByRole('button',{name:screen.click}).or(page.getByRole('tab',{name:screen.click})).first();await target.click().catch(()=>errors.push('click target not found: '+screen.click));await page.waitForTimeout(900)}
   const file=`${output}/${key}-${theme.toLowerCase()}-${w}x${h}.png`;
   await page.screenshot({path:file,fullPage:process.env.EVEREST_QA_FULL==='1'});
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);

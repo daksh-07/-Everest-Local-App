@@ -317,3 +317,8 @@ test('creation and stories: real header actions, story identity, accessible play
  const {formatAgo}=await import('../lib/format.ts');const now=new Date(2026,9,16,12,0);
  assert.equal(formatAgo(new Date(2026,9,16,11,10).toISOString(),{now}),'50m');assert.equal(formatAgo(new Date(2026,9,14,12,0).toISOString(),{now}),'2d');assert.equal(formatAgo(null),'');
 });
+
+test('the Live pill keeps off the Clips feed only while it is the visible scene',()=>{
+ assert.match(read('app/social.tsx'),/setImmersiveMedia\(active&&mode==='CLIPS'\);return\(\)=>setImmersiveMedia\(false\)/);
+ assert.match(read('components/EverestLiveMiniPlayer.tsx'),/&&!inThread&&!immersive;/);
+});

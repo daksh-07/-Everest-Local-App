@@ -7,7 +7,7 @@ import {usePathname,router,useGlobalSearchParams} from 'expo-router';
 import {supabase} from '@/lib/supabase';
 import {getEverestLiveState,type EverestLiveState} from '@/lib/everest-live';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
-import {useChatThreadOpen} from '@/lib/chat-focus';
+import {useChatThreadOpen,useImmersiveMedia} from '@/lib/chat-focus';
 
 type ActiveLiveRequest={
   id:string;
@@ -32,6 +32,7 @@ export function EverestLiveMiniPlayer(){
   const pathname=usePathname();
   const params=useGlobalSearchParams<{personalId?:string;marketId?:string;conversationId?:string}>();
   const threadOpen=useChatThreadOpen();
+  const immersive=useImmersiveMedia();
   const inThread=threadOpen||(pathname==='/messages'&&Boolean(params.personalId||params.marketId||params.conversationId));
   const {colors}=useAppTheme();
   const {width}=useWindowDimensions();
@@ -118,7 +119,7 @@ export function EverestLiveMiniPlayer(){
 
   // Business mode is a separate workspace; the customer's own search returns in Customer mode.
   // /business-profile is the customer-facing storefront, so the player stays there.
-  const visible=Boolean(request)&&!HIDDEN_ROUTES.has(pathname)&&!(pathname.startsWith('/business')&&pathname!=='/business-profile')&&!inThread;
+  const visible=Boolean(request)&&!HIDDEN_ROUTES.has(pathname)&&!(pathname.startsWith('/business')&&pathname!=='/business-profile')&&!inThread&&!immersive;
   if(!request||!visible)return null;
 
   const status=state?.live_status??request.live_status;

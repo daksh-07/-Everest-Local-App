@@ -26,6 +26,7 @@ import {listActiveStories,listClips,listEverestMusic,signedMusicUrl,type ClipEdi
 import {listPostAudioTracks,type PublicAudioTrack} from '@/lib/audio-studio';
 import {userMessage} from '@/lib/errors';
 import {formatAgo} from '@/lib/format';
+import {setImmersiveMedia} from '@/lib/chat-focus';
 
 type FeedPost=SocialPost&{
  media?:string[];
@@ -57,7 +58,9 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);const {width,height}=useWindowDimensions();const params=useGlobalSearchParams<{postId?:string;commentId?:string;mode?:string}>();
  const requestedPostId=typeof params.postId==='string'?params.postId:'';
  const cachedFeed=feedCache&&Date.now()-feedCache.at<FEED_CACHE_MS?feedCache:null;
- const [posts,setPosts]=useState<FeedPost[]>(()=>cachedFeed?.posts??[]);const [clips,setClips]=useState<FeedPost[]>([]);const [stories,setStories]=useState<StoryCard[]>([]);const [localMode,setMode]=useState<'POSTS'|'CLIPS'>(()=>params.mode==='clips'?'CLIPS':'POSTS');const mode=sceneMode??localMode;const [activeClipId,setActiveClipId]=useState<string|null>(null);const [loading,setLoading]=useState(()=>!cachedFeed);const [refreshing,setRefreshing]=useState(false);
+ const [posts,setPosts]=useState<FeedPost[]>(()=>cachedFeed?.posts??[]);const [clips,setClips]=useState<FeedPost[]>([]);const [stories,setStories]=useState<StoryCard[]>([]);const [localMode,setMode]=useState<'POSTS'|'CLIPS'>(()=>params.mode==='clips'?'CLIPS':'POSTS');const mode=sceneMode??localMode;
+ // While the Clips feed is the visible scene, floating overlays (the Live pill) stay off its action rail.
+ useEffect(()=>{setImmersiveMedia(active&&mode==='CLIPS');return()=>setImmersiveMedia(false)},[active,mode]);const [activeClipId,setActiveClipId]=useState<string|null>(null);const [loading,setLoading]=useState(()=>!cachedFeed);const [refreshing,setRefreshing]=useState(false);
  useEffect(()=>{if(!pager)fallbackProgress.value=mode==='CLIPS'?2:1},[fallbackProgress,mode,pager]);
  const [error,setError]=useState('');const [locality,setLocality]=useState(()=>cachedFeed?.locality??'Near you');const [userId,setUserId]=useState<string|null>(()=>cachedFeed?.userId??null);
  const [commentPost,setCommentPost]=useState<FeedPost|null>(null);const [comments,setComments]=useState<PostComment[]>([]);const [commentText,setCommentText]=useState('');
