@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import { AppState, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {Ionicons} from '@expo/vector-icons';
 import {usePathname,router} from 'expo-router';
@@ -19,6 +19,7 @@ type ActiveLiveRequest={
 const ACTIVE_STATUSES=['SEARCHING','NOTIFYING','RESPONSES_AVAILABLE','PROVIDER_SELECTED','NO_PROVIDER_FOUND'];
 const POLL_MS=30_000;
 const PLAYER_FOOTPRINT=72;
+const PLAYER_MAX_WIDTH=620;
 // Local session read only; no network round trip per poll.
 async function sessionUserId(){const {data}=await supabase.auth.getSession();return data.session?.user.id??null}
 const REALTIME_COALESCE_MS=180;
@@ -26,6 +27,9 @@ const REALTIME_COALESCE_MS=180;
 export function EverestLiveMiniPlayer(){
   const pathname=usePathname();
   const {colors}=useAppTheme();
+  const {width}=useWindowDimensions();
+  // Absolute + maxWidth anchors left on wide screens; centre it over the tab bar explicitly.
+  const inset=Math.max(12,(width-PLAYER_MAX_WIDTH)/2);
   const s=useMemo(()=>styles(colors),[colors]);
   const [request,setRequest]=useState<ActiveLiveRequest|null>(null);
   const [state,setState]=useState<EverestLiveState|null>(null);
@@ -126,7 +130,7 @@ export function EverestLiveMiniPlayer(){
     accessibilityRole="button"
     accessibilityLabel={`Open active Everest Live request. ${paused?'Search paused':primary}`}
     onPress={()=>router.push(`/everest-live?requestId=${request.id}`)}
-    style={({pressed})=>[s.wrap,pressed&&s.pressed]}>
+    style={({pressed})=>[s.wrap,{left:inset,right:inset},pressed&&s.pressed]}>
     <View style={s.iconWrap}>
       <View style={[s.dot,paused&&s.dotPaused]}/>
       <Ionicons name="radio-outline" size={20} color={colors.accent}/>
@@ -143,7 +147,7 @@ export function EverestLiveMiniPlayer(){
 
 const styles=(c:ThemeColors)=>StyleSheet.create({
   wrap:{
-    position:'absolute',left:12,right:12,bottom:88,minHeight:60,maxWidth:620,alignSelf:'center',
+    position:'absolute',bottom:88,minHeight:60,
     borderRadius:16,borderWidth:StyleSheet.hairlineWidth,borderColor:c.border,backgroundColor:c.elevated,
     paddingHorizontal:12,paddingVertical:9,flexDirection:'row',alignItems:'center',gap:11,
     shadowColor:'#000',shadowOpacity:.14,shadowRadius:16,shadowOffset:{width:0,height:6},elevation:10
