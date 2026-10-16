@@ -22,7 +22,9 @@ const products=[
  {id:'77777777-7777-4777-8777-777777777777',name:'Ceramic-safe wash kit',price:59.95,sale_price:49.95,business_name:'Fitzroy Mobile Detailing',business_id:businesses[2].id,suburb:'Fitzroy',city:'Melbourne',state:'VIC',primary_image_path:null,stock_quantity:3,status:'ACTIVE'},
 ];
 const other='88888888-8888-4888-8888-888888888888';
-const minutesAgo=m=>new Date(Date.UTC(2026,9,16,8,0)-m*60000).toISOString();
+// Fixture 'now' is 16 Oct 2026 19:00 in Melbourne; the page clock is pinned to it so relative dates are reproducible.
+const FIXTURE_NOW=Date.UTC(2026,9,16,8,0);const todayIso='2026-10-16';
+const minutesAgo=m=>new Date(FIXTURE_NOW-m*60000).toISOString();
 const personalConversations=[
  {id:'c1',other_user_id:other,display_name:'Priya Shah',avatar_url:null,status:'ACTIVE',initiated_by:other,updated_at:minutesAgo(4),latest_message:'Perfect, see you Tuesday at 10.',latest_message_at:minutesAgo(4),unread_count:2},
  {id:'c2',other_user_id:'99999999-9999-4999-8999-999999999999',display_name:'Marcus Lee',avatar_url:null,status:'ACTIVE',initiated_by:uid,updated_at:minutesAgo(190),latest_message:'Thanks for the recommendation!',latest_message_at:minutesAgo(190),unread_count:0},
@@ -71,18 +73,38 @@ const screens={
  'business-crm':{path:'/business-crm',signedIn:true,business:true},
 };
 const selected=(process.env.EVEREST_QA_SCREENS||Object.keys(screens).join(',')).split(',');
+// Minimal PostgREST filter support (eq, neq, in, gt, gte, lt, lte, is) so counts and tabs match the query.
+function applyFilters(list,params){
+ const skip=new Set(['select','order','limit','offset','or','and']);
+ return list.filter(row=>{for(const [col,raw] of params){if(skip.has(col)||col.includes('.'))continue;
+  const negate=raw.startsWith('not.');const expr=negate?raw.slice(4):raw;const dot=expr.indexOf('.');if(dot<0)continue;
+  const op=expr.slice(0,dot),val=expr.slice(dot+1),cell=row[col];if(!(col in row))continue;
+  const v=cell==null?null:String(cell);let ok=true;
+  if(op==='eq')ok=v===val;else if(op==='neq')ok=v!==val;else if(op==='in')ok=val.replace(/^\(|\)$/g,'').split(',').map(x=>x.replace(/^"|"$/g,'')).includes(v);
+  else if(op==='gt')ok=v!=null&&v>val;else if(op==='gte')ok=v!=null&&v>=val;else if(op==='lt')ok=v!=null&&v<val;else if(op==='lte')ok=v!=null&&v<=val;
+  else if(op==='is')ok=val==='null'?v==null:String(cell)===val;else continue;
+  if(negate?ok:!ok)return false}return true});
+}
 function rows(table,isBusiness){
  switch(table){
   case 'businesses':return businesses;
   case 'profiles':return [{id:uid,full_name:'Sam Taylor',avatar_url:null,suburb:'North Melbourne',city:'Melbourne',state:'VIC',country:'AU',role:isBusiness?'BUSINESS':'CUSTOMER'}];
-  case 'bookings':return [{id:'b1',status:'CONFIRMED',scheduled_date:'2026-10-20',scheduled_time:'10:00:00',created_at:'2026-10-12T10:00:00Z',price:185,business_id:biz,businesses:{name:businesses[0].name}}];
+  case 'bookings':return isBusiness?[
+   {id:'b2',request_id:'r2',status:'IN_PROGRESS',scheduled_date:todayIso,scheduled_time:'09:30:00',created_at:'2026-10-12T10:00:00Z',price:240,business_id:biz},
+   {id:'b3',request_id:'r3',status:'CONFIRMED',scheduled_date:todayIso,scheduled_time:'14:00:00',created_at:'2026-10-12T10:00:00Z',price:185,business_id:biz},
+   {id:'b4',request_id:null,status:'CONFIRMED',scheduled_date:todayIso,scheduled_time:null,created_at:'2026-10-12T10:00:00Z',price:null,business_id:biz},
+  ]:[{id:'b1',status:'CONFIRMED',scheduled_date:'2026-10-20',scheduled_time:'10:00:00',created_at:'2026-10-12T10:00:00Z',price:185,business_id:biz,businesses:{name:businesses[0].name}}];
   case 'service_requests':return [{id:'r1',status:'QUOTING',is_live:true,live_status:'NOTIFYING',live_radius_km:3,customer_id:uid,description:'Hedge trimming and green-waste removal, front and back yard',suburb:'North Melbourne',city:'Melbourne',state:'VIC',budget:250,preferred_date:'2026-10-21',created_at:'2026-10-14T10:00:00Z'}];
   case 'quotes':return [{id:'q1',request_id:'r1',business_id:biz,customer_id:uid,status:'SENT',description:'Trim front and back hedges, remove all green waste.',price:240,deposit:24,total:240,proposed_date:'2026-10-21',proposed_time:'10:00:00',valid_until:'2026-10-28T00:00:00Z',created_at:'2026-10-15T09:00:00Z',businesses:{id:biz,name:businesses[0].name,logo_url:null,verification_status:'VERIFIED'}},{id:'q2',request_id:'r1',business_id:businesses[1].id,customer_id:uid,status:'SENT',description:'Hedge trim and tidy. Green waste extra.',price:195,deposit:20,total:195,proposed_date:'2026-10-23',proposed_time:'14:00:00',valid_until:'2026-10-25T00:00:00Z',created_at:'2026-10-15T11:00:00Z',businesses:{id:businesses[1].id,name:businesses[1].name,logo_url:null,verification_status:'UNVERIFIED'}}];
   case 'services':return [{id:'s1',business_id:biz,name:'Garden maintenance',description:'Mowing, edging, hedges and seasonal tidy-ups.',base_price:85,duration_minutes:60,status:'ACTIVE',delivery_mode:'LOCAL',service_booking_settings:{instant_booking_enabled:false}}];
   case 'products':return products.map(p=>({...p,short_description:'Rinse-free wash and two plush microfibre towels.',description:'Everything needed for a ceramic-safe hand wash at home. Biodegradable, pH-neutral formula.',condition:'NEW',brand:'Fitzroy Detailing',key_features:['pH-neutral formula','Two 40 × 40 cm microfibre towels','Makes up to 20 washes'],tags:['car care'],attributes:{},fulfillment:'PICKUP_OR_DELIVERY',track_stock:true,made_to_order:false,delivery_eligible:true,pickup_available:true,shipping_available:false,shipping_fee:null,dispatch_days:1,listing_quality:null,businesses:{id:p.business_id,name:p.business_name,logo_url:null,verification_status:'VERIFIED',suburb:p.suburb,city:p.city,state:p.state},inventory:{stock_quantity:p.stock_quantity,reserved_quantity:0,low_stock_threshold:2},product_images:[],product_variants:[{id:'v1',product_id:p.id,title:'Standard',option_values:{size:'Standard'},price:null,sku:'WK-1',image_id:null,stock_quantity:3,reserved_quantity:0,low_stock_threshold:1,available:true,sort_order:0},{id:'v2',product_id:p.id,title:'Large',option_values:{size:'Large'},price:69.95,sku:'WK-2',image_id:null,stock_quantity:0,reserved_quantity:0,low_stock_threshold:1,available:false,sort_order:1}]}));
   case 'cart_items':return [{id:'ci1',quantity:1,product_id:products[1].id,variant_id:'v1',products:{id:products[1].id,name:products[1].name,price:59.95,sale_price:49.95,status:'ACTIVE',business_id:products[1].business_id,delivery_eligible:true,pickup_available:true,shipping_available:false},product_variants:{id:'v1',title:'Standard',price:null,available:true}},{id:'ci2',quantity:2,product_id:products[0].id,variant_id:null,products:{id:products[0].id,name:products[0].name,price:34,sale_price:null,status:'ACTIVE',business_id:biz,delivery_eligible:false,pickup_available:true,shipping_available:false},product_variants:null}];
   case 'orders':return [{id:'o1',order_number:'EV-1042',status:'PREPARING',payment_status:'PAID',total:133.95,created_at:'2026-10-12T10:00:00Z',delivery_method:'PICKUP',business_id:biz,businesses:{name:businesses[0].name}},{id:'o2',order_number:'EV-1031',status:'COMPLETED',payment_status:'PAID',total:49.95,created_at:'2026-09-28T10:00:00Z',delivery_method:'DELIVERY',business_id:businesses[2].id,businesses:{name:businesses[2].name}}];
-  case 'conversations':return [];
+  case 'conversations':return isBusiness?[
+   {id:'bc1',request_id:'r2',booking_id:'b2',quote_id:null,created_at:minutesAgo(600),messages:[{id:'bm1',body:'Gate code is 4471 — the side gate sticks a little.',created_at:minutesAgo(12),read_at:null,sender_id:other},{id:'bm2',body:'Running about ten minutes late?',created_at:minutesAgo(9),read_at:null,sender_id:other}]},
+   {id:'bc2',request_id:'r3',booking_id:null,quote_id:'q1',created_at:minutesAgo(2000),messages:[{id:'bm3',body:'Thanks — I’ll confirm the quote tonight.',created_at:minutesAgo(1500),read_at:minutesAgo(1400),sender_id:other}]},
+   {id:'bc3',request_id:'r4',booking_id:null,quote_id:null,created_at:minutesAgo(5000),messages:[]},
+  ]:[];
   case 'notifications':return [];
   default:return [];
  }
@@ -94,7 +116,7 @@ for(const key of selected){const screen=screens[key];if(!screen)continue;
  for(const theme of themes)for(const {w,h} of viewports){
   const context=await browser.newContext({viewport:{width:w,height:h},isMobile:w<768,hasTouch:w<768,reducedMotion:'reduce',deviceScaleFactor:w<768?2:1,timezoneId:'Australia/Melbourne',locale:'en-AU'});
   await context.addInitScript(({theme,session,signedIn})=>{localStorage.setItem('everest-local-theme',theme);if(signedIn)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session))},{theme,session,signedIn:screen.signedIn});
-  const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&/runtime error|TypeError|ReferenceError/.test(m.text()))errors.push(m.text().slice(0,400))});
+  const page=await context.newPage();await page.clock.setFixedTime(FIXTURE_NOW);const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&/runtime error|TypeError|ReferenceError/.test(m.text()))errors.push(m.text().slice(0,400))});
   await page.routeWebSocket('**/realtime/**',ws=>ws.close());
   await page.route(/open-meteo|nominatim|bigdatacloud/,route=>route.fulfill({status:503,json:{}}));
   await page.route('**/*.supabase.co/**',async route=>{
@@ -103,15 +125,15 @@ for(const key of selected){const screen=screens[key];if(!screen)continue;
    if(url.pathname.includes('/storage/'))return route.fulfill({status:200,json:[]});
    if(url.pathname.includes('/rpc/')){
     if(table==='get_my_access_context')return route.fulfill({json:{profile_role:screen.business?'BUSINESS':'CUSTOMER',is_business_member:!!screen.business,is_verified_business:!!screen.business,business_id:screen.business?biz:null,business_name:screen.business?businesses[0].name:null}});
-    if(table==='get_my_workspace_context')return route.fulfill({json:{mode:screen.business?'BUSINESS':'CUSTOMER',active_business_id:screen.business?biz:null,businesses:screen.business?[{...businesses[0],member_role:'OWNER',status:'ACTIVE'}]:[]}});
+    if(table==='get_my_workspace_context')return route.fulfill({json:{mode:screen.business?'BUSINESS':'CUSTOMER',active_business_id:screen.business?biz:null,businesses:screen.business?[{...businesses[0],member_role:'OWNER',status:'ACTIVE',can_view_all_jobs:true,can_assign_jobs:true,can_view_team:true,can_manage_team:true,can_view_crm:true,can_view_finance:true}]:[]}});
     if(rpcFixtures[table]){let body=null;try{body=request.postDataJSON()}catch{body=null}return route.fulfill({json:rpcFixtures[table](body)})}
     if(table.includes('shop')||table.includes('product'))return route.fulfill({json:products});
     return route.fulfill({json:[]});
    }
    if(request.method()!=='GET'&&request.method()!=='HEAD')return route.fulfill({status:403,json:{message:'Writes blocked by inert QA fixture'}});
-   let json=rows(table,screen.business);
+   let json=applyFilters(rows(table,screen.business),url.searchParams);
    if(request.headers().accept?.includes('vnd.pgrst.object'))json=json[0]??null;
-   return route.fulfill({status:200,json,headers:{'content-range':`0-${Math.max(0,(Array.isArray(json)?json.length:1)-1)}/${Array.isArray(json)?json.length:1}`}});
+   return route.fulfill({status:200,json,headers:{'access-control-expose-headers':'content-range','content-range':`0-${Math.max(0,(Array.isArray(json)?json.length:1)-1)}/${Array.isArray(json)?json.length:1}`}});
   });
   await page.goto(base+screen.path,{waitUntil:'networkidle'}).catch(()=>undefined);
   await page.waitForTimeout(1200);
