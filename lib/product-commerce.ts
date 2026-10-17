@@ -27,7 +27,7 @@ export async function saveProductDetails(input:{productId:string;name:string;sho
 
 export async function saveVariant(input:{productId:string;variantId?:string;title:string;optionValues:Record<string,string>;price?:number;sku?:string;stock:number;lowStockThreshold?:number;available?:boolean;sortOrder?:number}){const {data,error}=await supabase.rpc('upsert_product_variant',{p_product_id:input.productId,p_variant_id:input.variantId??null,p_title:input.title.trim(),p_option_values:input.optionValues,p_price:input.price??null,p_sku:input.sku?.trim()||null,p_stock:input.stock,p_low_stock_threshold:input.lowStockThreshold??5,p_available:input.available??true,p_sort_order:input.sortOrder??0});if(error)throw new Error(userFacingError(error,'Product option could not be saved.'));return data as string}
 
-export async function setVariantCartItem(productId:string,variantId:string|null,quantity:number){const {error}=await supabase.rpc('set_my_cart_item_v2',{p_product_id:productId,p_variant_id:variantId,p_quantity:quantity});if(error)throw new Error(userFacingError(error,'Unable to update your cart. Check availability and try again.'))}
+export async function setVariantCartItem(productId:string,variantId:string|null,quantity:number){if(!productId||!Number.isInteger(quantity)||quantity<0||quantity>99)throw new Error('Invalid cart quantity.');const {error}=await supabase.rpc('set_my_cart_item_v2',{p_product_id:productId,p_variant_id:variantId,p_quantity:quantity});if(error)throw new Error(userFacingError(error,'Unable to update your cart. Check availability and try again.'))}
 
 function normalizeProductImageMime(asset:ImagePicker.ImagePickerAsset){
  const raw=(asset.mimeType||asset.file?.type||'').toLowerCase();

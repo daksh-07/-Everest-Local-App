@@ -80,12 +80,12 @@ test('product gallery index follows the visible page and cart is always discover
 
 test('adding from a product increments an existing cart line instead of silently resetting it',()=>{
  assert.match(product,/existing=current\.find/);
- assert.match(product,/\(existing\?\.quantity\?\?0\)\+qty/);
+ assert.match(product,/nextCartQuantity\(existing\?\.quantity\?\?0,qty\)/);
  assert.match(product,/setCartCount/);
 });
 
 test('cart blocks checkout when no common fulfilment method is available',()=>{
- assert.match(cart,/hasFulfillmentMethod=pickupAvailable\|\|deliveryAvailable\|\|shippingAvailable/);
+ assert.match(cart,/hasFulfillmentMethod\s*=\s*pickupAvailable\s*\|\|\s*deliveryAvailable\s*\|\|\s*shippingAvailable/);
  assert.match(cart,/No fulfilment method available/);
- assert.match(cart,/\|\|!hasFulfillmentMethod\|\|method!==/);
+ assert.match(cart,/\|\|\s*!hasFulfillmentMethod\s*\|\|\s*\(?method\s*!==/);
 });
