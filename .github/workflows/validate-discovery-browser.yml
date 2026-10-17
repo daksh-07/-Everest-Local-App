@@ -22,6 +22,7 @@ on:
       - 'app/product.tsx'
       - 'app/business-orders.tsx'
       - 'components/OrderDetails.tsx'
+      - 'components/ui/TransactionLoading.tsx'
       - 'lib/commerce.ts'
       - 'lib/orders.ts'
       - 'scripts/verify-commerce-flow.mjs'

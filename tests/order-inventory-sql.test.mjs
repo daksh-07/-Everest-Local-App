@@ -143,6 +143,10 @@ test('verified failure releases exact variant reservations once, preserves physi
       db.query('select process_stripe_order_success($1)', [oid]),
       /not payable/,
     );
+    await assert.rejects(db.query("select create_order_from_cart('fixture-checkout-key-123')"),/no longer pending/);
+    const retry=await scalar(db,"select create_order_from_cart('fresh-after-expiry-key-123') as result");
+    assert.notEqual(retry.result.order_id,oid);
+    assert.equal((await scalar(db,'select * from product_variants')).reserved_quantity,2);
   } finally {
     await db.close();
   }
@@ -358,3 +362,6 @@ test('cart edit before provider claim cancels the old attempt and releases the e
 });
 
 test('checkout SQL refuses zero and excessive quantities even if corrupt cart data bypassed table constraints',async()=>{for(const quantity of [0,100]){const db=await setup();try{await assert.rejects(seed(db,{quantity}),/Invalid cart quantity/);assert.equal((await scalar(db,'select count(*)::int as n from orders')).n,0)}finally{await db.close()}}});
+
+test('rollout also blocks legacy action-required checkouts before guessing their reservation mode',async()=>{const db=new PGlite();try{await db.exec(schema);await db.exec("insert into orders(status,payment_status) values('PENDING','REQUIRES_ACTION')");await assert.rejects(db.exec(migration),/Reconcile pending product checkouts/);await db.exec('rollback')}finally{await db.close()}});
+test('rollout refuses orphaned parent or variant reservations even with no pending order',async()=>{for(const variant of [false,true]){const db=new PGlite();try{await db.exec(schema);await db.exec(variant?`insert into product_variants(id,product_id,stock_quantity,reserved_quantity)values('${id(40)}','${id(30)}',5,1)`:`insert into inventory(product_id,stock_quantity,reserved_quantity)values('${id(30)}',5,1)`);await assert.rejects(db.exec(migration),/Reconcile legacy inventory reservations/);await db.exec('rollback')}finally{await db.close()}}});

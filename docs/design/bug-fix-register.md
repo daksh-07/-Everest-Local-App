@@ -71,3 +71,8 @@ The earlier no-backend-change statement describes phases 1–2. Phase 4 proposes
 | P4-07 | Resumed cart could show current prices against an older saved total | Review immutable order-item snapshots |
 | P4-08 | Payout readiness loss could falsely fail an uncertain service payment | Preserve attempt until authoritative Stripe final state; test actual Edge handler |
 | P4-09 | Late checkout response could redirect after leaving the screen | Mounted-context guard; keyed booking context and synchronous action locks |
+| P4-10 | Closed product checkout attempt remained in a mounted cart after expiry | Clear the expired pending review, rotate the closed key and refresh on cart focus/foreground; actual handler and database retry checks |
+| P4-11 | Optional job/review failure blocked booking/payment content | Independent supporting reads, partial error/retry and unknown review state |
+| P4-12 | Incomplete delivery address disabled the CTA without focusing recovery | Inline validation before any checkout request, keyboard focus and preserved typed input |
+| P4-13 | Booking total/progress labels clipped at 320px | Constrained heading column and readable stage caption, checked at all five widths/themes |
+| P4-14 | Background refresh cleared payment-action errors; terminal arrival text could be stale | Separate action error state and authoritative terminal-status precedence |

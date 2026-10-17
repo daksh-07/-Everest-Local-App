@@ -218,10 +218,12 @@ for(const key of selected){const screen=screens[key];if(!screen)continue;
   if(screen.scrollTo)await page.getByRole('button',{name:screen.scrollTo}).scrollIntoViewIfNeeded();
   if(key.startsWith('cart')){
    const checkout=page.getByRole('button',{name:'Continue to secure checkout'});
-   if(['cart-mixed','cart-unavailable','cart-delivery'].includes(key)&&!(await checkout.isDisabled()))errors.push('unsafe checkout enabled');
+   if(['cart-mixed','cart-unavailable'].includes(key)&&!(await checkout.isDisabled()))errors.push('unsafe checkout enabled');
    if(key==='cart-delivery'){
     await page.getByRole('textbox',{name:'Delivery or shipping address'}).fill('1');
-    if(!(await checkout.isDisabled()))errors.push('short address accepted');
+    await checkout.click();
+    if(!(await page.getByText('Enter your street address, suburb and postcode to continue.',{exact:true}).isVisible()))errors.push('short address error absent');
+    if(!(await page.getByRole('textbox',{name:'Delivery or shipping address'}).evaluate(el=>el===document.activeElement)))errors.push('address field not focused');
     await page.getByRole('textbox',{name:'Delivery or shipping address'}).fill('14 Errol Street, North Melbourne VIC 3051');
     if(await checkout.isDisabled())errors.push('valid address cannot continue');
    }

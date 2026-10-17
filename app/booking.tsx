@@ -1,23 +1,24 @@
 import { Ionicons } from '@/components/ui/Icon';
 import { router,useLocalSearchParams } from 'expo-router';
 import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
-import { AppState, Platform, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, Platform, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { formatMoney,formatStatus } from '@/lib/format';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppCard,EmptyState,ErrorBanner,LoadingState,StatusBadge } from '@/components/ui';
+import { AppCard,EmptyState,ErrorBanner,StatusBadge } from '@/components/ui';
 import { getJobWorkspace,type JobChecklistItem,type JobRecord } from '@/lib/job-operations';
 import { getOrCreateConversation } from '@/lib/messaging';
 import { createServiceCheckout } from '@/lib/service-payments';
 import { supabase } from '@/lib/supabase';
 import { type ThemeColors,useAppTheme } from '@/lib/theme';
 import type { BookingStatus } from '@/lib/types';
+import {TransactionLoading} from '@/components/ui/TransactionLoading';
 import {userMessage} from '@/lib/errors';
 
 type Booking={id:string;business_id:string;request_id:string|null;quote_id:string|null;price:number;scheduled_date:string|null;scheduled_time:string|null;status:BookingStatus;created_at:string;completed_at:string|null};
 type Payment={amount:number;status:string;created_at:string;payment_kind?:'DEPOSIT'|'BALANCE'};
 type PaymentSummary={total:number;paid:number;pending:number;balance_due:number;marketplace_fee_total:number;marketplace_fee_collected:number;fully_paid:boolean};
-type PageData={booking:Booking;businessName:string;payment:Payment|null;paymentSummary:PaymentSummary;hasReview:boolean;record:JobRecord|null;checklist:JobChecklistItem[]};
+type PageData={booking:Booking;businessName:string;payment:Payment|null;paymentSummary:PaymentSummary;};
 function nextStep(status:BookingStatus,balanceDue:number,operational:string|null){
  if(status==='CANCELLED')return {icon:'close-circle-outline' as const,title:'This booking is closed',copy:'No further action is required for this booking.'};
  if(status==='DISPUTED')return {icon:'alert-circle-outline' as const,title:'Booking under review',copy:'Contact support if you need help with this booking. Check the recorded payment and job details below.'};
@@ -48,32 +49,44 @@ function BookingContent({bookingId,checkoutState}:{bookingId:string;checkoutStat
  const operationRef=useRef(false);const loadRef=useRef(false);const mountedRef=useRef(true);
  useEffect(()=>{mountedRef.current=true;return()=>{mountedRef.current=false}},[]);
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
- const [data,setData]=useState<PageData|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [busy,setBusy]=useState('');const [error,setError]=useState('');
+ const [data,setData]=useState<PageData|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [busy,setBusy]=useState('');const [error,setError]=useState('');const [actionError,setActionError]=useState('');
+ const [support,setSupport]=useState<{hasReview:boolean|null;record:JobRecord|null;checklist:JobChecklistItem[]}>({hasReview:null,record:null,checklist:[]});
+ const [supportBusy,setSupportBusy]=useState(true);const [supportError,setSupportError]=useState('');const supportRef=useRef(false);
+ const loadSupport=useCallback(async()=>{
+  if(!bookingId||supportRef.current)return;supportRef.current=true;setSupportBusy(true);
+  try{
+   const [review,workspace]=await Promise.allSettled([
+    supabase.from('reviews').select('id').eq('booking_id',bookingId).limit(1).maybeSingle().then(result=>{if(result.error)throw result.error;return Boolean(result.data)}),
+    getJobWorkspace(bookingId),
+   ] as const);
+   if(!mountedRef.current)return;
+   setSupport(current=>({hasReview:review.status==='fulfilled'?review.value:null,record:workspace.status==='fulfilled'?workspace.value.record:current.record,checklist:workspace.status==='fulfilled'?workspace.value.checklist:current.checklist}));
+   setSupportError(review.status==='rejected'||workspace.status==='rejected'?'Some job or review details could not be refreshed. Booking and payment information is shown separately. Retry these details below.':'');
+  }finally{supportRef.current=false;if(mountedRef.current)setSupportBusy(false)}
+ },[bookingId]);
  const load=useCallback(async(refresh=false)=>{if(loadRef.current)return;if(!bookingId){setError('Booking reference is missing.');setLoading(false);return;}loadRef.current=true;if(refresh)setRefreshing(true);else setLoading(true);setError('');try{
   const {data:booking,error:bookingError}=await supabase.from('bookings').select('id,business_id,request_id,quote_id,price,scheduled_date,scheduled_time,status,created_at,completed_at').eq('id',bookingId).single();if(bookingError)throw bookingError;
   const typed=booking as Booking;
-  const [businessResult,paymentResult,paymentSummaryResult,reviewResult,workspace]=await Promise.all([
+  const [businessResult,paymentResult,paymentSummaryResult]=await Promise.all([
    supabase.from('businesses').select('name').eq('id',typed.business_id).single(),
    supabase.from('service_payments').select('amount,status,created_at,payment_kind').eq('booking_id',typed.id).order('created_at',{ascending:false}).limit(1).maybeSingle(),
    supabase.rpc('service_booking_payment_summary',{p_booking_id:typed.id}),
-   supabase.from('reviews').select('id').eq('booking_id',typed.id).limit(1).maybeSingle(),
-   getJobWorkspace(typed.id),
   ]);
-  if(businessResult.error)throw businessResult.error;if(paymentResult.error)throw paymentResult.error;if(paymentSummaryResult.error)throw paymentSummaryResult.error;if(reviewResult.error)throw reviewResult.error;
-  setData({booking:typed,businessName:String(businessResult.data?.name??'Local business'),payment:paymentResult.data as Payment|null,paymentSummary:paymentSummaryResult.data as PaymentSummary,hasReview:Boolean(reviewResult.data),...workspace});
+  if(businessResult.error)throw businessResult.error;if(paymentResult.error)throw paymentResult.error;if(paymentSummaryResult.error)throw paymentSummaryResult.error;
+  setData({booking:typed,businessName:String(businessResult.data?.name??'Local business'),payment:paymentResult.data as Payment|null,paymentSummary:paymentSummaryResult.data as PaymentSummary});
  }catch{setError('This booking could not be loaded. Check your connection and try again.');}finally{loadRef.current=false;setLoading(false);setRefreshing(false)}},[bookingId]);
- useEffect(()=>{void load();const sub=AppState.addEventListener('change',state=>{if(state==='active')void load(true)});return()=>sub.remove()},[load]);
+ useEffect(()=>{void load();void loadSupport();const sub=AppState.addEventListener('change',state=>{if(state==='active'){void load(true);void loadSupport()}});return()=>sub.remove()},[load,loadSupport]);
  const returnPayment=data?.payment?.status;
  useEffect(()=>{if(!checkoutState||returnPayment==='SUCCEEDED')return;let attempts=0;const timer=setInterval(()=>{if(++attempts>15){clearInterval(timer);return}void load(true)},4000);return()=>clearInterval(timer)},[checkoutState,returnPayment,load]);
- async function action(key:string,work:()=>Promise<void>){if(operationRef.current||loadRef.current)return;operationRef.current=true;setBusy(key);setError('');try{await work()}catch(e){setError(userMessage(e,'That action could not be completed.'))}finally{operationRef.current=false;setBusy('')}}
- if(loading)return <SafeAreaView style={s.safe}><LoadingState label="Loading your booking…" minHeight={320}/></SafeAreaView>;
+ async function action(key:string,work:()=>Promise<void>){if(operationRef.current||loadRef.current)return;operationRef.current=true;setBusy(key);setActionError('');try{await work()}catch(e){setActionError(userMessage(e,'That action could not be completed.'))}finally{operationRef.current=false;setBusy('')}}
+ if(loading)return <SafeAreaView style={s.safe}><View style={s.page}><TransactionLoading kind="booking" label="Loading your booking…"/></View></SafeAreaView>;
  if(!data)return <SafeAreaView style={s.safe}><View style={s.center}><EmptyState icon="calendar-outline" title="Booking unavailable" description={error||'We could not load this booking.'} actionLabel="Try again" onAction={()=>void load()}/></View></SafeAreaView>;
- const {booking,record,checklist,paymentSummary}=data;const cancelled=booking.status==='CANCELLED';const activeStage=stages.findLastIndex(stage=>stage.statuses.includes(booking.status));const canPayBalance=!cancelled&&['CONFIRMED','UPCOMING','IN_PROGRESS'].includes(booking.status)&&paymentSummary.balance_due>0;
- const operational=record?.arrival_status&&record.arrival_status!=='NOT_STARTED'?record.arrival_status.replaceAll('_',' '):null;
+ const {booking,paymentSummary}=data;const {record,checklist,hasReview}=support;const cancelled=booking.status==='CANCELLED';const activeStage=stages.findLastIndex(stage=>stage.statuses.includes(booking.status));const canPayBalance=!cancelled&&['CONFIRMED','UPCOMING','IN_PROGRESS'].includes(booking.status)&&paymentSummary.balance_due>0;
+ const operational=!['COMPLETED','CANCELLED','DISPUTED'].includes(booking.status)&&record?.arrival_status&&record.arrival_status!=='NOT_STARTED'?record.arrival_status.replaceAll('_',' '):null;
  const date=booking.scheduled_date?new Date(`${booking.scheduled_date}T${booking.scheduled_time||'12:00'}`).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}):'Scheduling with business';
  const guidance=nextStep(booking.status,paymentSummary.balance_due,operational);
- return <SafeAreaView style={s.safe} edges={['top']}><ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>} contentContainerStyle={s.page}>
-  <Pressable onPress={()=>router.canGoBack()?router.back():router.replace('/bookings')} accessibilityLabel="Go back" style={s.back}><Ionicons name="arrow-back" size={21} color={colors.text}/></Pressable>
+ return <SafeAreaView style={s.safe} edges={['top']}><ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{void load(true);void loadSupport()}} tintColor={colors.accent}/>} contentContainerStyle={s.page}>
+  <Pressable accessibilityRole="button" onPress={()=>router.canGoBack()?router.back():router.replace('/bookings')} accessibilityLabel="Go back" style={s.back}><Ionicons name="arrow-back" size={21} color={colors.text}/></Pressable>
   <Text style={s.eyebrow}>Your job</Text><Text style={s.title}>{data.businessName}</Text><Text style={s.subtitle}>{date}{booking.scheduled_time?` · ${booking.scheduled_time.slice(0,5)}`:''}</Text>
   {checkoutState?<AppCard compact style={s.guidance}><Text style={s.guidanceTitle}>{returnPayment==='SUCCEEDED'?'Payment recorded':checkoutState==='cancelled'?'Checkout closed':'Checking payment status'}</Text><Text style={s.guidanceCopy}>Payments are confirmed from the server. Returning from checkout does not confirm payment. Pull to refresh for the latest booking and balance.</Text>{Platform.OS==='web'?<Pressable accessibilityRole="button" onPress={()=>void Linking.openURL('everestlocal://booking?id='+encodeURIComponent(bookingId)+'&checkout='+encodeURIComponent(checkoutState))} style={s.rebook}><Text style={s.rebookText}>Open booking in the Everest Local app</Text></Pressable>:null}</AppCard>:null}
   <View style={[s.hero,cancelled&&s.heroCancelled]}><View style={s.heroTop}><View style={{flex:1,minWidth:0}}><Text style={s.heroLabel}>{cancelled?'Booking cancelled':formatStatus(operational||booking.status)}</Text><Text style={s.heroTitle}>{cancelled?'This job is no longer active':booking.status==='COMPLETED'?'Job completed':operational==='ON MY WAY'?'Your professional is on the way':'Everything in one place'}</Text></View><Text tabular style={s.price}>{formatMoney(booking.price)}</Text></View>
@@ -81,16 +94,18 @@ function BookingContent({bookingId,checkoutState}:{bookingId:string;checkoutStat
    {!cancelled&&activeStage>=0?<Text style={[s.heroLabel,{marginTop:10,fontSize:12}]}>Step {activeStage+1} of {stages.length} · {stages[activeStage].label}</Text>:null}
   </View>
   <AppCard compact style={s.guidance}><View style={s.guidanceRow}><View style={s.guidanceIcon}><Ionicons name={guidance.icon} size={20} color={colors.accent}/></View><View style={s.guidanceBody}><Text style={s.guidanceKicker}>What happens next</Text><Text style={s.guidanceTitle}>{guidance.title}</Text><Text style={s.guidanceCopy}>{guidance.copy}</Text></View></View></AppCard>
-  {error?<View style={s.errorWrap}><ErrorBanner message={error}/></View>:null}
+  {error||actionError?<View style={s.errorWrap}><ErrorBanner message={error||actionError}/></View>:null}
   {!cancelled&&<View style={s.actions}>
-   {booking.status==='PENDING_PAYMENT'||canPayBalance?<Pressable accessibilityRole="button" disabled={!!busy||refreshing} onPress={()=>void action('pay',async()=>{const url=await createServiceCheckout(booking.id);if(!mountedRef.current)return;if(Platform.OS==='web'&&typeof window!=='undefined')window.location.assign(url);else await Linking.openURL(url)})} style={s.primary}><Ionicons name="card-outline" size={18} color={colors.onBrand}/><Text style={s.primaryText}>{busy==='pay'?'Opening…':booking.status==='PENDING_PAYMENT'?'Pay deposit':`Pay ${formatMoney(paymentSummary.balance_due)} balance`}</Text></Pressable>:null}
-   {booking.request_id?<Pressable disabled={!!busy} onPress={()=>void action('message',async()=>{const conversationId=await getOrCreateConversation({requestId:booking.request_id!,businessId:booking.business_id,bookingId:booking.id});router.push({pathname:'/messages',params:{conversationId}})})} style={s.secondary}><Ionicons name="chatbubble-outline" size={18} color={colors.text}/><Text style={s.secondaryText}>{busy==='message'?'Opening…':'Message'}</Text></Pressable>:null}
-   {booking.quote_id?<Pressable onPress={()=>router.push('/quotes')} style={s.secondary}><Ionicons name="document-text-outline" size={18} color={colors.text}/><Text style={s.secondaryText}>View quote</Text></Pressable>:null}
+   {booking.status==='PENDING_PAYMENT'||canPayBalance?<Pressable accessibilityRole="button" disabled={!!busy||refreshing} onPress={()=>void action('pay',async()=>{const url=await createServiceCheckout(booking.id);if(!mountedRef.current)return;if(Platform.OS==='web'&&typeof window!=='undefined')window.location.assign(url);else await Linking.openURL(url)})} style={({pressed})=>[s.primary,(!!busy||refreshing)&&{opacity:.6},pressed&&!busy&&!refreshing&&{opacity:.86}]}>{busy==='pay'?<ActivityIndicator color={colors.onBrand}/>:<Ionicons name="card-outline" size={18} color={colors.onBrand}/>}<Text style={s.primaryText}>{refreshing?'Checking payment…':busy==='pay'?'Opening…':booking.status==='PENDING_PAYMENT'?'Pay deposit':`Pay ${formatMoney(paymentSummary.balance_due)} balance`}</Text></Pressable>:null}
+   {booking.request_id?<Pressable accessibilityRole="button" disabled={!!busy} onPress={()=>void action('message',async()=>{const conversationId=await getOrCreateConversation({requestId:booking.request_id!,businessId:booking.business_id,bookingId:booking.id});router.push({pathname:'/messages',params:{conversationId}})})} style={s.secondary}><Ionicons name="chatbubble-outline" size={18} color={colors.text}/><Text style={s.secondaryText}>{busy==='message'?'Opening…':'Message'}</Text></Pressable>:null}
+   {booking.quote_id?<Pressable accessibilityRole="button" onPress={()=>router.push('/quotes')} style={s.secondary}><Ionicons name="document-text-outline" size={18} color={colors.text}/><Text style={s.secondaryText}>View quote</Text></Pressable>:null}
   </View>}
+  {supportBusy&&!record&&!checklist.length&&hasReview===null?<View style={s.section}><TransactionLoading kind="details" label="Loading job and review details…"/></View>:null}
+  {supportError?<View style={s.errorWrap}><ErrorBanner message={supportError} onRetry={supportBusy?undefined:()=>void loadSupport()} retryLabel="Retry job details"/>{supportBusy?<Text style={s.copy}>Refreshing job and review details…</Text>:null}</View>:null}
   {checklist.length>0&&<View style={s.section}><Text style={s.sectionKicker}>Work plan</Text><Text style={s.sectionTitle}>What’s included</Text>{checklist.map(item=><View key={item.id} style={s.checkRow}><Ionicons name={item.is_complete?'checkmark-circle':'ellipse-outline'} size={20} color={item.is_complete?colors.accent:colors.muted}/><Text style={[s.checkText,item.is_complete&&s.checkDone]}>{item.label}</Text></View>)}</View>}
   <View style={s.section}><View style={s.paymentHead}><Text style={s.sectionKicker}>Everest payment</Text><StatusBadge label={paymentSummary.fully_paid?'Paid':paymentSummary.balance_due>0?'Balance due':paymentSummary.pending>0?'Pending':'Protected'} tone={paymentSummary.fully_paid?'success':paymentSummary.balance_due>0?'warning':paymentSummary.pending>0?'info':'neutral'}/></View><View style={s.infoRow}><View style={{flex:1}}><Text style={s.sectionTitle}>{paymentSummary.fully_paid?'Paid in full':'Protected payment'}</Text><Text style={s.copy}>Job total · {formatMoney(paymentSummary.total)}</Text><Text style={s.copy}>Paid through Everest · ${paymentSummary.paid.toFixed(2)}</Text>{paymentSummary.balance_due>0?<Text style={s.balance}>Balance due · {formatMoney(paymentSummary.balance_due)}</Text>:<Text style={s.paid}>No balance remaining</Text>}</View><Ionicons name={paymentSummary.fully_paid?'shield-checkmark':'card-outline'} size={25} color={paymentSummary.fully_paid?colors.accent:colors.muted}/></View>{paymentSummary.balance_due>0?<Text style={s.paymentSafety}>Keep the remaining payment in Everest. Off-platform payments are not recorded against this booking and the job cannot be completed in Everest until the balance is settled.</Text>:null}</View>
   {record?.completion_summary?<View style={s.section}><Text style={s.sectionKicker}>Completion note</Text><Text style={s.sectionTitle}>From {data.businessName}</Text><Text style={s.summary}>{record.completion_summary}</Text></View>:null}
-  {booking.status==='COMPLETED'&&<View style={s.finish}><Text style={s.finishTitle}>How did it go?</Text><Text style={s.copy}>Your feedback helps trustworthy local businesses stand out.</Text><View style={s.actions}>{!data.hasReview&&<Pressable onPress={()=>router.push('/reviews')} style={s.primary}><Text style={s.primaryText}>Leave a review</Text></Pressable>}<Pressable onPress={()=>router.push({pathname:'/share-result',params:{bookingId:booking.id}})} style={s.secondary}><Text style={s.secondaryText}>Share result</Text></Pressable></View><Pressable onPress={()=>router.push('/request')} style={s.rebook}><Ionicons name="refresh" size={17} color={colors.accent}/><Text style={s.rebookText}>Book another local pro</Text></Pressable></View>}
+  {booking.status==='COMPLETED'&&<View style={s.finish}><Text style={s.finishTitle}>How did it go?</Text><Text style={s.copy}>Your feedback helps trustworthy local businesses stand out.</Text><View style={s.actions}>{hasReview===false&&<Pressable accessibilityRole="button" onPress={()=>router.push('/reviews')} style={s.primary}><Text style={s.primaryText}>Leave a review</Text></Pressable>}<Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/share-result',params:{bookingId:booking.id}})} style={s.secondary}><Text style={s.secondaryText}>Share result</Text></Pressable></View><Pressable accessibilityRole="button" onPress={()=>router.push('/request')} style={s.rebook}><Ionicons name="refresh" size={17} color={colors.accent}/><Text style={s.rebookText}>Book another local pro</Text></Pressable></View>}
   <Text style={s.reference}>Booking {booking.id.slice(0,8).toUpperCase()}</Text>
  </ScrollView></SafeAreaView>;
 }

@@ -12,7 +12,7 @@ Run browser checks after a web export served on port 4173, using `PLAYWRIGHT_MOD
 
 ## Rollout dependency — no migration applied
 
-`20261017071853_phase4_order_inventory_and_pickup.sql` is a review-only migration. Pause product checkout traffic, reconcile/expire all pending product checkouts, and only then apply in an approved staging/production rollout. The migration aborts if it finds an in-flight legacy product order: historical rows lack the inventory-reservation policy snapshot, so backfilling from mutable product settings would be unsafe. Keep checkout traffic paused until the matching checkout Edge function is deployed. The new Edge function requires `claim_order_checkout`; the collected action requires `complete_pickup_order`.
+`20261017071853_phase4_order_inventory_and_pickup.sql` is a review-only migration. Pause product checkout traffic, reconcile/expire all pending/action-required product checkouts and all orphaned inventory holds, and only then apply in an approved staging/production rollout. The migration aborts if it finds an in-flight legacy product order: historical rows lack the inventory-reservation policy snapshot, so backfilling from mutable product settings would be unsafe. Do not zero stock/reservations to bypass the guard. Also reconcile/expire legacy open Stripe sessions for product and service attempts, even when their database record was already failed/cancelled by the older decline handler. Keep checkout traffic paused until the matching checkout Edge and webhook functions are deployed. The new Edge function requires `claim_order_checkout`; the collected action requires `complete_pickup_order`.
 
 Configure `APP_PUBLIC_URL` on the Edge deployment to its trusted HTTPS application origin (no path/query/credentials). Returns always use that origin; clients cannot supply redirect URLs. Native users can explicitly open the returned order in the app. The legacy scheme mapping remains for already-created native Checkout sessions.
 
@@ -21,3 +21,9 @@ Configure `APP_PUBLIC_URL` on the Edge deployment to its trusted HTTPS applicati
 Authorised staging customer/business accounts, Stripe test-mode connected business and signed webhook delivery are unavailable here. Verify a real test payment, cancellation, declined-card retry, checkout expiry, webhook redelivery and business pickup collection in staging after migration review. Do not infer payment success from the browser return.
 
 Physical iPhone/PWA and native keyboard/device tests remain separate from browser emulation. Carrier-based shipping completion/refunds and a full historic transition timeline need backend workflows; current detail presents only the real creation and latest update timestamps. No delivery ETAs are fabricated.
+
+## Focused UX checks
+
+The expanded actual-component script verifies delayed structural loading, item-local mutation feedback, keyboard-triggered address validation and focus, preserved typed text, independent job/review failure and retry, safe review eligibility, terminal status precedence and expired cart recovery. All progress indicators are indeterminate; no payment/booking success is optimistic.
+
+WebKit can emit a native fetch diagnostic as `pageerror` when a fixture hard navigation or intentional auth-expiry transition cancels a read. The script excludes such a diagnostic only when the browser separately reports that exact URL as cancelled and a document change or the explicit auth-expiry transition is recorded. Those cases are retained in `navigation-cancellations.json`; application exceptions and uncorrelated failures still fail the test. This is fixture-teardown handling, not real-backend CORS verification.

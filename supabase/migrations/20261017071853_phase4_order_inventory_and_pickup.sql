@@ -1,13 +1,20 @@
 -- Review-only Phase 4 migration. Never apply to production without approval.
 -- ROLLOUT PRECONDITION: pause product checkout traffic and reconcile/expire
--- every pending product checkout first. Keep traffic paused through Edge rollout.
+-- every pending product checkout first. Reconcile orphaned inventory holds too.
+-- Expire/reconcile legacy Stripe sessions (including DB-failed attempts) outside
+-- SQL; this migration cannot establish provider state. Keep traffic paused
+-- through the matching Edge/webhook rollout.
 -- Historic rows did not snapshot reservation mode; guessing it from today's
 -- mutable product flags could corrupt inventory. Abort rather than backfill.
 begin;
-lock table public.orders,public.order_items,public.carts in share row exclusive mode;
+lock table public.orders,public.order_items,public.carts,public.inventory,public.product_variants in share row exclusive mode;
 do $$ begin
- if exists(select 1 from public.orders where status='PENDING' and payment_status='PENDING') then
+ if exists(select 1 from public.orders where status='PENDING' or payment_status in ('PENDING','REQUIRES_ACTION')) then
   raise exception 'Reconcile pending product checkouts before applying Phase 4 inventory migration';
+ end if;
+ if exists(select 1 from public.inventory where coalesce(reserved_quantity,0)<>0)
+    or exists(select 1 from public.product_variants where coalesce(reserved_quantity,0)<>0) then
+  raise exception 'Reconcile legacy inventory reservations before applying Phase 4 inventory migration';
  end if;
 end $$;
 alter table public.orders add column checkout_started_at timestamptz;

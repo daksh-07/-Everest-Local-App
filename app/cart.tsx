@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   Linking,
   Platform,
   Pressable,
@@ -15,7 +16,8 @@ import { cartQuantityLimit, cartNeedsAttention } from '@/lib/cart-presentation';
 import { formatMoney } from '@/lib/format';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { TransactionLoading } from '@/components/ui/TransactionLoading';
 import { OrderDetails } from '@/components/OrderDetails';
 import { Ionicons } from '@/components/ui/Icon';
 import {
@@ -33,6 +35,10 @@ import type {
 } from '@/lib/commerce';
 import { type ThemeColors, useAppTheme } from '@/lib/theme';
 
+function newCheckoutAttemptKey() {
+  return `cart-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
 export default function Cart() {
   const { colors } = useAppTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
@@ -43,11 +49,13 @@ export default function Cart() {
   const [error, setError] = useState('');
   const [method, setMethod] = useState<ProductDeliveryMethod>('PICKUP');
   const [address, setAddress] = useState('');
+  const [addressError, setAddressError] = useState('');
+  const addressRef = useRef<TextInput>(null);
+  const [pendingItem, setPendingItem] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingCartCheckout | null>(null);
   const loadRef = useRef(false);
-  const checkoutKey = useRef(
-    `cart-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`,
-  );
+  const checkoutKey = useRef(newCheckoutAttemptKey());
+  const loadAction = useRef<() => void>(() => {});
   const operationRef = useRef(false);
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -72,6 +80,7 @@ export default function Cart() {
       ]);
       setItems(rows);
       setPending(active);
+      if (!active) checkoutKey.current = newCheckoutAttemptKey();
     } catch {
       setError(
         items.length
@@ -84,13 +93,25 @@ export default function Cart() {
       setRefreshing(false);
     }
   }
-  useEffect(() => {
-    void load();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  async function mutate(action: () => Promise<void>, message: string) {
+  loadAction.current = () => void load('refresh');
+  useFocusEffect(
+    useCallback(() => {
+      loadAction.current();
+      const sub = AppState.addEventListener('change', (state) => {
+        if (state === 'active') loadAction.current();
+      });
+      return () => sub.remove();
+    }, []),
+  );
+  async function mutate(
+    action: () => Promise<void>,
+    message: string,
+    itemId: string,
+  ) {
     if (operationRef.current || loadRef.current || refreshing) return;
     operationRef.current = true;
     setBusy(true);
+    setPendingItem(itemId);
     setError('');
     try {
       await action();
@@ -98,16 +119,19 @@ export default function Cart() {
       await load('silent', true);
       operationRef.current = false;
       setBusy(false);
+      setPendingItem(null);
     } catch {
       setError(message);
       operationRef.current = false;
       setBusy(false);
+      setPendingItem(null);
     }
   }
   async function remove(item: CartItem) {
     await mutate(
       () => removeFromCart(item.product_id, item.variant_id),
       'Could not remove that item. Please try again.',
+      item.id,
     );
   }
   async function change(item: CartItem, delta: number) {
@@ -120,6 +144,7 @@ export default function Cart() {
     await mutate(
       () => setCartQuantity(item.product_id, item.variant_id, next),
       'Could not update your cart. Check stock availability and try again.',
+      item.id,
     );
   }
   const hasUnavailableProduct =
@@ -178,6 +203,14 @@ export default function Cart() {
       );
       return;
     }
+    if (!pending && method !== 'PICKUP' && address.trim().length < 5) {
+      setAddressError(
+        'Enter your street address, suburb and postcode to continue.',
+      );
+      addressRef.current?.focus();
+      return;
+    }
+    setAddressError('');
     operationRef.current = true;
     setBusy(true);
     setError('');
@@ -189,6 +222,12 @@ export default function Cart() {
       );
       if (!mountedRef.current) return;
       if (!result.checkoutUrl) {
+        if (result.checkoutState === 'EXPIRED') {
+          checkoutKey.current = newCheckoutAttemptKey();
+          setPending(null);
+          await load('silent', true);
+          if (!mountedRef.current) return;
+        }
         router.push({
           pathname: '/orders',
           params: {
@@ -226,8 +265,7 @@ export default function Cart() {
     (!pending &&
       (hasUnavailableProduct ||
         hasMultipleBusinesses ||
-        !hasFulfillmentMethod ||
-        (method !== 'PICKUP' && address.trim().length < 5)));
+        !hasFulfillmentMethod));
   const subtotal = items.reduce(
     (sum, item) => sum + cartUnitPrice(item) * item.quantity,
     0,
@@ -235,6 +273,8 @@ export default function Cart() {
   return (
     <SafeAreaView style={s.safe}>
       <ScrollView
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -270,10 +310,17 @@ export default function Cart() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Resume secure checkout"
-              accessibilityState={{ busy, disabled: checkoutDisabled }}
+              accessibilityState={{
+                busy: busy && !pendingItem,
+                disabled: checkoutDisabled,
+              }}
               disabled={checkoutDisabled}
               onPress={() => void pay()}
-              style={[s.button, checkoutDisabled && s.buttonDisabled]}
+              style={({ pressed }) => [
+                s.button,
+                checkoutDisabled && s.buttonDisabled,
+                pressed && !checkoutDisabled && { opacity: 0.86 },
+              ]}
             >
               {busy ? (
                 <ActivityIndicator color={colors.onBrand} />
@@ -296,7 +343,7 @@ export default function Cart() {
           </View>
         ) : null}
         {loading ? (
-          <ActivityIndicator color={colors.text} style={{ marginTop: 40 }} />
+          <TransactionLoading kind="cart" label="Loading your cart…" />
         ) : error && !items.length ? (
           <View style={s.errorBox}>
             <Text style={s.error}>{error}</Text>
@@ -308,6 +355,7 @@ export default function Cart() {
               <Text style={s.retryText}>Sign in</Text>
             </Pressable>
             <Pressable
+              accessibilityRole="button"
               onPress={() => void load()}
               disabled={locked}
               style={s.retry}
@@ -327,6 +375,7 @@ export default function Cart() {
                 <Text style={s.warningTitle}>Cart update unavailable</Text>
                 <Text style={s.warningText}>{error}</Text>
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => void load('refresh')}
                   disabled={locked}
                   style={s.warningRetry}
@@ -393,7 +442,16 @@ export default function Cart() {
                       >
                         <Text style={s.qtyButtonText}>−</Text>
                       </Pressable>
-                      <Text style={s.qtyText}>{item.quantity}</Text>
+                      <View style={{ minWidth: 24, alignItems: 'center' }}>
+                        {pendingItem === item.id ? (
+                          <ActivityIndicator
+                            accessibilityLabel={`Updating ${item.products?.name}`}
+                            color={colors.primary}
+                          />
+                        ) : (
+                          <Text style={s.qtyText}>{item.quantity}</Text>
+                        )}
+                      </View>
                       <Pressable
                         accessibilityRole="button"
                         accessibilityLabel={`Increase quantity of ${item.products?.name}`}
@@ -561,8 +619,12 @@ export default function Cart() {
                   <>
                     <Text style={s.addressLabel}>Delivery address</Text>
                     <TextInput
+                      ref={addressRef}
                       value={address}
-                      onChangeText={setAddress}
+                      onChangeText={(value) => {
+                        setAddress(value);
+                        if (value.trim().length >= 5) setAddressError('');
+                      }}
                       editable={!locked}
                       accessibilityLabel="Delivery or shipping address"
                       autoComplete="street-address"
@@ -570,11 +632,24 @@ export default function Cart() {
                       placeholder="Street address, suburb and postcode"
                       placeholderTextColor={colors.muted}
                       autoCapitalize="words"
-                      style={s.input}
+                      style={[
+                        s.input,
+                        !!addressError && { borderColor: colors.danger },
+                      ]}
                     />
-                    <Text style={s.meta}>
-                      Include your street, suburb and postcode.
-                    </Text>
+                    {addressError ? (
+                      <Text
+                        accessibilityRole="alert"
+                        accessibilityLiveRegion="polite"
+                        style={s.error}
+                      >
+                        {addressError}
+                      </Text>
+                    ) : (
+                      <Text style={s.meta}>
+                        Include your street, suburb and postcode.
+                      </Text>
+                    )}
                   </>
                 )}
               </>
@@ -596,12 +671,19 @@ export default function Cart() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={'Continue to secure checkout'}
-                accessibilityState={{ busy, disabled: checkoutDisabled }}
+                accessibilityState={{
+                  busy: busy && !pendingItem,
+                  disabled: checkoutDisabled,
+                }}
                 disabled={checkoutDisabled}
                 onPress={() => void pay()}
-                style={[s.button, checkoutDisabled && s.buttonDisabled]}
+                style={({ pressed }) => [
+                  s.button,
+                  checkoutDisabled && s.buttonDisabled,
+                  pressed && !checkoutDisabled && { opacity: 0.86 },
+                ]}
               >
-                {busy ? (
+                {busy && !pendingItem ? (
                   <ActivityIndicator color={colors.onBrand} />
                 ) : (
                   <Text
@@ -638,6 +720,7 @@ export default function Cart() {
               Add products from local businesses and they’ll show up here.
             </Text>
             <Pressable
+              accessibilityRole="button"
               onPress={() => router.push('/shop')}
               style={s.shopButton}
             >

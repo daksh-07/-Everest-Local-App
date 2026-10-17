@@ -87,5 +87,6 @@ test('adding from a product increments an existing cart line instead of silently
 test('cart blocks checkout when no common fulfilment method is available',()=>{
  assert.match(cart,/hasFulfillmentMethod\s*=\s*pickupAvailable\s*\|\|\s*deliveryAvailable\s*\|\|\s*shippingAvailable/);
  assert.match(cart,/No fulfilment method available/);
- assert.match(cart,/\|\|\s*!hasFulfillmentMethod\s*\|\|\s*\(?method\s*!==/);
+ assert.match(cart,/hasUnavailableProduct\s*\|\|\s*hasMultipleBusinesses\s*\|\|\s*!hasFulfillmentMethod/);
+ assert.match(cart,/addressRef\.current\?\.focus\(\)/);
 });
