@@ -31,7 +31,7 @@ test('keyboard resizing preserves bottom context only when user is near latest m
  assert.match(messages,/nearBottomRef/);
  assert.match(messages,/contentSize\.height-\(contentOffset\.y\+layoutMeasurement\.height\)<120/);
  assert.match(messages,/Math\.abs\(previous-current\)<32/);
- assert.match(messages,/scrollThreadToEndAfterLayout\(threadRef,!reducedMotion\)/);
+ assert.match(messages,/scrollThreadToEndAfterLayout\(threadRef,!reducedMotion,\(\)=>nearBottomRef\.current\)/);
 });
 
 test('long press measures the selected bubble and uses root modal spotlight geometry',()=>{

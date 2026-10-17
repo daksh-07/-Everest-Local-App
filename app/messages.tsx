@@ -54,8 +54,8 @@ function dateLabel(value:string){
  return d.toLocaleDateString([],{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==today.getFullYear()?{year:'numeric'}:{})});
 }
 function sameDay(a:string,b:string){return new Date(a).toDateString()===new Date(b).toDateString()}
-function scrollThreadToEndAfterLayout(ref:React.MutableRefObject<ScrollView|null>,animated:boolean){
- const run=()=>ref.current?.scrollToEnd({animated});
+function scrollThreadToEndAfterLayout(ref:React.MutableRefObject<ScrollView|null>,animated:boolean,shouldScroll:()=>boolean=()=>true){
+ const run=()=>{if(shouldScroll())ref.current?.scrollToEnd({animated})};
  if(Platform.OS==='web'&&typeof requestAnimationFrame==='function'){
   requestAnimationFrame(()=>requestAnimationFrame(run));
  }else{
@@ -246,7 +246,7 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
   lastViewportHeightRef.current=current;
   if(previous==null||Math.abs(previous-current)<32)return;
   if((selectedPersonal||selectedMarket)&&nearBottomRef.current){
-   scrollThreadToEndAfterLayout(threadRef,!reducedMotion);
+   scrollThreadToEndAfterLayout(threadRef,!reducedMotion,()=>nearBottomRef.current);
   }
  },[visualViewport.height,selectedPersonal,selectedMarket,reducedMotion]);
 
@@ -413,7 +413,7 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
       onReachTop={()=>void loadOlder()}
       onNearBottomChange={value=>{nearBottomRef.current=value}}
       onInitialContent={()=>{if(initialScrollRef.current||nearBottomRef.current){initialScrollRef.current=false;threadRef.current?.scrollToEnd({animated:false})}}}
-      onViewportLayout={()=>{if(nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,false)}}
+      onViewportLayout={()=>{if(nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,false,()=>nearBottomRef.current)}}
     />
 
     {incomingRequest?<View style={{marginHorizontal:14,marginBottom:12,padding:18,borderRadius:20,backgroundColor:c.elevated}}>
@@ -430,7 +430,7 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
     {canCompose?<Composer
       draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitPersonal()} colors={c}
       reply={replying} edit={editing} reducedMotion={reducedMotion} bottomInset={composerBottomInset}
-      onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}}
+      onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion,()=>nearBottomRef.current)}}
       cancelReply={()=>setReplying(null)}
       cancelEdit={()=>{setEditing(null);setDraft('')}}
     />:null}
@@ -451,7 +451,7 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
    </GlassSurface>
    {(selectedMarket.booking_id||selectedMarket.request_id||selectedMarket.context_type==='SERVICE')?<View style={{marginHorizontal:12,marginTop:8,paddingHorizontal:12,paddingVertical:9,borderRadius:12,backgroundColor:c.soft,borderWidth:1,borderColor:c.border,flexDirection:'row',gap:8,alignItems:'center'}}><Ionicons name="shield-checkmark-outline" size={17} color={c.accent}/><Text style={{flex:1,fontSize:13,lineHeight:18,color:c.text}}><Text style={{fontWeight:'600'}}>Keep service payments in Everest.</Text> Payments made outside Everest are not counted toward the booking balance or marketplace protection.</Text></View>:null}
    <MarketThread refValue={threadRef} items={marketThread} userId={userId} colors={c} onNearBottomChange={value=>{nearBottomRef.current=value}}/>
-   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} bottomInset={composerBottomInset} onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
+   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} bottomInset={composerBottomInset} onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion,()=>nearBottomRef.current)}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
    {error?<Text style={{fontSize:13,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
   </ChatKeyboardFrame>
  </SafeAreaView></View>;
@@ -614,7 +614,7 @@ function MarketThread({refValue,items,userId,colors:c,onNearBottomChange}:{refVa
   const {contentOffset,layoutMeasurement,contentSize}=event.nativeEvent;
   marketNearBottomRef.current=contentSize.height-(contentOffset.y+layoutMeasurement.height)<120;onNearBottomChange(marketNearBottomRef.current);
  };
- return <ScrollView ref={node=>{refValue.current=node}} onLayout={()=>{if(marketNearBottomRef.current)scrollThreadToEndAfterLayout(refValue,false)}} style={{flex:1,minHeight:0,backgroundColor:c.canvas}} keyboardDismissMode={Platform.OS==='ios'?'interactive':'none'} keyboardShouldPersistTaps="always" onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={()=>{if(marketNearBottomRef.current)refValue.current?.scrollToEnd({animated:false})}} contentContainerStyle={{flexGrow:1,justifyContent:'flex-end',paddingHorizontal:12,paddingVertical:8}}>
+ return <ScrollView ref={node=>{refValue.current=node}} onLayout={()=>{if(marketNearBottomRef.current)scrollThreadToEndAfterLayout(refValue,false,()=>marketNearBottomRef.current)}} style={{flex:1,minHeight:0,backgroundColor:c.canvas}} keyboardDismissMode={Platform.OS==='ios'?'interactive':'none'} keyboardShouldPersistTaps="always" onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={()=>{if(marketNearBottomRef.current)refValue.current?.scrollToEnd({animated:false})}} contentContainerStyle={{flexGrow:1,justifyContent:'flex-end',paddingHorizontal:12,paddingVertical:8}}>
   {items.map((m,index)=>{const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;const groupedPrev=Boolean(prev&&prev.sender_id===m.sender_id&&sameDay(prev.created_at,m.created_at));const groupedNext=Boolean(next&&next.sender_id===m.sender_id&&sameDay(next.created_at,m.created_at));return <View key={m.id} style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}><View style={{maxWidth:'79%',backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:StyleSheet.hairlineWidth,borderColor:c.border,borderRadius:22,borderTopRightRadius:mine&&groupedPrev?9:22,borderTopLeftRadius:!mine&&groupedPrev?9:22,borderBottomRightRadius:mine&&!groupedNext?6:22,borderBottomLeftRadius:!mine&&!groupedNext?6:22,paddingHorizontal:14,paddingVertical:10}}>{m.is_automated?<Text style={{fontSize:12,fontWeight:'600',color:mine?c.onBrand:c.accent,marginBottom:3}}>{m.automation_source==='EVEREST_AI'?'Everest AI · Automated':'Automated answer'}</Text>:null}<Text style={{fontSize:16,lineHeight:22.5,letterSpacing:-.12,color:mine?c.onBrand:c.text}}>{m.body}</Text></View>{!groupedNext?<DeliveryMeta createdAt={m.created_at} mine={mine} seen={Boolean(m.read_at)} colors={c}/>:null}</View>})}
  </ScrollView>;
 }
