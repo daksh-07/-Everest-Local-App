@@ -52,7 +52,14 @@ const merchant = {
   state: 'VIC',
   postcode: '3051',
 };
-const layouts=(process.env.EVEREST_QA_LAYOUTS||'320:LIGHT,390:DARK,1280:LIGHT,1280:DARK').split(',').map(v=>{const [w,t]=v.split(':');return [Number(w),t]});
+const layouts = (
+  process.env.EVEREST_QA_LAYOUTS || '320:LIGHT,390:DARK,1280:LIGHT,1280:DARK'
+)
+  .split(',')
+  .map((v) => {
+    const [w, t] = v.split(':');
+    return [Number(w), t];
+  });
 for (const [width, theme] of layouts) {
   const context = await browser.newContext({
     viewport: { width, height: 844 },
@@ -72,6 +79,11 @@ for (const [width, theme] of layouts) {
   );
   const state = {
     authenticated: true,
+    serviceCalls: 0,
+    servicePayment: 'PENDING',
+    bookingStatus: 'PENDING_PAYMENT',
+    serviceExpired: false,
+    catalogPrice: 49.95,
     qty: 0,
     pending: false,
     status: 'PENDING',
@@ -101,7 +113,7 @@ for (const [width, theme] of layouts) {
     business_id: biz,
     name: 'Ceramic-safe wash kit',
     price: 59.95,
-    sale_price: 49.95,
+    sale_price: state.catalogPrice,
     status: 'ACTIVE',
     description: 'Ceramic-safe wash and microfibre towels.',
     short_description: 'Local care, made simple.',
@@ -167,9 +179,12 @@ for (const [width, theme] of layouts) {
   const errors = [];
   page.on('pageerror', (e) => {
     errors.push(e.message);
-    console.error(e.stack||e.message);
+    console.error(e.stack || e.message);
   });
-  if(process.env.EVEREST_QA_VERBOSE==='1')page.on('requestfailed',req=>console.log('Request failed',req.url(),req.failure()));
+  if (process.env.EVEREST_QA_VERBOSE === '1')
+    page.on('requestfailed', (req) =>
+      console.log('Request failed', req.url(), req.failure()),
+    );
   await page.routeWebSocket('**/realtime/**', (ws) => ws.close());
   await page.route(/open-meteo|nominatim|bigdatacloud/, (r) =>
     r.fulfill({ status: 503, json: {} }),
@@ -177,7 +192,7 @@ for (const [width, theme] of layouts) {
   await page.route('https://checkout.stripe.com/**', (r) =>
     r.fulfill({
       contentType: 'text/html',
-      body: `<title>Fixture checkout</title><h1>Fixture hosted checkout — no payment taken</h1><a href="${base}/orders?order_id=${oid}&checkout=cancelled">Cancel fixture checkout</a>`,
+      body: `<title>Fixture checkout</title><h1>Fixture hosted checkout — no payment taken</h1><a href="${base}/${r.request().url().endsWith('booking') ? 'booking?id=' + oid : 'orders?order_id=' + oid}&checkout=cancelled">Cancel fixture checkout</a>`,
     }),
   );
   await page.route('**/*.supabase.co/**', async (r) => {
@@ -204,6 +219,22 @@ for (const [width, theme] of layouts) {
           ? user
           : { message: 'Fixture expired session' },
       });
+    if (url.pathname.includes('/functions/v1/service-checkout')) {
+      state.serviceCalls++;
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      return reply({
+        json: {
+          paymentId: 'payment-1',
+          bookingId: oid,
+          total: 50,
+          checkoutState: state.serviceExpired ? 'EXPIRED' : 'OPEN',
+          checkoutUrl: state.serviceExpired
+            ? null
+            : 'https://checkout.stripe.com/c/pay/booking',
+          reused: false,
+        },
+      });
+    }
     if (url.pathname.includes('/functions/v1/checkout')) {
       state.checkoutCalls++;
       await new Promise((resolve) => setTimeout(resolve, 150));
@@ -227,6 +258,18 @@ for (const [width, theme] of layouts) {
       });
     }
     if (url.pathname.includes('/rpc/')) {
+      if (table === 'service_booking_payment_summary')
+        return reply({
+          json: {
+            total: 240,
+            paid: state.servicePayment === 'SUCCEEDED' ? 50 : 0,
+            pending: state.servicePayment === 'PENDING' ? 50 : 0,
+            balance_due: state.servicePayment === 'SUCCEEDED' ? 190 : 240,
+            fully_paid: false,
+            marketplace_fee_total: 0,
+            marketplace_fee_collected: 0,
+          },
+        });
       if (table === 'get_my_workspace_context')
         return reply({
           json: {
@@ -284,6 +327,33 @@ for (const [width, theme] of layouts) {
         json: { message: 'Unapproved fixture write' },
       });
     let rows = [];
+    if (table === 'bookings')
+      rows =
+        url.searchParams.get('id') === 'eq.' + oid
+          ? [
+              {
+                id: oid,
+                business_id: biz,
+                request_id: null,
+                quote_id: null,
+                price: 240,
+                status: state.bookingStatus,
+                scheduled_date: null,
+                scheduled_time: null,
+                created_at: '2026-10-17T05:00:00Z',
+                completed_at: null,
+              },
+            ]
+          : [];
+    if (table === 'service_payments')
+      rows = [
+        {
+          amount: 50,
+          status: state.servicePayment,
+          created_at: '2026-10-17T05:01:00Z',
+          payment_kind: 'DEPOSIT',
+        },
+      ];
     if (table === 'profiles')
       rows = [
         {
@@ -328,8 +398,14 @@ for (const [width, theme] of layouts) {
   // Hard navigation discards a browsing context, unlike in-app route changes.
   // Drain fixture responses first so WebKit does not report their cancellation
   // as a cross-origin error in the context being destroyed.
-  const goto = async(path) => {await page.waitForLoadState('networkidle');await page.goto(base + path, { waitUntil: 'networkidle' })};
-  const reload = async()=>{await page.waitForLoadState('networkidle');await page.reload({waitUntil:'networkidle'})};
+  const goto = async (path) => {
+    await page.waitForLoadState('networkidle');
+    await page.goto(base + path, { waitUntil: 'networkidle' });
+  };
+  const reload = async () => {
+    await page.waitForLoadState('networkidle');
+    await page.reload({ waitUntil: 'networkidle' });
+  };
   const snap = async (name) => {
     assert.equal(
       await page.evaluate(
@@ -352,6 +428,7 @@ for (const [width, theme] of layouts) {
     });
     console.log(width, theme, name);
   };
+  if(process.env.EVEREST_QA_BOOKING_LAYOUT_ONLY!=='1'){
   await goto('/product?id=' + pid);
   await page
     .getByRole('button', { name: 'Increase quantity', exact: true })
@@ -426,10 +503,14 @@ for (const [width, theme] of layouts) {
       .getByRole('button', {
         name: 'Increase quantity of Ceramic-safe wash kit',
       })
-      .isDisabled(),
-    true,
+      .count(),
+    0,
   );
-  record('pending checkout locks cart and can resume reserved stock');
+  await page.getByText('Price breakdown', { exact: true }).waitFor();
+  await page.getByText('2 × $49.95', { exact: true }).waitFor();
+  assert.equal(await page.getByText('$79.95 each', { exact: true }).count(), 0);
+  await snap('saved-checkout');
+  record('pending checkout keeps saved prices and resumes reserved stock');
   await goto('/orders?order_id=' + oid + '&checkout=success');
   await page
     .getByText('Awaiting payment confirmation', { exact: true })
@@ -454,9 +535,21 @@ for (const [width, theme] of layouts) {
     .first()
     .waitFor();
   state.orderError = false;
+  const refreshedDetails = page.waitForResponse(
+    (r) =>
+      r.url().includes('/rest/v1/orders?') &&
+      new URL(r.url()).searchParams.get('select')?.includes('order_items') &&
+      r.status() === 200,
+  );
+  const refreshedDelivery = page.waitForResponse(
+    (r) => r.url().includes('/rest/v1/deliveries?') && r.status() === 200,
+  );
   await page
     .getByRole('button', { name: 'Refresh orders', exact: true })
     .click();
+  await Promise.all([refreshedDelivery, refreshedDetails]);
+  await page.getByText('Price breakdown', { exact: true }).waitFor();
+  await page.waitForLoadState('networkidle');
   record('failed order loading retry');
   state.business = true;
   await goto('/business-orders');
@@ -515,6 +608,66 @@ for (const [width, theme] of layouts) {
     0,
   );
   record('unauthorised workspace clears order records');
+  }
+  if (process.env.EVEREST_QA_BOOKING === '1') {
+    state.business = false;
+    await goto('/booking?id=' + oid + '&checkout=success');
+    await page.getByText('Checking payment status', { exact: true }).waitFor();
+    assert.equal(
+      await page.getByText('Payment recorded', { exact: true }).count(),
+      0,
+    );
+    const priceFits = await page
+      .getByText('$240.00', { exact: true })
+      .evaluate((el) => {
+        const box = el.getBoundingClientRect(),
+          row = el.parentElement.getBoundingClientRect();
+        return box.right <= row.right + 1 && box.left >= row.left - 1;
+      });
+    assert.equal(priceFits, true, 'booking total is clipped');
+    record('booking return waits for authoritative payment');
+    state.serviceExpired = true;
+    await page
+      .getByRole('button', { name: 'Pay deposit', exact: true })
+      .click();
+    await page
+      .getByText(
+        'That checkout expired. No payment was confirmed for that attempt. Tap Pay again to start a new secure checkout.',
+        { exact: true },
+      )
+      .waitFor();
+    record('expired service checkout is recoverable');
+    state.serviceExpired = false;
+    await page
+      .getByRole('button', { name: 'Pay deposit', exact: true })
+      .evaluate((el) => {
+        el.click();
+        el.click();
+      });
+    await page.waitForURL('https://checkout.stripe.com/**');
+    assert.equal(state.serviceCalls, 2);
+    await page.getByRole('link', { name: 'Cancel fixture checkout' }).click();
+    await page.getByText('Checkout closed', { exact: true }).waitFor();
+    assert.equal(state.servicePayment, 'PENDING');
+    record('duplicate service payment tap and cancellation return');
+    state.servicePayment = 'SUCCEEDED';
+    state.bookingStatus = 'CONFIRMED';
+    await page
+      .getByText('Payment recorded', { exact: true })
+      .waitFor({ timeout: 15000 });
+    await page
+      .getByRole('button', { name: 'Pay $190.00 balance', exact: true })
+      .waitFor();
+    await snap('booking-payment');
+    record('booking polls server deposit and remaining balance');
+    await goto('/booking?id=missing');
+    await page.getByText('Booking unavailable', { exact: true }).waitFor();
+    assert.equal(
+      await page.getByRole('button', { name: /Pay.*balance/ }).count(),
+      0,
+    );
+    record('switching bookings cannot retain stale payment actions');
+  }
   state.business = false;
   state.qty = 0;
   await goto('/cart');

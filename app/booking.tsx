@@ -1,7 +1,7 @@
 import { Ionicons } from '@/components/ui/Icon';
 import { router,useLocalSearchParams } from 'expo-router';
-import { useCallback,useEffect,useMemo,useState } from 'react';
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
+import { AppState, Platform, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { formatMoney,formatStatus } from '@/lib/format';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +20,8 @@ type PaymentSummary={total:number;paid:number;pending:number;balance_due:number;
 type PageData={booking:Booking;businessName:string;payment:Payment|null;paymentSummary:PaymentSummary;hasReview:boolean;record:JobRecord|null;checklist:JobChecklistItem[]};
 function nextStep(status:BookingStatus,balanceDue:number,operational:string|null){
  if(status==='CANCELLED')return {icon:'close-circle-outline' as const,title:'This booking is closed',copy:'No further action is required for this booking.'};
+ if(status==='DISPUTED')return {icon:'alert-circle-outline' as const,title:'Booking under review',copy:'Contact support if you need help with this booking. Check the recorded payment and job details below.'};
+ if(status==='COMPLETED')return {icon:'checkmark-circle-outline' as const,title:'Job complete',copy:'Review the completion note, confirm payment is settled, and leave feedback when you are ready.'};
  if(status==='PENDING_PAYMENT')return {icon:'card-outline' as const,title:'Secure your booking',copy:'Complete the required Everest payment to move this job forward.'};
  if(balanceDue>0&&['CONFIRMED','UPCOMING','IN_PROGRESS'].includes(status))return {icon:'wallet-outline' as const,title:'A balance is still due',copy:'Keep the remaining payment inside Everest so the completed job is recorded correctly.'};
  if(operational==='ON MY WAY')return {icon:'navigate-circle-outline' as const,title:'Your professional is on the way',copy:'Keep this page open for job updates or message the business if access details change.'};
@@ -27,7 +29,7 @@ function nextStep(status:BookingStatus,balanceDue:number,operational:string|null
  if(status==='CONFIRMED')return {icon:'checkmark-circle-outline' as const,title:'Booking confirmed',copy:'Your booking is secured. The next milestone is the scheduled visit or service start.'};
  if(status==='UPCOMING')return {icon:'calendar-outline' as const,title:'Coming up next',copy:'Check the scheduled time and make sure the business has any access or arrival details it needs.'};
  if(status==='IN_PROGRESS')return {icon:'construct-outline' as const,title:'Work is in progress',copy:'Follow the work plan below. Payment and completion status will update from the trusted backend.'};
- return {icon:'sparkles-outline' as const,title:'Job complete',copy:'Review the completion note, confirm payment is settled, and leave feedback when you are ready.'};
+ return {icon:'information-circle-outline' as const,title:'Booking update',copy:'Check the recorded job details below or contact the business for help.'};
 }
 
 const stages:ReadonlyArray<{label:string;statuses:BookingStatus[]}>= [
@@ -39,10 +41,15 @@ const stages:ReadonlyArray<{label:string;statuses:BookingStatus[]}>= [
 ];
 
 export default function BookingPortal(){
- const {id}=useLocalSearchParams<{id?:string}>();const bookingId=typeof id==='string'?id:'';
+ const {id,checkout}=useLocalSearchParams<{id?:string;checkout?:string}>();
+ return <BookingContent key={typeof id==='string'?id:''} bookingId={typeof id==='string'?id:''} checkoutState={typeof checkout==='string'?checkout:''}/>;
+}
+function BookingContent({bookingId,checkoutState}:{bookingId:string;checkoutState:string}){
+ const operationRef=useRef(false);const loadRef=useRef(false);const mountedRef=useRef(true);
+ useEffect(()=>{mountedRef.current=true;return()=>{mountedRef.current=false}},[]);
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
  const [data,setData]=useState<PageData|null>(null);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [busy,setBusy]=useState('');const [error,setError]=useState('');
- const load=useCallback(async(refresh=false)=>{if(!bookingId){setError('Booking reference is missing.');setLoading(false);return;}if(refresh)setRefreshing(true);else setLoading(true);setError('');try{
+ const load=useCallback(async(refresh=false)=>{if(loadRef.current)return;if(!bookingId){setError('Booking reference is missing.');setLoading(false);return;}loadRef.current=true;if(refresh)setRefreshing(true);else setLoading(true);setError('');try{
   const {data:booking,error:bookingError}=await supabase.from('bookings').select('id,business_id,request_id,quote_id,price,scheduled_date,scheduled_time,status,created_at,completed_at').eq('id',bookingId).single();if(bookingError)throw bookingError;
   const typed=booking as Booking;
   const [businessResult,paymentResult,paymentSummaryResult,reviewResult,workspace]=await Promise.all([
@@ -54,9 +61,11 @@ export default function BookingPortal(){
   ]);
   if(businessResult.error)throw businessResult.error;if(paymentResult.error)throw paymentResult.error;if(paymentSummaryResult.error)throw paymentSummaryResult.error;if(reviewResult.error)throw reviewResult.error;
   setData({booking:typed,businessName:String(businessResult.data?.name??'Local business'),payment:paymentResult.data as Payment|null,paymentSummary:paymentSummaryResult.data as PaymentSummary,hasReview:Boolean(reviewResult.data),...workspace});
- }catch{setError('This booking could not be loaded. Check your connection and try again.');}finally{setLoading(false);setRefreshing(false)}},[bookingId]);
- useEffect(()=>{void load()},[load]);
- async function action(key:string,work:()=>Promise<void>){if(busy)return;setBusy(key);setError('');try{await work()}catch(e){setError(userMessage(e,'That action could not be completed.'))}finally{setBusy('')}}
+ }catch{setError('This booking could not be loaded. Check your connection and try again.');}finally{loadRef.current=false;setLoading(false);setRefreshing(false)}},[bookingId]);
+ useEffect(()=>{void load();const sub=AppState.addEventListener('change',state=>{if(state==='active')void load(true)});return()=>sub.remove()},[load]);
+ const returnPayment=data?.payment?.status;
+ useEffect(()=>{if(!checkoutState||returnPayment==='SUCCEEDED')return;let attempts=0;const timer=setInterval(()=>{if(++attempts>15){clearInterval(timer);return}void load(true)},4000);return()=>clearInterval(timer)},[checkoutState,returnPayment,load]);
+ async function action(key:string,work:()=>Promise<void>){if(operationRef.current||loadRef.current)return;operationRef.current=true;setBusy(key);setError('');try{await work()}catch(e){setError(userMessage(e,'That action could not be completed.'))}finally{operationRef.current=false;setBusy('')}}
  if(loading)return <SafeAreaView style={s.safe}><LoadingState label="Loading your booking…" minHeight={320}/></SafeAreaView>;
  if(!data)return <SafeAreaView style={s.safe}><View style={s.center}><EmptyState icon="calendar-outline" title="Booking unavailable" description={error||'We could not load this booking.'} actionLabel="Try again" onAction={()=>void load()}/></View></SafeAreaView>;
  const {booking,record,checklist,paymentSummary}=data;const cancelled=booking.status==='CANCELLED';const activeStage=stages.findLastIndex(stage=>stage.statuses.includes(booking.status));const canPayBalance=!cancelled&&['CONFIRMED','UPCOMING','IN_PROGRESS'].includes(booking.status)&&paymentSummary.balance_due>0;
@@ -64,15 +73,17 @@ export default function BookingPortal(){
  const date=booking.scheduled_date?new Date(`${booking.scheduled_date}T${booking.scheduled_time||'12:00'}`).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}):'Scheduling with business';
  const guidance=nextStep(booking.status,paymentSummary.balance_due,operational);
  return <SafeAreaView style={s.safe} edges={['top']}><ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>} contentContainerStyle={s.page}>
-  <Pressable onPress={()=>router.back()} accessibilityLabel="Go back" style={s.back}><Ionicons name="arrow-back" size={21} color={colors.text}/></Pressable>
+  <Pressable onPress={()=>router.canGoBack()?router.back():router.replace('/bookings')} accessibilityLabel="Go back" style={s.back}><Ionicons name="arrow-back" size={21} color={colors.text}/></Pressable>
   <Text style={s.eyebrow}>Your job</Text><Text style={s.title}>{data.businessName}</Text><Text style={s.subtitle}>{date}{booking.scheduled_time?` · ${booking.scheduled_time.slice(0,5)}`:''}</Text>
-  <View style={[s.hero,cancelled&&s.heroCancelled]}><View style={s.heroTop}><View><Text style={s.heroLabel}>{cancelled?'Booking cancelled':formatStatus(operational||booking.status)}</Text><Text style={s.heroTitle}>{cancelled?'This job is no longer active':booking.status==='COMPLETED'?'Job completed':operational==='ON MY WAY'?'Your professional is on the way':'Everything in one place'}</Text></View><Text tabular style={s.price}>{formatMoney(booking.price)}</Text></View>
-   {!cancelled&&<View style={s.timeline}>{stages.map((stage,index)=>{const done=index<=activeStage;return <View key={stage.label} style={s.stage}><View style={[s.dot,done&&s.dotOn]}>{done&&<Ionicons name="checkmark" size={11} color={colors.onBrand}/>}</View><Text style={[s.stageText,done&&s.stageOn]} numberOfLines={1}>{stage.label}</Text></View>})}</View>}
+  {checkoutState?<AppCard compact style={s.guidance}><Text style={s.guidanceTitle}>{returnPayment==='SUCCEEDED'?'Payment recorded':checkoutState==='cancelled'?'Checkout closed':'Checking payment status'}</Text><Text style={s.guidanceCopy}>Payments are confirmed from the server. Returning from checkout does not confirm payment. Pull to refresh for the latest booking and balance.</Text>{Platform.OS==='web'?<Pressable accessibilityRole="button" onPress={()=>void Linking.openURL('everestlocal://booking?id='+encodeURIComponent(bookingId)+'&checkout='+encodeURIComponent(checkoutState))} style={s.rebook}><Text style={s.rebookText}>Open booking in the Everest Local app</Text></Pressable>:null}</AppCard>:null}
+  <View style={[s.hero,cancelled&&s.heroCancelled]}><View style={s.heroTop}><View style={{flex:1,minWidth:0}}><Text style={s.heroLabel}>{cancelled?'Booking cancelled':formatStatus(operational||booking.status)}</Text><Text style={s.heroTitle}>{cancelled?'This job is no longer active':booking.status==='COMPLETED'?'Job completed':operational==='ON MY WAY'?'Your professional is on the way':'Everything in one place'}</Text></View><Text tabular style={s.price}>{formatMoney(booking.price)}</Text></View>
+   {!cancelled&&<View style={s.timeline}>{stages.map((stage,index)=>{const done=index<=activeStage;return <View key={stage.label} style={s.stage}><View style={[s.dot,done&&s.dotOn]}>{done&&<Ionicons name="checkmark" size={11} color={colors.onBrand}/>}</View></View>})}</View>}
+   {!cancelled&&activeStage>=0?<Text style={[s.heroLabel,{marginTop:10,fontSize:12}]}>Step {activeStage+1} of {stages.length} · {stages[activeStage].label}</Text>:null}
   </View>
   <AppCard compact style={s.guidance}><View style={s.guidanceRow}><View style={s.guidanceIcon}><Ionicons name={guidance.icon} size={20} color={colors.accent}/></View><View style={s.guidanceBody}><Text style={s.guidanceKicker}>What happens next</Text><Text style={s.guidanceTitle}>{guidance.title}</Text><Text style={s.guidanceCopy}>{guidance.copy}</Text></View></View></AppCard>
   {error?<View style={s.errorWrap}><ErrorBanner message={error}/></View>:null}
   {!cancelled&&<View style={s.actions}>
-   {booking.status==='PENDING_PAYMENT'||canPayBalance?<Pressable disabled={!!busy} onPress={()=>void action('pay',async()=>{const url=await createServiceCheckout(booking.id);await Linking.openURL(url)})} style={s.primary}><Ionicons name="card-outline" size={18} color={colors.onBrand}/><Text style={s.primaryText}>{busy==='pay'?'Opening…':booking.status==='PENDING_PAYMENT'?'Pay deposit':`Pay ${formatMoney(paymentSummary.balance_due)} balance`}</Text></Pressable>:null}
+   {booking.status==='PENDING_PAYMENT'||canPayBalance?<Pressable accessibilityRole="button" disabled={!!busy||refreshing} onPress={()=>void action('pay',async()=>{const url=await createServiceCheckout(booking.id);if(!mountedRef.current)return;if(Platform.OS==='web'&&typeof window!=='undefined')window.location.assign(url);else await Linking.openURL(url)})} style={s.primary}><Ionicons name="card-outline" size={18} color={colors.onBrand}/><Text style={s.primaryText}>{busy==='pay'?'Opening…':booking.status==='PENDING_PAYMENT'?'Pay deposit':`Pay ${formatMoney(paymentSummary.balance_due)} balance`}</Text></Pressable>:null}
    {booking.request_id?<Pressable disabled={!!busy} onPress={()=>void action('message',async()=>{const conversationId=await getOrCreateConversation({requestId:booking.request_id!,businessId:booking.business_id,bookingId:booking.id});router.push({pathname:'/messages',params:{conversationId}})})} style={s.secondary}><Ionicons name="chatbubble-outline" size={18} color={colors.text}/><Text style={s.secondaryText}>{busy==='message'?'Opening…':'Message'}</Text></Pressable>:null}
    {booking.quote_id?<Pressable onPress={()=>router.push('/quotes')} style={s.secondary}><Ionicons name="document-text-outline" size={18} color={colors.text}/><Text style={s.secondaryText}>View quote</Text></Pressable>:null}
   </View>}

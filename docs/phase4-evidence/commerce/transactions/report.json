@@ -52,7 +52,7 @@
     "browser": "chromium",
     "width": 320,
     "theme": "LIGHT",
-    "scenario": "pending checkout locks cart and can resume reserved stock",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
     "passed": true
   },
   {
@@ -102,6 +102,41 @@
     "width": 320,
     "theme": "LIGHT",
     "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
     "passed": true
   },
   {
@@ -171,7 +206,7 @@
     "browser": "chromium",
     "width": 390,
     "theme": "DARK",
-    "scenario": "pending checkout locks cart and can resume reserved stock",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
     "passed": true
   },
   {
@@ -221,6 +256,41 @@
     "width": 390,
     "theme": "DARK",
     "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
     "passed": true
   },
   {
@@ -290,7 +360,7 @@
     "browser": "chromium",
     "width": 1280,
     "theme": "LIGHT",
-    "scenario": "pending checkout locks cart and can resume reserved stock",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
     "passed": true
   },
   {
@@ -340,6 +410,41 @@
     "width": 1280,
     "theme": "LIGHT",
     "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
     "passed": true
   },
   {
@@ -409,7 +514,7 @@
     "browser": "chromium",
     "width": 1280,
     "theme": "DARK",
-    "scenario": "pending checkout locks cart and can resume reserved stock",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
     "passed": true
   },
   {
@@ -459,6 +564,41 @@
     "width": 1280,
     "theme": "DARK",
     "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
     "passed": true
   },
   {

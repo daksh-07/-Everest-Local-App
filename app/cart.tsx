@@ -16,6 +16,7 @@ import { formatMoney } from '@/lib/format';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { OrderDetails } from '@/components/OrderDetails';
 import { Ionicons } from '@/components/ui/Icon';
 import {
   cartUnitPrice,
@@ -48,6 +49,13 @@ export default function Cart() {
     `cart-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`,
   );
   const operationRef = useRef(false);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
   async function load(
     mode: 'initial' | 'refresh' | 'silent' = 'initial',
     duringMutation = false,
@@ -179,6 +187,7 @@ export default function Cart() {
         pending ? 'PICKUP' : method,
         pending || method === 'PICKUP' ? null : address,
       );
+      if (!mountedRef.current) return;
       if (!result.checkoutUrl) {
         router.push({
           pathname: '/orders',
@@ -255,6 +264,23 @@ export default function Cart() {
               Your saved items, total and fulfilment details are reserved.
               Resume the same secure checkout or view its order.
             </Text>
+            <Text style={s.warningTitle}>
+              Saved checkout total · {formatMoney(pending.total)}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Resume secure checkout"
+              accessibilityState={{ busy, disabled: checkoutDisabled }}
+              disabled={checkoutDisabled}
+              onPress={() => void pay()}
+              style={[s.button, checkoutDisabled && s.buttonDisabled]}
+            >
+              {busy ? (
+                <ActivityIndicator color={colors.onBrand} />
+              ) : (
+                <Text style={s.buttonText}>Resume secure checkout</Text>
+              )}
+            </Pressable>
             <Pressable
               accessibilityRole="button"
               onPress={() =>
@@ -288,6 +314,11 @@ export default function Cart() {
             >
               <Text style={s.retryText}>Try again</Text>
             </Pressable>
+          </View>
+        ) : pending ? (
+          <View>
+            {error ? <Text style={s.error}>{error}</Text> : null}
+            <OrderDetails id={pending.id} customerActions={false} />
           </View>
         ) : items.length ? (
           <>
@@ -553,11 +584,9 @@ export default function Cart() {
             </Text>
             <View style={s.summary}>
               <View style={s.total}>
-                <Text style={s.totalLabel}>
-                  {pending ? 'Checkout total' : 'Item subtotal'}
-                </Text>
+                <Text style={s.totalLabel}>Item subtotal</Text>
                 <Text tabular style={s.totalValue}>
-                  {formatMoney(pending?.total ?? subtotal)}
+                  {formatMoney(subtotal)}
                 </Text>
               </View>
               <Text style={s.note}>
@@ -566,11 +595,7 @@ export default function Cart() {
               </Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={
-                  pending
-                    ? 'Resume secure checkout'
-                    : 'Continue to secure checkout'
-                }
+                accessibilityLabel={'Continue to secure checkout'}
                 accessibilityState={{ busy, disabled: checkoutDisabled }}
                 disabled={checkoutDisabled}
                 onPress={() => void pay()}
@@ -585,9 +610,7 @@ export default function Cart() {
                       checkoutDisabled && s.buttonTextDisabled,
                     ]}
                   >
-                    {pending
-                      ? 'Resume secure checkout'
-                      : 'Continue to secure checkout'}
+                    Continue to secure checkout
                   </Text>
                 )}
               </Pressable>

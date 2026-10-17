@@ -13,10 +13,12 @@ export function OrderDetails({
   id,
   businessId,
   version = 0,
+  customerActions = true,
 }: {
   id: string;
   businessId?: string;
   version?: number;
+  customerActions?: boolean;
 }) {
   const { colors: c } = useAppTheme();
   const [order, setOrder] = useState<OrderDetail | null>(null);
@@ -234,7 +236,7 @@ export function OrderDetails({
           </Text>
         ) : null}
       </View>
-      {!businessId ? (
+      {!businessId && customerActions ? (
         <View style={section}>
           {order.status === 'PENDING' && order.payment_status === 'PENDING' ? (
             <Pressable

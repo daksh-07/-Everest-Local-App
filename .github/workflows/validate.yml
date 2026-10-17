@@ -73,7 +73,7 @@ jobs:
       - name: Product marketplace regressions
         run: npm run test:products
       - name: Phase 4 transaction and inventory regressions
-        run: node --experimental-strip-types --test tests/checkout-handler.test.mjs tests/checkout-lifecycle.test.mjs tests/order-presentation.test.mjs tests/order-inventory-sql.test.mjs tests/cart-presentation.test.mjs tests/product-presentation.test.mjs
+        run: node --experimental-strip-types --test tests/booking-guidance.test.mjs tests/checkout-handler.test.mjs tests/service-checkout-handler.test.mjs tests/checkout-lifecycle.test.mjs tests/order-presentation.test.mjs tests/order-inventory-sql.test.mjs tests/cart-presentation.test.mjs tests/product-presentation.test.mjs
       - name: Service dispatch regression tests
         run: npm run test:dispatch && node --test tests/service-aware-dispatch-audit.test.mjs
       - name: Business verification tests
