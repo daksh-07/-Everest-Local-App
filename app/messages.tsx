@@ -1,5 +1,5 @@
 import {initialsOf} from '@/lib/initials';
-import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
+import {useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Alert, Animated, Image, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
@@ -18,6 +18,7 @@ import {supabase} from '@/lib/supabase';
 import {useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
 import {MOTION,ease,useReducedMotion} from '@/lib/motion';
+import {composerInputHeight,COMPOSER_INPUT_MIN,COMPOSER_INPUT_MAX} from '@/lib/chat-layout';
 import {useVisualViewport} from '@/lib/visual-viewport';
 import {installChatWebRuntimeStyles} from '@/lib/chat-web-runtime';
 import {setChatThreadOpen} from '@/lib/chat-focus';
@@ -53,8 +54,8 @@ function dateLabel(value:string){
  return d.toLocaleDateString([],{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==today.getFullYear()?{year:'numeric'}:{})});
 }
 function sameDay(a:string,b:string){return new Date(a).toDateString()===new Date(b).toDateString()}
-function scrollThreadToEndAfterLayout(ref:React.MutableRefObject<ScrollView|null>,animated:boolean){
- const run=()=>ref.current?.scrollToEnd({animated});
+function scrollThreadToEndAfterLayout(ref:React.MutableRefObject<ScrollView|null>,animated:boolean,shouldScroll:()=>boolean=()=>true){
+ const run=()=>{if(shouldScroll())ref.current?.scrollToEnd({animated})};
  if(Platform.OS==='web'&&typeof requestAnimationFrame==='function'){
   requestAnimationFrame(()=>requestAnimationFrame(run));
  }else{
@@ -65,7 +66,7 @@ function scrollThreadToEndAfterLayout(ref:React.MutableRefObject<ScrollView|null
 function GlassSurface({children,style,intensity=58}:{children:React.ReactNode;style?:StyleProp<ViewStyle>;intensity?:number}){
  const {isDark}=useAppTheme();
  const strong=intensity>=60;
- const glass=isDark?(strong?'rgba(34,34,30,.88)':'rgba(31,31,28,.76)'):(strong?'rgba(255,254,251,.90)':'rgba(255,254,251,.78)');
+ const glass=isDark?(strong?'rgba(17,17,17,.96)':'rgba(31,31,31,.92)'):(strong?'rgba(255,255,255,.96)':'rgba(255,255,255,.90)');
  const webGlass=Platform.OS==='web'&&strong?({backdropFilter:'blur(22px) saturate(1.18)',WebkitBackdropFilter:'blur(22px) saturate(1.18)'} as never):null;
  return <View style={[{backgroundColor:glass},webGlass,style]}>{children}</View>;
 }
@@ -87,6 +88,7 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
  const params=useGlobalSearchParams<{personalId?:string;marketId?:string;conversationId?:string}>();
  const requestedPersonalId=typeof params.personalId==='string'?params.personalId:'';
  const requestedMarketId=typeof params.marketId==='string'?params.marketId:typeof params.conversationId==='string'?params.conversationId:'';
+ const openedPersonalLink=useRef('');const openedMarketLink=useRef('');
  const [tab,setTab]=useState<'CHATS'|'REQUESTS'>('CHATS');
  const [marketFilter,setMarketFilter]=useState<'ALL'|'PRODUCT'|'SERVICE'>('ALL');
  const [isBusinessUser,setIsBusinessUser]=useState(false);
@@ -106,8 +108,10 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
  const [hasOlder,setHasOlder]=useState(false);
  const [loadingOlder,setLoadingOlder]=useState(false);
  const [draft,setDraft]=useState('');
+ const draftRef=useRef(draft);draftRef.current=draft;const threadDrafts=useRef(new Map<string,string>());const draftThread=useRef('');
+ useEffect(()=>{const key=selectedPersonalId?'personal:'+selectedPersonalId:selectedMarketId?'market:'+selectedMarketId:'';if(key===draftThread.current)return;if(draftThread.current)threadDrafts.current.set(draftThread.current,draftRef.current);draftThread.current=key;setDraft(threadDrafts.current.get(key)??'');setReplying(null);setEditing(null);setError('')},[selectedPersonalId,selectedMarketId]);
  const [userId,setUserId]=useState('');
- const [loading,setLoading]=useState(true);
+ const [loading,setLoading]=useState(true);const [threadLoading,setThreadLoading]=useState(false);
  const lastHomeLoad=useRef(0);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
@@ -128,9 +132,10 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
  const threadRef=useRef<ScrollView|null>(null);
  const initialScrollRef=useRef(true);
  const keyboardOpen=Platform.OS==='web'&&visualViewport.keyboardInset>80;
- const [nativeKeyboardOpen,setNativeKeyboardOpen]=useState(false);
- useEffect(()=>{if(Platform.OS==='web')return;const show=Keyboard.addListener(Platform.OS==='ios'?'keyboardWillShow':'keyboardDidShow',()=>setNativeKeyboardOpen(true));const hide=Keyboard.addListener(Platform.OS==='ios'?'keyboardWillHide':'keyboardDidHide',()=>setNativeKeyboardOpen(false));return()=>{show.remove();hide.remove()}},[]);
+ const [nativeKeyboardOpen,setNativeKeyboardOpen]=useState(()=>Platform.OS!=='web'&&Keyboard.isVisible());
+ useEffect(()=>{if(Platform.OS==='web')return;const show=Keyboard.addListener(Platform.OS==='ios'?'keyboardWillShow':'keyboardDidShow',()=>setNativeKeyboardOpen(true));const hide=Keyboard.addListener('keyboardDidHide',()=>setNativeKeyboardOpen(false));return()=>{show.remove();hide.remove()}},[]);
  const composerBottomInset=keyboardOpen||nativeKeyboardOpen?0:insets.bottom;
+ useEffect(()=>{if(Platform.OS!=='web'||typeof document==='undefined'||!visible||!(selectedPersonal||selectedMarket))return;document.documentElement.dataset.everestChatOpen='true';return()=>{delete document.documentElement.dataset.everestChatOpen}},[visible,selectedPersonal,selectedMarket]);
  const chatRootStyle={flex:1,minHeight:0,width:'100%',overflow:'hidden',backgroundColor:c.canvas} as const;
 
  const loadHome=useCallback(async(silent=false)=>{
@@ -152,11 +157,11 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
    }
    const names=Object.fromEntries(businessRows.map(x=>[x.id,x]));
    setMarket(rows.map(x=>({...x,counterpart_name:names[x.business_id]?.name??'Business conversation',logo_url:names[x.business_id]?.logo_url??null})));
-   if(requestedPersonalId&&!selectedPersonalRef.current){
+   if(requestedPersonalId&&openedPersonalLink.current!==requestedPersonalId){
     const found=[...p,...r].find(x=>x.id===requestedPersonalId);
-    if(found){setSelectedPersonal(found);setTab(found.status==='REQUEST'&&found.initiated_by!==user?.id?'REQUESTS':'CHATS')}
+    if(found){openedPersonalLink.current=requestedPersonalId;setSelectedMarket(null);setSelectedPersonal(found);setTab(found.status==='REQUEST'&&found.initiated_by!==user?.id?'REQUESTS':'CHATS')}
    }
-   if(requestedMarketId&&!selectedMarketRef.current){const found=rows.find(x=>x.id===requestedMarketId);if(found)setSelectedMarket({...found,counterpart_name:names[found.business_id]?.name??'Business conversation',logo_url:names[found.business_id]?.logo_url??null})}
+   if(requestedMarketId&&openedMarketLink.current!==requestedMarketId){const found=rows.find(x=>x.id===requestedMarketId);if(found){openedMarketLink.current=requestedMarketId;setSelectedPersonal(null);setSelectedMarket({...found,counterpart_name:names[found.business_id]?.name??'Business conversation',logo_url:names[found.business_id]?.logo_url??null})}}
   }catch{if(!silent)setError('Messages could not be loaded.')}
   finally{if(!silent)setLoading(false)}
  },[requestedPersonalId,requestedMarketId]);
@@ -164,6 +169,8 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
  const refreshPersonalThread=useCallback(async(id:string,silent=false)=>{
   try{
    const rows=await personalMessages(id,null,PAGE_SIZE);
+   if(selectedPersonalRef.current?.id!==id)return;
+   if(!silent)initialScrollRef.current=true;
    setPersonalThread(current=>{
     if(!silent)return rows;
     const localPending=current.filter(m=>m.id.startsWith('temp-')||m.sending||m.failed);
@@ -176,13 +183,13 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
    });
    setHasOlder(rows.length===PAGE_SIZE);
    if(rows.some(message=>message.sender_id!==userId&&!message.read_at))await markPersonalConversationRead(id).catch(()=>0);
-   if(!silent){initialScrollRef.current=true}
-  }catch{if(!silent)setError('Conversation could not be loaded.')}
+  }catch{if(!silent&&selectedPersonalRef.current?.id===id)setError('Conversation could not be loaded.')}finally{if(selectedPersonalRef.current?.id===id)setThreadLoading(false)}
  },[userId]);
 
  const refreshMarketThread=useCallback(async(id:string)=>{
   try{
    const rows=await messages(id) as MarketMessage[];
+   if(selectedMarketRef.current?.id!==id)return;
    setMarketThread(current=>{
     const unchanged=current.length===rows.length&&current.every((message,index)=>{
      const next=rows[index];
@@ -190,14 +197,15 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
     });
     return unchanged?current:rows;
    });
-  }catch{setError('Conversation could not be loaded.')}
+  }catch{if(selectedMarketRef.current?.id===id)setError('Conversation could not be loaded.')}finally{if(selectedMarketRef.current?.id===id)setThreadLoading(false)}
  },[]);
 
  async function loadOlder(){
   if(!selectedPersonal||loadingOlder||!hasOlder||!personalThread.length)return;
   setLoadingOlder(true);
   try{
-   const older=await personalMessages(selectedPersonal.id,personalThread[0].created_at,PAGE_SIZE);
+   const conversationId=selectedPersonal.id;const older=await personalMessages(conversationId,personalThread[0].created_at,PAGE_SIZE);
+   if(selectedPersonalRef.current?.id!==conversationId)return;
    setPersonalThread(current=>[...older,...current]);
    setHasOlder(older.length===PAGE_SIZE);
   }catch{setError('Older messages could not be loaded.')}
@@ -214,13 +222,13 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
  },[loadHome,selectedPersonalId,selectedMarketId,pagerSelected,visible]);
  useEffect(()=>{
   if(!visible||!selectedPersonalId||(pagerSelected!==undefined&&pagerSelected!==4))return;
-  initialScrollRef.current=true;void refreshPersonalThread(selectedPersonalId);
+  initialScrollRef.current=true;setThreadLoading(true);setPersonalThread([]);void refreshPersonalThread(selectedPersonalId);
   const timer=setInterval(()=>void refreshPersonalThread(selectedPersonalId,true),3000);
   return()=>clearInterval(timer);
  },[refreshPersonalThread,selectedPersonalId,pagerSelected,visible]);
  useEffect(()=>{
   if(!visible||!selectedMarketId||(pagerSelected!==undefined&&pagerSelected!==4))return;
-  void refreshMarketThread(selectedMarketId);
+  setThreadLoading(true);setMarketThread([]);void refreshMarketThread(selectedMarketId);
   const timer=setInterval(()=>void refreshMarketThread(selectedMarketId),4000);
   return()=>clearInterval(timer);
  },[refreshMarketThread,selectedMarketId,pagerSelected,visible]);
@@ -238,7 +246,7 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
   lastViewportHeightRef.current=current;
   if(previous==null||Math.abs(previous-current)<32)return;
   if((selectedPersonal||selectedMarket)&&nearBottomRef.current){
-   scrollThreadToEndAfterLayout(threadRef,!reducedMotion);
+   scrollThreadToEndAfterLayout(threadRef,!reducedMotion,()=>nearBottomRef.current);
   }
  },[visualViewport.height,selectedPersonal,selectedMarket,reducedMotion]);
 
@@ -258,7 +266,7 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
   try{
    const result=await sendPersonalMessageDetailed(selectedPersonal.other_user_id,body,reply?.id??null);
    setPersonalThread(current=>current.map(m=>m.id===tempId?{...optimistic,id:result.message_id,conversation_id:result.conversation_id,created_at:result.created_at,sending:false}:m));
-   setSelectedPersonal(current=>current?{...current,status:result.status,updated_at:result.created_at}:current);
+   setSelectedPersonal(current=>current?.id===optimistic.conversation_id?{...current,status:result.status,updated_at:result.created_at}:current);
    void loadHome(true);
   }catch{
    setPersonalThread(current=>current.map(m=>m.id===tempId?{...m,sending:false,failed:true}:m));
@@ -308,13 +316,13 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
  }
  async function declineRequest(){
   if(!selectedPersonal)return;setBusy(true);
-  try{await respondMessageRequest(selectedPersonal.id,false);setSelectedPersonal(null);setPersonalThread([]);await loadHome(true)}
+  try{await respondMessageRequest(selectedPersonal.id,false);Keyboard.dismiss();setSelectedPersonal(null);setPersonalThread([]);await loadHome(true)}
   catch{setError('Request could not be declined.')}
   finally{setBusy(false)}
  }
  async function blockOther(){
   if(!selectedPersonal)return;setBusy(true);
-  try{await blockUser(selectedPersonal.other_user_id);setSelectedPersonal(null);setPersonalThread([]);setHeaderMenu(false);await loadHome(true)}
+  try{await blockUser(selectedPersonal.other_user_id);Keyboard.dismiss();setSelectedPersonal(null);setPersonalThread([]);setHeaderMenu(false);await loadHome(true)}
   catch{setError('User could not be blocked.')}
   finally{setBusy(false)}
  }
@@ -380,20 +388,20 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
   const canCompose=selectedPersonal.status==='ACTIVE'||outgoingRequest;
   return <View nativeID="everest-chat-shell" style={chatRootStyle}><SafeAreaView edges={['top','left','right']} style={{flex:1,minHeight:0,backgroundColor:c.canvas}}>
    <ChatKeyboardFrame>
-    <GlassSurface intensity={64} style={{minHeight:70,paddingHorizontal:12,paddingVertical:9,flexDirection:'row',alignItems:'center',gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:c.border,shadowColor:'#000',shadowOpacity:.16,shadowRadius:18,shadowOffset:{width:0,height:8},zIndex:2}}>
-     <Pressable accessibilityLabel="Back to messages" onPress={()=>{setSelectedPersonal(null);setPersonalThread([]);setReplying(null);setEditing(null);void loadHome(true)}} style={({pressed})=>({width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.95:1}]})}><Ionicons name="chevron-back" size={25} color={c.text}/></Pressable>
-     <Pressable onPress={()=>router.push('/public-user?id='+selectedPersonal.other_user_id)} style={{flex:1,flexDirection:'row',alignItems:'center',gap:10}}>
+    <GlassSurface intensity={64} style={{minHeight:60,paddingHorizontal:12,paddingVertical:7,flexDirection:'row',alignItems:'center',gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:c.border,zIndex:2}}>
+     <Pressable accessibilityRole="button" accessibilityLabel="Back to messages" onPress={()=>{Keyboard.dismiss();setSelectedPersonal(null);setPersonalThread([]);setReplying(null);setEditing(null);void loadHome(true)}} style={({pressed})=>({width:44,height:44,borderRadius:22,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.95:1}]})}><Ionicons name="chevron-back" size={25} color={c.text}/></Pressable>
+     <Pressable accessibilityRole="button" accessibilityLabel={'View '+(selectedPersonal.display_name??'recipient')+' profile'} onPress={()=>router.push('/public-user?id='+selectedPersonal.other_user_id)} style={{flex:1,flexDirection:'row',alignItems:'center',gap:10}}>
       {selectedPersonal.avatar_url?<Image source={{uri:selectedPersonal.avatar_url}} style={{width:44,height:44,borderRadius:22}}/>:<View style={{width:44,height:44,borderRadius:22,backgroundColor:c.soft,alignItems:'center',justifyContent:'center',borderWidth:StyleSheet.hairlineWidth,borderColor:c.border}}><Text style={{fontSize:15,fontWeight:'700',color:c.accent}}>{initialsOf(selectedPersonal.display_name)}</Text></View>}
       <View style={{flex:1}}><Text numberOfLines={1} style={{fontSize:17,lineHeight:22,fontWeight:'600',color:c.text}}>{selectedPersonal.display_name??'Everest member'}</Text><Text style={{fontSize:13,lineHeight:17,color:c.textSecondary,marginTop:1}}>{outgoingRequest?'Request pending':incomingRequest?'Message request':'View profile'}</Text></View>
      </Pressable>
-     <Pressable accessibilityLabel="Conversation menu" onPress={()=>setHeaderMenu(true)} style={({pressed})=>({width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.95:1}]})}><Ionicons name="ellipsis-horizontal" size={21} color={c.text}/></Pressable>
+     <Pressable accessibilityRole="button" accessibilityLabel="Conversation menu" onPress={()=>setHeaderMenu(true)} style={({pressed})=>({width:44,height:44,borderRadius:22,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.95:1}]})}><Ionicons name="ellipsis-horizontal" size={21} color={c.text}/></Pressable>
     </GlassSurface>
 
     {hasOlder?<Pressable disabled={loadingOlder} onPress={()=>void loadOlder()} style={{alignSelf:'center',paddingHorizontal:14,paddingVertical:8,marginTop:8,borderRadius:14,backgroundColor:c.soft}}><Text style={{fontSize:13,fontWeight:'600',color:c.text}}>{loadingOlder?'Loading…':'Load earlier messages'}</Text></Pressable>:null}
     {conversationSearchOpen?<View style={{paddingHorizontal:12,paddingVertical:7,borderBottomWidth:1,borderBottomColor:c.border,backgroundColor:c.canvas,flexDirection:'row',alignItems:'center',gap:8}}><Ionicons name="search-outline" size={17} color={c.muted}/><TextInput nativeID="everest-conversation-search" autoFocus value={conversationQuery} onChangeText={setConversationQuery} placeholder="Search this conversation" placeholderTextColor={c.muted} style={{flex:1,minHeight:36,fontSize:16,color:c.text}}/><Pressable accessibilityRole="button" accessibilityLabel="Close search" onPress={()=>{setConversationSearchOpen(false);setConversationQuery('')}} style={{width:34,height:34,alignItems:'center',justifyContent:'center'}}><Ionicons name="close" size={19} color={c.muted}/></Pressable></View>:null}
     <PersonalThread
       refValue={threadRef}
-      items={visiblePersonalThread}
+      items={visiblePersonalThread} loading={threadLoading}
       userId={userId}
       colors={c}
       onAction={(message,rect)=>{void haptic.medium();setActionTarget({message,rect})}}
@@ -404,7 +412,8 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
       onReply={beginReply}
       onReachTop={()=>void loadOlder()}
       onNearBottomChange={value=>{nearBottomRef.current=value}}
-      onInitialContent={()=>{if(initialScrollRef.current){initialScrollRef.current=false;threadRef.current?.scrollToEnd({animated:false})}}}
+      onInitialContent={()=>{if(initialScrollRef.current||nearBottomRef.current){initialScrollRef.current=false;threadRef.current?.scrollToEnd({animated:false})}}}
+      onViewportLayout={()=>{if(nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,false,()=>nearBottomRef.current)}}
     />
 
     {incomingRequest?<View style={{marginHorizontal:14,marginBottom:12,padding:18,borderRadius:20,backgroundColor:c.elevated}}>
@@ -421,7 +430,7 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
     {canCompose?<Composer
       draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitPersonal()} colors={c}
       reply={replying} edit={editing} reducedMotion={reducedMotion} bottomInset={composerBottomInset}
-      onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}}
+      onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion,()=>nearBottomRef.current)}}
       cancelReply={()=>setReplying(null)}
       cancelEdit={()=>{setEditing(null);setDraft('')}}
     />:null}
@@ -435,14 +444,14 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
 
  if(selectedMarket)return <View nativeID="everest-chat-shell" style={chatRootStyle}><SafeAreaView edges={['top','left','right']} style={{flex:1,minHeight:0,backgroundColor:c.canvas}}>
   <ChatKeyboardFrame>
-   <GlassSurface intensity={64} style={{minHeight:70,paddingHorizontal:12,paddingVertical:9,flexDirection:'row',alignItems:'center',gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:c.border,shadowColor:'#000',shadowOpacity:.16,shadowRadius:18,shadowOffset:{width:0,height:8},zIndex:2}}>
-    <Pressable accessibilityLabel="Back to messages" onPress={()=>{setSelectedMarket(null);setMarketThread([]);void loadHome(true)}} style={({pressed})=>({width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.95:1}]})}><Ionicons name="chevron-back" size={25} color={c.text}/></Pressable>
+   <GlassSurface intensity={64} style={{minHeight:60,paddingHorizontal:12,paddingVertical:7,flexDirection:'row',alignItems:'center',gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:c.border,zIndex:2}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Back to messages" onPress={()=>{Keyboard.dismiss();setSelectedMarket(null);setMarketThread([]);void loadHome(true)}} style={({pressed})=>({width:44,height:44,borderRadius:22,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.95:1}]})}><Ionicons name="chevron-back" size={25} color={c.text}/></Pressable>
     {selectedMarket.logo_url?<Image source={{uri:selectedMarket.logo_url}} style={{width:46,height:46,borderRadius:16}}/>:<View style={{width:46,height:46,borderRadius:16,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="storefront-outline" size={22} color={c.accent}/></View>}
     <View style={{flex:1}}><Text style={{fontSize:17,fontWeight:'800',letterSpacing:-.45,color:c.text}}>{selectedMarket.counterpart_name}</Text><Text numberOfLines={1} style={{fontSize:13,color:c.textSecondary,marginTop:1}}>{selectedMarket.context_type==='PRODUCT'?'Product · '+(selectedMarket.context_title??'Enquiry'):selectedMarket.context_type==='SERVICE'?'Service · '+(selectedMarket.context_title??'Enquiry'):'Business conversation'}</Text></View>
    </GlassSurface>
    {(selectedMarket.booking_id||selectedMarket.request_id||selectedMarket.context_type==='SERVICE')?<View style={{marginHorizontal:12,marginTop:8,paddingHorizontal:12,paddingVertical:9,borderRadius:12,backgroundColor:c.soft,borderWidth:1,borderColor:c.border,flexDirection:'row',gap:8,alignItems:'center'}}><Ionicons name="shield-checkmark-outline" size={17} color={c.accent}/><Text style={{flex:1,fontSize:13,lineHeight:18,color:c.text}}><Text style={{fontWeight:'600'}}>Keep service payments in Everest.</Text> Payments made outside Everest are not counted toward the booking balance or marketplace protection.</Text></View>:null}
-   <MarketThread refValue={threadRef} items={marketThread} userId={userId} colors={c}/>
-   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} bottomInset={composerBottomInset} onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion)}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
+   <MarketThread refValue={threadRef} items={marketThread} userId={userId} colors={c} onNearBottomChange={value=>{nearBottomRef.current=value}}/>
+   <Composer draft={draft} setDraft={setDraft} busy={busy} submit={()=>void submitMarket()} colors={c} reply={null} edit={null} reducedMotion={reducedMotion} bottomInset={composerBottomInset} onFocus={()=>{if(Platform.OS==='web'&&nearBottomRef.current)scrollThreadToEndAfterLayout(threadRef,!reducedMotion,()=>nearBottomRef.current)}} cancelReply={()=>{}} cancelEdit={()=>{}}/>
    {error?<Text style={{fontSize:13,color:c.danger,paddingHorizontal:16,paddingBottom:8}}>{error}</Text>:null}
   </ChatKeyboardFrame>
  </SafeAreaView></View>;
@@ -541,7 +550,7 @@ function MotionMessage({children,mine,selected,exiting,reducedMotion}:{children:
  return <Animated.View style={{opacity:selected?.08:Animated.multiply(enter,visibility),transform:[{translateX:enter.interpolate({inputRange:[0,1],outputRange:[mine?8:-8,0]})},{translateY:enter.interpolate({inputRange:[0,1],outputRange:[4,0]})},{scale:baseScale}]}}>{children}</Animated.View>;
 }
 
-function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,transitioningId,reducedMotion,onRetry,onReply,onReachTop,onNearBottomChange,onInitialContent}:{refValue:React.MutableRefObject<ScrollView|null>;items:PersonalMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onAction:(m:PersonalMessage,rect:MessageRect)=>void;selectedId:string|null;transitioningId:string|null;reducedMotion:boolean;onRetry:(m:PersonalMessage)=>void;onReply:(m:PersonalMessage)=>void;onReachTop:()=>void;onNearBottomChange:(value:boolean)=>void;onInitialContent:()=>void}){
+function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,transitioningId,reducedMotion,onRetry,onReply,onReachTop,onNearBottomChange,onInitialContent,onViewportLayout,loading}:{refValue:React.MutableRefObject<ScrollView|null>;items:PersonalMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors'];onAction:(m:PersonalMessage,rect:MessageRect)=>void;selectedId:string|null;transitioningId:string|null;reducedMotion:boolean;onRetry:(m:PersonalMessage)=>void;onReply:(m:PersonalMessage)=>void;onReachTop:()=>void;onNearBottomChange:(value:boolean)=>void;onInitialContent:()=>void;onViewportLayout:()=>void;loading:boolean}){
  const noSelect=Platform.OS==='web'?({userSelect:'none',WebkitUserSelect:'none',WebkitTouchCallout:'none',touchAction:'manipulation'} as never):undefined;
  const messageRefs=useRef(new Map<string,View>());
  const openAction=(message:PersonalMessage)=>{
@@ -559,7 +568,8 @@ function PersonalThread({refValue,items,userId,colors:c,onAction,selectedId,tran
   if(contentOffset.y<36)onReachTop();
   onNearBottomChange(contentSize.height-(contentOffset.y+layoutMeasurement.height)<120);
  };
- return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1,minHeight:0,backgroundColor:c.canvas}} keyboardShouldPersistTaps="always" keyboardDismissMode={Platform.OS==='ios'?'interactive':'none'} maintainVisibleContentPosition={{minIndexForVisible:0}} onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={onInitialContent} contentContainerStyle={{paddingHorizontal:12,paddingTop:8,paddingBottom:12}}>
+ return <ScrollView testID="personal-message-list" onLayout={onViewportLayout} ref={node=>{refValue.current=node}} style={{flex:1,minHeight:0,backgroundColor:c.canvas}} keyboardShouldPersistTaps="always" keyboardDismissMode={Platform.OS==='ios'?'interactive':'none'} maintainVisibleContentPosition={{minIndexForVisible:0}} onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={onInitialContent} contentContainerStyle={{flexGrow:1,justifyContent:'flex-end',paddingHorizontal:12,paddingTop:8,paddingBottom:8}}>
+  {loading?<View style={{padding:20}}><ActivityIndicator accessibilityLabel="Loading messages" color={c.muted}/></View>:items.length===0?<View style={{padding:20,alignItems:'center'}}><Text style={{fontSize:14,lineHeight:20,color:c.textSecondary}}>Start the conversation with a message.</Text></View>:null}
   {items.map((m,index)=>{
    const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;
    const showDate=!prev||!sameDay(prev.created_at,m.created_at);
@@ -598,35 +608,37 @@ function SwipeReplyBubble({message,colors:c,reducedMotion,onReply,children}:{mes
  return <View style={{position:'relative'}}><Reanimated.View pointerEvents="none" style={[{position:'absolute',left:14,top:'42%'},icon]}><Ionicons name="arrow-undo" size={19} color={c.accent}/></Reanimated.View><GestureDetector gesture={gesture}><Reanimated.View style={shift}>{children}</Reanimated.View></GestureDetector></View>;
 }
 
-function MarketThread({refValue,items,userId,colors:c}:{refValue:React.MutableRefObject<ScrollView|null>;items:MarketMessage[];userId:string;colors:ReturnType<typeof useAppTheme>['colors']}){
+function MarketThread({refValue,items,userId,colors:c,onNearBottomChange}:{refValue:React.MutableRefObject<ScrollView|null>;items:MarketMessage[];userId:string;onNearBottomChange:(value:boolean)=>void;colors:ReturnType<typeof useAppTheme>['colors']}){
  const marketNearBottomRef=useRef(true);
  const onScroll=(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
   const {contentOffset,layoutMeasurement,contentSize}=event.nativeEvent;
-  marketNearBottomRef.current=contentSize.height-(contentOffset.y+layoutMeasurement.height)<120;
+  marketNearBottomRef.current=contentSize.height-(contentOffset.y+layoutMeasurement.height)<120;onNearBottomChange(marketNearBottomRef.current);
  };
- return <ScrollView ref={node=>{refValue.current=node}} style={{flex:1,backgroundColor:c.canvas}} keyboardDismissMode={Platform.OS==='ios'?'interactive':'none'} keyboardShouldPersistTaps="always" onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={()=>{if(marketNearBottomRef.current)refValue.current?.scrollToEnd({animated:false})}} contentContainerStyle={{paddingHorizontal:12,paddingVertical:8}}>
+ return <ScrollView ref={node=>{refValue.current=node}} onLayout={()=>{if(marketNearBottomRef.current)scrollThreadToEndAfterLayout(refValue,false,()=>marketNearBottomRef.current)}} style={{flex:1,minHeight:0,backgroundColor:c.canvas}} keyboardDismissMode={Platform.OS==='ios'?'interactive':'none'} keyboardShouldPersistTaps="always" onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={()=>{if(marketNearBottomRef.current)refValue.current?.scrollToEnd({animated:false})}} contentContainerStyle={{flexGrow:1,justifyContent:'flex-end',paddingHorizontal:12,paddingVertical:8}}>
   {items.map((m,index)=>{const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;const groupedPrev=Boolean(prev&&prev.sender_id===m.sender_id&&sameDay(prev.created_at,m.created_at));const groupedNext=Boolean(next&&next.sender_id===m.sender_id&&sameDay(next.created_at,m.created_at));return <View key={m.id} style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}><View style={{maxWidth:'79%',backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:StyleSheet.hairlineWidth,borderColor:c.border,borderRadius:22,borderTopRightRadius:mine&&groupedPrev?9:22,borderTopLeftRadius:!mine&&groupedPrev?9:22,borderBottomRightRadius:mine&&!groupedNext?6:22,borderBottomLeftRadius:!mine&&!groupedNext?6:22,paddingHorizontal:14,paddingVertical:10}}>{m.is_automated?<Text style={{fontSize:12,fontWeight:'600',color:mine?c.onBrand:c.accent,marginBottom:3}}>{m.automation_source==='EVEREST_AI'?'Everest AI · Automated':'Automated answer'}</Text>:null}<Text style={{fontSize:16,lineHeight:22.5,letterSpacing:-.12,color:mine?c.onBrand:c.text}}>{m.body}</Text></View>{!groupedNext?<DeliveryMeta createdAt={m.created_at} mine={mine} seen={Boolean(m.read_at)} colors={c}/>:null}</View>})}
  </ScrollView>;
 }
 
-export function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,reducedMotion,bottomInset,onFocus,cancelReply,cancelEdit}:{draft:string;setDraft:(v:string)=>void;busy:boolean;submit:()=>void;colors:ReturnType<typeof useAppTheme>['colors'];reply:PersonalMessage|null;edit:PersonalMessage|null;reducedMotion:boolean;bottomInset:number;onFocus:()=>void;cancelReply:()=>void;cancelEdit:()=>void}){
+export function Composer({draft,setDraft,busy,submit,colors:c,reply,edit,bottomInset,onFocus,cancelReply,cancelEdit}:{draft:string;setDraft:(v:string)=>void;busy:boolean;submit:()=>void;colors:ReturnType<typeof useAppTheme>['colors'];reply:PersonalMessage|null;edit:PersonalMessage|null;reducedMotion:boolean;bottomInset:number;onFocus:()=>void;cancelReply:()=>void;cancelEdit:()=>void}){
  const [focused,setFocused]=useState(false);
- const active=useRef(new Animated.Value(draft.trim()?1:0)).current;
- const pressed=useRef(new Animated.Value(1)).current;
+ const [inputHeight,setInputHeight]=useState(COMPOSER_INPUT_MIN);
  const inputRef=useRef<TextInput|null>(null);
+ const {width}=useWindowDimensions();
  useEffect(()=>installChatWebRuntimeStyles(c.brand,c.text),[c.brand,c.text]);
- const hasDraft=Boolean(draft.trim());
- useEffect(()=>{const to=hasDraft?1:0;if(reducedMotion){active.setValue(to);return}Animated.spring(active,{toValue:to,useNativeDriver:true,...MOTION.spring}).start()},[hasDraft,reducedMotion,active]);
- const pressTo=(to:number)=>{if(reducedMotion){pressed.setValue(to);return}Animated.spring(pressed,{toValue:to,useNativeDriver:true,...MOTION.spring}).start()};
- return <View style={{backgroundColor:'transparent',paddingHorizontal:12,paddingTop:8,paddingBottom:Math.max(8,bottomInset+8),zIndex:10}}>
-  {reply||edit?<View style={{marginHorizontal:3,marginBottom:10,paddingHorizontal:12,paddingVertical:9,borderLeftWidth:3,borderLeftColor:c.brand,backgroundColor:c.soft,flexDirection:'row',alignItems:'center',gap:8}}><View style={{flex:1}}><Text style={{fontSize:12,fontWeight:'600',color:c.accent}}>{edit?'Editing message':'Replying'}</Text><Text numberOfLines={1} style={{fontSize:12,color:c.text,marginTop:3}}>{edit?edit.body:reply?.body}</Text></View><Pressable onPress={edit?cancelEdit:cancelReply} accessibilityRole="button" accessibilityLabel={edit?"Cancel editing":"Cancel reply"} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><Ionicons name="close" size={18} color={c.muted}/></Pressable></View>:null}
-  <View nativeID="everest-composer-shell" style={{position:'relative',zIndex:20}} onTouchStart={()=>inputRef.current?.focus()}>
-   <GlassSurface intensity={70} style={{minHeight:56,maxHeight:132,borderRadius:29,overflow:'hidden',borderWidth:StyleSheet.hairlineWidth,borderColor:focused?c.brand:c.border,flexDirection:'row',alignItems:'flex-end',paddingLeft:17,paddingRight:6,paddingVertical:6,shadowColor:'#000',shadowOpacity:.22,shadowRadius:18,shadowOffset:{width:0,height:9}}}>
-    <TextInput ref={inputRef} nativeID="everest-message-composer" value={draft} onChangeText={setDraft} onFocus={()=>{setFocused(true);onFocus()}} onBlur={()=>setFocused(false)} placeholder="Write a message…" placeholderTextColor={c.muted} multiline scrollEnabled showSoftInputOnFocus maxLength={5000} style={[{flex:1,minHeight:38,maxHeight:102,color:c.text,fontSize:16,lineHeight:21,paddingTop:8,paddingBottom:8,paddingHorizontal:0,textAlignVertical:'center',borderWidth:0},Platform.OS==='web'?({outlineStyle:'none',outlineWidth:0,outlineColor:'transparent',boxShadow:'none'} as never):null]}/>
-    <Animated.View style={{opacity:active.interpolate({inputRange:[0,1],outputRange:[.42,1]}),transform:[{scale:Animated.multiply(active.interpolate({inputRange:[0,1],outputRange:[.9,1]}),pressed)}]}}>
-     <Pressable accessibilityLabel={edit?'Save edited message':'Send message'} disabled={busy||!draft.trim()} onPressIn={()=>pressTo(.92)} onPressOut={()=>pressTo(1)} onPress={()=>{void haptic.light();submit()}} style={{width:42,height:42,borderRadius:21,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginBottom:1,shadowColor:'#000',shadowOpacity:hasDraft?.18:0,shadowRadius:8,shadowOffset:{width:0,height:4}}}>{busy?<ActivityIndicator size="small" color={c.onBrand}/>:<Ionicons name={edit?'checkmark':'arrow-up'} size={21} color={c.onBrand}/>}</Pressable>
-    </Animated.View>
-   </GlassSurface>
+ // Reset before measuring so deleting lines shrinks as naturally as typing grows.
+ useLayoutEffect(()=>{
+  if(Platform.OS!=='web')return;
+  const input=inputRef.current as unknown as HTMLTextAreaElement|null;
+  if(!input)return;input.style.height='0px';const height=composerInputHeight(input.scrollHeight);input.style.height=height+'px';setInputHeight(height);
+ },[draft,width]);
+ const disabled=busy||!draft.trim();
+ return <View style={{flexShrink:0,backgroundColor:c.canvas,paddingHorizontal:12,paddingTop:6,paddingBottom:Math.max(6,bottomInset+6),zIndex:10}}>
+  {reply||edit?<View style={{marginBottom:6,paddingHorizontal:12,paddingVertical:7,borderLeftWidth:3,borderLeftColor:c.brand,backgroundColor:c.soft,flexDirection:'row',alignItems:'center',gap:8}}><View style={{flex:1}}><Text style={{fontSize:12,fontWeight:'600',color:c.primaryText}}>{edit?'Editing message':'Replying'}</Text><Text numberOfLines={1} style={{fontSize:12,color:c.text,marginTop:3}}>{edit?edit.body:reply?.body}</Text></View><Pressable onPress={edit?cancelEdit:cancelReply} accessibilityRole="button" accessibilityLabel={edit?"Cancel editing":"Cancel reply"} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><Ionicons name="close" size={18} color={c.muted}/></Pressable></View>:null}
+  <View nativeID="everest-composer-shell" style={{position:'relative',zIndex:20}}>
+   <View style={{minHeight:52,maxHeight:136,borderRadius:20,borderWidth:StyleSheet.hairlineWidth,borderColor:focused?c.borderStrong:c.border,backgroundColor:c.input,flexDirection:'row',alignItems:'flex-end',paddingLeft:12,paddingRight:4,paddingVertical:3}}>
+    <TextInput ref={inputRef} nativeID="everest-message-composer" accessibilityLabel="Message" value={draft} onChangeText={setDraft} onFocus={()=>{setFocused(true);onFocus()}} onBlur={()=>setFocused(false)} onContentSizeChange={event=>{if(Platform.OS!=='web')setInputHeight(composerInputHeight(event.nativeEvent.contentSize.height))}} placeholder="Write a message…" placeholderTextColor={c.muted} multiline {...(Platform.OS==='web'?{rows:1}:{})} scrollEnabled={inputHeight>=COMPOSER_INPUT_MAX} showSoftInputOnFocus maxLength={5000} style={[{flex:1,height:inputHeight,minHeight:36,maxHeight:120,color:c.text,fontSize:16,lineHeight:21,paddingTop:7,paddingBottom:7,paddingHorizontal:0,textAlignVertical:'top',borderWidth:0,alignSelf:'center'},Platform.OS==='web'?({outlineStyle:'none',outlineWidth:0,outlineColor:'transparent',boxShadow:'none',resize:'none',overflowY:inputHeight>=COMPOSER_INPUT_MAX?'auto':'hidden'} as never):null]}/>
+    <Pressable accessibilityRole="button" accessibilityLabel={edit?'Save edited message':'Send message'} accessibilityState={{disabled,busy}} disabled={disabled} onPressIn={event=>event.preventDefault()} onPress={()=>{inputRef.current?.focus();void haptic.light();submit()}} style={{width:44,height:44,borderRadius:22,backgroundColor:disabled?c.disabled:c.brand,alignItems:'center',justifyContent:'center'}}>{busy?<ActivityIndicator size="small" color={c.onDisabled}/>:<Ionicons name={edit?'checkmark':'arrow-up'} size={21} color={disabled?c.onDisabled:c.onBrand}/>}</Pressable>
+   </View>
   </View>
  </View>;
 }

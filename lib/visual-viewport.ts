@@ -1,3 +1,4 @@
+import {chatViewport} from './chat-layout';
 import {Platform} from 'react-native';
 import {useEffect,useState} from 'react';
 
@@ -24,9 +25,9 @@ export function useVisualViewport(){
     const height=vv?.height??window.innerHeight;
     const width=vv?.width??window.innerWidth;
     const offsetTop=vv?.offsetTop??0;
-    const keyboardInset=Math.max(0,layoutHeight-height-offsetTop);
+    const {keyboardInset}=chatViewport(layoutHeight,height,offsetTop,vv?.scale??1);
     const next={height,width,offsetTop,keyboardInset,supported:Boolean(vv)};
-    setState(next);
+    setState(current=>current.height===next.height&&current.width===next.width&&current.offsetTop===next.offsetTop&&current.keyboardInset===next.keyboardInset?current:next);
     document.documentElement.style.setProperty('--everest-visual-height',Math.round(height)+'px');
     document.documentElement.style.setProperty('--everest-visual-top',Math.round(offsetTop)+'px');
     document.documentElement.style.setProperty('--everest-keyboard-inset',Math.round(keyboardInset)+'px');
