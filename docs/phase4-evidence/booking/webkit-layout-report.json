@@ -1,0 +1,492 @@
+[
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  }
+]

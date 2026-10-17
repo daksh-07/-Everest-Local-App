@@ -149,7 +149,7 @@ test('shopping screens show stock honestly and format money once',()=>{
  assert.match(product,/!enabled\?<Text style=\{s\.variantPrice\}>Sold out<\/Text>/);
  assert.match(product,/available<=5&&product\.track_stock\)\?c\.warning:c\.success/);
  for(const [name,source] of [['product',product],['cart',cart],['orders',orders]])assert.doesNotMatch(source,/toFixed\(2\)|EVEREST LOCAL|fontSize:8,/,name);
- assert.match(orders,/<ScreenHeader title="Orders"/);
+ assert.match(orders,/<ScreenHeader\s+title="Orders"/);
 });
 
 test('app copy stays sentence case and legible',async()=>{

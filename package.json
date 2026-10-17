@@ -75,6 +75,7 @@
     "expo-notifications": "~0.32.17"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
     "@eslint/js": "^9.33.0",
     "@types/react": "~19.1.10",
     "eslint": "^9.33.0",

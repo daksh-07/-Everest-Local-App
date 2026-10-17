@@ -50,10 +50,10 @@ test('delete choices depend on message ownership',()=>{
 });
 
 test('composer stays compact and bounded',()=>{
- assert.match(messages,/minHeight:56,maxHeight:132/);
- assert.match(messages,/minHeight:38,maxHeight:102/);
+ assert.match(messages,/minHeight:52,maxHeight:136/);
+ assert.match(messages,/minHeight:36,maxHeight:120/);
  assert.match(messages,/fontSize:16/);
- assert.match(messages,/borderRadius:29/);
+ assert.match(messages,/borderRadius:20/);
 });
 
 test('grouped messages render metadata only at end of cluster',()=>{

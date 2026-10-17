@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const messages=fs.readFileSync('app/messages.tsx','utf8');
-const html=fs.readFileSync('app/+html.tsx','utf8');
+const html=fs.readFileSync('app/+html.tsx','utf8')+fs.readFileSync('public/chat-layout.css','utf8');
 const haptics=fs.readFileSync('lib/haptics.ts','utf8');
 const viewport=fs.readFileSync('lib/visual-viewport.ts','utf8');
 const connections=fs.readFileSync('lib/connections.ts','utf8');
@@ -31,7 +31,7 @@ test('keyboard resizing preserves bottom context only when user is near latest m
  assert.match(messages,/nearBottomRef/);
  assert.match(messages,/contentSize\.height-\(contentOffset\.y\+layoutMeasurement\.height\)<120/);
  assert.match(messages,/Math\.abs\(previous-current\)<32/);
- assert.match(messages,/scrollThreadToEndAfterLayout\(threadRef,!reducedMotion\)/);
+ assert.match(messages,/scrollThreadToEndAfterLayout\(threadRef,!reducedMotion,\(\)=>nearBottomRef\.current\)/);
 });
 
 test('long press measures the selected bubble and uses root modal spotlight geometry',()=>{

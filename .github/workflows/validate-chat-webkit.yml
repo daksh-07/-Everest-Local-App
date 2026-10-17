@@ -9,6 +9,11 @@ on:
       - 'lib/chat-web-runtime.ts'
       - 'lib/visual-viewport.ts'
       - 'scripts/verify-chat-webkit.mjs'
+      - 'scripts/verify-chat-layout.mjs'
+      - 'lib/chat-layout.ts'
+      - 'app/+html.tsx'
+      - 'public/chat-layout.css'
+      - 'public/index.html'
       - '.github/workflows/validate-chat-webkit.yml'
 
 permissions:
@@ -42,9 +47,18 @@ jobs:
           exit 1
       - name: Verify focused textarea computed styles
         run: node scripts/verify-chat-webkit.mjs
+      - name: Verify conversation layout and keyboard viewport transitions
+        env:
+          EVEREST_QA_BROWSER: webkit
+          EVEREST_PREVIEW_URL: http://127.0.0.1:4173
+          EVEREST_QA_WIDTHS: '320,390,1280'
+          EVEREST_QA_ARTIFACTS: /tmp/everest-chat-layout
+        run: node scripts/verify-chat-layout.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: chat-input-webkit-regression
-          path: chat-input-webkit-regression.png
+          path: |
+            chat-input-webkit-regression.png
+            /tmp/everest-chat-layout
           if-no-files-found: ignore

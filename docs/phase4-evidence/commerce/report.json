@@ -1,0 +1,50 @@
+[
+ {
+  "screen": "product",
+  "theme": "DARK",
+  "viewport": "390x844",
+  "file": "/tmp/p4-commerce-first/product-dark-390x844.png",
+  "horizontalOverflow": false,
+  "errors": []
+ },
+ {
+  "screen": "cart",
+  "theme": "DARK",
+  "viewport": "390x844",
+  "file": "/tmp/p4-commerce-first/cart-dark-390x844.png",
+  "horizontalOverflow": false,
+  "errors": []
+ },
+ {
+  "screen": "cart-delivery",
+  "theme": "DARK",
+  "viewport": "390x844",
+  "file": "/tmp/p4-commerce-first/cart-delivery-dark-390x844.png",
+  "horizontalOverflow": false,
+  "errors": []
+ },
+ {
+  "screen": "cart-unavailable",
+  "theme": "DARK",
+  "viewport": "390x844",
+  "file": "/tmp/p4-commerce-first/cart-unavailable-dark-390x844.png",
+  "horizontalOverflow": false,
+  "errors": []
+ },
+ {
+  "screen": "orders",
+  "theme": "DARK",
+  "viewport": "390x844",
+  "file": "/tmp/p4-commerce-first/orders-dark-390x844.png",
+  "horizontalOverflow": false,
+  "errors": []
+ },
+ {
+  "screen": "orders-history",
+  "theme": "DARK",
+  "viewport": "390x844",
+  "file": "/tmp/p4-commerce-first/orders-history-dark-390x844.png",
+  "horizontalOverflow": false,
+  "errors": []
+ }
+]

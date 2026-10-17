@@ -1,22 +1,517 @@
-import { useEffect,useMemo,useRef,useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { AppText as Text } from '@/components/ui/AppText';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  AppState,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { AppText as Text } from '@/components/ui/AppText';
+import {
+  ScreenHeader,
+  HeaderIconButton,
+  StatusBadge,
+  ConfirmSheet,
+} from '@/components/ui';
+import { OrderDetails } from '@/components/OrderDetails';
 import { supabase } from '@/lib/supabase';
-import { myBusiness } from '@/lib/catalog';
-import { type ThemeColors,useAppTheme } from '@/lib/theme';
-import type { Order,OrderStatus } from '@/lib/types';
+import { getWorkspaceContext, type BusinessWorkspace } from '@/lib/workspace';
+import { useAppTheme, type ThemeColors } from '@/lib/theme';
+import { formatDay, formatMoney, formatStatus } from '@/lib/format';
+import {
+  merchantOrderAction,
+  orderGuidance,
+  orderIsFinished,
+  orderMethod,
+} from '@/lib/order-presentation';
+import type { Order, OrderStatus } from '@/lib/types';
 
-type Delivery={order_id:string;status:string};
-type BusinessOrder=Order&{subtotal:number;marketplace_fee:number;provider_net:number;fee_policy_version:string};
-export default function BusinessOrders(){
- const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
- const [orders,setOrders]=useState<BusinessOrder[]>([]);const [deliveries,setDeliveries]=useState<Record<string,string>>({});const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [deliveryLoading,setDeliveryLoading]=useState(false);const [busy,setBusy]=useState<string|null>(null);const [error,setError]=useState('');const [deliveryError,setDeliveryError]=useState('');const loadRef=useRef(false);const deliveryRef=useRef(false);const operationRef=useRef(false);
- async function loadDeliveries(data:BusinessOrder[]){if(deliveryRef.current)return;if(!data.length){setDeliveries({});setDeliveryError('');return;}deliveryRef.current=true;setDeliveryLoading(true);setDeliveryError('');try{const {data:ds,error:de}=await supabase.from('deliveries').select('order_id,status').in('order_id',data.map(o=>o.id));if(de)throw de;setDeliveries(Object.fromEntries(((ds??[]) as Delivery[]).map(d=>[d.order_id,d.status])));}catch{setDeliveryError('Delivery updates are temporarily unavailable. Showing the last successfully loaded delivery information.');}finally{deliveryRef.current=false;setDeliveryLoading(false)}}
- async function load(mode:'initial'|'refresh'|'silent'='initial'){if(loadRef.current||operationRef.current)return;loadRef.current=true;if(mode==='initial'&&!orders.length)setLoading(true);else if(mode==='refresh')setRefreshing(true);setError('');try{const b=await myBusiness();if(!b){setOrders([]);setDeliveries({});setDeliveryError('');return;}const {data,error:e}=await supabase.from('orders').select('id,order_number,status,payment_status,subtotal,total,marketplace_fee,provider_net,fee_policy_version,created_at,delivery_method').eq('business_id',b.id).order('created_at',{ascending:false});if(e)throw e;const nextOrders=(data??[]) as BusinessOrder[];setOrders(nextOrders);await loadDeliveries(nextOrders);}catch{setError(orders.length?'We could not refresh your orders. Showing the last successfully loaded order information.':'Unable to load business orders right now. Please try again.');}finally{loadRef.current=false;setLoading(false);setRefreshing(false)}}useEffect(()=>{void load()},[]); // eslint-disable-line react-hooks/exhaustive-deps
- async function next(order:BusinessOrder,status:OrderStatus){if(operationRef.current||loadRef.current||deliveryRef.current)return;operationRef.current=true;setBusy(order.id);setError('');try{const {error:e}=await supabase.rpc('update_order_status',{p_order_id:order.id,p_next:status});if(e)throw e;setOrders(current=>current.map(item=>item.id===order.id?{...item,status}:item));}catch{setError('Unable to update this order right now. Please try again.');}finally{operationRef.current=false;setBusy(null)}}
- async function requestDelivery(order:BusinessOrder){if(operationRef.current||loadRef.current||deliveryRef.current)return;operationRef.current=true;setBusy(order.id);setError('');try{const {error:e}=await supabase.rpc('request_delivery_for_order',{p_order_id:order.id});if(e)throw e;setDeliveries(current=>({...current,[order.id]:'READY_FOR_PICKUP'}));}catch{setError('Unable to request delivery right now. Please try again.');}finally{operationRef.current=false;setBusy(null)}}
- function nextStatus(o:BusinessOrder):OrderStatus|null{if(o.status==='PAYMENT_CONFIRMED')return 'ACCEPTED';if(o.status==='ACCEPTED')return 'PREPARING';if(o.status==='PREPARING')return 'READY_FOR_PICKUP';return null}
- const operationsLocked=busy!==null||refreshing||deliveryLoading||loading;
- return <SafeAreaView style={s.safe}><ScrollView refreshControl={<RefreshControl refreshing={refreshing} enabled={!operationsLocked} tintColor={colors.text} onRefresh={()=>{if(!operationRef.current&&!loadRef.current&&!deliveryRef.current)void load('refresh')}}/>} contentContainerStyle={s.page}><Text style={s.eyebrow}>Business orders</Text><Text style={s.title}>Orders</Text>{loading?<ActivityIndicator color={colors.text}/>:error&&!orders.length?<View style={s.empty}><Text style={s.error}>{error}</Text><Pressable disabled={operationsLocked} onPress={()=>void load()} style={[s.retry,operationsLocked&&s.disabled]}><Text style={s.retryText}>Retry</Text></Pressable></View>:orders.length?<>{error?<View style={s.warning}><Text style={s.warningText}>{error}</Text><Pressable disabled={operationsLocked} onPress={()=>void load('refresh')} style={s.deliveryRetry}><Text style={s.retryText}>Retry orders</Text></Pressable></View>:null}{deliveryError?<View style={s.warning}><Text style={s.warningText}>{deliveryError}</Text><Pressable disabled={operationsLocked} onPress={()=>void loadDeliveries(orders)} style={s.deliveryRetry}>{deliveryLoading?<ActivityIndicator color={colors.text}/>:<Text style={s.retryText}>Retry delivery updates</Text>}</Pressable></View>:null}{orders.map(o=>{const nextValue=nextStatus(o);const deliveryStatus=deliveries[o.id];const canRequestDelivery=o.status==='READY_FOR_PICKUP'&&(o.delivery_method==='EVEREST_DELIVERY'||o.delivery_method==='SAME_DAY')&&!deliveryStatus;return <View style={s.card} key={o.id}><View style={s.row}><Text style={s.number}>{o.order_number}</Text><Text style={s.status}>{o.status.replaceAll('_',' ')}</Text></View><Text style={s.amount}>${Number(o.total).toFixed(2)} AUD</Text><Text style={s.meta}>{o.delivery_method??'Pickup / local fulfilment'} · {o.payment_status.replaceAll('_',' ')}</Text><View style={s.feeBox}><View style={s.feeRow}><Text style={s.feeLabel}>Product subtotal</Text><Text style={s.feeValue}>${Number(o.subtotal).toFixed(2)}</Text></View><View style={s.feeRow}><Text style={s.feeLabel}>Everest fee · 5%</Text><Text style={s.feeValue}>−${Number(o.marketplace_fee).toFixed(2)}</Text></View><View style={[s.feeRow,s.feeNetRow]}><Text style={s.feeNetLabel}>You receive from products</Text><Text style={s.feeNetValue}>${Number(o.provider_net).toFixed(2)}</Text></View><Text style={s.feeNote}>Delivery is excluded from the 5% product fee.</Text></View>{deliveryStatus&&<Text style={s.delivery}>DELIVERY · {deliveryStatus.replaceAll('_',' ')}</Text>}{nextValue&&<Pressable disabled={operationsLocked} style={[s.button,operationsLocked&&s.disabled]} onPress={()=>void next(o,nextValue)}><Text style={s.buttonText}>{busy===o.id?'Updating…':`MOVE TO ${nextValue.replaceAll('_',' ')}`}</Text></Pressable>}{canRequestDelivery&&!deliveryError&&<Pressable disabled={operationsLocked} style={[s.outline,operationsLocked&&s.disabled]} onPress={()=>void requestDelivery(o)}><Text style={s.outlineText}>{busy===o.id?'Requesting…':'Request Everest delivery'}</Text></Pressable>}</View>})}</>:<View style={s.empty}><Text style={s.emptyTitle}>No orders yet.</Text><Text style={s.meta}>Real customer orders will appear here.</Text></View>}</ScrollView></SafeAreaView>}
-const createStyles=(c:ThemeColors)=>StyleSheet.create({safe:{flex:1,backgroundColor:c.canvas},page:{padding:20,paddingBottom:50,maxWidth:760,width:'100%',alignSelf:'center'},eyebrow:{fontSize:12,fontWeight:'900',color:c.muted},title:{fontSize:31,fontWeight:'900',marginTop:7,marginBottom:22,color:c.text},card:{backgroundColor:c.surface,borderRadius:17,borderWidth:1,borderColor:c.border,padding:17,marginBottom:10},row:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:12},number:{fontSize:14,fontWeight:'900',color:c.text},status:{fontSize:12,fontWeight:'900',color:c.text},amount:{fontSize:22,fontWeight:'900',marginTop:12,color:c.text},meta:{fontSize:12,color:c.muted,marginTop:5},delivery:{fontSize:12,fontWeight:'900',marginTop:10,color:c.text},feeBox:{marginTop:12,borderRadius:13,backgroundColor:c.soft,padding:12,gap:6},feeRow:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12},feeLabel:{fontSize:14,color:c.muted},feeValue:{fontSize:12,fontWeight:'800',color:c.text},feeNetRow:{borderTopWidth:1,borderTopColor:c.border,paddingTop:7,marginTop:1},feeNetLabel:{fontSize:14,fontWeight:'900',color:c.text},feeNetValue:{fontSize:13,fontWeight:'900',color:c.text},feeNote:{fontSize:12,lineHeight:17,color:c.muted,marginTop:2},button:{height:46,borderRadius:12,backgroundColor:c.text,alignItems:'center',justifyContent:'center',marginTop:13},buttonText:{color:c.canvas,fontSize:14,fontWeight:'900'},outline:{height:46,borderRadius:12,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center',marginTop:8},outlineText:{fontSize:12,fontWeight:'900',color:c.text},empty:{backgroundColor:c.surface,borderRadius:19,padding:28,alignItems:'center',borderWidth:1,borderColor:c.border},emptyTitle:{fontSize:16,fontWeight:'800',color:c.text},error:{color:c.danger,fontSize:14,textAlign:'center'},retry:{height:42,borderRadius:12,borderWidth:1,borderColor:c.border,alignItems:'center',justifyContent:'center',marginTop:12,minWidth:120},retryText:{fontSize:12,fontWeight:'900',color:c.text},warning:{backgroundColor:c.soft,borderRadius:14,padding:14,marginBottom:12,borderWidth:1,borderColor:c.border},warningText:{fontSize:12,lineHeight:18,color:c.text},deliveryRetry:{minHeight:38,alignItems:'center',justifyContent:'center',marginTop:8},disabled:{opacity:.5}});
+type BusinessOrder = Order & {
+  subtotal: number;
+  marketplace_fee?: number;
+  provider_net?: number;
+};
+type Pending = {
+  order: BusinessOrder;
+  status?: OrderStatus;
+  delivery?: boolean;
+  label: string;
+};
+export default function BusinessOrders() {
+  const { colors: c } = useAppTheme();
+  const s = useMemo(() => styles(c), [c]);
+  const [workspace, setWorkspace] = useState<BusinessWorkspace | null>(null);
+  const [orders, setOrders] = useState<BusinessOrder[]>([]);
+  const [deliveries, setDeliveries] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [deliveryError, setDeliveryError] = useState('');
+  const [view, setView] = useState<'active' | 'history'>('active');
+  const [expanded, setExpanded] = useState('');
+  const [version, setVersion] = useState(0);
+  const [pending, setPending] = useState<Pending | null>(null);
+  const loadRef = useRef(false);
+  const operationRef = useRef(false);
+  const loadAction = useRef(() => {});
+  async function load(
+    mode: 'initial' | 'refresh' | 'silent' = 'initial',
+    duringOperation = false,
+  ) {
+    if (loadRef.current || (operationRef.current && !duringOperation)) return;
+    loadRef.current = true;
+    if (mode === 'refresh') setRefreshing(true);
+    setError('');
+    try {
+      const ctx = await getWorkspaceContext();
+      const current =
+        ctx.mode === 'BUSINESS'
+          ? ctx.businesses.find((b) => b.id === ctx.active_business_id)
+          : null;
+      if (!current?.can_view_orders) {
+        setWorkspace(null);
+        setOrders([]);
+        setDeliveries({});
+        throw new Error('access');
+      }
+      setWorkspace(current);
+      const financial = current.can_view_finance
+        ? ',marketplace_fee,provider_net'
+        : '';
+      const { data, error: e } = await supabase
+        .from('orders')
+        .select(
+          'id,order_number,status,payment_status,subtotal,total,created_at,delivery_method' +
+            financial,
+        )
+        .eq('business_id', current.id)
+        .order('created_at', { ascending: false });
+      if (e) throw e;
+      const rows = (data ?? []) as unknown as BusinessOrder[];
+      setOrders(rows);
+      setVersion((v) => v + 1);
+      setDeliveryError('');
+      if (!rows.length) {
+        setDeliveries({});
+        return;
+      }
+      const result = await supabase
+        .from('deliveries')
+        .select('order_id,status')
+        .in(
+          'order_id',
+          rows.map((o) => o.id),
+        );
+      if (result.error)
+        setDeliveryError(
+          'Delivery updates could not be refreshed. Last loaded updates may be out of date.',
+        );
+      else
+        setDeliveries(
+          Object.fromEntries(
+            (result.data ?? []).map((d) => [d.order_id, d.status]),
+          ),
+        );
+    } catch {
+      setError(
+        'Orders could not be loaded. Check your business workspace and order permissions, then try again.',
+      );
+    } finally {
+      loadRef.current = false;
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }
+  loadAction.current = () => void load('refresh');
+  useEffect(() => {
+    loadAction.current();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') loadAction.current();
+    });
+    return () => sub.remove();
+  }, []);
+  async function perform() {
+    if (!pending || !workspace || operationRef.current || loadRef.current)
+      return;
+    operationRef.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      const ctx = await getWorkspaceContext();
+      const current = ctx.businesses.find(
+        (b) => b.id === ctx.active_business_id,
+      );
+      if (
+        ctx.mode !== 'BUSINESS' ||
+        current?.id !== workspace.id ||
+        !current.can_manage_orders
+      )
+        throw new Error('Workspace changed');
+      const result = pending.delivery
+        ? await supabase.rpc('request_delivery_for_order', {
+            p_order_id: pending.order.id,
+          })
+        : pending.status === 'COMPLETED'
+          ? await supabase.rpc('complete_pickup_order', {
+              p_order_id: pending.order.id,
+            })
+          : await supabase.rpc('update_order_status', {
+              p_order_id: pending.order.id,
+              p_next: pending.status,
+            });
+      if (
+        result.error ||
+        (pending.delivery
+          ? typeof result.data !== 'string'
+          : result.data !== true)
+      )
+        throw new Error('Order update rejected');
+      setPending(null);
+      await load('silent', true);
+    } catch {
+      setError(
+        'The order could not be updated. Refresh to check its current status and try again.',
+      );
+    } finally {
+      operationRef.current = false;
+      setBusy(false);
+    }
+  }
+  const active = orders.filter((o) => !orderIsFinished(o));
+  const history = orders.filter(orderIsFinished);
+  const shown = view === 'active' ? active : history;
+  const locked = loading || refreshing || busy;
+  return (
+    <SafeAreaView style={s.safe}>
+      <ScrollView
+        contentContainerStyle={s.page}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            enabled={!busy}
+            onRefresh={() => loadAction.current()}
+            tintColor={c.primary}
+          />
+        }
+      >
+        <ScreenHeader
+          title="Orders"
+          subtitle={workspace?.name ?? 'Business orders'}
+          fallback="/business-today"
+          actions={
+            <HeaderIconButton
+              icon="refresh-outline"
+              label="Refresh business orders"
+              onPress={() => loadAction.current()}
+            />
+          }
+        />
+        {error ? (
+          <View style={s.notice}>
+            <Text style={s.error}>{error}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => loadAction.current()}
+              disabled={locked}
+              style={s.action}
+            >
+              <Text style={s.link}>Retry orders</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {deliveryError ? (
+          <View style={s.notice}>
+            <Text style={s.copy}>{deliveryError}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => loadAction.current()}
+              disabled={locked}
+              style={s.action}
+            >
+              <Text style={s.link}>Retry delivery updates</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {loading ? (
+          <ActivityIndicator
+            accessibilityLabel="Loading business orders"
+            color={c.primary}
+            style={{ marginTop: 30 }}
+          />
+        ) : (
+          <>
+            <View style={s.tabs} accessibilityRole="tablist">
+              {(['active', 'history'] as const).map((tab) => (
+                <Pressable
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: tab === view }}
+                  onPress={() => setView(tab)}
+                  key={tab}
+                  style={[s.tab, tab === view && s.selected]}
+                >
+                  <Text
+                    style={[s.tabText, tab === view && { color: c.onSelected }]}
+                  >
+                    {tab === 'active'
+                      ? `To fulfil · ${active.length}`
+                      : `History · ${history.length}`}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            {shown.length ? (
+              shown.map((o) => {
+                const next = merchantOrderAction(o);
+                const delivery = deliveries[o.id];
+                const canRequest =
+                  o.payment_status === 'SUCCEEDED' &&
+                  o.status === 'READY_FOR_PICKUP' &&
+                  ['EVEREST_DELIVERY', 'SAME_DAY'].includes(
+                    o.delivery_method ?? '',
+                  ) &&
+                  (!delivery || ['FAILED', 'CANCELLED'].includes(delivery));
+                return (
+                  <View style={s.card} key={o.id}>
+                    <View style={s.row}>
+                      <Text accessibilityRole="header" style={s.title}>
+                        Order {o.order_number}
+                      </Text>
+                      <Text tabular style={s.amount}>
+                        {formatMoney(o.total)}
+                      </Text>
+                    </View>
+                    <Text style={s.copy}>
+                      {formatDay(o.created_at)} ·{' '}
+                      {orderMethod(o.delivery_method)}
+                    </Text>
+                    <View style={{ marginTop: 12 }}>
+                      <StatusBadge
+                        label={formatStatus(o.status)}
+                        tone={orderGuidance(o).tone}
+                      />
+                    </View>
+                    <Text style={s.copy}>
+                      Payment ·{' '}
+                      {o.payment_status === 'SUCCEEDED'
+                        ? 'Paid'
+                        : formatStatus(o.payment_status)}
+                    </Text>
+                    {workspace?.can_view_finance ? (
+                      <View style={s.fees}>
+                        <Text style={s.copy}>
+                          Product subtotal · {formatMoney(o.subtotal)}
+                        </Text>
+                        <Text style={s.copy}>
+                          Everest fee · {formatMoney(o.marketplace_fee ?? 0)}
+                        </Text>
+                        <Text style={s.copy}>
+                          Product proceeds before Stripe fees ·{' '}
+                          {formatMoney(o.provider_net ?? 0)}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {delivery ? (
+                      <Text style={s.copy}>
+                        Everest Delivery · {formatStatus(delivery)}
+                        {deliveryError ? ' · last loaded update' : ''}
+                      </Text>
+                    ) : null}
+                    {workspace?.can_manage_orders && next ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        disabled={locked}
+                        onPress={() => {
+                          setError('');
+                          setPending({
+                            order: o,
+                            status: next.status,
+                            label: next.label,
+                          });
+                        }}
+                        style={s.primary}
+                      >
+                        <Text style={s.primaryText}>{next.label}</Text>
+                      </Pressable>
+                    ) : null}
+                    {workspace?.can_manage_orders &&
+                    canRequest &&
+                    !deliveryError ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        disabled={locked}
+                        onPress={() => {
+                          setError('');
+                          setPending({
+                            order: o,
+                            delivery: true,
+                            label: 'Request Everest delivery',
+                          });
+                        }}
+                        style={s.primary}
+                      >
+                        <Text style={s.primaryText}>
+                          Request Everest delivery
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                    {o.status === 'CANCELLED' || o.status === 'REFUNDED' ? (
+                      <Text style={s.copy}>
+                        Use the recorded payment status for cancellation or
+                        refund reconciliation.
+                      </Text>
+                    ) : null}
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: expanded === o.id }}
+                      onPress={() =>
+                        setExpanded((value) => (value === o.id ? '' : o.id))
+                      }
+                      style={s.action}
+                    >
+                      <Text style={s.link}>
+                        {expanded === o.id
+                          ? 'Hide order details'
+                          : 'View items & fulfilment'}
+                      </Text>
+                    </Pressable>
+                    {expanded === o.id && workspace ? (
+                      <OrderDetails
+                        id={o.id}
+                        businessId={workspace.id}
+                        version={version}
+                      />
+                    ) : null}
+                  </View>
+                );
+              })
+            ) : (
+              <View style={s.empty}>
+                <Text style={s.title}>
+                  {view === 'active'
+                    ? 'No orders to fulfil'
+                    : 'No completed orders yet'}
+                </Text>
+                <Text style={s.copy}>
+                  Customer purchases appear here with their recorded payment and
+                  fulfilment status.
+                </Text>
+              </View>
+            )}
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/help')}
+              style={s.action}
+            >
+              <Text style={s.link}>Order cancellation or refund help</Text>
+            </Pressable>
+          </>
+        )}
+      </ScrollView>
+      <ConfirmSheet
+        visible={!!pending}
+        title={pending?.label ?? 'Update order'}
+        subtitle={pending ? 'Order ' + pending.order.order_number : undefined}
+        rows={
+          pending
+            ? [
+                { label: 'Total', value: formatMoney(pending.order.total) },
+                {
+                  label: 'Fulfilment',
+                  value: orderMethod(pending.order.delivery_method),
+                },
+              ]
+            : undefined
+        }
+        note={
+          error ||
+          'Confirm the order details before updating its fulfilment status.'
+        }
+        confirmLabel={pending?.label ?? 'Confirm update'}
+        busy={busy}
+        onCancel={() => setPending(null)}
+        onConfirm={() => void perform()}
+      />
+    </SafeAreaView>
+  );
+}
+const styles = (c: ThemeColors) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: c.canvas },
+    page: {
+      padding: 18,
+      paddingBottom: 60,
+      maxWidth: 760,
+      width: '100%',
+      alignSelf: 'center',
+    },
+    tabs: { flexDirection: 'row', gap: 8, marginTop: 20, marginBottom: 16 },
+    tab: {
+      flex: 1,
+      minHeight: 46,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 12,
+      backgroundColor: c.elevated,
+    },
+    selected: { backgroundColor: c.selected },
+    tabText: { fontSize: 14, fontWeight: '600', color: c.textSecondary },
+    card: {
+      padding: 18,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 16,
+      backgroundColor: c.surface,
+      marginBottom: 12,
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      gap: 12,
+    },
+    title: {
+      fontSize: 17,
+      lineHeight: 23,
+      fontWeight: '600',
+      color: c.text,
+      flexShrink: 1,
+    },
+    amount: { fontSize: 18, fontWeight: '600', color: c.text },
+    copy: {
+      fontSize: 14,
+      lineHeight: 21,
+      color: c.textSecondary,
+      marginTop: 6,
+    },
+    fees: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+      marginTop: 12,
+      paddingTop: 6,
+    },
+    primary: {
+      minHeight: 48,
+      borderRadius: 14,
+      backgroundColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 16,
+      paddingHorizontal: 12,
+    },
+    primaryText: { fontSize: 15, fontWeight: '600', color: c.onPrimary },
+    action: { minHeight: 44, justifyContent: 'center', marginTop: 6 },
+    link: { fontSize: 14, fontWeight: '600', color: c.primaryText },
+    notice: {
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: c.elevated,
+      marginTop: 12,
+    },
+    error: { fontSize: 14, lineHeight: 21, color: c.danger },
+    empty: { paddingVertical: 28, gap: 6 },
+  });

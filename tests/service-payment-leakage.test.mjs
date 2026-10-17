@@ -46,11 +46,12 @@ test('instant booking cannot bypass payout readiness or marketplace payment auth
  assert.doesNotMatch(instant,/values\([\s\S]{0,400}s\.base_price,0,s\.base_price/);
 });
 
-test('service checkout does not strand pending attempts when payouts are unavailable',()=>{
+test('service checkout blocks new payments when payouts are unavailable without invalidating an uncertain Stripe attempt',()=>{
  const retry=fs.readFileSync('supabase/migrations/20260930162000_service_checkout_retry_hardening.sql','utf8');
  const checkout=fs.readFileSync('supabase/functions/service-checkout/index.ts','utf8');
  assert.match(retry,/is_business_payment_ready\(b\.business_id\)/);
- assert.match(checkout,/status:'FAILED'/);
+ assert.doesNotMatch(checkout,/status:'FAILED'/);
+ assert.match(checkout,/process_stripe_service_failure/);
  assert.match(checkout,/provider_checkout_session_id/);
  assert.match(checkout,/This business is still setting up payouts/);
 });
