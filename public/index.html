@@ -12,6 +12,7 @@
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="stylesheet" href="/fonts/fonts.css" />
     <link rel="stylesheet" href="/interaction-focus.css" />
+    <link rel="stylesheet" href="/chat-layout.css" />
     <link rel="preload" href="/fonts/Inter-Regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/Inter-SemiBold.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/BricolageGrotesque-Bold.woff2" as="font" type="font/woff2" crossorigin />
@@ -21,9 +22,9 @@
         try {
           var preference = localStorage.getItem('everest-local-theme');
           var dark = preference === 'DARK' || (preference !== 'LIGHT' && matchMedia('(prefers-color-scheme: dark)').matches);
-          var canvas = dark ? '#000000' : '#F7F5F0';
+          var canvas = dark ? '#000000' : '#F8FAFC';
           document.documentElement.style.setProperty('--everest-canvas', canvas);
-          document.documentElement.style.setProperty('--everest-text', dark ? '#F5F1E9' : '#121411');
+          document.documentElement.style.setProperty('--everest-text', dark ? '#F3F5F9' : '#161A24');
           document.documentElement.style.backgroundColor = canvas;
           document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
           document.querySelector('meta[name="theme-color"]').setAttribute('content', canvas);

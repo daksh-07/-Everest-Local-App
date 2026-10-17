@@ -1,0 +1,212 @@
+[
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "booking price fits",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "readable current progress",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "no horizontal overflow",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "booking price fits",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "readable current progress",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "no horizontal overflow",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "booking price fits",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "readable current progress",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "no horizontal overflow",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "booking price fits",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "readable current progress",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "no horizontal overflow",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "booking price fits",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "readable current progress",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "no horizontal overflow",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "booking price fits",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "readable current progress",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "no horizontal overflow",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "booking price fits",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "readable current progress",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "no horizontal overflow",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "booking price fits",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "readable current progress",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "no horizontal overflow",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "booking price fits",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "readable current progress",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "no horizontal overflow",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "booking price fits",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "readable current progress",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "no horizontal overflow",
+    "passed": true
+  }
+]
