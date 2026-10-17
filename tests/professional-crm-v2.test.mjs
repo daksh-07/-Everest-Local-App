@@ -68,7 +68,7 @@ test('professional quotes calculate totals server-side and do not fake delivery'
 });
 
 test('CRM bookings detect overlap and preserve native marketplace authority',()=>{
- assert.match(migration,/Booking conflicts with an existing CRM booking/);assert.match(migration,/tstzrange\(b\.scheduled_start,b\.scheduled_end/);assert.match(booking,/Possible double booking/);assert.match(booking,/Everest marketplace conflict requires acknowledgement/);
+ assert.match(migration,/Booking conflicts with an existing CRM booking/);assert.match(migration,/tstzrange\(b\.scheduled_start,b\.scheduled_end/);assert.match(booking,/Possible double booking/);assert.match(booking,/Check that your team can cover both jobs before continuing/);assert.match(booking,/warning&&!conflictAcknowledged/);assert.match(booking,/setConflictAcknowledged\(true\)/);
  assert.match(migration,/linked_marketplace_booking_id/);assert.doesNotMatch(migration,/update public\.bookings set/i);
 });
 

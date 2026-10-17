@@ -1,12 +1,14 @@
 # Route progress checklist
 
+Updated after verifying Claude’s committed phase-3 work and the checkout continuation. Historical verification describes fixture evidence, not production journeys.
+
 Generated from the branch diff against `a8490d7` (pre-transformation `main`). **Redesigned** = layout/IA rebuilt; **Refined** = targeted UX and copy changes on the existing layout; **Fixed** = behaviour/data fix; **Swept** = automated sentence-case and legibility pass only; **Not a screen** = redirect, alias or test harness. No route is untouched: every screen received the global passes below.
 
 **Global passes applied to every screen (phase 2):** every icon-only button has an accessible name (enforced by a source test); caught errors go through `userMessage()` so database/runtime text never reaches people (enforced by a source test); sentence case and ≥11px text (enforced by a source test).
 
 Verification column: fixture screenshots are browser renderings with inert Supabase fixtures (not authenticated real-backend tests, not native devices).
 
-Totals: 15 redesigned · 9 refined · 3 fixed · 65 swept · 4 not screens (redirects/aliases/test harness) · 96 routes
+Totals: 19 redesigned · 12 refined · 3 fixed · 58 swept · 4 not screens (redirects/aliases/test harness) · 96 routes
 
 | Route | Area | Status | Verification |
 |---|---|---|---|
@@ -31,7 +33,7 @@ Totals: 15 redesigned · 9 refined · 3 fixed · 65 swept · 4 not screens (redi
 | `/business-crm` | Business | Redesigned: actionable count strip + summary instead of 10 tiles | Fixture screenshots (web, 4 viewports, light/dark) |
 | `/business-crm-booking` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/business-crm-quote` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
-| `/business-customer` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
+| `/business-customer` | Business | Redesigned: customer identity, next-up, actions and four focused views | Phase 3 populated fixtures, light/dark; committed in 239ea3b |
 | `/business-customers` | Business | Refined: header aligned with Business mode screens (plus global passes) | Typecheck + tests only |
 | `/business-dashboard` | Business | Not a screen: redirects to /business-today | Typecheck |
 | `/business-deal` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
@@ -42,7 +44,7 @@ Totals: 15 redesigned · 9 refined · 3 fixed · 65 swept · 4 not screens (redi
 | `/business-inbox` | Business | Redesigned: Messages-style rows, unread weight and badge, relative times, readable errors | Fixture screenshots (web, 320/390/1280, light/dark) with populated fixtures |
 | `/business-integrations` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/business-invite` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
-| `/business-job` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
+| `/business-job` | Business | Redesigned: lifecycle workspace, state-ordered sections, confirmed completion | Phase 3 populated fixtures, light/dark; committed in 03693b3 |
 | `/business-jobs` | Business | Redesigned: schedule-first rows, status badge, counts, verification CTA, readable errors with retry | Fixture screenshots (web, 320/390/1280, light/dark) with populated fixtures |
 | `/business-leads` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/business-my-work` | Business | Refined: header, Ask Everest in header | Typecheck + tests only |
@@ -50,18 +52,18 @@ Totals: 15 redesigned · 9 refined · 3 fixed · 65 swept · 4 not screens (redi
 | `/business-operations` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/business-orders` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/business-payouts` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
-| `/business-profile` | Business | Redesigned: storefront header, single primary CTA, fixed broken Services link | Fixture screenshots (web, 4 viewports, light/dark) |
+| `/business-profile` | Business | Redesigned: cover header, trust facts, service detail sheet | Phase 3 populated fixtures, light/dark; committed in a03a14b |
 | `/business-profile-edit` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/business-today` | Business | Redesigned: attention-first, glance strip, Ask Everest in header | Fixture screenshots (web, 4 viewports, light/dark) |
 | `/business-upgrade` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/business-verification` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
-| `/cart` | Customer | Refined: header, money format, copy | Fixture screenshots (web, 4 viewports, light/dark) |
+| `/cart` | Customer | Redesigned: items, fulfilment selection, address and checkout review | Phase 4 fixture scenarios, 320/390/1280 light/dark |
 | `/chat-input-regression` | Account | Not a product screen: regression-test harness route | Used by webkit-chat CI |
 | `/connections` | Social | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/create` | Social | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
-| `/create-clip` | Social | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
-| `/create-post` | Social | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
-| `/create-story` | Social | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
+| `/create-clip` | Social | Refined: composer header action | Phase 3 fixtures; committed in dce179b |
+| `/create-post` | Social | Refined: composer header action, labelled fields | Phase 3 fixtures; committed in dce179b |
+| `/create-story` | Social | Refined: composer header action, labelled fields | Phase 3 fixtures; committed in dce179b |
 | `/customer-calendar` | Account | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/delete-account` | Auth / legal | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/delivery` | Admin / delivery | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
@@ -82,13 +84,13 @@ Totals: 15 redesigned · 9 refined · 3 fixed · 65 swept · 4 not screens (redi
 | `/notification-settings` | Account | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/notifications` | Account | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/opportunities` | Business | Fixed: scoped to active business, quotes as that business | Typecheck + tests only |
-| `/orders` | Customer | Redesigned: shared header, grouped rows, status badges | Fixture screenshots (web, 4 viewports, light/dark) |
+| `/orders` | Customer | Redesigned: active/history views, payment and fulfilment guidance, refresh | Phase 4 fixture scenarios, 320/390/1280 light/dark; presentation tests |
 | `/privacy` | Auth / legal | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/product` | Customer | Refined: stock honesty (sold out text, low-stock tone), prices, CTA copy | Fixture screenshots (web, 4 viewports, light/dark) |
 | `/product-editor` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/products` | Business | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/promote-post` | Social | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
-| `/public-user` | Social | Swept: global passes only (accessible names, safe error copy); layout unchanged | Typecheck + tests only |
+| `/public-user` | Social | Redesigned: flatter profile, connection confirmation, message sheet | Phase 3 populated fixtures, light/dark; committed in a03b863 |
 | `/quotes` | Customer | Redesigned: comparable facts, honest badges, confirm-before-accept | Fixture screenshots (web, 4 viewports, light/dark) |
 | `/request` | Customer | Refined: copy only (step flow already structured) | Fixture screenshots (web, 4 viewports, light/dark) |
 | `/requests` | Customer | Redesigned: shared header, status badges, formatted dates | Fixture screenshots (web, 4 viewports, light/dark) |
@@ -101,8 +103,8 @@ Totals: 15 redesigned · 9 refined · 3 fixed · 65 swept · 4 not screens (redi
 | `/settings` | Account | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/share-result` | Social | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/shop` | Customer | Refined: filters, prices, header | Fixture screenshots (web, 4 viewports, light/dark) |
-| `/social` | Social | Refined: removed dead chips; labelled post actions; relative times; text posts lead with the caption | Fixture screenshots (web, 320/390/1280, light/dark) with feed fixtures |
+| `/social` | Social | Refined: post actions, relative times; Clips hides Live mini-player | Phase 3 Clips light/dark evidence; c705947 |
 | `/social-privacy` | Account | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
 | `/sound` | Social | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
-| `/story` | Social | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |
+| `/story` | Social | Refined: viewer header, pause control, coral rings | Phase 3 fixtures; committed in dce179b |
 | `/terms` | Auth / legal | Swept: sentence case, legible type, formatted enums (structure unchanged) | Typecheck + tests only |

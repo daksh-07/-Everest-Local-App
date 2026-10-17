@@ -55,3 +55,20 @@ Fixture artefacts that looked like bugs and were not (the app was correct): prod
 | NF-3 | — | 12 pre-existing ESLint `exhaustive-deps` warnings | Behavioural risk outside this scope | Review individually |
 
 No database, RLS, payment, Stripe or edge-function code was changed in either phase. Client queries were only narrowed (scoped to the signed-in customer or active business), never widened.
+
+## Phase 4 — shopping continuation
+
+| ID | Sev | Issue | Resolution | Verification |
+|---|---|---|---|---|
+| BF-41 | P2 | Persisted `EVEREST_DELIVERY` and `SAME_DAY` orders had no fulfilment label | Explicit method labels with an honest unknown fallback | Order presentation tests |
+| BF-42 | P2 | Pending/action-required payments had no next-step guidance; pickup readiness could be misread for a delivery order | Status-specific guidance separates payment, collection and dispatch | Presentation tests and fixture browser scenarios |
+| BF-43 | P2 | Shared warning badges used the primary blue action colour | Semantic warning foreground/container; long labels wrap | Palette tests and narrow-screen captures |
+| BF-44 | P3 | One-character addresses enabled checkout but were rejected by the existing commerce validation | Match the existing five-character minimum in the UI | Fixture browser checks for short and complete addresses |
+
+No server, RLS, payment or dispatch contract changed. Corrected commerce fixtures from `PAID`/`DELIVERY` to persisted `SUCCEEDED`/`EVEREST_DELIVERY`; mixed-business cart remains a separate rejection scenario.
+
+| ID | Sev | Issue | Resolution | Verification |
+|---|---|---|---|---|
+| BF-45 | P2 | Product selection could default to a fully reserved variant | Select only available options with sellable stock (respect made-to-order/untracked stock) | Product presentation unit tests |
+| BF-46 | P2 | Product quantity could exceed 99; addition silently truncated while reporting the original quantity | Cap selection and refuse over-limit combined quantities with a cart-review message | Boundary tests at 98+1 and 98+2 |
+| BF-47 | P2 | Live mini-player could cover the final Orders help row | Reserve scroll space below the final control | Orders fixture captures |

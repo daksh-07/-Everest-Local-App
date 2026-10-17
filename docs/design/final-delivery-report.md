@@ -2,6 +2,21 @@
 
 Branch `design/everest-transformation-2026-10`, based on `main` @ `a8490d7`. Not deployed to production.
 
+## Current continuation — 16 October 2026
+
+Resumed from Claude's committed head `c705947`, with a clean checkout. Verified the colour identity (`28098c3`–`15a1caf`), Business Job (`03693b3`), CRM customer (`239ea3b`), storefront (`a03a14b`), public profile (`a03b863`), accessibility (`a02e7b8`), creation (`dce179b`) and Clips overlap (`c705947`) commits. Their work and phase-3 evidence are preserved. The older phase-2 totals below are historical; the route checklist is now reconciled with phase 3.
+
+Shopping continuation:
+- Cart is an ordered review: item totals and quantity controls → fulfilment radio choices and address → subtotal and secure checkout. Uses the existing checkout/idempotency path, with the existing minimum address length reflected in button readiness.
+- Orders separate in-progress purchases from history. Guidance explains payment verification, acceptance, preparation, pickup, dispatch and terminal states. Explicit refresh works on web as well as pull-to-refresh on mobile. Payment and delivery status remain independent; stale delivery data is labelled.
+- Product: fulfilment before quantity, compact missing-photo state, accessible variant/photo selectors, quantity-aware purchase total. Sold-out defaults and silent quantity truncation are fixed.
+- Correct persisted fulfilment labels and semantic warning badges. Long status labels wrap.
+- No new backend queries, mutations, migrations, RLS rules, Stripe paths or dispatch transitions.
+- Evidence: `evidence/phase4/shopping/`, including mixed-business/unavailable carts, address validation, order history and delivery failures. Inert fixtures, not real-backend verification.
+- Validation: 457 tests passing; typecheck passing; lint 0 errors / 12 existing warnings. Browser results are recorded with the evidence and PR update.
+
+The transformation is **not complete**. Remaining routes stay explicitly marked swept/refined in the checklist. Real-backend and physical-device journeys require an authorised non-production environment and test accounts; no such credentials are configured in this workspace. No merge or production deployment is authorised.
+
 ## Phase 2 summary (PR #104 continuation)
 
 Phase 2 took the remaining surfaces from "swept" to redesigned where the work mattered most, and fixed the behavioural bugs found on the way (BF-20 to BF-40 in `bug-fix-register.md`).
@@ -123,7 +138,7 @@ Branch `design/everest-transformation-2026-10`, PR #104. Do not merge or deploy 
 
 1. Environment: `npm ci` (postinstall creates migration alias symlinks; they are excluded via `.git/info/exclude`, never commit them). Playwright lives at `/opt/node-tools/node_modules/playwright`; symlink it into `node_modules/` for the browser suites. Use `NODE_OPTIONS=--max-old-space-size=3072` for `tsc`/lint if the container is memory-constrained.
 2. Before every push: `npm run -s lint` (0 errors), `npm run -s typecheck`, all tests, then rebuild and run the four discovery-browser suites in Chromium.
-3. Next routes in priority order (all currently "Swept" in the checklist): `business-job` detail → `public-user` → social creation (`create`, `create-post`, `create-story`, `create-clip`, `story`) → `business-crm-booking`/`-quote`/`-deal` → `business-operations` (team) → `services`/`products`/`product-editor` → `settings` family → admin/delivery.
+3. Historical phase-2 sequence (consult the updated checklist before acting; phase-3 work is already committed): `business-job` detail → `public-user` → social creation (`create`, `create-post`, `create-story`, `create-clip`, `story`) → `business-crm-booking`/`-quote`/`-deal` → `business-operations` (team) → `services`/`products`/`product-editor` → `settings` family → admin/delivery.
 4. Patterns to reuse: `ScreenHeader`/`HeaderIconButton`, `ConfirmSheet` for anything consequential, `StatusBadge` + `formatStatus`, `formatMoney`/`formatSchedule`/`formatWhen`, `userMessage`, the Business header (name + "Business mode" + `ModeSwitcher`), 44pt targets, hairline list rows.
 5. Add fixtures to `scripts/capture-design-evidence.mjs` before judging a screen; empty fixtures hide layout problems. Distinguish fixture artefacts from app bugs (see the register's note).
 6. Update `route-progress-checklist.md`, `bug-fix-register.md` and this report with each pass.
