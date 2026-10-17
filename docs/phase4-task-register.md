@@ -9,7 +9,7 @@ All interrupted local work was preserved in `recovery/codex-phase4-20261017` at 
 ## Checkpoints
 
 - **A — in progress:** recovered product/cart UI; variant selection excludes unavailable/reserved stock; quantity cap 99; no silent truncation; synchronous add lock; product route remount prevents stale-product purchase. Cart reads authoritative stock and merchant identity, blocks invalid quantities and unavailable variants, retains server validation. Targeted tests passing; current screenshots and full validation still pending.
-- **P1 messaging — active:** user escalated iPhone keyboard/composer defect. Investigate visible viewport ownership and multiline textarea sizing before further shopping work. Preserve messaging infrastructure and Apple system keyboard/accessibility features.
+- **P1 messaging — implemented, validation checkpoint:** confirmed Safari home-screen PWA. Fixed missing shipped viewport CSS, compact autosizing composer, keyboard/list anchoring, deep-link reopening and per-thread context. 66 Chromium cases passed at 320/390/1280 light/dark; final representative evidence repeats 22 cases. Full suite: 460 tests pass, typecheck pass, lint 0 errors/12 existing warnings. See `phase4-evidence/messaging/README.md`. WebKit CI and physical-device acceptance remain to be checked.
 - **B — pending:** checkout return routes, session lifecycle/recovery, duplicate operation protection, payment verification.
 - **C — pending:** customer order details, scoped merchant fulfilment and authoritative updates.
 - **D — pending:** focused booking/payment reliability, final regression checks and PR.
@@ -19,6 +19,6 @@ All interrupted local work was preserved in `recovery/codex-phase4-20261017` at 
 - Checkout currently emits `everestlocal://order/success` and `/cancelled` returns, but neither route exists; web customers cannot reliably return to their order.
 - No authorised staging accounts or test Stripe credentials are configured. No live credentials will be inspected or used. Real payment completion and device keyboard behaviour remain unverified.
 - PR #97 remains open. Its geographic/RLS migrations and dispatch-related changes have not been applied or merged.
-- iPhone screenshot contains a form-navigation toolbar consistent with Safari/PWA. Screenshot alone cannot distinguish installed PWA from Safari; native app has no custom accessory implementation. Write with Siri and keyboard language/microphone/emoji controls are iOS system UI.
+- iPhone screenshot contains a form-navigation toolbar consistent with Safari/PWA. The owner confirmed an installed Safari home-screen PWA; native app has no custom accessory implementation. Write with Siri and keyboard language/microphone/emoji controls are iOS system UI.
 
 No production deployment, merge, migration application, security policy or India-infrastructure change is authorised.

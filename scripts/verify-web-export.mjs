@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 const root = process.cwd();
 const dist = join(root, 'dist');
-const requiredFiles = [join(dist, 'index.html'), join(dist, 'build-info.json')];
+const requiredFiles = [join(dist, 'index.html'), join(dist, 'build-info.json'), join(dist, 'chat-layout.css')];
 
 for (const file of requiredFiles) {
   try {
@@ -75,3 +75,5 @@ if (expectedEnvironment && buildInfo.environment !== expectedEnvironment) {
 console.log(
   `Web export verified: HTML shell and build provenance are present for ${buildInfo.environment} build ${buildInfo.commit}.`,
 );
+
+if (!html.includes('href="/chat-layout.css"')) throw new Error('Web export is missing the chat viewport stylesheet.');

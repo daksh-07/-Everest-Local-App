@@ -1,4 +1,4 @@
-import {webkit,devices} from 'playwright';
+const {webkit,devices}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 
 const browser=await webkit.launch();
 const context=await browser.newContext({...devices['iPhone 15 Pro']});

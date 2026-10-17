@@ -1,0 +1,25 @@
+/* One viewport owner for Safari/PWA threads. The OS already excludes its keyboard
+   and accessory area from visualViewport.height. Native uses no rules here. */
+#everest-chat-shell {
+  position: absolute !important;
+  top: var(--everest-visual-top, 0px) !important;
+  left: 0; right: 0;
+  min-height: 0 !important;
+  height: var(--everest-visual-height, 100dvh) !important;
+  max-height: var(--everest-visual-height, 100dvh) !important;
+  overflow: hidden !important;
+  transform: none !important;
+}
+html[data-everest-chat-open="true"],
+html[data-everest-chat-open="true"] body,
+html[data-everest-chat-open="true"] #root {
+  height: 100%; min-height: 0; overflow: hidden; overscroll-behavior: none;
+}
+html[data-everest-chat-open="true"] body { position: fixed; inset: 0; }
+@supports not (height: 100dvh) {
+  #everest-chat-shell {
+    height: var(--everest-visual-height, 100%) !important;
+    max-height: var(--everest-visual-height, 100%) !important;
+  }
+}
+#everest-composer-shell textarea { resize: none; }

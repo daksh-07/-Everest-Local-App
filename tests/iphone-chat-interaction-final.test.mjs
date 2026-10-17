@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const messages=fs.readFileSync('app/messages.tsx','utf8');
-const html=fs.readFileSync('app/+html.tsx','utf8');
+const html=fs.readFileSync('app/+html.tsx','utf8')+fs.readFileSync('public/chat-layout.css','utf8');
 const haptics=fs.readFileSync('lib/haptics.ts','utf8');
 const viewport=fs.readFileSync('lib/visual-viewport.ts','utf8');
 const connections=fs.readFileSync('lib/connections.ts','utf8');

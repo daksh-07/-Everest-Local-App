@@ -8,6 +8,7 @@ export default function Root({ children }: PropsWithChildren) {
       <head>
         <link rel="stylesheet" href="/fonts/fonts.css" />
         <link rel="stylesheet" href="/interaction-focus.css" />
+        <link rel="stylesheet" href="/chat-layout.css" />
         <link rel="preload" href="/fonts/Inter-Regular.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/Inter-SemiBold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/BricolageGrotesque-Bold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
@@ -65,21 +66,6 @@ export default function Root({ children }: PropsWithChildren) {
             min-height: 100%;
             min-height: 100dvh;
             background: var(--everest-canvas, #F8FAFC);
-          }
-
-          #everest-chat-shell {
-            min-height: 0 !important;
-            height: 100dvh !important;
-            max-height: 100dvh !important;
-            overflow: hidden !important;
-            transform: none !important;
-          }
-
-          @supports not (height: 100dvh) {
-            #everest-chat-shell {
-              height: 100% !important;
-              max-height: 100% !important;
-            }
           }
 
           html.android-mobile-viewport-fallback,
@@ -176,7 +162,7 @@ export default function Root({ children }: PropsWithChildren) {
 
           #everest-composer-shell:focus-within {
             border-color: var(--everest-focus, #315BEE) !important;
-            box-shadow: 0 0 0 1px rgba(49,91,238,.16), 0 8px 22px rgba(0,0,0,.12) !important;
+            box-shadow: none !important;
           }
 
           #everest-composer-shell *,
