@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Linking,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { HeaderIconButton, ScreenHeader } from '@/components/ui';
-import {cartQuantityLimit,cartNeedsAttention} from '@/lib/cart-presentation';
+import { cartQuantityLimit, cartNeedsAttention } from '@/lib/cart-presentation';
 import { formatMoney } from '@/lib/format';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,10 +21,15 @@ import {
   cartUnitPrice,
   checkout,
   getCart,
+  pendingCartCheckout,
   removeFromCart,
   setCartQuantity,
 } from '@/lib/commerce';
-import type { CartItem, ProductDeliveryMethod } from '@/lib/commerce';
+import type {
+  CartItem,
+  PendingCartCheckout,
+  ProductDeliveryMethod,
+} from '@/lib/commerce';
 import { type ThemeColors, useAppTheme } from '@/lib/theme';
 
 export default function Cart() {
@@ -37,17 +42,28 @@ export default function Cart() {
   const [error, setError] = useState('');
   const [method, setMethod] = useState<ProductDeliveryMethod>('PICKUP');
   const [address, setAddress] = useState('');
+  const [pending, setPending] = useState<PendingCartCheckout | null>(null);
+  const loadRef = useRef(false);
   const checkoutKey = useRef(
     `cart-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`,
   );
   const operationRef = useRef(false);
-  async function load(mode: 'initial' | 'refresh' | 'silent' = 'initial') {
-    if (operationRef.current) return;
+  async function load(
+    mode: 'initial' | 'refresh' | 'silent' = 'initial',
+    duringMutation = false,
+  ) {
+    if ((!duringMutation && operationRef.current) || loadRef.current) return;
+    loadRef.current = true;
     if (mode === 'initial') setLoading(true);
     else if (mode === 'refresh') setRefreshing(true);
     setError('');
     try {
-      setItems(await getCart());
+      const [rows, active] = await Promise.all([
+        getCart(),
+        pendingCartCheckout(),
+      ]);
+      setItems(rows);
+      setPending(active);
     } catch {
       setError(
         items.length
@@ -55,6 +71,7 @@ export default function Cart() {
           : 'Your cart is unavailable. Sign in if your session ended, or try again.',
       );
     } finally {
+      loadRef.current = false;
       setLoading(false);
       setRefreshing(false);
     }
@@ -63,16 +80,16 @@ export default function Cart() {
     void load();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   async function mutate(action: () => Promise<void>, message: string) {
-    if (operationRef.current || refreshing) return;
+    if (operationRef.current || loadRef.current || refreshing) return;
     operationRef.current = true;
     setBusy(true);
     setError('');
     try {
       await action();
       checkoutKey.current = `cart-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+      await load('silent', true);
       operationRef.current = false;
       setBusy(false);
-      await load('silent');
     } catch {
       setError(message);
       operationRef.current = false;
@@ -87,7 +104,7 @@ export default function Cart() {
   }
   async function change(item: CartItem, delta: number) {
     const next = item.quantity + delta;
-    if(delta>0&&next>cartQuantityLimit(item))return;
+    if (delta > 0 && next > cartQuantityLimit(item)) return;
     if (next < 1) {
       await remove(item);
       return;
@@ -97,9 +114,8 @@ export default function Cart() {
       'Could not update your cart. Check stock availability and try again.',
     );
   }
-  const hasUnavailableProduct = items.some(
-    (i) => cartNeedsAttention(i),
-  );
+  const hasUnavailableProduct =
+    !pending && items.some((i) => cartNeedsAttention(i));
   const businessIds = new Set(
     items.map((i) => i.products?.business_id).filter(Boolean),
   );
@@ -140,11 +156,10 @@ export default function Cart() {
     }
   }, [deliveryAvailable, pickupAvailable, shippingAvailable, method]);
   async function pay() {
-    if (operationRef.current || refreshing) return;
+    if (operationRef.current || loadRef.current || refreshing) return;
     if (
-      hasUnavailableProduct ||
-      hasMultipleBusinesses ||
-      !hasFulfillmentMethod
+      !pending &&
+      (hasUnavailableProduct || hasMultipleBusinesses || !hasFulfillmentMethod)
     ) {
       setError(
         hasMultipleBusinesses
@@ -161,23 +176,49 @@ export default function Cart() {
     try {
       const result = await checkout(
         checkoutKey.current,
-        method,
-        method === 'PICKUP' ? null : address,
+        pending ? 'PICKUP' : method,
+        pending || method === 'PICKUP' ? null : address,
       );
-      if (!result.checkoutUrl) throw new Error();
-      if (!(await Linking.canOpenURL(result.checkoutUrl))) throw new Error();
-      await Linking.openURL(result.checkoutUrl);
+      if (!result.checkoutUrl) {
+        router.push({
+          pathname: '/orders',
+          params: {
+            order_id: result.orderId,
+            checkout:
+              result.checkoutState === 'EXPIRED' ? 'expired' : 'returned',
+          },
+        });
+        return;
+      }
+      setPending({
+        id: result.orderId,
+        total: result.total,
+        delivery_method: pending?.delivery_method ?? method,
+      });
+      if (Platform.OS === 'web' && typeof window !== 'undefined')
+        window.location.assign(result.checkoutUrl);
+      else {
+        if (!(await Linking.canOpenURL(result.checkoutUrl))) throw new Error();
+        await Linking.openURL(result.checkoutUrl);
+      }
     } catch {
-      Alert.alert(
-        'Checkout unavailable',
-        'Secure checkout could not be started. Please review your cart and try again.',
+      setError(
+        'Checkout could not be opened. Try again, or check Orders before starting another payment.',
       );
     } finally {
       operationRef.current = false;
       setBusy(false);
     }
   }
-  const locked = busy || refreshing;
+  const locked = busy || refreshing || !!pending;
+  const checkoutDisabled =
+    busy ||
+    refreshing ||
+    (!pending &&
+      (hasUnavailableProduct ||
+        hasMultipleBusinesses ||
+        !hasFulfillmentMethod ||
+        (method !== 'PICKUP' && address.trim().length < 5)));
   const subtotal = items.reduce(
     (sum, item) => sum + cartUnitPrice(item) * item.quantity,
     0,
@@ -207,11 +248,39 @@ export default function Cart() {
             />
           }
         />
+        {pending ? (
+          <View style={s.warning}>
+            <Text style={s.warningTitle}>Checkout in progress</Text>
+            <Text style={s.warningText}>
+              Your saved items, total and fulfilment details are reserved.
+              Resume the same secure checkout or view its order.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                router.push({
+                  pathname: '/orders',
+                  params: { order_id: pending.id },
+                })
+              }
+              style={s.warningRetry}
+            >
+              <Text style={s.retryText}>View order</Text>
+            </Pressable>
+          </View>
+        ) : null}
         {loading ? (
           <ActivityIndicator color={colors.text} style={{ marginTop: 40 }} />
         ) : error && !items.length ? (
           <View style={s.errorBox}>
-            <Text style={s.error}>{error}</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/auth')} style={s.retry}><Text style={s.retryText}>Sign in</Text></Pressable>
+            <Text style={s.error}>{error}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/auth')}
+              style={s.retry}
+            >
+              <Text style={s.retryText}>Sign in</Text>
+            </Pressable>
             <Pressable
               onPress={() => void load()}
               disabled={locked}
@@ -247,7 +316,11 @@ export default function Cart() {
                     <Text style={s.name}>
                       {item.products?.name ?? 'Product unavailable'}
                     </Text>
-                    {item.products?.businesses?.name?<Text style={s.meta}>{item.products.businesses.name}</Text>:null}
+                    {item.products?.businesses?.name ? (
+                      <Text style={s.meta}>
+                        {item.products.businesses.name}
+                      </Text>
+                    ) : null}
                     {item.product_variants?.title ? (
                       <Text style={s.variant}>
                         {item.product_variants.title}
@@ -258,7 +331,7 @@ export default function Cart() {
                         ? `${formatMoney(cartUnitPrice(item))} each`
                         : 'This product is no longer available.'}
                     </Text>
-                    {cartNeedsAttention(item) && (
+                    {!pending && cartNeedsAttention(item) && (
                       <Text style={s.unavailable}>Check availability</Text>
                     )}
                   </View>
@@ -294,8 +367,14 @@ export default function Cart() {
                         accessibilityRole="button"
                         accessibilityLabel={`Increase quantity of ${item.products?.name}`}
                         onPress={() => void change(item, 1)}
-                        disabled={locked || item.quantity >= cartQuantityLimit(item)}
-                        style={[s.qtyButton, item.quantity >= cartQuantityLimit(item) && s.disabled]}
+                        disabled={
+                          locked || item.quantity >= cartQuantityLimit(item)
+                        }
+                        style={[
+                          s.qtyButton,
+                          item.quantity >= cartQuantityLimit(item) &&
+                            s.disabled,
+                        ]}
                       >
                         <Text style={s.qtyButtonText}>+</Text>
                       </Pressable>
@@ -339,7 +418,7 @@ export default function Cart() {
                   </Text>
                 </View>
               )}
-            {!hasUnavailableProduct && !hasMultipleBusinesses && (
+            {!pending && !hasUnavailableProduct && !hasMultipleBusinesses && (
               <>
                 <Text accessibilityRole="header" style={s.section}>
                   2. How to get your order
@@ -474,9 +553,11 @@ export default function Cart() {
             </Text>
             <View style={s.summary}>
               <View style={s.total}>
-                <Text style={s.totalLabel}>Item subtotal</Text>
+                <Text style={s.totalLabel}>
+                  {pending ? 'Checkout total' : 'Item subtotal'}
+                </Text>
                 <Text tabular style={s.totalValue}>
-                  {formatMoney(subtotal)}
+                  {formatMoney(pending?.total ?? subtotal)}
                 </Text>
               </View>
               <Text style={s.note}>
@@ -485,33 +566,15 @@ export default function Cart() {
               </Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Continue to secure checkout"
-                accessibilityState={{
-                  busy,
-                  disabled:
-                    locked ||
-                    hasUnavailableProduct ||
-                    hasMultipleBusinesses ||
-                    !hasFulfillmentMethod ||
-                    (method !== 'PICKUP' && address.trim().length < 5),
-                }}
-                disabled={
-                  locked ||
-                  hasUnavailableProduct ||
-                  hasMultipleBusinesses ||
-                  !hasFulfillmentMethod ||
-                  (method !== 'PICKUP' && address.trim().length < 5)
+                accessibilityLabel={
+                  pending
+                    ? 'Resume secure checkout'
+                    : 'Continue to secure checkout'
                 }
+                accessibilityState={{ busy, disabled: checkoutDisabled }}
+                disabled={checkoutDisabled}
                 onPress={() => void pay()}
-                style={[
-                  s.button,
-                  (locked ||
-                    hasUnavailableProduct ||
-                    hasMultipleBusinesses ||
-                    !hasFulfillmentMethod ||
-                    (method !== 'PICKUP' && address.trim().length < 5)) &&
-                    s.buttonDisabled,
-                ]}
+                style={[s.button, checkoutDisabled && s.buttonDisabled]}
               >
                 {busy ? (
                   <ActivityIndicator color={colors.onBrand} />
@@ -519,15 +582,12 @@ export default function Cart() {
                   <Text
                     style={[
                       s.buttonText,
-                      (locked ||
-                        hasUnavailableProduct ||
-                        hasMultipleBusinesses ||
-                        !hasFulfillmentMethod ||
-                        (method !== 'PICKUP' && address.trim().length < 5)) &&
-                        s.buttonTextDisabled,
+                      checkoutDisabled && s.buttonTextDisabled,
                     ]}
                   >
-                    Continue to secure checkout
+                    {pending
+                      ? 'Resume secure checkout'
+                      : 'Continue to secure checkout'}
                   </Text>
                 )}
               </Pressable>

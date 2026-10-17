@@ -18,5 +18,5 @@ test('checkout and inventory adjustment remain server-authoritative', async () =
   // Stock may be read for honest UI limits, but never written by this client.
   assert.doesNotMatch(commerce, /from\(['"](?:inventory|product_variants)['"]\)\.(?:update|insert|upsert)/i);
   assert.doesNotMatch(commerce, /p_(?:stock|reserved|available)_quantity\s*:/i);
-  assert.match(commerce, /supabase\.rpc\('set_my_cart_item_v2'/);
+  assert.match(commerce, /supabase\.rpc\(['"]set_my_cart_item_v2['"]/);
 });
