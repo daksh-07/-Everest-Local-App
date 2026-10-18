@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import { ActivityIndicator, Animated, AppState, Easing, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, AppState, Easing, Image, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@/components/ui/Icon';
@@ -15,22 +15,32 @@ import {formatMoney,formatSchedule} from '@/lib/format';
 import {useReducedMotion} from '@/lib/motion';
 import {livePresentation} from '@/lib/live-presentation';
 import {haptic} from '@/lib/haptics';
+import {withTimeout} from '@/lib/resilience';
 import {userMessage} from '@/lib/errors';
 
 export default function EverestLive(){
- const {requestId}=useLocalSearchParams<{requestId:string}>();const id=typeof requestId==='string'?requestId:'';const {colors}=useAppTheme();const experience=useExperience();const s=useMemo(()=>styles(colors,experience.mode),[colors,experience.mode]);
+ const {requestId}=useLocalSearchParams<{requestId:string}>();
+ const id=typeof requestId==='string'?requestId:'';
+ return <LiveRequest key={id} id={id}/>;
+}
+
+function LiveRequest({id}:{id:string}){
+ const {height}=useWindowDimensions();const {colors}=useAppTheme();const experience=useExperience();const s=useMemo(()=>styles(colors,experience.mode),[colors,experience.mode]);
  const [state,setState]=useState<EverestLiveState|null>(null);
  const [quotes,setQuotes]=useState<LiveQuote[]>([]);
  const [map,setMap]=useState<LiveMapSnapshot>({customer:null,businesses:[]});
  const [loading,setLoading]=useState(true);
  const [refreshing,setRefreshing]=useState(false);
- const [reconnecting,setReconnecting]=useState(false);
+ const [statusStale,setStatusStale]=useState(false);
+ const [connectionLost,setConnectionLost]=useState(false);
+ const reconnecting=statusStale||connectionLost;
  const [secondaryWarning,setSecondaryWarning]=useState('');
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
  const [reviewing,setReviewing]=useState<string|null>(null);
  const [confirmCancel,setConfirmCancel]=useState(false);
  const expansionLock=useRef(false);
+ const mutationLock=useRef(false);
  const refreshInFlight=useRef(false);
  const refreshQueued=useRef(false);
  const mounted=useRef(true);
@@ -45,29 +55,23 @@ export default function EverestLive(){
   try{
    do{
     refreshQueued.current=false;
-    const [coreResult,quoteResult,mapResult]=await Promise.allSettled([
-     getEverestLiveState(id),
-     listLiveQuotes(id),
-     getEverestLiveMapPoints(id),
+    const warnings:string[]=[];
+    await Promise.allSettled([
+     withTimeout(getEverestLiveState(id),12000,'Live status').then(value=>{
+      if(!mounted.current)return;
+      setState(value);setLoading(false);setStatusStale(false);
+      if(!value){setQuotes([]);setMap({customer:null,businesses:[]});}
+      setError(value?'':'This live request is unavailable.');
+     }).catch(reason=>{
+      if(!mounted.current)return;
+      setStatusStale(true);setLoading(false);
+      setError(userMessage(reason,'Live search status is reconnecting…'));
+     }),
+     withTimeout(listLiveQuotes(id),12000,'Provider responses').then(value=>{if(mounted.current)setQuotes(value)}).catch(()=>warnings.push('responses')),
+     withTimeout(getEverestLiveMapPoints(id),12000,'Live map').then(value=>{if(mounted.current)setMap(value)}).catch(()=>warnings.push('map')),
     ]);
     if(!mounted.current)return;
-
-    const warnings:string[]=[];
-    if(coreResult.status==='fulfilled'){
-     setState(coreResult.value);
-     setReconnecting(false);
-     setError(coreResult.value?'':'This live request is unavailable.');
-    }else{
-     setReconnecting(true);
-     setError(userMessage(coreResult.reason,'Live search status is reconnecting…'));
-    }
-
-    if(quoteResult.status==='fulfilled')setQuotes(quoteResult.value);
-    else warnings.push('responses');
-    if(mapResult.status==='fulfilled')setMap(mapResult.value);
-    else warnings.push('map');
-
-    setSecondaryWarning(warnings.length?`Some live ${warnings.join(' and ')} details are catching up. Your search is still running.`:'');
+    setSecondaryWarning(warnings.length?`Some live ${warnings.join(' and ')} details are catching up. Showing the last available details. Retry to check for updates.`:'');
    }while(refreshQueued.current&&mounted.current);
   }finally{
    refreshInFlight.current=false;
@@ -94,9 +98,10 @@ export default function EverestLive(){
   const channel=supabase.channel(`everest-live:${id}`)
    .on('postgres_changes',{event:'*',schema:'public',table:'service_requests',filter:`id=eq.${id}`},scheduleRefresh)
    .on('postgres_changes',{event:'*',schema:'public',table:'quotes',filter:`request_id=eq.${id}`},scheduleRefresh)
+   .on('postgres_changes',{event:'*',schema:'public',table:'opportunities',filter:`request_id=eq.${id}`},scheduleRefresh)
    .subscribe(status=>{
-    if(status==='SUBSCRIBED')setReconnecting(false);
-    if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setReconnecting(true);
+    if(status==='SUBSCRIBED'){setConnectionLost(false);scheduleRefresh()}
+    if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED')setConnectionLost(true);
    });
   const app=AppState.addEventListener('change',value=>{if(value==='active')scheduleRefresh()});
   const fallback=setInterval(()=>{if(AppState.currentState==='active')void refresh('silent')},30000);
@@ -108,38 +113,47 @@ export default function EverestLive(){
   };
  },[id,refresh,scheduleRefresh]);
 
+ const expand=useCallback(async()=>{
+  if(expansionLock.current||mutationLock.current)return;
+  expansionLock.current=true;mutationLock.current=true;setBusy(true);
+  try{await expandEverestLive(id);await refresh('silent')}
+  catch(e){if(mounted.current)setError(userMessage(e,'The search area could not be expanded.'))}
+  finally{expansionLock.current=false;mutationLock.current=false;if(mounted.current)setBusy(false)}
+ },[id,refresh]);
+
+ const liveStatus=state?.live_status;const radiusStage=state?.radius_stage;const notifiedCount=state?.notified_count;const expiresAt=state?.expires_at;
  useEffect(()=>{
-  if(!state||!['SEARCHING','NOTIFYING','NO_PROVIDER_FOUND'].includes(state.live_status)||state.radius_stage>=4)return;
-  const wait=state.notified_count>0?45000:20000;
-  const timer=setTimeout(async()=>{
-   if(expansionLock.current)return;
-   expansionLock.current=true;
-   try{await expandEverestLive(id);await refresh('silent')}
-   catch(e){if(mounted.current)setError(userMessage(e,'The search area could not be expanded.'))}
-   finally{expansionLock.current=false}
+  if(!liveStatus||!['SEARCHING','NOTIFYING','NO_PROVIDER_FOUND'].includes(liveStatus)||radiusStage==null||radiusStage>=4||statusStale)return;
+  const wait=notifiedCount?45000:20000;
+  const timer=setTimeout(()=>{
+   if(expiresAt&&Date.parse(expiresAt)<=Date.now())return;
+   void expand();
   },wait);
   return()=>clearTimeout(timer);
- },[id,state,refresh]);
+  // Counts and lifecycle changes matter; a poll returning an equivalent object must not restart the clock.
+ },[id,liveStatus,radiusStage,notifiedCount,expiresAt,statusStale,expand]);
 
- async function cancel(){if(busy)return;setBusy(true);try{await cancelEverestLive(id);setConfirmCancel(false);router.replace('/activity')}catch(e){setConfirmCancel(false);setError(userMessage(e,'Could not cancel the search.'))}finally{setBusy(false)}}
- async function choose(quoteId:string){if(busy)return;setBusy(true);setError('');try{const bookingId=await acceptQuote(quoteId);setReviewing(null);void haptic.success();router.replace(`/booking?id=${bookingId}`)}catch(e){setReviewing(null);setError(userMessage(e,'This provider could not be selected.'))}finally{setBusy(false)}}
+
+ async function cancel(){if(mutationLock.current)return;mutationLock.current=true;setBusy(true);try{if(!await cancelEverestLive(id))throw new Error('Cancellation was not confirmed. Retry to check your request.');setConfirmCancel(false);router.replace('/activity')}catch(e){setConfirmCancel(false);setError(userMessage(e,'Could not cancel the search.'))}finally{mutationLock.current=false;if(mounted.current)setBusy(false)}}
+ async function choose(quoteId:string){if(mutationLock.current)return;mutationLock.current=true;setBusy(true);setError('');try{const bookingId=await acceptQuote(quoteId);setReviewing(null);void haptic.success();router.replace(`/booking?id=${bookingId}`)}catch(e){setReviewing(null);await refresh('silent');if(mounted.current)setError(userMessage(e,'This provider could not be selected.'))}finally{mutationLock.current=false;if(mounted.current)setBusy(false)}}
  const status=state?.live_status;const presentation=livePresentation(status,reconnecting);const finished=presentation.finished;const searching=presentation.searching;const label=state?.quote_count?`${state.quote_count} provider response${state.quote_count===1?'':'s'}`:state?.viewed_count?`${state.viewed_count} business${state.viewed_count===1?' has':'es have'} viewed your request`:state?.notified_count?`${state.notified_count} business${state.notified_count===1?'':'es'} notified`:'Finding available businesses nearby';
- if(!id||(!loading&&!state))return <SafeAreaView style={s.safe}><EmptyState icon="radio-outline" title="Live request unavailable" description={error||'Open an active request from My Everest, or start a new search.'} actionLabel="My Everest" onAction={()=>router.replace('/activity')}/></SafeAreaView>;
- return <SafeAreaView style={s.safe} edges={['top','left','right']}><View style={s.top}><Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={()=>router.canGoBack()?router.back():router.replace('/activity')} style={s.icon}><Ionicons name="chevron-back" size={22} color={colors.text}/></Pressable><Text accessibilityRole="header" style={s.topTitle}>Everest Live</Text><Pressable accessibilityLabel="Live search help" onPress={()=>router.push('/help')} style={s.icon}><Ionicons name="help-circle-outline" size={22} color={colors.text}/></Pressable></View>
+ if(!id||(!loading&&!state&&!error))return <SafeAreaView style={s.safe}><EmptyState icon="radio-outline" title="Live request unavailable" description={error||'Open an active request from My Everest, or start a new search.'} actionLabel="My Everest" onAction={()=>router.replace('/activity')}/></SafeAreaView>;
+ if(!loading&&!state&&error)return <SafeAreaView style={s.safe}><EmptyState icon="cloud-offline-outline" title="Live request unavailable" description={error} actionLabel={statusStale?(refreshing?'Reconnecting…':'Reconnect'):'My Everest'} onAction={()=>statusStale?void refresh('manual'):router.replace('/activity')}/></SafeAreaView>;
+ return <SafeAreaView style={s.safe} edges={['top','left','right']}><View style={s.top}><Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={()=>router.canGoBack()?router.back():router.replace('/activity')} style={s.icon}><Ionicons name="chevron-back" size={22} color={colors.text}/></Pressable><Text accessibilityRole="header" style={s.topTitle}>Everest Live</Text><Pressable accessibilityRole="button" accessibilityLabel="Live search help" onPress={()=>router.push('/help')} style={s.icon}><Ionicons name="help-circle-outline" size={22} color={colors.text}/></Pressable></View>
   <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void refresh('manual')} tintColor={colors.accent}/>} contentContainerStyle={s.page}>
-   <View style={s.map} accessibilityLabel={`Real Everest Live map, searching within approximately ${state?.radius_km??3} kilometres`}>
+   <View style={[s.map,{height:Math.min(experience.mode==='CLASSIC'?290:350,Math.max(220,height*.36))}]} accessibilityLabel={`Real Everest Live map, searching within approximately ${state?.radius_km??3} kilometres`}>
     <LiveSearchMap customer={map.customer} businesses={map.businesses} radiusKm={Number(state?.radius_km??3)}/>
     <LiveSearchingOverlay active={searching&&Boolean(map.customer)} />
     <View pointerEvents="none" style={s.mapTop}>
-     <View style={s.addressPill}><Ionicons name="home-outline" size={16} color="#f8f5ee"/><Text numberOfLines={1} style={s.addressText}>{map.customer?.address_label||'Loading service address…'}</Text></View>
+     <View style={s.addressPill}><Ionicons name="home-outline" size={16} color="#f8f5ee"/><Text numberOfLines={1} style={s.addressText}>{map.customer?.address_label||(secondaryWarning.includes('map')?'Service map unavailable':'Loading service address…')}</Text></View>
 
     </View>
     <View pointerEvents="none" style={s.radiusPill}><View style={s.scanIcon}><Ionicons name="radio-outline" size={14} color="#8ff0c7"/></View><View style={s.radiusCopy}><Text style={s.radiusText}>{searching?'Searching within':'Search area'} {Number(state?.radius_km??3).toFixed(0)} km</Text><Text style={s.radiusSub}>{presentation.label}</Text></View>{searching?<ActivityIndicator size="small" color="#8ff0c7"/>:<Ionicons name={reconnecting?'cloud-offline-outline':finished?'pause':'radio-outline'} size={16} color="#d9c29d"/>}</View>
    </View>
    <View style={s.statusCard}>{loading&&!state?<ActivityIndicator color={colors.accent}/>:<><View style={s.liveRow}><View style={[s.liveDot,reconnecting&&s.liveDotReconnect]}/><Text style={[s.liveText,reconnecting&&s.liveTextReconnect]}>{presentation.label}</Text></View><Text accessibilityLiveRegion="polite" style={s.title}>{searching?label:presentation.title}</Text>{presentation.connection?<View style={s.connection}><Ionicons name="cloud-offline-outline" size={15} color={colors.textSecondary}/><Text style={s.connectionText}>{presentation.connection}</Text></View>:null}<Text style={s.copy}>{presentation.terminal?'Open My Everest to view your request and any booking details.':state?.responding_count?`${state.responding_count} business${state.responding_count===1?' is':'es are'} responding now.`:state?.notified_count?'Businesses can view the request and send a fast quote. Arrival is confirmed only after you choose one.':'We’re checking eligible businesses near your service address. You can leave this screen and return to your request.'}</Text><View style={s.metrics}><Metric n={state?.notified_count??0} label="Notified"/><Metric n={state?.viewed_count??0} label="Viewed"/><Metric n={state?.quote_count??0} label="Responses"/></View></>}</View>
    {quotes.length&&!presentation.terminal?<View style={s.section}><View style={s.sectionHead}><Text style={s.sectionTitle}>Provider responses</Text><View style={s.responseCount}><Text style={s.responseCountText}>{quotes.length} ready</Text></View></View>{quotes.map(q=>{const livePoint=map.businesses.find(point=>point.business_id===q.business_id);const eta=livePoint?.eta_seconds!=null?Math.max(1,Math.round(livePoint.eta_seconds/60)):null;return <View key={q.id} style={s.provider}><View style={s.providerHead}>{q.businesses?.logo_url?<Image source={{uri:q.businesses.logo_url}} style={s.logo}/>:<View style={s.logoFallback}><Ionicons name="storefront" size={20} color={colors.accent}/></View>}<View style={{flex:1}}><View style={s.nameRow}><Text style={s.name}>{q.businesses?.name??'Local business'}</Text>{q.businesses?.verification_status==='VERIFIED'?<Ionicons name="checkmark-circle" size={16} color={colors.accent}/>:null}</View><Text style={s.quoteMeta}>{eta?'≈ '+eta+' min away · ':''}Quote received · Timing to confirm</Text></View><Text tabular style={s.price}>{formatMoney(q.total)}</Text></View><Text style={s.quoteCopy}>{q.description}</Text>{q.deposit>0?<Text style={s.deposit}>{formatMoney(q.deposit)+' deposit requested'}</Text>:null}<View style={s.actions}><Pressable accessibilityRole="button" onPress={()=>router.push(('/quotes?requestId='+id) as never)} style={s.secondary}><Text style={s.secondaryText}>Compare</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel={`Review and book ${q.businesses?.name??'this business'}`} disabled={busy} onPress={()=>{void haptic.selection();setReviewing(q.id)}} style={[s.primary,busy&&s.disabled]}><Text style={s.primaryText}>Review & book</Text></Pressable></View></View>})}</View>:null}
-   {finished?<View style={s.alternatives}><Text style={s.sectionTitle}>What would you like to do?</Text><Pressable disabled={busy||status==='EXPIRED'||state?.radius_stage===4} onPress={()=>void expandEverestLive(id).then(()=>refresh('silent')).catch(e=>setError(userMessage(e,'Could not expand search.')))} style={[s.option,state?.radius_stage===4&&s.disabled]}><Ionicons name="expand-outline" size={19} color={colors.accent}/><Text style={s.optionText}>Keep searching farther away</Text></Pressable><Pressable onPress={()=>router.replace(`/request?retry=${id}`)} style={s.option}><Ionicons name="time-outline" size={19} color={colors.accent}/><Text style={s.optionText}>Change arrival window or schedule later</Text></Pressable><Pressable onPress={()=>router.replace('/activity')} style={s.option}><Ionicons name="document-text-outline" size={19} color={colors.accent}/><Text style={s.optionText}>View your requests</Text></Pressable></View>:null}
-   {secondaryWarning?<View style={s.softWarning}><Ionicons name="cloud-offline-outline" size={16} color={colors.warning}/><Text style={s.softWarningText}>{secondaryWarning}</Text></View>:null}
+   {finished?<View style={s.alternatives}><Text style={s.sectionTitle}>What would you like to do?</Text><Pressable disabled={busy||status==='EXPIRED'||state?.radius_stage===4} accessibilityRole="button" onPress={()=>void expand()} style={[s.option,state?.radius_stage===4&&s.disabled]}><Ionicons name="expand-outline" size={19} color={colors.accent}/><Text style={s.optionText}>Keep searching farther away</Text></Pressable><Pressable onPress={()=>router.replace(`/request?retry=${id}`)} style={s.option}><Ionicons name="time-outline" size={19} color={colors.accent}/><Text style={s.optionText}>Change arrival window or schedule later</Text></Pressable><Pressable onPress={()=>router.replace('/activity')} style={s.option}><Ionicons name="document-text-outline" size={19} color={colors.accent}/><Text style={s.optionText}>View your requests</Text></Pressable></View>:null}
+   {secondaryWarning?<View style={s.errorWrap}><ErrorBanner message={secondaryWarning} onRetry={()=>void refresh('manual')} retryLabel="Retry details"/></View>:null}
    {error?<View style={s.errorWrap}><ErrorBanner message={error} onRetry={()=>void refresh('manual')} retryLabel="Reconnect"/></View>:null}
    <View style={s.bottomActions}><Pressable onPress={()=>router.push(`/request?edit=${id}`)} style={s.edit}><Ionicons name="pencil-outline" size={16} color={colors.text}/><Text style={s.editText}>Edit request</Text></Pressable><Pressable accessibilityRole="button" disabled={busy||presentation.terminal} onPress={()=>setConfirmCancel(true)} style={s.cancel}><Text style={s.cancelText}>Cancel search</Text></Pressable></View>
   </ScrollView>
