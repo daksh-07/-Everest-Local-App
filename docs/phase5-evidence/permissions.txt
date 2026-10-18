@@ -1,0 +1,1 @@
+PASS exact discovery migration: missing predicate permission reproduced; anonymous verified-only listings, private branches excluded, column grants/RLS, write denial, admin denial, pagination, signed-in people/community, blank-people privacy, and the real main-branch password/MFA admin predicates. Disposable PostgreSQL fixtures only.

@@ -33,6 +33,13 @@ on:
       - 'components/GlobalSwipeNavigator.tsx'
       - 'components/ServiceCategoryGrid.tsx'
       - 'lib/universal-search.ts'
+      - 'lib/use-section.ts'
+      - 'lib/section-state.ts'
+      - 'components/SectionStatus.tsx'
+      - 'components/ModeSwitcher.tsx'
+      - 'tests/section-state.test.mjs'
+      - 'scripts/verify-phase5*.mjs'
+      - 'supabase/migrations/*phase5_public_discovery.sql'
       - 'scripts/verify-discovery-foundation.mjs'
       - 'scripts/verify-search-discovery.mjs'
       - 'scripts/verify-business-job.mjs'
@@ -78,7 +85,7 @@ jobs:
       - name: Install isolated browser runtime
         run: |
           mkdir -p /tmp/everest-browser-tools
-          npm install --prefix /tmp/everest-browser-tools playwright@1.55.0 serve@14.2.4
+          npm install --prefix /tmp/everest-browser-tools playwright@1.64.1 serve@14.2.4 @axe-core/playwright@4.14.0 @electric-sql/pglite@0.5.10
           /tmp/everest-browser-tools/node_modules/.bin/playwright install --with-deps ${{ matrix.browser }}
       - name: Serve exported application
         run: |
@@ -103,6 +110,8 @@ jobs:
           node scripts/verify-search-discovery.mjs
           node scripts/verify-business-job.mjs
           node scripts/verify-public-profile.mjs
+          AXE_MODULE=/tmp/everest-browser-tools/node_modules/@axe-core/playwright/dist/index.mjs EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/phase5 node scripts/verify-phase5.mjs
+          PGLITE_MODULE=/tmp/everest-browser-tools/node_modules/@electric-sql/pglite/dist/index.js node scripts/verify-phase5-permissions.mjs
           EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/refinement node scripts/verify-visual-refinement.mjs
           EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/typography node scripts/verify-typography-browser.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

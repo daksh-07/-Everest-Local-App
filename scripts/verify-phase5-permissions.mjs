@@ -12,6 +12,8 @@ try{
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
  grant usage on schema auth to anon,authenticated;
  grant execute on function auth.uid() to anon,authenticated;
+ create table public.profiles(id uuid primary key,role text);
+ create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb,'{}'::jsonb) $$;
  create table public.businesses(id uuid primary key,name text,description text,logo_url text,suburb text,status text,verification_status text);
  create table public.services(id uuid primary key,business_id uuid,name text,description text,base_price numeric,active boolean);
  create table public.products(id uuid primary key,business_id uuid,name text,description text,price numeric,sale_price numeric,status text);
@@ -44,6 +46,14 @@ try{
  insert into public.user_social_preferences select id,true from public.public_profiles;
  insert into public.posts values('50000000-0000-4000-8000-000000000001','40000000-0000-4000-8000-000000000001',null,'Garden community','UPDATE','PUBLISHED','PUBLIC');
  `);
+ // Use the real main-branch identity and password+MFA predicates, not a
+ // permissive stand-in, when checking the restored boolean execute grant.
+ const identitySource=await fs.readFile('supabase/migrations/20260920125431_20260920240000_secure_single_account_admin_mfa.sql','utf8');
+ const adminSource=await fs.readFile('supabase/migrations/20260920125633_20260920241000_require_password_plus_mfa_for_admin.sql','utf8');
+ const definition=(source,name)=>{const start=source.indexOf('create or replace function public.'+name+'()');return source.slice(start,source.indexOf('$$;',start)+3)};
+ await db.exec(definition(identitySource,'is_admin_identity'));
+ await db.exec(definition(adminSource,'is_admin'));
+ await db.exec("insert into public.profiles values('716edb35-a0cb-4cbf-99b2-41fa8500ffd3','ADMIN')");
  await db.exec('set role anon');
  await assert.rejects(db.query('select id from public.businesses'),/permission denied for function is_admin/);
  await db.exec('reset role');
@@ -67,5 +77,11 @@ try{
  assert.equal((await db.query("select * from public.universal_search('garden','PERSON')")).rows.length,1);
  assert.equal((await db.query("select * from public.universal_search('garden','POST')")).rows.length,1);
  assert.equal((await db.query("select * from public.universal_search('','PERSON')")).rows.length,0);
- console.log('PASS exact discovery migration: missing predicate permission reproduced; anonymous verified-only listings, private branches excluded, column grants/RLS, write denial, admin denial, pagination, signed-in people/community and blank-people privacy. Disposable PostgreSQL fixtures only.');
+ await db.exec("set request.jwt.claim.sub='716edb35-a0cb-4cbf-99b2-41fa8500ffd3';set request.jwt.claims='{\"aal\":\"aal1\",\"amr\":[{\"method\":\"password\"}]}'");
+ assert.equal((await db.query('select public.is_admin() value')).rows[0].value,false,'Password alone is not admin authorization');
+ await db.exec("set request.jwt.claims='{\"aal\":\"aal2\",\"amr\":[]}'");
+ assert.equal((await db.query('select public.is_admin() value')).rows[0].value,false,'MFA without password is not admin authorization');
+ await db.exec("set request.jwt.claims='{\"aal\":\"aal2\",\"amr\":[{\"method\":\"password\"}]}'");
+ assert.equal((await db.query('select public.is_admin() value')).rows[0].value,true,'Existing fully authenticated admin behavior is retained');
+ console.log('PASS exact discovery migration: missing predicate permission reproduced; anonymous verified-only listings, private branches excluded, column grants/RLS, write denial, admin denial, pagination, signed-in people/community, blank-people privacy, and the real main-branch password/MFA admin predicates. Disposable PostgreSQL fixtures only.');
 }finally{await db.close()}
