@@ -74,7 +74,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  }
  const [locality,setLocality]=useState<Pick<CustomerLocality,'suburb'|'city'|'state'>|null>(null);
  const localityRef=useRef(locality);localityRef.current=locality;
- const discoveryKey=JSON.stringify(locality);
+ const discoveryKey=JSON.stringify(locality&&[locality.suburb,locality.city,locality.state]);
  const businessSection=useSection<BusinessPreview[]>(discoveryKey,async()=>{
   const merged=new Map<string,BusinessPreview>();
   if(locality)for(const [field,value] of [['suburb',locality.suburb],['city',locality.city],['state',locality.state]] as const){
@@ -176,10 +176,10 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
     </View>
 
     <View style={s.hero}>
-     <Text variant="hero" style={[s.greeting,classic&&{fontSize:t.typography.hero,lineHeight:Math.round(t.typography.hero*1.18)}]}>{classic?'What would you like to do?':hello}</Text>
-     {!name||classic?<Text style={s.heroCopy}>{classic?'Find a business, book a service or shop nearby.':'Book local services, request quotes and shop from nearby businesses.'}</Text>:null}
+     <Text accessibilityRole="header" variant="hero" style={[s.greeting,classic&&{fontSize:t.typography.hero,lineHeight:Math.round(t.typography.hero*1.18)}]}>{classic?'What would you like to do?':hello}</Text>
+     {!name||classic?<Text style={s.heroCopy}>{classic?'Find a business, book a service or shop nearby.':'Find a service, compare quotes or shop local.'}</Text>:null}
      <View style={[s.search,{minHeight:classic?t.controls.minHeight+12:56,borderRadius:t.shape.medium,borderWidth:t.surfaces.borderWidth}]}>
-      <Pressable onPress={()=>go('/search')} style={({pressed})=>[s.searchMain,pressed&&s.searchPressed]} accessibilityRole="button" accessibilityLabel="Search services, businesses and products"><Ionicons name="search" size={20} color={c.text}/><Text numberOfLines={1} style={s.searchText}>{classic?'Search for a service, business, or product':'Search your local area'}</Text></Pressable>
+      <Pressable onPress={()=>go('/search')} style={({pressed})=>[s.searchMain,pressed&&s.searchPressed]} accessibilityRole="button" accessibilityLabel="Search services, businesses and products"><Ionicons name="search" size={20} color={c.text}/><Text numberOfLines={1} style={s.searchText}>{compact?'Search locally':classic?'Search for a service, business, or product':'Search your local area'}</Text></Pressable>
       <View style={s.searchDivider}/>
       <Pressable onPress={()=>go('/assistant')} style={({pressed})=>[s.askButton,pressed&&s.press]} accessibilityRole="button" accessibilityLabel="Ask Everest for help" hitSlop={4}><Ionicons name="sparkles-outline" size={19} color={c.accent}/><Text style={s.askText}>Ask</Text></Pressable>
      </View>
@@ -190,7 +190,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
      {context?<Pressable onPress={()=>go(context.route)} style={({pressed})=>[s.context,{borderRadius:t.shape.medium},pressed&&s.press]} accessibilityRole="button" accessibilityLabel={`Continue: ${context.title}, ${context.detail}`}><View style={s.contextIcon}><Ionicons name={context.kind==='booking'?'calendar':'document-text'} size={18} color={c.accent}/></View><View style={{flex:1,minWidth:0}}><Text style={s.contextLabel}>Continue where you left off</Text><Text numberOfLines={1} style={s.contextTitle}>{context.title}</Text><Text numberOfLines={1} style={s.contextDetail}>{context.detail}</Text></View><Ionicons name="chevron-forward" size={18} color={c.muted}/></Pressable>:null}
     </View>
 
-    <SectionHeader title="Browse services" action={{label:'All services',accessibilityLabel:'Explore all services',onPress:()=>go('/search?tab=SERVICE')}}/>
+    <SectionHeader title="Browse services" style={{marginTop:20}} action={{label:'All services',accessibilityLabel:'Explore all services',onPress:()=>go('/search?tab=SERVICE')}}/>
     <ServiceCategoryGrid onSelect={query=>go('/search?q='+encodeURIComponent(query)+'&tab=SERVICE')}/>
     {loadError?<ErrorBanner message={loadError} retryLabel="Retry location" onRetry={()=>void refreshLocality(true)}/>:null}
 
@@ -243,7 +243,7 @@ const styles=(c:ThemeColors,desktop:boolean)=>StyleSheet.create({
  quickLiveGlow:{flex:1},
  quickIntentLive:{flex:1,height:'100%',backgroundColor:c.surface,borderWidth:StyleSheet.hairlineWidth,borderColor:c.border},
  quickIntentPrimaryTitle:{fontSize:15,lineHeight:20,fontWeight:'600',color:c.onBrand},
- quickIntentPrimaryCopy:{fontSize:13,lineHeight:17,color:c.onBrand,opacity:.78,marginTop:1},
+ quickIntentPrimaryCopy:{fontSize:13,lineHeight:17,color:c.onBrand,marginTop:1},
  quickIntentTitle:{fontSize:15,lineHeight:20,fontWeight:'600',color:c.text},
  liveRow:{flexDirection:'row',alignItems:'center',gap:6,marginTop:1},liveDot:{width:6,height:6,borderRadius:3,backgroundColor:c.secondary},
  liveIntentCopy:{fontSize:13,lineHeight:17,color:c.textSecondary},

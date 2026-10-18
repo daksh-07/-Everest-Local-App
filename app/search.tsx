@@ -1,3 +1,4 @@
+import {isAccessFailure} from '@/lib/section-state';
 import {userMessage} from '@/lib/errors';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Alert, Image, Modal, PanResponder, Pressable, ScrollView, View } from 'react-native';
@@ -176,7 +177,7 @@ export default function Search(){
       if(tab==='JOB')void loadJobs(text,current);
       else void universalSearch(text,tab as UniversalKind,30,0,controller.signal)
         .then(x=>{if(version.current===current){setItems(x);setLoadedKey(requestKey)}})
-        .catch(e=>{if(version.current!==current)return;const denied=e?.code==='42501'||e?.code==='PGRST301'||e?.code==='PGRST302';const needsAccount=!signedIn&&denied;if(denied){setItems([]);setJobs([]);setLoadedKey('')}setRequiresSignIn(needsAccount);setError(needsAccount?'Sign in to search Everest':'Search could not be loaded. Check your connection and try again.')})
+        .catch(e=>{if(version.current!==current)return;const denied=isAccessFailure(e);const needsAccount=!signedIn&&denied;if(denied){setItems([]);setJobs([]);setLoadedKey('')}setRequiresSignIn(needsAccount);setError(needsAccount?'Sign in to search Everest':'Search could not be loaded. Check your connection and try again.')})
         .finally(()=>{if(version.current===current)setLoading(false)});
     },350);
     return()=>{clearTimeout(timer);version.current=current+1;controller.abort()};
@@ -234,7 +235,10 @@ export default function Search(){
         if(version.current===current){setJobs((data??[]) as JobResult[]);setLoadedKey(requestKey)}
       }
     }catch(e){
-      if(version.current===current)setError(userMessage(e,'Jobs could not be loaded.'));
+      if(version.current===current){
+        if(isAccessFailure(e)){setJobs([]);setLoadedKey('')}
+        setError(userMessage(e,'Jobs could not be loaded.'));
+      }
     }finally{
       if(version.current===current)setLoading(false);
     }
@@ -366,7 +370,6 @@ export default function Search(){
             placeholderTextColor={c.muted}
             style={[
               {flex:1,minWidth:0,fontSize:16,color:c.text,minHeight:48},
-              {outlineStyle:'none'} as never,
             ]}
             returnKeyType="search"
           />
@@ -377,7 +380,7 @@ export default function Search(){
           ):null}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7,paddingVertical:14}}>
+        <ScrollView accessibilityRole="tablist" accessibilityLabel="Search categories" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7,paddingVertical:14}}>
           {tabs.map(x=>(
             <Pressable
               key={x}

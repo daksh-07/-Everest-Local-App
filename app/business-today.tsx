@@ -9,7 +9,7 @@ import {BusinessTabBar} from '@/components/BusinessTabBar';
 import {Skeleton} from '@/components/ui';
 import {ModeSwitcher} from '@/components/ModeSwitcher';
 import {AskEverestButton} from '@/components/AskEverestButton';
-import {listCrmBookings,listCrmOpportunities,listCrmQuotes,listCrmTasks,type CrmOpportunity,type CrmTask} from '@/lib/crm';
+import {listCrmBookings,listCrmQuotes,listCrmTasks,type CrmOpportunity,type CrmTask} from '@/lib/crm';
 import {getWorkspaceContext} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
@@ -34,7 +34,8 @@ export default function BusinessToday(){
  const key=workspace.data?.mode==='BUSINESS'&&verified?business!.id:null;
  useEffect(()=>{if(workspace.data&&(workspace.data.mode!=='BUSINESS'||!business))router.replace('/')},[workspace.data,business]);
  const today=dayStart(),tomorrow=new Date(today.getTime()+86400000),todayIso=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-'),weekAgo=new Date(Date.now()-7*86400000).toISOString();
- const dealsSection=useSection(key,()=>listCrmOpportunities(key!));
+ const dealsSection=useSection(key,()=>readResult(supabase.from('crm_opportunities').select('id,title,status,stage_id,estimated_value,last_activity_at').eq('business_id',key!).order('updated_at',{ascending:false})));
+ const stageSection=useSection(key,()=>readResult(supabase.from('crm_pipeline_stages').select('id,stage_key').eq('business_id',key!)));
  const taskSection=useSection(key,()=>listCrmTasks(key!));
  const crmQuoteSection=useSection(key,()=>listCrmQuotes(key!));
  const crmJobSection=useSection(key?key+todayIso:null,()=>listCrmBookings(key!));
@@ -42,7 +43,7 @@ export default function BusinessToday(){
  const nativeJobSection=useSection(key?key+todayIso:null,()=>readResult(supabase.from('bookings').select('id,status,price,scheduled_date,scheduled_time,request_id').eq('business_id',key!).eq('scheduled_date',todayIso).in('status',['CONFIRMED','UPCOMING','IN_PROGRESS']).order('scheduled_time')));
  const orderSection=useSection(key,async()=>{
   const result=await supabase.from('orders').select('id,order_number,status',{count:'exact'}).eq('business_id',key!).in('status',['PAYMENT_CONFIRMED','ACCEPTED','PREPARING','READY_FOR_PICKUP']).order('created_at').limit(1);
-  if(result.error)throw result.error;return result.count;
+  if(result.error)throw result.error;if(result.count===null)throw new Error('Count unavailable');return result.count;
  });
  const messageSection=useSection(key,async()=>{
   const {data:{user},error}=await supabase.auth.getUser();if(error)throw error;if(!user)throw new Error('Authentication required');
@@ -52,21 +53,21 @@ export default function BusinessToday(){
  const payoutSection=useSection(key,()=>readResult(supabase.from('marketplace_payout_ledger').select('provider_net,created_at').eq('business_id',key!).gte('created_at',weekAgo)));
  const completedSection=useSection(key,async()=>{
   const result=await supabase.from('bookings').select('id',{count:'exact',head:true}).eq('business_id',key!).eq('status','COMPLETED').gte('completed_at',weekAgo);
-  if(result.error)throw result.error;return result.count;
+  if(result.error)throw result.error;if(result.count===null)throw new Error('Count unavailable');return result.count;
  });
  const payoutSetup=useSection(business?.id??null,()=>readResult(supabase.from('businesses').select('stripe_connect_status,stripe_details_submitted,stripe_charges_enabled,stripe_payouts_enabled,stripe_connected_account_id').eq('id',business!.id).single()));
  const ps=payoutSetup.data;
  const payoutReady=ps?Boolean(ps.stripe_connected_account_id&&ps.stripe_connect_status==='ACTIVE'&&ps.stripe_details_submitted&&ps.stripe_charges_enabled&&ps.stripe_payouts_enabled):null;
- const sections=[dealsSection,taskSection,crmQuoteSection,crmJobSection,nativeQuoteSection,nativeJobSection,orderSection,messageSection,payoutSection,completedSection];
+ const sections=[dealsSection,stageSection,taskSection,crmQuoteSection,crmJobSection,nativeQuoteSection,nativeJobSection,orderSection,messageSection,payoutSection,completedSection];
  const incomplete=sections.some(section=>section.loading||section.error);
  async function load(){if(refreshing)return;setRefreshing(true);try{await workspace.retry();await Promise.all([...sections,payoutSetup].map(section=>section.retry()))}finally{setRefreshing(false)}}
  const deals=dealsSection.data??[],tasks=taskSection.data??[],crmQuotes=crmQuoteSection.data??[],crmBookings=crmJobSection.data??[];
  const nativeJobs={data:nativeJobSection.data},payouts={data:payoutSection.data};
-  const open=deals.filter(d=>d.status==='OPEN'),newLeads=open.filter(d=>d.stage?.stage_key==='NEW_LEAD'),overdue=tasks.filter(t=>t.status==='OPEN'&&new Date(t.due_at)<new Date()),waiting=crmQuotes.filter(q=>['SENT','VIEWED'].includes(q.status)),todayCrm=crmBookings.filter(b=>!['CANCELLED','NO_SHOW'].includes(b.status)&&new Date(b.scheduled_start)>=today&&new Date(b.scheduled_start)<tomorrow),stale=open.filter(d=>Date.now()-new Date(d.last_activity_at).getTime()>=3*86400000);
+  const open=deals.filter(d=>d.status==='OPEN'),newLeads=open.filter(d=>(stageSection.data??[]).some(stage=>stage.id===d.stage_id&&stage.stage_key==='NEW_LEAD')),overdue=tasks.filter(t=>t.status==='OPEN'&&new Date(t.due_at)<new Date()),waiting=crmQuotes.filter(q=>['SENT','VIEWED'].includes(q.status)),todayCrm=crmBookings.filter(b=>!['CANCELLED','NO_SHOW'].includes(b.status)&&new Date(b.scheduled_start)>=today&&new Date(b.scheduled_start)<tomorrow),stale=open.filter(d=>Date.now()-new Date(d.last_activity_at).getTime()>=3*86400000);
   const unreadRows=messageSection.data??[];
   const revenue=(payouts.data??[]).length?(payouts.data??[]).reduce((sum,row)=>sum+Number(row.provider_net||0),0):null;
   const activeJobs=todayCrm.filter(b=>b.status==='IN_PROGRESS').length+(nativeJobs.data??[]).filter(j=>j.status==='IN_PROGRESS').length;
-  const snap:Snapshot={newLeads:dealsSection.data?newLeads.length:null,openDeals:dealsSection.data?open.length:null,pipelineValue:dealsSection.data?open.reduce((sum,d)=>sum+Number(d.estimated_value||0),0):null,overdue:taskSection.data?overdue.length:null,quotesWaiting:crmQuoteSection.data&&nativeQuoteSection.data?waiting.length+nativeQuoteSection.data.length:null,jobsToday:crmJobSection.data&&nativeJobSection.data?todayCrm.length+nativeJobSection.data.length:null,activeJobs:crmJobSection.data&&nativeJobSection.data?activeJobs:null,unread:messageSection.data?unreadRows.length:null,stale:dealsSection.data?stale.length:null,orders:orderSection.data,revenue,completed:completedSection.data};
+  const snap:Snapshot={newLeads:dealsSection.data&&stageSection.data?newLeads.length:null,openDeals:dealsSection.data?open.length:null,pipelineValue:dealsSection.data?open.reduce((sum,d)=>sum+Number(d.estimated_value||0),0):null,overdue:taskSection.data?overdue.length:null,quotesWaiting:crmQuoteSection.data&&nativeQuoteSection.data?waiting.length+nativeQuoteSection.data.length:null,jobsToday:crmJobSection.data&&nativeJobSection.data?todayCrm.length+nativeJobSection.data.length:null,activeJobs:crmJobSection.data&&nativeJobSection.data?activeJobs:null,unread:messageSection.data?unreadRows.length:null,stale:dealsSection.data?stale.length:null,orders:orderSection.data,revenue,completed:completedSection.data};
   const priorities:Priority[]=[];
   const nativeJob=nativeJobs.data?.[0];const crmJob=todayCrm[0];
   if(nativeJob)priorities.push({kind:'JOB',title:'Everest job today',subtitle:(formatTime(nativeJob.scheduled_time)||'Time to be confirmed')+' · '+formatStatus(nativeJob.status),action:'Open job',run:()=>router.push({pathname:'/business-job',params:{id:nativeJob.id}})});
@@ -75,10 +76,10 @@ export default function BusinessToday(){
   const firstOverdue=[...overdue].sort((a,b)=>a.due_at.localeCompare(b.due_at))[0];if(firstOverdue)priorities.push(taskPriority(firstOverdue));
   const firstLead=newLeads[0];if(firstLead)priorities.push(dealPriority('NEW_LEAD',firstLead,'New lead needs a first response'));
   const viewed=crmQuotes.find(q=>q.status==='VIEWED');if(viewed)priorities.push({kind:'QUOTE',title:'Quote #'+viewed.quote_number+' was viewed',subtitle:'Waiting for a customer decision',action:'View quote',run:()=>router.push({pathname:'/business-crm-quote',params:{id:viewed.id}})});
-  const staleDeal=stale.find(d=>!d.next_task);if(staleDeal)priorities.push(dealPriority('STALE',staleDeal,'No activity for 3+ days and no next task'));
+  const staleDeal=taskSection.data&&!taskSection.error?stale.find(d=>!tasks.some(task=>task.opportunity_id===d.id&&task.status==='OPEN')):undefined;if(staleDeal)priorities.push(dealPriority('STALE',staleDeal,'No activity for 3+ days and no next task'));
   const priority=priorities.slice(0,6);
  function taskPriority(task:CrmTask):Priority{return{kind:'OVERDUE',title:task.task,subtitle:'Overdue since '+formatDay(task.due_at)+(formatTime(new Date(task.due_at).toTimeString())?' · '+formatTime(new Date(task.due_at).toTimeString()):''),action:'Open tasks',run:()=>router.push({pathname:'/business-crm',params:{view:'TASKS'}})}}
- function dealPriority(kind:'NEW_LEAD'|'STALE',deal:CrmOpportunity,subtitle:string):Priority{return{kind,title:deal.title,subtitle,action:'Open deal',run:()=>router.push({pathname:'/business-deal',params:{id:deal.id}})}}
+ function dealPriority(kind:'NEW_LEAD'|'STALE',deal:Pick<CrmOpportunity,'id'|'title'>,subtitle:string):Priority{return{kind,title:deal.title,subtitle,action:'Open deal',run:()=>router.push({pathname:'/business-deal',params:{id:deal.id}})}}
  const glance:[string,number|null,()=>void][]=[['Jobs today',snap.jobsToday,()=>router.push('/business-jobs')],['In progress',snap.activeJobs,()=>router.push('/business-jobs')],['Unread',snap.unread,()=>router.push('/business-inbox')],['Orders',snap.orders,()=>router.push('/business-orders')]];
  const todayLabel=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
  const t=experience.tokens;
@@ -93,7 +94,7 @@ export default function BusinessToday(){
     <View style={st.glance}>{glance.map(([label,n,run],index)=><Pressable key={label} onPress={run} accessibilityRole="button" accessibilityLabel={`${label}: ${n===null?'unavailable':n}`} style={({pressed})=>[st.glanceItem,index>0&&st.glanceDivider,pressed&&st.pressed]}><Text tabular style={[st.glanceValue,n!==null&&n>0&&{color:colors.text}]}>{n??'—'}</Text><Text numberOfLines={2} style={st.glanceLabel}>{label}</Text></Pressable>)}</View>
     <SectionStatus label="Jobs" section={nativeJobSection}/><SectionStatus label="CRM bookings" section={crmJobSection}/><SectionStatus label="Messages" section={messageSection}/><SectionStatus label="Orders" section={orderSection}/>
     <View style={st.section}><View style={st.sectionHead}><Text accessibilityRole="header" style={st.sectionLabel}>Needs attention</Text>{priority.length?<Text tabular style={st.sectionCount}>{priority.length}</Text>:null}</View>{priority.length?<View style={st.list}>{priority.map((item,index)=><Pressable key={item.kind+index} onPress={item.run} accessibilityRole="button" accessibilityLabel={`${item.title}. ${item.subtitle}. ${item.action}`} style={({pressed})=>[st.priority,index>0&&st.rowDivider,pressed&&st.pressed]}><View style={[st.priorityIcon,(item.kind==='OVERDUE'||item.kind==='STALE')&&{backgroundColor:colors.soft}]}><Ionicons name={icon(item.kind)} size={18} color={item.kind==='OVERDUE'||item.kind==='STALE'?colors.danger:colors.accent}/></View><View style={{flex:1,minWidth:0}}><Text numberOfLines={2} style={st.priorityTitle}>{item.title}</Text><Text numberOfLines={2} style={st.prioritySub}>{item.subtitle}</Text></View><Text style={st.priorityAction}>{item.action}</Text></Pressable>)}</View>:incomplete?<View style={st.card}><Text style={st.setupCopy}>Some activity is still unavailable or loading. Review the sections below before assuming you’re caught up.</Text></View>:<View style={st.clear}><Ionicons name="checkmark-circle-outline" size={20} color={colors.success}/><View style={{flex:1}}><Text style={st.clearTitle}>You’re all caught up</Text><Text style={st.setupCopy}>Today’s jobs, customer messages and time-sensitive follow-ups will appear here.</Text></View></View>}</View>
-    <SectionStatus label="Sales" section={dealsSection}/><SectionStatus label="Tasks" section={taskSection}/><SectionStatus label="CRM quotes" section={crmQuoteSection}/><SectionStatus label="Quotes" section={nativeQuoteSection}/>
+    <SectionStatus label="Sales" section={dealsSection}/><SectionStatus label="Sales stages" section={stageSection}/><SectionStatus label="Tasks" section={taskSection}/><SectionStatus label="CRM quotes" section={crmQuoteSection}/><SectionStatus label="Quotes" section={nativeQuoteSection}/>
     <View style={st.section}><View style={st.sectionHead}><Text accessibilityRole="header" style={st.sectionLabel}>Sales & CRM</Text><Pressable accessibilityRole="link" onPress={()=>router.push('/business-crm')} style={st.link}><Text style={st.linkText}>Open CRM</Text></Pressable></View><View style={st.card}><Text tabular style={st.metric}>{snap.pipelineValue===null?'—':money(snap.pipelineValue)}</Text><Text style={st.metricLabel}>{snap.openDeals??'—'} open {snap.openDeals===1?'opportunity':'opportunities'}</Text><View style={st.salesMetrics}><Text style={st.salesMetric}>{snap.newLeads??'—'} new {snap.newLeads===1?'lead':'leads'}</Text><Text style={st.salesMetric}>{snap.quotesWaiting??'—'} {snap.quotesWaiting===1?'quote':'quotes'} waiting</Text><Text style={[st.salesMetric,(snap.overdue??0)>0&&{color:colors.danger}]}>{snap.overdue??'—'} overdue</Text></View></View></View>
     <SectionStatus label="Weekly activity" section={completedSection}/><SectionStatus label="Weekly business share" section={payoutSection}/>
     {(snap.revenue!==null||(snap.completed??0)>0)?<View style={st.section}><Text accessibilityRole="header" style={st.sectionLabel}>This week</Text><View style={[st.card,st.performance]}>{snap.revenue!==null?<View><Text tabular style={st.metric}>{money(snap.revenue)}</Text><Text style={st.metricLabel}>Business share before Stripe fees</Text></View>:null}<View><Text tabular style={st.metric}>{snap.completed??'—'}</Text><Text style={st.metricLabel}>Completed Everest jobs</Text></View></View></View>:null}
