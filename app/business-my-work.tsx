@@ -67,7 +67,7 @@ export default function BusinessMyWork(){
   <View style={st.header}><View style={{flex:1,minWidth:0}}><Text style={st.eyebrow}>My work</Text><Text numberOfLines={1} style={st.business}>{business?.name??'Business'}</Text></View><ModeSwitcher compact/><AskEverestButton/></View>
   <Text style={st.title}>Your shift, without the noise.</Text><Text style={st.copy}>Only work assigned to you or your crew appears here. Company finance, payouts and admin stay with authorised roles.</Text>
   {error?<ErrorBanner message={error} onRetry={()=>void load(true)} retryLabel="Retry work queue"/>:null}
-  {loading?<ActivityIndicator color={colors.accent} style={{marginTop:55}}/>:error&&!jobs.length?null:<>
+  {(loading||(refreshing&&!jobs.length))?<ActivityIndicator color={colors.accent} style={{marginTop:55}}/>:error&&!jobs.length?null:<>
    <View style={st.summary}>
     <View><Text style={st.summaryN}>{active.length}</Text><Text style={st.summaryL}>Active jobs</Text></View>
     <View style={st.divider}/><View><Text style={st.summaryN}>{active.filter(x=>x.status==='IN_PROGRESS').length}</Text><Text style={st.summaryL}>In progress</Text></View>

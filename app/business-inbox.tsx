@@ -38,12 +38,12 @@ export default function BusinessInbox(){
   return()=>{app.remove();void supabase.removeChannel(channel);};
  },[business?.id,business?.can_view_inbox,load]);
  const sorted=items.map(item=>({...item,messages:[...(item.messages??[])].sort((a,b)=>b.created_at.localeCompare(a.created_at))})).sort((a,b)=>(b.messages[0]?.created_at??b.created_at).localeCompare(a.messages[0]?.created_at??a.created_at));
- const verified=business?.can_view_inbox&&business?.verification_status==='VERIFIED';
+ const verified=business?.verification_status==='VERIFIED';
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}><ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>} contentContainerStyle={st.page}>
   <View style={st.header}><View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={st.name}>{business?.name??'Business'}</Text><Text style={st.mode}>Business mode</Text></View><ModeSwitcher compact/></View>
   <Text accessibilityRole="header" variant="title" style={st.title}>Inbox</Text><Text style={st.copy}>Enquiries, quotes and booking conversations. Personal chats stay in Customer mode.</Text>
   {!verified&&business?<View style={st.restricted}><Text style={st.restrictedTitle}>Inbox is locked until you’re verified</Text><Text style={st.copy}>Complete verification before operating customer conversations.</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/business-verification')} style={st.restrictedAction}><Text style={st.restrictedActionText}>Continue verification</Text></Pressable></View>:null}
-  {verified?(loading?<ActivityIndicator color={colors.accent} style={{marginTop:40}}/>:sorted.length?<View style={st.list}>{sorted.map((conversation,index)=>{
+  {verified?((loading||(refreshing&&!items.length))?<ActivityIndicator color={colors.accent} style={{marginTop:40}}/>:sorted.length?<View style={st.list}>{sorted.map((conversation,index)=>{
    const last=conversation.messages[0];
    const unread=(conversation.messages??[]).filter(message=>message.sender_id!==userId&&!message.read_at).length;
    const context=conversation.booking_id?'Booking':conversation.quote_id?'Quote':conversation.request_id?'Enquiry':'Customer';

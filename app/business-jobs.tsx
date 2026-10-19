@@ -27,20 +27,20 @@ export default function BusinessJobs(){
  const [business,setBusiness]=useState<BusinessWorkspace|null>(null);
  const [items,setItems]=useState<Job[]>([]);
  const [counts,setCounts]=useState<Counts>({TODAY:null,UPCOMING:null,ACTIVE:null,COMPLETED:null});
- const [tab,setTab]=useState<Tab>('TODAY');
+ const [tab,setTab]=useState<Tab>('TODAY');const [loadedTab,setLoadedTab]=useState<Tab|null>(null);
  const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);
  const [busy,setBusy]=useState<string|null>(null);const [error,setError]=useState('');
 
- const load=useCallback(async(refresh=false)=>{
+ const load=useCallback(async(refresh=false,countsOnly=false)=>{
   const version=++generation.current;const currentRead=()=>version===generation.current;
-  if(refresh)setRefreshing(true);else setLoading(true);setError('');setCountError(false);
+  if(refresh)setRefreshing(true);else setLoading(true);if(!countsOnly)setError('');setCountError(false);
   try{
    const ctx=await getWorkspaceContext();
    if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return}
    const current=ctx.businesses.find(item=>item.id===ctx.active_business_id);
    if(!current){router.replace('/');return}
    if(!currentRead())return;
-   if(scope.current!==current.id){setItems([]);setCounts({TODAY:null,UPCOMING:null,ACTIVE:null,COMPLETED:null});scope.current=current.id;}
+   if(scope.current!==current.id){countsOnly=false;setLoading(true);setItems([]);setCounts({TODAY:null,UPCOMING:null,ACTIVE:null,COMPLETED:null});scope.current=current.id;}
    setBusiness(current);
 
    if(!current.can_view_all_jobs){
@@ -59,6 +59,7 @@ export default function BusinessJobs(){
     const result=await query;if(result.error)throw result.error;return result.count;
    },count=>setCounts(previous=>({...previous,[value]:count})),()=>setCounts(previous=>({...previous,[value]:null})),status=>{if(status==='error')setCountError(true)},currentRead)));
 
+   if(countsOnly){await countsRead;return;}
    let query=supabase.from('bookings')
     .select('id,request_id,business_id,price,scheduled_date,scheduled_time,status,created_at')
     .eq('business_id',current.id)
@@ -72,9 +73,9 @@ export default function BusinessJobs(){
    const {data,error:queryError}=await query;
    if(!currentRead())return;
    if(queryError)throw queryError;
-   setItems((data??[]) as Job[]);setLoading(false);
+   setItems((data??[]) as Job[]);setLoadedTab(tab);setLoading(false);
    await countsRead;
-  }catch{if(currentRead()){setItems([]);setError('Jobs couldn’t load. Check your connection and try again.')}}
+  }catch{if(currentRead()){setItems([]);setLoadedTab(tab);setError('Jobs couldn’t load. Check your connection and try again.')}}
   finally{if(currentRead()){setLoading(false);setRefreshing(false)}}
  },[tab]);
 
@@ -104,8 +105,8 @@ export default function BusinessJobs(){
     {(['TODAY','UPCOMING','ACTIVE','COMPLETED'] as const).map(value=><Pressable key={value} accessibilityRole="tab" accessibilityState={{selected:tab===value}} accessibilityLabel={`${TAB_LABEL[value]}, ${counts[value]??'count unavailable'}`} onPress={()=>setTab(value)} style={[st.tab,tab===value&&st.tabOn]}><Text style={[st.tabText,tab===value&&st.tabTextOn]}>{TAB_LABEL[value]}</Text><Text tabular style={[st.tabCount,tab===value&&st.tabCountOn]}>{counts[value]??'—'}</Text></Pressable>)}
    </ScrollView>
 
-   {countError?<View style={st.errorBox}><Text style={st.error}>Job counts unavailable. Loaded jobs are still shown.</Text><Pressable accessibilityRole="button" onPress={()=>void load(true)} style={st.retry}><Text style={st.retryText}>Retry counts</Text></Pressable></View>:null}
-   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:45}}/>:items.length?<View style={st.list}>{items.map(job=>{
+   {countError?<View style={st.errorBox}><Text style={st.error}>Job counts unavailable. Loaded jobs are still shown.</Text><Pressable accessibilityRole="button" onPress={()=>void load(true,true)} style={st.retry}><Text style={st.retryText}>Retry counts</Text></Pressable></View>:null}
+   {(loading||loadedTab!==tab||(refreshing&&!items.length))?<ActivityIndicator color={colors.accent} style={{marginTop:45}}/>:items.length?<View style={st.list}>{items.map(job=>{
     const date=job.scheduled_date?new Date(job.scheduled_date+'T12:00:00'):null;
     const when=formatSchedule(job.scheduled_date,job.scheduled_time)||'Time to confirm';
     return <Pressable accessibilityRole="button" accessibilityLabel={`${when}, ${formatStatus(job.status)}${job.price!=null?', '+formatMoney(job.price):''}. Open job`} onPress={()=>router.push({pathname:'/business-job',params:{id:job.id}})} style={({pressed})=>[st.card,pressed&&{opacity:.72}]} key={job.id}>

@@ -62,7 +62,7 @@ export default function BusinessCalendar(){
  },[]);
  useEffect(()=>{const guard=generation;void load();return()=>{guard.current++;};},[load]);
  const incomplete=Object.entries(sources).some(([name,status])=>name!=='Availability'&&status!=='ready');
- const canEdit=business?.can_manage_crm===true;const canViewSchedule=business?.can_view_crm||business?.can_view_all_jobs;
+ const canEdit=business?.can_manage_crm===true&&business.can_view_crm===true;const canViewSchedule=business?.can_view_crm||business?.can_view_all_jobs;
 
  const events=useMemo<Event[]>(()=>[
   ...crmBookings.map(b=>({id:b.id,kind:'CRM_BOOKING' as const,title:b.service_label,start:new Date(b.scheduled_start),end:new Date(b.scheduled_end),meta:crmLabel(b.status)+(b.location_label?' · '+b.location_label:''),route:()=>router.push({pathname:'/business-crm-booking',params:{id:b.id}})})),
