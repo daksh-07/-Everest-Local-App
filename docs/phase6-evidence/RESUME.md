@@ -1,5 +1,7 @@
 # Resumption and release gate
 
+> Historical Phase 6 checkpoint at `152188f`. See [Phase 7 evidence](../phase7-evidence/README.md) for the acceptance lock-order correction, updated migration inventory and current release gates.
+
 Branch: `codex/phase6-backend-hardening`, based on deployed/main `95b8d48`. Review PR #110. Production remains unchanged. Read checkpoint A/B/C/D notes and ROLLOUT.md before continuing.
 
 Completed source: three Live matching fixes, #107 reconciliation (only vercel.json conflicted), actual-RLS comment moderation correction, and Live MATCHING-to-QUOTING boundary correction. Live action-failure feedback now survives healthy background reads; deterministic held-response browser coverage reproduces the previous loss. No payment functions changed. SQL evidence is in sql/; independent provider acceptance passes while customer quote contention records a 40P01 deadlock without duplicate bookings.

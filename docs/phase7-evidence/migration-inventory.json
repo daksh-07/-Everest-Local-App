@@ -1,0 +1,1958 @@
+{
+  "scope": "Version/name and trimmed source fingerprints only; unverified content is not certified equivalent. No database writes.",
+  "localCount": 240,
+  "remoteCount": 239,
+  "counts": {
+    "APPLIED_HISTORY_CONTENT_UNVERIFIED": 209,
+    "APPLIED_HISTORY_BYTE_MATCH": 26,
+    "PENDING_RELEASE_GATE": 5
+  },
+  "local": [
+    {
+      "file": "supabase/migrations/001_marketplace.sql",
+      "version": "001",
+      "name": "marketplace",
+      "sha256": "05304da0f52f62074140882a860f60895f28a3505142114452864f7bb0b78bbb",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "marketplace"
+    },
+    {
+      "file": "supabase/migrations/002_secure_marketplace_rpc.sql",
+      "version": "002",
+      "name": "secure_marketplace_rpc",
+      "sha256": "d56ad2f0206c541d02c3f9fa668b76c8f3b7c0d3e96cef41f8160e8956e20e91",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "secure_marketplace_rpc"
+    },
+    {
+      "file": "supabase/migrations/003_checkout_transaction.sql",
+      "version": "003",
+      "name": "checkout_transaction",
+      "sha256": "b0ffece5e71817e08585c65da5b44665378c4e3f38485eb4b3319b9830c4d3b5",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "checkout_transaction"
+    },
+    {
+      "file": "supabase/migrations/004_checkout_failure.sql",
+      "version": "004",
+      "name": "checkout_failure",
+      "sha256": "014ce7b0e5ae68e415bdae9a52aa1b5885fc05d01e7aea6a5b51a2c5243abe37",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "checkout_failure"
+    },
+    {
+      "file": "supabase/migrations/005_inventory_and_notifications.sql",
+      "version": "005",
+      "name": "inventory_and_notifications",
+      "sha256": "4fa094b7b57fc63bb2746c5b348d90f623b2aca03b43d47c8cc60a0e920a439f",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "inventory_and_notifications"
+    },
+    {
+      "file": "supabase/migrations/006_business_verification.sql",
+      "version": "006",
+      "name": "business_verification",
+      "sha256": "eb986596ccd3cebcd7ddbfee74ce69539baafd5f61bbb6bce1fca0691c6a68bb",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_verification"
+    },
+    {
+      "file": "supabase/migrations/007_secure_reviews.sql",
+      "version": "007",
+      "name": "secure_reviews",
+      "sha256": "38782bd5a8bdb9ede99655eee4e763728a8562ce1290c1e06e7935470094b2a1",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "secure_reviews"
+    },
+    {
+      "file": "supabase/migrations/008_delivery_workflow.sql",
+      "version": "008",
+      "name": "delivery_workflow",
+      "sha256": "ffdfb38065f8927cb501fe90042442f75bc1fb5871c6845f52b1fb62c736c16c",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "delivery_workflow"
+    },
+    {
+      "file": "supabase/migrations/009_security_hardening.sql",
+      "version": "009",
+      "name": "security_hardening",
+      "sha256": "dffe04775f768d6aed75049ca8fc611cf50622a91523361c61dcb9ff59445bad",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "security_hardening"
+    },
+    {
+      "file": "supabase/migrations/010_payment_and_delivery_hardening.sql",
+      "version": "010",
+      "name": "payment_and_delivery_hardening",
+      "sha256": "f435522caab55b27f8be893ec5abddb624b020e935d2b7180a16c591f1ec63b6",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "payment_and_delivery_hardening"
+    },
+    {
+      "file": "supabase/migrations/011_business_catalog.sql",
+      "version": "011",
+      "name": "business_catalog",
+      "sha256": "45d8633c35d759437acc2bcfda7ee285a447fb4cd29d298b638342d796f2e523",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_catalog"
+    },
+    {
+      "file": "supabase/migrations/012_service_management.sql",
+      "version": "012",
+      "name": "service_management",
+      "sha256": "52ea7ee2a813961c1bb15246b6ce9ef0cd643f22cbe3bef7df5e15a4d836ad9f",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "service_management"
+    },
+    {
+      "file": "supabase/migrations/013_integrity_constraints.sql",
+      "version": "013",
+      "name": "integrity_constraints",
+      "sha256": "99b03126449078c6822b012ee0e2aab06b4676e08fa8f601935f2ce0dad8c925",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "integrity_constraints"
+    },
+    {
+      "file": "supabase/migrations/014_marketplace_notifications.sql",
+      "version": "014",
+      "name": "marketplace_notifications",
+      "sha256": "9ce2ccd0b399960fc0e78616e539dbf58262d6f4e04fb8d8f2d6ec8948658b56",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "marketplace_notifications"
+    },
+    {
+      "file": "supabase/migrations/015_production_integrity_hardening.sql",
+      "version": "015",
+      "name": "production_integrity_hardening",
+      "sha256": "13629dba4211d3973e23674241a6a20c54a6f790a5691bed8ca9dc7d7383e580",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "production_integrity_hardening"
+    },
+    {
+      "file": "supabase/migrations/016_stripe_atomic_processing.sql",
+      "version": "016",
+      "name": "stripe_atomic_processing",
+      "sha256": "c23598e64eb9a0b6d54a27f4620a25ebaea9d84a74d485a25b28ee02c6d9def0",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "stripe_atomic_processing"
+    },
+    {
+      "file": "supabase/migrations/017_checkout_idempotency.sql",
+      "version": "017",
+      "name": "checkout_idempotency",
+      "sha256": "fd19d62705a21d98a62337428183c1421763a7d0c7df623ea81225b1f4d02e0e",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "checkout_idempotency"
+    },
+    {
+      "file": "supabase/migrations/018_security_integrity_followup.sql",
+      "version": "018",
+      "name": "security_integrity_followup",
+      "sha256": "52ebef46a475264b19486b730dc05f79dbcb30c14662b51cdc924c7557534f59",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "security_integrity_followup"
+    },
+    {
+      "file": "supabase/migrations/019_messaging_workflow.sql",
+      "version": "019",
+      "name": "messaging_workflow",
+      "sha256": "75bdf6f3093ab1fdd6fbdccc72f92f25cbf48c8c8deec3a10ce8edf23246a875",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "messaging_workflow"
+    },
+    {
+      "file": "supabase/migrations/020_checkout_concurrency.sql",
+      "version": "020",
+      "name": "checkout_concurrency",
+      "sha256": "489691a5cfeafcc7b8973b61ef3a1d62f6cd696cafec0acf5bae64b61709331c",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "checkout_concurrency"
+    },
+    {
+      "file": "supabase/migrations/021_product_management.sql",
+      "version": "021",
+      "name": "product_management",
+      "sha256": "7c6f78e560e0f9224d99575adb6f4b28b4f912e2542a3e9d8553d21e69006bc8",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "product_management"
+    },
+    {
+      "file": "supabase/migrations/022_service_payment_checkout.sql",
+      "version": "022",
+      "name": "service_payment_checkout",
+      "sha256": "5e9f452aa09a811f317f346f5c7bc8bf3a30b8b70c9756426e33cc39dfe49e5d",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "service_payment_checkout"
+    },
+    {
+      "file": "supabase/migrations/023_messaging_security_hardening.sql",
+      "version": "023",
+      "name": "messaging_security_hardening",
+      "sha256": "dd5046c04e03034d85dce5f2eee43223f5adb970fc2485de546febf28d7d069b",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "messaging_security_hardening"
+    },
+    {
+      "file": "supabase/migrations/024_checkout_cart_cleanup_scope.sql",
+      "version": "024",
+      "name": "checkout_cart_cleanup_scope",
+      "sha256": "ef046562a8db8fdd4eb89ff7d88cdab15173550821776b2e640d9562a01aafb8",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "checkout_cart_cleanup_scope"
+    },
+    {
+      "file": "supabase/migrations/025_checkout_item_snapshot.sql",
+      "version": "025",
+      "name": "checkout_item_snapshot",
+      "sha256": "3928b162830d23d2b69ffe0e2fc60ee28f2708c2556717c476a00117baab8b10",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "checkout_item_snapshot"
+    },
+    {
+      "file": "supabase/migrations/026_delivery_operations.sql",
+      "version": "026",
+      "name": "delivery_operations",
+      "sha256": "93285ef3f43e460a1d4bdfae6839499403c422505ab157c9186c3bb43f3b521a",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "delivery_operations"
+    },
+    {
+      "file": "supabase/migrations/027_product_delivery_checkout.sql",
+      "version": "027",
+      "name": "product_delivery_checkout",
+      "sha256": "634598d7dbce1c37d855799d46e357b572423eaf508282a5311ff78549c72386",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "product_delivery_checkout"
+    },
+    {
+      "file": "supabase/migrations/028_service_payment_idempotency_scope.sql",
+      "version": "028",
+      "name": "service_payment_idempotency_scope",
+      "sha256": "0fa5fd679705c226a731665478ef436a9f9f63a997b3a612b2ddbf212b9e8d49",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "service_payment_idempotency_scope"
+    },
+    {
+      "file": "supabase/migrations/029_delivery_payment_integrity.sql",
+      "version": "029",
+      "name": "delivery_payment_integrity",
+      "sha256": "c80a5c6baef267f3688b647a9739915f58bec7b3728626106e5b97f1eb8d2c1b",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "delivery_payment_integrity"
+    },
+    {
+      "file": "supabase/migrations/030_delivery_notifications.sql",
+      "version": "030",
+      "name": "delivery_notifications",
+      "sha256": "93f8b2038d9cc60d325e5dd722f12610f3d50c2b09b0a7b7cb3a41a49a8d4591",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "delivery_notifications"
+    },
+    {
+      "file": "supabase/migrations/031_cart_creation_concurrency.sql",
+      "version": "031",
+      "name": "cart_creation_concurrency",
+      "sha256": "507efa12fb8e3d986880e172b20924cd81202b61e8d4eb2e5d31de18a0223ab0",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "cart_creation_concurrency"
+    },
+    {
+      "file": "supabase/migrations/032_cart_authority_hardening.sql",
+      "version": "032",
+      "name": "cart_authority_hardening",
+      "sha256": "54072dd049bdc7ba72e531a40173f9bba6562c61c4c8ec8e3f864df8212b5a50",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "cart_authority_hardening"
+    },
+    {
+      "file": "supabase/migrations/033_rpc_execute_hardening.sql",
+      "version": "033",
+      "name": "rpc_execute_hardening",
+      "sha256": "609990450bae5660e9faddb866d2cf6833741cca2085f6716bafbe7ebacb0bd8",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "rpc_execute_hardening"
+    },
+    {
+      "file": "supabase/migrations/034_rpc_public_execute_hardening.sql",
+      "version": "034",
+      "name": "rpc_public_execute_hardening",
+      "sha256": "a74d27aea95cb4597a27d52f82c450d5ce6e3f5cb55a5a2bf8456595134ece8b",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "rpc_public_execute_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260917155708_rpc_public_execute_hardening.sql",
+      "version": "20260917155708",
+      "name": "rpc_public_execute_hardening",
+      "sha256": "2bf8dc7ef221a89d7d6f0ee2e1ddd848d110832b62c07f5ededfe1b0f18b8e2b",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "rpc_public_execute_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260917162943_authoritative_write_paths.sql",
+      "version": "20260917162943",
+      "name": "authoritative_write_paths",
+      "sha256": "ce3b483af9ba66a086ba16d52d092817ceb99074f19d03aa471c0d6d2c2ac5cb",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "authoritative_write_paths"
+    },
+    {
+      "file": "supabase/migrations/20260917163336_quote_service_integrity.sql",
+      "version": "20260917163336",
+      "name": "quote_service_integrity",
+      "sha256": "5bc12a6332e543e14f9ea4f5f27b68b981ca31ca820df23e9e94a2b8817f17bc",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "quote_service_integrity"
+    },
+    {
+      "file": "supabase/migrations/20260919061923_restore_data_api_grants.sql",
+      "version": "20260919061923",
+      "name": "restore_data_api_grants",
+      "sha256": "c5ddc814cbc32837a4ec3ddb32fd1fec8d2a5793530abd74dcde349ba4cbaafa",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "restore_data_api_grants"
+    },
+    {
+      "file": "supabase/migrations/20260919061947_restore_service_payment_read_grant.sql",
+      "version": "20260919061947",
+      "name": "restore_service_payment_read_grant",
+      "sha256": "333731826a0a9e63ed28c26dd2014ac33678b7abe5fdfc051dec3885e09df937",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "restore_service_payment_read_grant"
+    },
+    {
+      "file": "supabase/migrations/20260919062121_restore_rls_helper_execute_grants.sql",
+      "version": "20260919062121",
+      "name": "restore_rls_helper_execute_grants",
+      "sha256": "8b3c723e43bf3bd83a6f01f1f6207e8c25eadb19e85dddeabeb6961e5c43c5c4",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "restore_rls_helper_execute_grants"
+    },
+    {
+      "file": "supabase/migrations/20260919062141_restore_public_rls_helper_execute_grants.sql",
+      "version": "20260919062141",
+      "name": "restore_public_rls_helper_execute_grants",
+      "sha256": "dd74998911d377812b82e03d47a22755e4b1aeb27967d7e1c7dfa4727bf1cd07",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "restore_public_rls_helper_execute_grants"
+    },
+    {
+      "file": "supabase/migrations/20260919063855_037_delivery_driver_access.sql",
+      "version": "20260919063855",
+      "name": "037_delivery_driver_access",
+      "sha256": "7123b2475a2f3dd9e86a0fc4e0efcfc1a337b1ede4ae8be4a60808a20dccc144",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "037_delivery_driver_access"
+    },
+    {
+      "file": "supabase/migrations/20260919081826_038_business_driver_auth.sql",
+      "version": "20260919081826",
+      "name": "038_business_driver_auth",
+      "sha256": "0c65ab2d0092713e1a285591480d0f0a792c94ea6393bf567de7f0ebf69d34ec",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "038_business_driver_auth"
+    },
+    {
+      "file": "supabase/migrations/20260919082247_039_auth_rpc_execute_hardening.sql",
+      "version": "20260919082247",
+      "name": "039_auth_rpc_execute_hardening",
+      "sha256": "949c099c3a4b3f32b5a02c4243dfaba6aa7b497a5abac14ee56df9705b7d7574",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "039_auth_rpc_execute_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260919084825_grant_driver_application_data_api_access.sql",
+      "version": "20260919084825",
+      "name": "grant_driver_application_data_api_access",
+      "sha256": "f0fd04b26b07e91cc24681ca698b8b602e5090e5cd39d7c864f1ccb18ec1d5df",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "grant_driver_application_data_api_access"
+    },
+    {
+      "file": "supabase/migrations/20260919085906_driver_verification_system.sql",
+      "version": "20260919085906",
+      "name": "driver_verification_system",
+      "sha256": "b2b1b09fcf8c53131cb231530c73d7cf90e4a18058db4518eb5c5cfe4fbc10c3",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "driver_verification_system"
+    },
+    {
+      "file": "supabase/migrations/20260919090102_driver_verification_details.sql",
+      "version": "20260919090102",
+      "name": "driver_verification_details",
+      "sha256": "53ec192bce96df14902f2fb34d822299b64d7b4e9b52cce1d4fa38dd5fedbaa9",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "driver_verification_details"
+    },
+    {
+      "file": "supabase/migrations/20260919090516_driver_verification_maintenance.sql",
+      "version": "20260919090516",
+      "name": "driver_verification_maintenance",
+      "sha256": "f829d0840d497107b0eb94f5d4f9095c7737d7911dc30a8557335c62da7d7436",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "driver_verification_maintenance"
+    },
+    {
+      "file": "supabase/migrations/20260919090534_revoke_legacy_driver_application_rpc.sql",
+      "version": "20260919090534",
+      "name": "revoke_legacy_driver_application_rpc",
+      "sha256": "1155d1ba79f312301668a27a18cc3f53466408b23a2bf6ed518e1514df81c56b",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "revoke_legacy_driver_application_rpc"
+    },
+    {
+      "file": "supabase/migrations/20260919090631_driver_data_api_privileges.sql",
+      "version": "20260919090631",
+      "name": "driver_data_api_privileges",
+      "sha256": "bd919b15866b0f78f84aae2ca726b60b3a07e56024ef53273306157248ff904a",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "driver_data_api_privileges"
+    },
+    {
+      "file": "supabase/migrations/20260919090651_driver_vehicle_admin_verification.sql",
+      "version": "20260919090651",
+      "name": "driver_vehicle_admin_verification",
+      "sha256": "3e9001b999392be2884490e6d55e43c9f0d21b785ce8c14136176028db8ab661",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "driver_vehicle_admin_verification"
+    },
+    {
+      "file": "supabase/migrations/20260919090806_fix_access_context_volatility.sql",
+      "version": "20260919090806",
+      "name": "fix_access_context_volatility",
+      "sha256": "31be29c714569f5a3a4806d8a056e9edf9358296ad6c7337ab1f2dc9ed89c104",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "fix_access_context_volatility"
+    },
+    {
+      "file": "supabase/migrations/20260919090952_scope_driver_operational_check.sql",
+      "version": "20260919090952",
+      "name": "scope_driver_operational_check",
+      "sha256": "b85c45a085091aae12efb8337f6b703d6624d9cf00b4a3209a73a89e0c81bb1d",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "scope_driver_operational_check"
+    },
+    {
+      "file": "supabase/migrations/20260919091028_lock_verified_driver_documents.sql",
+      "version": "20260919091028",
+      "name": "lock_verified_driver_documents",
+      "sha256": "8a87455fdf281d10bc97840625540073415ff2f307e19f004e1cee6b2efa38aa",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "lock_verified_driver_documents"
+    },
+    {
+      "file": "supabase/migrations/20260919091331_driver_delivery_acceptance.sql",
+      "version": "20260919091331",
+      "name": "driver_delivery_acceptance",
+      "sha256": "84779656ade7528886a2ef2771ce110c171c5645cadd783580e543e293f1a5bd",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "driver_delivery_acceptance"
+    },
+    {
+      "file": "supabase/migrations/20260919091518_driver_credential_admin_review.sql",
+      "version": "20260919091518",
+      "name": "driver_credential_admin_review",
+      "sha256": "54ad52ee7b14ab13a3f210572701bc230d633cec5842b0f7365d7910aa65a457",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "driver_credential_admin_review"
+    },
+    {
+      "file": "supabase/migrations/20260919101512_051_business_members_owner_grant_hardening.sql",
+      "version": "20260919101512",
+      "name": "051_business_members_owner_grant_hardening",
+      "sha256": "a8872222bcdc76b1205d7baf5e65da1da02548ef33a91538641bb31668b8eefe",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "051_business_members_owner_grant_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260919121203_052_driver_compliance_and_legacy_cleanup.sql",
+      "version": "20260919121203",
+      "name": "052_driver_compliance_and_legacy_cleanup",
+      "sha256": "f8046a37f08c4a34748f2bfe19704930aa9bf23e12713cd03a71b42d3ac94a13",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "052_driver_compliance_and_legacy_cleanup"
+    },
+    {
+      "file": "supabase/migrations/20260919121348_053_driver_verification_metadata.sql",
+      "version": "20260919121348",
+      "name": "053_driver_verification_metadata",
+      "sha256": "2fb3054cb1ea44db57aaf0d8647b963bd6814fa0b72f3c46b088ce5b5923144e",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "053_driver_verification_metadata"
+    },
+    {
+      "file": "supabase/migrations/20260919121448_054_driver_application_draft.sql",
+      "version": "20260919121448",
+      "name": "054_driver_application_draft",
+      "sha256": "b8635c6b85735702a386d452ff2f5439268e1cce310c93ab8476e8525b9b5d54",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "054_driver_application_draft"
+    },
+    {
+      "file": "supabase/migrations/20260919121530_055_driver_document_subtype.sql",
+      "version": "20260919121530",
+      "name": "055_driver_document_subtype",
+      "sha256": "6361bb6bf649a8397fbf1046e88979aaa9078cb6a53f4e3c515e87b2b630a32b",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "055_driver_document_subtype"
+    },
+    {
+      "file": "supabase/migrations/20260919121933_056_driver_compliance_maintenance.sql",
+      "version": "20260919121933",
+      "name": "056_driver_compliance_maintenance",
+      "sha256": "25754a7e02b811cdd34b9b56391270a31f1af1baf2977382833fd7b3593b57d7",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "056_driver_compliance_maintenance"
+    },
+    {
+      "file": "supabase/migrations/20260919122053_057_driver_document_versioning.sql",
+      "version": "20260919122053",
+      "name": "057_driver_document_versioning",
+      "sha256": "61d4eaa695988e003ec6214117e321a4c8efbc7f1b2e2aae77734703797b7a45",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "057_driver_document_versioning"
+    },
+    {
+      "file": "supabase/migrations/20260919122142_058_driver_identity_review_sync.sql",
+      "version": "20260919122142",
+      "name": "058_driver_identity_review_sync",
+      "sha256": "b130fcf38487c645417a75c1528cc4b89e676c1de63332e30651b1df22133a58",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "058_driver_identity_review_sync"
+    },
+    {
+      "file": "supabase/migrations/20260919122400_059_driver_submission_state_guards.sql",
+      "version": "20260919122400",
+      "name": "059_driver_submission_state_guards",
+      "sha256": "e0ca28aef5c48af104fc3a49bdc4cccd9f3269e4a08b48eae9901b450ddf871d",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "059_driver_submission_state_guards"
+    },
+    {
+      "file": "supabase/migrations/20260919122439_060_driver_authoritative_writes.sql",
+      "version": "20260919122439",
+      "name": "060_driver_authoritative_writes",
+      "sha256": "69fdba731d0e4a4b876a3c17f8bcfae1a3e5c7464cd39b2815c92619b631fc1e",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "060_driver_authoritative_writes"
+    },
+    {
+      "file": "supabase/migrations/20260919122605_061_driver_operational_status_gate.sql",
+      "version": "20260919122605",
+      "name": "061_driver_operational_status_gate",
+      "sha256": "27980e1d941215b818885210d4b771726ddab79b9da41e2c9c28bf14d0424330",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "061_driver_operational_status_gate"
+    },
+    {
+      "file": "supabase/migrations/20260919122739_062_driver_operational_app_status_assertion.sql",
+      "version": "20260919122739",
+      "name": "062_driver_operational_app_status_assertion",
+      "sha256": "8ca3473654874c9d5a0ac2cb968a8e948ca17ccdf9defd41d863e5ee8a694abf",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "062_driver_operational_app_status_assertion"
+    },
+    {
+      "file": "supabase/migrations/20260919135642_prevent_multiple_quote_acceptance.sql",
+      "version": "20260919135642",
+      "name": "prevent_multiple_quote_acceptance",
+      "sha256": "a0c6c9d100215a6b6c565559f4d1e7bef21e3a1ce06b98867eb2f6389f5b294b",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "prevent_multiple_quote_acceptance"
+    },
+    {
+      "file": "supabase/migrations/20260919151603_remove_duplicate_indexes.sql",
+      "version": "20260919151603",
+      "name": "remove_duplicate_indexes",
+      "sha256": "1ed4cf894c7e4a3a4fa8e21feb17c901711ec82ab466b0ae5d6f4907a32d3158",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "remove_duplicate_indexes"
+    },
+    {
+      "file": "supabase/migrations/20260919162357_optimize_rls_auth_initplans.sql",
+      "version": "20260919162357",
+      "name": "optimize_rls_auth_initplans",
+      "sha256": "70b1a5febd39956e9158a0af4ea0454e7e6740dfe7645249e50c7dde8149e3c6",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "optimize_rls_auth_initplans"
+    },
+    {
+      "file": "supabase/migrations/20260919175035_index_unindexed_foreign_keys.sql",
+      "version": "20260919175035",
+      "name": "index_unindexed_foreign_keys",
+      "sha256": "5eceb22885354bbc5d7b540661e65af7ea82afc6ce4aea6342a173f12cead544",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "index_unindexed_foreign_keys"
+    },
+    {
+      "file": "supabase/migrations/20260919185355_restrict_direct_review_writes.sql",
+      "version": "20260919185355",
+      "name": "restrict_direct_review_writes",
+      "sha256": "66601075132019af00b6c37dd47bd55677aaa2625efb3b22511ff4062df810b1",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "restrict_direct_review_writes"
+    },
+    {
+      "file": "supabase/migrations/20260919191556_revoke_anon_rls_helper_execute.sql",
+      "version": "20260919191556",
+      "name": "revoke_anon_rls_helper_execute",
+      "sha256": "afeee31f47d166031fc1bbd9fc291d7639f9a1b65814376011b029e7ea62b2dd",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "revoke_anon_rls_helper_execute"
+    },
+    {
+      "file": "supabase/migrations/20260919200938_20260920060813_index_driver_compliance_requirement_fk.sql",
+      "version": "20260919200938",
+      "name": "20260920060813_index_driver_compliance_requirement_fk",
+      "sha256": "e48be2af5b64ad506e728407fb67ffecade9b76894a02161f4db9ddf17aa5dce",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260920060813_index_driver_compliance_requirement_fk"
+    },
+    {
+      "file": "supabase/migrations/20260919214846_consolidate_overlapping_rls_policies.sql",
+      "version": "20260919214846",
+      "name": "consolidate_overlapping_rls_policies",
+      "sha256": "03f413a23a48691c4678ebb396785058de85735cdea8a973738c4f40adcf1437",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "consolidate_overlapping_rls_policies"
+    },
+    {
+      "file": "supabase/migrations/20260919223924_revoke_authenticated_internal_rpc_execute.sql",
+      "version": "20260919223924",
+      "name": "revoke_authenticated_internal_rpc_execute",
+      "sha256": "062cb065ee1dc9144978d00be6eaca92b6e41d00dcb37b5f387d37413f7df930",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "revoke_authenticated_internal_rpc_execute"
+    },
+    {
+      "file": "supabase/migrations/20260920002739_restrict_internal_driver_rpc_execution.sql",
+      "version": "20260920002739",
+      "name": "restrict_internal_driver_rpc_execution",
+      "sha256": "a2568b89db0242df609eb5fa8b4cb8131f70b0f191b7d68fd4cb453f47cefa0d",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "restrict_internal_driver_rpc_execution"
+    },
+    {
+      "file": "supabase/migrations/20260920095043_20260920194900_social_discovery_foundation.sql",
+      "version": "20260920095043",
+      "name": "20260920194900_social_discovery_foundation",
+      "sha256": "a740891389605fdcdb86e5387308fa237659c728f9d06ad38f2a2778227a62c8",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260920194900_social_discovery_foundation"
+    },
+    {
+      "file": "supabase/migrations/20260920095116_20260920195800_social_profile_visibility_hardening.sql",
+      "version": "20260920095116",
+      "name": "20260920195800_social_profile_visibility_hardening",
+      "sha256": "4b2f199756d8a716ef4e31fc6bfec379dfea2cb0097e842e0a679c611ec5c99a",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260920195800_social_profile_visibility_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260920095600_20260920110000_service_taxonomy_delivery_modes.sql",
+      "version": "20260920095600",
+      "name": "20260920110000_service_taxonomy_delivery_modes",
+      "sha256": "12381a2483714596d0eee5d8007b527bd52a312f36e4a7d195de09281868e470",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260920110000_service_taxonomy_delivery_modes"
+    },
+    {
+      "file": "supabase/migrations/20260920095838_20260920111000_harden_service_rpc_execute.sql",
+      "version": "20260920095838",
+      "name": "20260920111000_harden_service_rpc_execute",
+      "sha256": "4c7967ae4c9b815a507bfac98ee3255b043bf3d1904cec18101c54824e62dc99",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260920111000_harden_service_rpc_execute"
+    },
+    {
+      "file": "supabase/migrations/20260920095919_20260920112000_atomic_business_service_setup.sql",
+      "version": "20260920095919",
+      "name": "20260920112000_atomic_business_service_setup",
+      "sha256": "d7ca6193a8076d02558a5bab47d31c8af52f536dac8b4db55f66124c86166923",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260920112000_atomic_business_service_setup"
+    },
+    {
+      "file": "supabase/migrations/20260920104541_consolidate_social_policy_overlap.sql",
+      "version": "20260920104541",
+      "name": "consolidate_social_policy_overlap",
+      "sha256": "87b4e9e8858f17a8e49adf571031de3de713e2eff75969cbbf0533fc2b11c17c",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "consolidate_social_policy_overlap"
+    },
+    {
+      "file": "supabase/migrations/20260920111150_business_abn_verification_flow.sql",
+      "version": "20260920111150",
+      "name": "business_abn_verification_flow",
+      "sha256": "3f7f002ad1195a864d36018cca83d8151d589c8a49ee2d03f6ea759112289c9d",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_abn_verification_flow"
+    },
+    {
+      "file": "supabase/migrations/20260920112705_business_verification_search_path_hardening.sql",
+      "version": "20260920112705",
+      "name": "business_verification_search_path_hardening",
+      "sha256": "c5c10ff7c9a5506b2594fbb48f6574dd3a53e06cc7d5ef0cd78432d44e8d1399",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_verification_search_path_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260920122000_admin_rpc_execute_hardening.sql",
+      "version": "20260920122000",
+      "name": "admin_rpc_execute_hardening",
+      "sha256": "38b65c77a7944c37d209236dd401353050f2099ef99aeaef3f0d692659f100fc",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "admin_rpc_execute_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260920123411_abr_government_verification.sql",
+      "version": "20260920123411",
+      "name": "abr_government_verification",
+      "sha256": "e3cc935b1a10522e74335ad3278494f6212353f564e05103baf1378037f385ac",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "abr_government_verification"
+    },
+    {
+      "file": "supabase/migrations/20260920123530_restrict_legacy_business_verification_submission.sql",
+      "version": "20260920123530",
+      "name": "restrict_legacy_business_verification_submission",
+      "sha256": "4808a6446ebde94b0a71a6d43a40f2d877346175cbeab049770ca37de261a64c",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "restrict_legacy_business_verification_submission"
+    },
+    {
+      "file": "supabase/migrations/20260920123615_allow_abr_recheck_of_legacy_pending_verification.sql",
+      "version": "20260920123615",
+      "name": "allow_abr_recheck_of_legacy_pending_verification",
+      "sha256": "5d0805ed426088d5008623228ed9e0286bf8b57b10b86783a8be7fc27affb396",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "allow_abr_recheck_of_legacy_pending_verification"
+    },
+    {
+      "file": "supabase/migrations/20260920125431_20260920240000_secure_single_account_admin_mfa.sql",
+      "version": "20260920125431",
+      "name": "20260920240000_secure_single_account_admin_mfa",
+      "sha256": "c23e76265381aeeeaef6b199d043a27a931a8ded7ae7afc29f0b05d3b99897bb",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260920240000_secure_single_account_admin_mfa"
+    },
+    {
+      "file": "supabase/migrations/20260920125633_20260920241000_require_password_plus_mfa_for_admin.sql",
+      "version": "20260920125633",
+      "name": "20260920241000_require_password_plus_mfa_for_admin",
+      "sha256": "c8f18a011b01965b352260d4bb05d84dd972d6f79409ddb3d9803e0a562ed7d5",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260920241000_require_password_plus_mfa_for_admin"
+    },
+    {
+      "file": "supabase/migrations/20260920125901_20260920242000_revoke_admin_role_trigger_execute.sql",
+      "version": "20260920125901",
+      "name": "20260920242000_revoke_admin_role_trigger_execute",
+      "sha256": "8d2d7db8a305afdd6a0a926e18881bfff6bcc066ae811299cbae378edd70b780",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260920242000_revoke_admin_role_trigger_execute"
+    },
+    {
+      "file": "supabase/migrations/20260920130858_20260920243000_lock_initial_admin_identity.sql",
+      "version": "20260920130858",
+      "name": "20260920243000_lock_initial_admin_identity",
+      "sha256": "878070b5102d16d674ce4d33606d1162626ba2ef8200014cf07e6ceac1cc24b3",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260920243000_lock_initial_admin_identity"
+    },
+    {
+      "file": "supabase/migrations/20260920130945_20260920244000_make_admin_auth_state_invoker.sql",
+      "version": "20260920130945",
+      "name": "20260920244000_make_admin_auth_state_invoker",
+      "sha256": "59f02fb8ff7684a7cfd34d0681c3872544cbd131f3a0e3822aa1e3cc872ada9f",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260920244000_make_admin_auth_state_invoker"
+    },
+    {
+      "file": "supabase/migrations/20260920142109_mark_all_notifications_read.sql",
+      "version": "20260920142109",
+      "name": "mark_all_notifications_read",
+      "sha256": "e818638ff549bfca3abd36307b4dd4cd54b0b2257aa46034d59140ae53b47f1e",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "mark_all_notifications_read"
+    },
+    {
+      "file": "supabase/migrations/20260920151631_quote_mutation_authority_hardening.sql",
+      "version": "20260920151631",
+      "name": "quote_mutation_authority_hardening",
+      "sha256": "d219bb8398dd5174f6ff500810598a87d5a9046e9fcd20342d762fafcbf38fae",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "quote_mutation_authority_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260920184333_harden_cart_checkout_binding.sql",
+      "version": "20260920184333",
+      "name": "harden_cart_checkout_binding",
+      "sha256": "a76ff3016e9936bf0b91067b91050ebd56b8f3e59e3ecdaab49649ff63b243d4",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "harden_cart_checkout_binding"
+    },
+    {
+      "file": "supabase/migrations/20260920214920_cart_quantity_integrity.sql",
+      "version": "20260920214920",
+      "name": "cart_quantity_integrity",
+      "sha256": "45df31cd00a04cb8157fd3a8c7249830ce5d2a1db0703eaad2f6a222ee9236c8",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "cart_quantity_integrity"
+    },
+    {
+      "file": "supabase/migrations/20260920233247_delivery_request_state_integrity.sql",
+      "version": "20260920233247",
+      "name": "delivery_request_state_integrity",
+      "sha256": "9c8288333ae7866f2d67a54f090cd74beee14494d80155ea45d754359eefc913",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "delivery_request_state_integrity"
+    },
+    {
+      "file": "supabase/migrations/20260921004137_inventory_reservation_integrity.sql",
+      "version": "20260921004137",
+      "name": "inventory_reservation_integrity",
+      "sha256": "ccb61b9d33b8863a402033753d8bc836c642e1b5c423e30269df8214a971c902",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "inventory_reservation_integrity"
+    },
+    {
+      "file": "supabase/migrations/20260921010133_product_order_line_financial_integrity.sql",
+      "version": "20260921010133",
+      "name": "product_order_line_financial_integrity",
+      "sha256": "b7b6d242604c38a19aaedaf1942ccdc418fdfd1105697dc9f7d692b06d1a6289",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "product_order_line_financial_integrity"
+    },
+    {
+      "file": "supabase/migrations/20260921041318_secure_all_definer_search_paths.sql",
+      "version": "20260921041318",
+      "name": "secure_all_definer_search_paths",
+      "sha256": "30185e1641587d359d895992cb523980e809a9fc5c1e654f8df9b9150847292d",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "secure_all_definer_search_paths"
+    },
+    {
+      "file": "supabase/migrations/20260921071633_20260920133001_abr_registry_columns.sql",
+      "version": "20260921071633",
+      "name": "20260920133001_abr_registry_columns",
+      "sha256": "4e8f17a8c239128f71d35aa7ae2ec7dfaeab8c2cf9fa42c98e0fe17537c08733",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "20260920133001_abr_registry_columns"
+    },
+    {
+      "file": "supabase/migrations/20260921071642_20260920133002_abr_registry_admin_policy.sql",
+      "version": "20260921071642",
+      "name": "20260920133002_abr_registry_admin_policy",
+      "sha256": "c5238b564e770b8ce0609a19454b52b9118aaeb209c2e0c01f18e57b6cc8e5a4",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "20260920133002_abr_registry_admin_policy"
+    },
+    {
+      "file": "supabase/migrations/20260921071653_20260920133003_abr_registry_record_rpc.sql",
+      "version": "20260921071653",
+      "name": "20260920133003_abr_registry_record_rpc",
+      "sha256": "20eea995c1c0b9d782d4c54c6bc192acbc95e5bed4174d5643644a231be7e561",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "20260920133003_abr_registry_record_rpc"
+    },
+    {
+      "file": "supabase/migrations/20260921071819_20260920133004_restrict_abr_registry_rpc_execute.sql",
+      "version": "20260921071819",
+      "name": "20260920133004_restrict_abr_registry_rpc_execute",
+      "sha256": "18e0ef233116056e4d3be5dfefb1e89924f31aa38dfd8a05c58ea686df53dedb",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "20260920133004_restrict_abr_registry_rpc_execute"
+    },
+    {
+      "file": "supabase/migrations/20260921073731_20260921073000_automated_business_abn_verification.sql",
+      "version": "20260921073731",
+      "name": "20260921073000_automated_business_abn_verification",
+      "sha256": "3a097a46ccec1e60f77f47f62094fa0f7b0e51cc73c6466548a87443e5edffc4",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921073000_automated_business_abn_verification"
+    },
+    {
+      "file": "supabase/migrations/20260921073918_20260921073100_business_verification_case_types.sql",
+      "version": "20260921073918",
+      "name": "20260921073100_business_verification_case_types",
+      "sha256": "99b6364fda9e56f7e23096708e70de196f4325ee2ad34e4477c8639a7fd8d798",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921073100_business_verification_case_types"
+    },
+    {
+      "file": "supabase/migrations/20260921074133_20260921073200_fix_automated_abn_status_transition.sql",
+      "version": "20260921074133",
+      "name": "20260921073200_fix_automated_abn_status_transition",
+      "sha256": "42b29a1695d7501390e3968f0005b0643d381c344fc53cb39ed52d9ab6a24647",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921073200_fix_automated_abn_status_transition"
+    },
+    {
+      "file": "supabase/migrations/20260921074343_20260921073300_add_abn_revalidation_strategy.sql",
+      "version": "20260921074343",
+      "name": "20260921073300_add_abn_revalidation_strategy",
+      "sha256": "683af0b19b93921be235408c70de058d90d89810eafbcde5bb1416bd5ffb0514",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921073300_add_abn_revalidation_strategy"
+    },
+    {
+      "file": "supabase/migrations/20260921074449_20260921073400_fix_abn_retry_timestamp.sql",
+      "version": "20260921074449",
+      "name": "20260921073400_fix_abn_retry_timestamp",
+      "sha256": "cf2b44983f7471655bb760193865d230fc0d019e92546e8fc634bce14f35d9cf",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921073400_fix_abn_retry_timestamp"
+    },
+    {
+      "file": "supabase/migrations/20260921074718_20260921073500_harden_verification_review_rpc_execute.sql",
+      "version": "20260921074718",
+      "name": "20260921073500_harden_verification_review_rpc_execute",
+      "sha256": "736e6e95ad06f2662f4730fc15dce8ae864402a5805d2586ead75a4f05a03df3",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921073500_harden_verification_review_rpc_execute"
+    },
+    {
+      "file": "supabase/migrations/20260921074815_20260921073600_remove_legacy_abn_begin_overload.sql",
+      "version": "20260921074815",
+      "name": "20260921073600_remove_legacy_abn_begin_overload",
+      "sha256": "c6243dbdf4040272863d91a06dff385dc0a62b8134525524cef2235ebb43fc92",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921073600_remove_legacy_abn_begin_overload"
+    },
+    {
+      "file": "supabase/migrations/20260921082558_driver_licence_authoritative_boundary.sql",
+      "version": "20260921082558",
+      "name": "driver_licence_authoritative_boundary",
+      "sha256": "f4e46adad531ad0d849626fb369f270cb8d200c7990cb9b03e4f501fa28c4c85",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "driver_licence_authoritative_boundary"
+    },
+    {
+      "file": "supabase/migrations/20260921082642_restore_driver_credential_admin_execute.sql",
+      "version": "20260921082642",
+      "name": "restore_driver_credential_admin_execute",
+      "sha256": "36249f9df837e85326ebbb65473ca010bead5e153bd3833eebacc63dd12c90e6",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "restore_driver_credential_admin_execute"
+    },
+    {
+      "file": "supabase/migrations/20260921110407_20260921090300_consolidate_business_verification_rls_and_fk_indexes.sql",
+      "version": "20260921110407",
+      "name": "20260921090300_consolidate_business_verification_rls_and_fk_indexes",
+      "sha256": "b53dcc69c54a94d80892ec23a0c75410aca83f07402472e76e530c18dab5d2a2",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921090300_consolidate_business_verification_rls_and_fk_indexes"
+    },
+    {
+      "file": "supabase/migrations/20260921111841_driver_availability.sql",
+      "version": "20260921111841",
+      "name": "driver_availability",
+      "sha256": "2acd0a123d78709b72b434ae703a4de4f0d7af869ed217459539cbc76998362e",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "driver_availability"
+    },
+    {
+      "file": "supabase/migrations/20260921112014_driver_dispatch_availability_guard.sql",
+      "version": "20260921112014",
+      "name": "driver_dispatch_availability_guard",
+      "sha256": "a72935c5b109928b717d4079272a143c754731990c30bd2c9587db8306b56ac3",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "driver_dispatch_availability_guard"
+    },
+    {
+      "file": "supabase/migrations/20260921125010_20260921230000_optimize_driver_availability_rls.sql",
+      "version": "20260921125010",
+      "name": "20260921230000_optimize_driver_availability_rls",
+      "sha256": "ccd3c0e75538130c1819c5d6d820a68e6f1ee7b14a5b67075fd698b9c5fa8c1f",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921230000_optimize_driver_availability_rls"
+    },
+    {
+      "file": "supabase/migrations/20260921132552_20260921233000_service_aware_dispatch_engine.sql",
+      "version": "20260921132552",
+      "name": "20260921233000_service_aware_dispatch_engine",
+      "sha256": "10eaf4693041614f6b2152aa74d638a385d3bc3918be60b95156249a3fe218aa",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "20260921233000_service_aware_dispatch_engine"
+    },
+    {
+      "file": "supabase/migrations/20260921132704_20260921233100_service_dispatch_authority.sql",
+      "version": "20260921132704",
+      "name": "20260921233100_service_dispatch_authority",
+      "sha256": "de918cd4983727a7bc4c218534f6adb1fd6d67c7742e511bc7704524169f1fc3",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921233100_service_dispatch_authority"
+    },
+    {
+      "file": "supabase/migrations/20260921132847_20260921233200_service_dispatch_fk_indexes.sql",
+      "version": "20260921132847",
+      "name": "20260921233200_service_dispatch_fk_indexes",
+      "sha256": "d7acc9bde1e143119826d4ebd1d0911d947250fd07a026b8f9ada496856aa46b",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921233200_service_dispatch_fk_indexes"
+    },
+    {
+      "file": "supabase/migrations/20260921132916_20260921233300_service_dispatch_rls_linter_hardening.sql",
+      "version": "20260921132916",
+      "name": "20260921233300_service_dispatch_rls_linter_hardening",
+      "sha256": "fd15317377c4dd8a5726a0e97b25496997f5eba6363b535163cda2bb1a30b38d",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921233300_service_dispatch_rls_linter_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260921132957_20260921233400_service_dispatch_evaluation_audit.sql",
+      "version": "20260921132957",
+      "name": "20260921233400_service_dispatch_evaluation_audit",
+      "sha256": "9f634465fdcd6ab586aed872198adb47454ce127a74a17c274601686880732d3",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921233400_service_dispatch_evaluation_audit"
+    },
+    {
+      "file": "supabase/migrations/20260921133059_20260921235900_dispatch_relationship_prerequisites.sql",
+      "version": "20260921133059",
+      "name": "20260921235900_dispatch_relationship_prerequisites",
+      "sha256": "da23267b80bc27c309a82a04cf3ac876207f519368a4b71c4be269c815cad71b",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921235900_dispatch_relationship_prerequisites"
+    },
+    {
+      "file": "supabase/migrations/20260921133145_20260921240000_dispatch_lifecycle_authority_correction.sql",
+      "version": "20260921133145",
+      "name": "20260921240000_dispatch_lifecycle_authority_correction",
+      "sha256": "6cd918d8f779674a5faca578886f1165f0f79a87fb750b64682481409dba3165",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921240000_dispatch_lifecycle_authority_correction"
+    },
+    {
+      "file": "supabase/migrations/20260921133400_20260921241000_dispatch_state_audit_and_acceptance_guards.sql",
+      "version": "20260921133400",
+      "name": "20260921241000_dispatch_state_audit_and_acceptance_guards",
+      "sha256": "77737584f755a7fa81617905dedc69e4c7cea1a66cb61397e8a94857d8769f3f",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921241000_dispatch_state_audit_and_acceptance_guards"
+    },
+    {
+      "file": "supabase/migrations/20260921133428_20260921241100_fix_dispatch_offer_response_guard.sql",
+      "version": "20260921133428",
+      "name": "20260921241100_fix_dispatch_offer_response_guard",
+      "sha256": "e8580675a688a44a42a98c389cd94c7c7706246dece5452fa39974cee67c341e",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260921241100_fix_dispatch_offer_response_guard"
+    },
+    {
+      "file": "supabase/migrations/20260921140046_revoke_anon_dispatch_security_definer_execute.sql",
+      "version": "20260921140046",
+      "name": "revoke_anon_dispatch_security_definer_execute",
+      "sha256": "454c94ab6a4d77dece8af8beadeff5fc39658bc09d19b48151b79a5517c2189c",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "revoke_anon_dispatch_security_definer_execute"
+    },
+    {
+      "file": "supabase/migrations/20260921140113_revoke_public_dispatch_security_definer_execute.sql",
+      "version": "20260921140113",
+      "name": "revoke_public_dispatch_security_definer_execute",
+      "sha256": "cfa3bc9fcd75b23523314ce2ae723644a0e694effbf19c36fc984d09e8c658b7",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "revoke_public_dispatch_security_definer_execute"
+    },
+    {
+      "file": "supabase/migrations/20260921164516_index_dispatch_assignment_composite_foreign_keys.sql",
+      "version": "20260921164516",
+      "name": "index_dispatch_assignment_composite_foreign_keys",
+      "sha256": "e9e54e98ab36206790daba7276d3f66205822e5ce70365d889e1b45c95b812fe",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "index_dispatch_assignment_composite_foreign_keys"
+    },
+    {
+      "file": "supabase/migrations/20260922004353_20260922005000_revoke_authenticated_trigger_guard_execution.sql",
+      "version": "20260922004353",
+      "name": "20260922005000_revoke_authenticated_trigger_guard_execution",
+      "sha256": "e5396773bf26a1cc20f904a4488ad412f6c7de8422610fbce1da9b316aff34e7",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "20260922005000_revoke_authenticated_trigger_guard_execution"
+    },
+    {
+      "file": "supabase/migrations/20260922133215_profile_media.sql",
+      "version": "20260922133215",
+      "name": "profile_media",
+      "sha256": "1b64b2b2248d13c75764864765c3cb7996151b35434b2454dbc2888e748e22f4",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "profile_media"
+    },
+    {
+      "file": "supabase/migrations/20260922151420_settings_preferences_support.sql",
+      "version": "20260922151420",
+      "name": "settings_preferences_support",
+      "sha256": "4c873f10222e6678251427a2067f125451d00f72e29a1251a21718bb90f17a2c",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "settings_preferences_support"
+    },
+    {
+      "file": "supabase/migrations/20260923155744_20260923045959_external_crypto_compat.sql",
+      "version": "20260923155744",
+      "name": "20260923045959_external_crypto_compat",
+      "sha256": "be25707db3b2a7489f93a8f5c1154100d0ab7ccf469865033f01356694557acd",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260923045959_external_crypto_compat"
+    },
+    {
+      "file": "supabase/migrations/20260923155748_20260923050000_external_business_identity_enquiries.sql",
+      "version": "20260923155748",
+      "name": "20260923050000_external_business_identity_enquiries",
+      "sha256": "30127935183781e005f4ad07a665fdd90a1f5422a09a59574c862aabc24a0aa8",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260923050000_external_business_identity_enquiries"
+    },
+    {
+      "file": "supabase/migrations/20260923155754_20260923090000_external_messaging_safety.sql",
+      "version": "20260923155754",
+      "name": "20260923090000_external_messaging_safety",
+      "sha256": "3ccdc13025a249f3b53a5507eaeaf8adf63207d6206c2d664c1a7f200de503f3",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260923090000_external_messaging_safety"
+    },
+    {
+      "file": "supabase/migrations/20260923155759_20260923093000_external_gateway_self_service_opt_out.sql",
+      "version": "20260923155759",
+      "name": "20260923093000_external_gateway_self_service_opt_out",
+      "sha256": "815c4de3de3060c91ecb9b74b993ae8e8ef5951f7bc800d7fce90215dc3c343c",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260923093000_external_gateway_self_service_opt_out"
+    },
+    {
+      "file": "supabase/migrations/20260923155804_20260923110000_external_gateway_lock_order.sql",
+      "version": "20260923155804",
+      "name": "20260923110000_external_gateway_lock_order",
+      "sha256": "d6e35a2c24af0d7521b0700fa3deeaff96c999bd580fff07117be8b26014d528",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "20260923110000_external_gateway_lock_order"
+    },
+    {
+      "file": "supabase/migrations/20260924071010_secure_cart_mutations.sql",
+      "version": "20260924071010",
+      "name": "secure_cart_mutations",
+      "sha256": "f78568480c16059eda6901d82e02abf87c1e718f897fe382434fb4919d3c3986",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "secure_cart_mutations"
+    },
+    {
+      "file": "supabase/migrations/20260924071140_lock_down_cart_table_grants.sql",
+      "version": "20260924071140",
+      "name": "lock_down_cart_table_grants",
+      "sha256": "cd5f8f17b5ff30cff5d642302d376bd169acc42ef9bacdc188582dbe464ce8ef",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "lock_down_cart_table_grants"
+    },
+    {
+      "file": "supabase/migrations/20260924135741_revoke_client_table_ddl_privileges.sql",
+      "version": "20260924135741",
+      "name": "revoke_client_table_ddl_privileges",
+      "sha256": "9f02908b385e05f178592cfe7f76efd3a7fa528d3d9669e6522b53aa679c7629",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "revoke_client_table_ddl_privileges"
+    },
+    {
+      "file": "supabase/migrations/20260924135824_lock_future_postgres_table_maintain_privilege.sql",
+      "version": "20260924135824",
+      "name": "lock_future_postgres_table_maintain_privilege",
+      "sha256": "2247c6114b440023f2396fa5073e9e23bc7107a922cbd7ce7db7776bea7733f6",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "lock_future_postgres_table_maintain_privilege"
+    },
+    {
+      "file": "supabase/migrations/20260924154938_harden_service_request_matching_terminal_states.sql",
+      "version": "20260924154938",
+      "name": "harden_service_request_matching_terminal_states",
+      "sha256": "a4de5afa67a5331090c4108243165cec913873b56d6bdf2d74056c74a74c75bb",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "harden_service_request_matching_terminal_states"
+    },
+    {
+      "file": "supabase/migrations/20260924160851_harden_quote_submission_request_lifecycle.sql",
+      "version": "20260924160851",
+      "name": "harden_quote_submission_request_lifecycle",
+      "sha256": "b077539b213c9c2a1e7be1c46b4eeab516cb8cf9e1c6c0d7d1a618548e4db0df",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "harden_quote_submission_request_lifecycle"
+    },
+    {
+      "file": "supabase/migrations/20260924172852_enforce_one_pending_service_payment_per_booking.sql",
+      "version": "20260924172852",
+      "name": "enforce_one_pending_service_payment_per_booking",
+      "sha256": "010da25f50e9d4c62152b5c879691e30303c4d67a6c3a25c8893f4134d3097d7",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "enforce_one_pending_service_payment_per_booking"
+    },
+    {
+      "file": "supabase/migrations/20260924220801_universal_search_connections_messaging.sql",
+      "version": "20260924220801",
+      "name": "universal_search_connections_messaging",
+      "sha256": "1ec3c47cd2ab059a8e4018a16666a7d7a1f56ef6f61e0aa6e4665b8657357861",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "universal_search_connections_messaging"
+    },
+    {
+      "file": "supabase/migrations/20260924224142_message_request_deletion_followers_fix.sql",
+      "version": "20260924224142",
+      "name": "message_request_deletion_followers_fix",
+      "sha256": "dc6a078b5a5c5b06a80a16bfb4ca3eb24423864a73a5495db9c6c443d4c5bf53",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "message_request_deletion_followers_fix"
+    },
+    {
+      "file": "supabase/migrations/20260924230056_production_messaging_overhaul.sql",
+      "version": "20260924230056",
+      "name": "production_messaging_overhaul",
+      "sha256": "f7742d3c961599daa71d7cd58c0b0f6a2f97a5725b632c0d1d9e181826c05520",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "production_messaging_overhaul"
+    },
+    {
+      "file": "supabase/migrations/20260924234201_final_messaging_delete_everyone_repair.sql",
+      "version": "20260924234201",
+      "name": "final_messaging_delete_everyone_repair",
+      "sha256": "56263411a937583013cf7279e291c74dc949533ce1269af70dd3216c57f0bc20",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "final_messaging_delete_everyone_repair"
+    },
+    {
+      "file": "supabase/migrations/20260925002154_messaging_conversation_hide.sql",
+      "version": "20260925002154",
+      "name": "messaging_conversation_hide",
+      "sha256": "041e239a150e46320b58613e39b252708f8796121d63957b59b33e48cd2c6b20",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "messaging_conversation_hide"
+    },
+    {
+      "file": "supabase/migrations/20260925035112_dual_role_workspace_preferences.sql",
+      "version": "20260925035112",
+      "name": "dual_role_workspace_preferences",
+      "sha256": "dfdc03cedbe674a4ae614a0e60e2baf198f2642c6640c04ab5e0a003fccb83dc",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "dual_role_workspace_preferences"
+    },
+    {
+      "file": "supabase/migrations/20260925042243_product_marketplace_commerce.sql",
+      "version": "20260925042243",
+      "name": "product_marketplace_commerce",
+      "sha256": "09a8812be8b29f6120e7b2918f1b0f3b1b6158b158e1d379a769a39ddf69e783",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "product_marketplace_commerce"
+    },
+    {
+      "file": "supabase/migrations/20260925053936_request_posts_matching_ux.sql",
+      "version": "20260925053936",
+      "name": "request_posts_matching_ux",
+      "sha256": "df21d657505a5723512698c27e13e400d0ff6d258cb08b18f96f5ed273be8b4c",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "request_posts_matching_ux"
+    },
+    {
+      "file": "supabase/migrations/20260925061050_fix_dispatch_lifecycle_trigger_record_fields.sql",
+      "version": "20260925061050",
+      "name": "fix_dispatch_lifecycle_trigger_record_fields",
+      "sha256": "a00fa83a6cd7a6af912217d6fe6f192210f6016446a12b5d2abbd6ddd31345cd",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "fix_dispatch_lifecycle_trigger_record_fields"
+    },
+    {
+      "file": "supabase/migrations/20260925073234_global_local_crm_p0.sql",
+      "version": "20260925073234",
+      "name": "global_local_crm_p0",
+      "sha256": "65fc99bc27b77a285ebb53ba2037c49608e946319c5917904528bb94d385534b",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "global_local_crm_p0"
+    },
+    {
+      "file": "supabase/migrations/20260925154409_grant_external_discovery_service_role_reads.sql",
+      "version": "20260925154409",
+      "name": "grant_external_discovery_service_role_reads",
+      "sha256": "49995876cab18546e43a2cc95aad6fc0146bb5062b6f9ebaa3fc7930c3d237cd",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "grant_external_discovery_service_role_reads"
+    },
+    {
+      "file": "supabase/migrations/20260925161341_customer_calendar_integrations.sql",
+      "version": "20260925161341",
+      "name": "customer_calendar_integrations",
+      "sha256": "8f5ad9cdf5a3fdb86d33920f66b7398bc80c66ed1c5d3b6ee9936824c3485f22",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "customer_calendar_integrations"
+    },
+    {
+      "file": "supabase/migrations/20260925164503_professional_crm_v2.sql",
+      "version": "20260925164503",
+      "name": "professional_crm_v2",
+      "sha256": "07f6f70b50fdb064c6da53c709a321b881970ee4e70ad0e92b03009a39bc957f",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "professional_crm_v2"
+    },
+    {
+      "file": "supabase/migrations/20260925164541_enable_btree_gist_for_crm_calendar.sql",
+      "version": "20260925164541",
+      "name": "enable_btree_gist_for_crm_calendar",
+      "sha256": "d140270d13df6fbd9fb2686adc3fa6c3d22b6fdba58306e0bc42c57185da2959",
+      "state": "APPLIED_HISTORY_BYTE_MATCH",
+      "remoteName": "enable_btree_gist_for_crm_calendar"
+    },
+    {
+      "file": "supabase/migrations/20260925164552_crm_integrations_automation_foundation.sql",
+      "version": "20260925164552",
+      "name": "crm_integrations_automation_foundation",
+      "sha256": "02a78511a76728b8ba2c6755c50f2db70a051d8a2f066bc54d8dc36736bd2329",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "crm_integrations_automation_foundation"
+    },
+    {
+      "file": "supabase/migrations/20260925165254_fix_product_media_storage_policies.sql",
+      "version": "20260925165254",
+      "name": "fix_product_media_storage_policies",
+      "sha256": "ce505907ac38792f3d24b865049af44705c4bb8c16ca1046ccaebc14451532f3",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "fix_product_media_storage_policies"
+    },
+    {
+      "file": "supabase/migrations/20260926033121_business_pro_subscriptions.sql",
+      "version": "20260926033121",
+      "name": "business_pro_subscriptions",
+      "sha256": "6184608a3d349988e330dc99718d1fc5bfdfc3baba4fe19da2303ea4c9f2d890",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_pro_subscriptions"
+    },
+    {
+      "file": "supabase/migrations/20260926082505_subscription_webhook_event_ordering.sql",
+      "version": "20260926082505",
+      "name": "subscription_webhook_event_ordering",
+      "sha256": "5acee89fb2d3118789bbccf7d5c29016ec85369b6aa72403b7775d2ab62920d2",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "subscription_webhook_event_ordering"
+    },
+    {
+      "file": "supabase/migrations/20260926082511_crm_contact_import.sql",
+      "version": "20260926082511",
+      "name": "crm_contact_import",
+      "sha256": "8f1991fdcb1b6670e32b4841e17f79affc5900716c3f17ea31cf0dda01a9b64d",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "crm_contact_import"
+    },
+    {
+      "file": "supabase/migrations/20260926082702_retention_p0_saved_searches_instant_booking.sql",
+      "version": "20260926082702",
+      "name": "retention_p0_saved_searches_instant_booking",
+      "sha256": "4b13bee1b3ef8be5d42b7b34b21bdf41a35463ae90fce90b520c56dc2ad076c7",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "retention_p0_saved_searches_instant_booking"
+    },
+    {
+      "file": "supabase/migrations/20260926082711_business_growth_engine_p0.sql",
+      "version": "20260926082711",
+      "name": "business_growth_engine_p0",
+      "sha256": "f52691bc68c348e8144acd1860e2f7167e554488da3d77d4dbe6cc7821f55cbd",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_growth_engine_p0"
+    },
+    {
+      "file": "supabase/migrations/20260926082721_instant_opportunity_alerts.sql",
+      "version": "20260926082721",
+      "name": "instant_opportunity_alerts",
+      "sha256": "1efe10a7dac6c36cc4c50d3eee662f264e81e0f28423e5c8d7efe89d6b282bd7",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "instant_opportunity_alerts"
+    },
+    {
+      "file": "supabase/migrations/20260926082924_restrict_retention_trigger_execution.sql",
+      "version": "20260926082924",
+      "name": "restrict_retention_trigger_execution",
+      "sha256": "cc492052a4a1415bb8375626039a69f8ecb0cdc616edfc65497cec6146ad23cb",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "restrict_retention_trigger_execution"
+    },
+    {
+      "file": "supabase/migrations/20260926084018_business_growth_engine_p1.sql",
+      "version": "20260926084018",
+      "name": "business_growth_engine_p1",
+      "sha256": "f1744a5c5358d98dba972113e4760fa1bf1930fc0348d59f498c7d72e0a21f2c",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_growth_engine_p1"
+    },
+    {
+      "file": "supabase/migrations/20260926084743_growth_execution_p2.sql",
+      "version": "20260926084743",
+      "name": "growth_execution_p2",
+      "sha256": "47664f61e8c0c230fc475e4cc912ae245b5c0724934a5f150d669b1c71cb26bd",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "growth_execution_p2"
+    },
+    {
+      "file": "supabase/migrations/20260926104416_apple_iap_entitlements.sql",
+      "version": "20260926104416",
+      "name": "apple_iap_entitlements",
+      "sha256": "e832e60678e1852d23b1a3a9dc4d388f8cdcf17de8804b397a8de21e4c02ac6c",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "apple_iap_entitlements"
+    },
+    {
+      "file": "supabase/migrations/20260926112442_everest_live_marketplace.sql",
+      "version": "20260926112442",
+      "name": "everest_live_marketplace",
+      "sha256": "a2c8c3d3446cd4473f3abf0f5fa98dfba744e9a888b58da81052353772bb35d7",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "everest_live_marketplace"
+    },
+    {
+      "file": "supabase/migrations/20260926114231_contextual_business_dm_automation.sql",
+      "version": "20260926114231",
+      "name": "contextual_business_dm_automation",
+      "sha256": "47512b8a8c1098542b11aaa63812363aa2f2d8e2709cc38c57287641ed960cbf",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "contextual_business_dm_automation"
+    },
+    {
+      "file": "supabase/migrations/20260926114328_harden_business_dm_automation.sql",
+      "version": "20260926114328",
+      "name": "harden_business_dm_automation",
+      "sha256": "a0d47cc5b739a09b26e3398078cfaf349d2bbb9ccf8597de4aaed5380d23eec6",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "harden_business_dm_automation"
+    },
+    {
+      "file": "supabase/migrations/20260926114431_social_engagement_feed.sql",
+      "version": "20260926114431",
+      "name": "social_engagement_feed",
+      "sha256": "afe18c2e074a96569c99b9f0f33637402cc4c8ac427228fad663868c49dd681a",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "social_engagement_feed"
+    },
+    {
+      "file": "supabase/migrations/20260926114854_social_reaction_policy_tuning.sql",
+      "version": "20260926114854",
+      "name": "social_reaction_policy_tuning",
+      "sha256": "0ec1bda91d0d64b48a8d32dd089e95b1ad6331a4be8725ea5b7f6f001818de2f",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "social_reaction_policy_tuning"
+    },
+    {
+      "file": "supabase/migrations/20260926115833_fix_everest_live_provider_tables.sql",
+      "version": "20260926115833",
+      "name": "fix_everest_live_provider_tables",
+      "sha256": "891ed9f1b5956b563796f78a0f0c8230a315ca5b6c58e45d283e69a405c8b72f",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "fix_everest_live_provider_tables"
+    },
+    {
+      "file": "supabase/migrations/20260926121806_structured_service_niche_matching.sql",
+      "version": "20260926121806",
+      "name": "structured_service_niche_matching",
+      "sha256": "b01f1f9d29b2ef65c8a22f4a153d951fdbb011d38b31d2f8d176c0524a0beaf9",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "structured_service_niche_matching"
+    },
+    {
+      "file": "supabase/migrations/20260926123438_social_comment_reactions_notifications.sql",
+      "version": "20260926123438",
+      "name": "social_comment_reactions_notifications",
+      "sha256": "8106b0ce829bbb3f311b4e7b91f1f781d34e602ab0912e79f5d2f8b372ec8043",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "social_comment_reactions_notifications"
+    },
+    {
+      "file": "supabase/migrations/20260926124858_marketplace_fee_engine.sql",
+      "version": "20260926124858",
+      "name": "marketplace_fee_engine",
+      "sha256": "921c51fa8ac2b9709646f5528f1a2638210be0dc5ca7cbbb86e3e4420aa2d10b",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "marketplace_fee_engine"
+    },
+    {
+      "file": "supabase/migrations/20260926125206_marketplace_payout_release_states.sql",
+      "version": "20260926125206",
+      "name": "marketplace_payout_release_states",
+      "sha256": "640a0a8a225917e0de49305d9f08d4f213160d7b963eafda161338d1d8b00df9",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "marketplace_payout_release_states"
+    },
+    {
+      "file": "supabase/migrations/20260926131657_service_payment_leakage_controls.sql",
+      "version": "20260926131657",
+      "name": "service_payment_leakage_controls",
+      "sha256": "06f8d007fd19236df0bb74c23070cb6eeb5267466736c9744b901fb4ab6fdc3d",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "service_payment_leakage_controls"
+    },
+    {
+      "file": "supabase/migrations/20260927002759_grant_product_images_authenticated_write.sql",
+      "version": "20260927002759",
+      "name": "grant_product_images_authenticated_write",
+      "sha256": "70e3c1e86ca317e388c975057c2f6049194364165a581ce2fc81a87f2986f6b2",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "grant_product_images_authenticated_write"
+    },
+    {
+      "file": "supabase/migrations/20260927011535_social_growth_promotions_collaboration.sql",
+      "version": "20260927011535",
+      "name": "social_growth_promotions_collaboration",
+      "sha256": "1991b8ca154fba9a9ffdfb962a47fda57fa99d07377d0bae4a34e70822ffe434",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "social_growth_promotions_collaboration"
+    },
+    {
+      "file": "supabase/migrations/20260927012456_post_promotion_audience_estimates.sql",
+      "version": "20260927012456",
+      "name": "post_promotion_audience_estimates",
+      "sha256": "9746278a0b66c307a7a9ea72f9e34f0a918903a338f60c021c929206b3b3f5f5",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "post_promotion_audience_estimates"
+    },
+    {
+      "file": "supabase/migrations/20260927021512_social_media_expansion_foundation.sql",
+      "version": "20260927021512",
+      "name": "social_media_expansion_foundation",
+      "sha256": "f2405c6184f0cec21ba55fa9f7651e4760d6d2d7b0075068d7002285a7237ed4",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "social_media_expansion_foundation"
+    },
+    {
+      "file": "supabase/migrations/20260927023255_separate_posts_from_clips_discovery.sql",
+      "version": "20260927023255",
+      "name": "separate_posts_from_clips_discovery",
+      "sha256": "4f06de62fa7ab4ed93e1cb3c0f9d3a67befe5fad45f30347eab725cb1d060408",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "separate_posts_from_clips_discovery"
+    },
+    {
+      "file": "supabase/migrations/20260927025750_precise_service_location_live_map.sql",
+      "version": "20260927025750",
+      "name": "precise_service_location_live_map",
+      "sha256": "ed378babb2464a707fd6013332ae31f1fe2e6c8d6e8eb2a0c968a0579b122dca",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "precise_service_location_live_map"
+    },
+    {
+      "file": "supabase/migrations/20260927032245_marketplace_stability_hardening.sql",
+      "version": "20260927032245",
+      "name": "marketplace_stability_hardening",
+      "sha256": "a9f24797016badeede2b0a1ee6ec9729f016357acd61affcfcfa17b86cfbd082",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "marketplace_stability_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260927033153_social_rls_advisor_hardening.sql",
+      "version": "20260927033153",
+      "name": "social_rls_advisor_hardening",
+      "sha256": "1d080e70574b5dd25b909f18294276c17f2b31fbf00b4f9d4a29d64950df9eee",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "social_rls_advisor_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260927041710_social_rls_advisor_hardening.sql",
+      "version": "20260927041710",
+      "name": "social_rls_advisor_hardening",
+      "sha256": "1d080e70574b5dd25b909f18294276c17f2b31fbf00b4f9d4a29d64950df9eee",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "social_rls_advisor_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260927042709_clip_editor_v2.sql",
+      "version": "20260927042709",
+      "name": "clip_editor_v2",
+      "sha256": "58be4962523ca3f8427cfc16718c81bdc8356798e56d1944d17bb6545ac0e1c7",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "clip_editor_v2"
+    },
+    {
+      "file": "supabase/migrations/20260927044323_everest_studio_sound_system.sql",
+      "version": "20260927044323",
+      "name": "everest_studio_sound_system",
+      "sha256": "695ea78840656229b273102531216514037015c9ef9fefd052d8580bbedcfa26",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "everest_studio_sound_system"
+    },
+    {
+      "file": "supabase/migrations/20260927045328_reusable_public_sounds.sql",
+      "version": "20260927045328",
+      "name": "reusable_public_sounds",
+      "sha256": "9f4bd02a19aee1ecfe098bd71c52062c1e8e33a2c6132e812b8ee80b83f06629",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "reusable_public_sounds"
+    },
+    {
+      "file": "supabase/migrations/20260927062736_storage_policy_music_tracks_read_privilege_fix.sql",
+      "version": "20260927062736",
+      "name": "storage_policy_music_tracks_read_privilege_fix",
+      "sha256": "b43d9fcd400644a7cea55079f6a96333fa59679783dcc96baeb38c7f1fd72635",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "storage_policy_music_tracks_read_privilege_fix"
+    },
+    {
+      "file": "supabase/migrations/20260927081523_stripe_connect_marketplace_payouts.sql",
+      "version": "20260927081523",
+      "name": "stripe_connect_marketplace_payouts",
+      "sha256": "8de24d4350914fc24f3782d9c591f389f680b44c40cc2b0f65afccb0ad723810",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "stripe_connect_marketplace_payouts"
+    },
+    {
+      "file": "supabase/migrations/20260927090456_stripe_connect_service_role_privileges.sql",
+      "version": "20260927090456",
+      "name": "stripe_connect_service_role_privileges",
+      "sha256": "32e5fe2ddd530bb329dc4ae8cabd1d3b412cce4626bc4fd1139288e48193d9ea",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "stripe_connect_service_role_privileges"
+    },
+    {
+      "file": "supabase/migrations/20260927095959_stripe_webhook_vault_secrets.sql",
+      "version": "20260927095959",
+      "name": "stripe_webhook_vault_secrets",
+      "sha256": "c45c4645d3ca20aef1d0310e741094f3820f5c63b5541a2b068f6cb5325075fd",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "stripe_webhook_vault_secrets"
+    },
+    {
+      "file": "supabase/migrations/20260927121749_business_ops_01_structure.sql",
+      "version": "20260927121749",
+      "name": "business_ops_01_structure",
+      "sha256": "63f53aef17ba59eade78c90895961d64e57c13661e6d98e1e9351a01fc0b973f",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_ops_01_structure"
+    },
+    {
+      "file": "supabase/migrations/20260927121756_business_ops_02_permissions.sql",
+      "version": "20260927121756",
+      "name": "business_ops_02_permissions",
+      "sha256": "e2f8d962b5e95f620151265ae95be45ded6b6da3bf91bf494fae4f88474f1bde",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_ops_02_permissions"
+    },
+    {
+      "file": "supabase/migrations/20260927121803_business_ops_03_members.sql",
+      "version": "20260927121803",
+      "name": "business_ops_03_members",
+      "sha256": "40e0459c82b08be30753447bac5d53211cf3a0532b84f8e9012469ef550fc0a1",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_ops_03_members"
+    },
+    {
+      "file": "supabase/migrations/20260927121813_business_ops_04_assignment.sql",
+      "version": "20260927121813",
+      "name": "business_ops_04_assignment",
+      "sha256": "0d13dd331cc6536da6c80377bcccc4094b3a387c92a5e0730455329ea4ece164",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_ops_04_assignment"
+    },
+    {
+      "file": "supabase/migrations/20260927121828_business_ops_04_dashboard.sql",
+      "version": "20260927121828",
+      "name": "business_ops_04_dashboard",
+      "sha256": "d2f8839f1adec009a7015bcbb449f1a5ae6887ab6e58799d7be458cfc9eaa316",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_ops_04_dashboard"
+    },
+    {
+      "file": "supabase/migrations/20260927121836_business_ops_05_rls.sql",
+      "version": "20260927121836",
+      "name": "business_ops_05_rls",
+      "sha256": "c6339b4ebbfbbff87c4a76f7343d51f08e55170d5bed3a7a756481e877b01b70",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_ops_05_rls"
+    },
+    {
+      "file": "supabase/migrations/20260927121844_business_ops_06_job_lifecycle.sql",
+      "version": "20260927121844",
+      "name": "business_ops_06_job_lifecycle",
+      "sha256": "655388a53dfa5887eb9aeb02962b3c06fd4e97b1fcfccb03682f4fc26a5edd67",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_ops_06_job_lifecycle"
+    },
+    {
+      "file": "supabase/migrations/20260927121851_business_ops_06_messaging_live.sql",
+      "version": "20260927121851",
+      "name": "business_ops_06_messaging_live",
+      "sha256": "43bba7b4f48a65b55a43412216ed1e2a3c6bc614a1f23ea295abf7c2f62e5b48",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_ops_06_messaging_live"
+    },
+    {
+      "file": "supabase/migrations/20260928123830_business_push_notifications.sql",
+      "version": "20260928123830",
+      "name": "business_push_notifications",
+      "sha256": "c4b2e4793fe12f114fc9185bec613cb449c1cf2d7289339dc85bd608d04fe458",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_push_notifications"
+    },
+    {
+      "file": "supabase/migrations/20260928165049_lock_down_social_actor_helpers.sql",
+      "version": "20260928165049",
+      "name": "lock_down_social_actor_helpers",
+      "sha256": "9d995552ddf9d688fabcb9a156831c249262820721e8c31327a724159e5d8f17",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "lock_down_social_actor_helpers"
+    },
+    {
+      "file": "supabase/migrations/20260928170252_secure_post_reporting.sql",
+      "version": "20260928170252",
+      "name": "secure_post_reporting",
+      "sha256": "fc09a231387d093023bf1eb06da04f9c885d355662676e0b1dbae1776be50ebc",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "secure_post_reporting"
+    },
+    {
+      "file": "supabase/migrations/20260928172000_active_business_membership_and_live_hardening.sql",
+      "version": "20260928172000",
+      "name": "active_business_membership_and_live_hardening",
+      "sha256": "9213fba04277267935724b62241087cbd35e2224bb8cec21251032cca5a68ef4",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "active_business_membership_and_live_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260929133200_flat_marketplace_fee_policy_v2.sql",
+      "version": "20260929133200",
+      "name": "flat_marketplace_fee_policy_v2",
+      "sha256": "12c6460c312e733f630d37fc589342e2a0d4029f8ce0f8364fc8cfe9878789e0",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "flat_marketplace_fee_policy_v2"
+    },
+    {
+      "file": "supabase/migrations/20260929134000_preserve_split_service_fee_v2.sql",
+      "version": "20260929134000",
+      "name": "preserve_split_service_fee_v2",
+      "sha256": "f44414c83137af1155b422d9d507e48fbf3d8df8529aee85b244ccab04ebf1ac",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "preserve_split_service_fee_v2"
+    },
+    {
+      "file": "supabase/migrations/20260929134500_restore_marketplace_booking_payment_guards.sql",
+      "version": "20260929134500",
+      "name": "restore_marketplace_booking_payment_guards",
+      "sha256": "eb5756fd49631f103d3c985ac2fcfebeedf7c8a8731790375c7e288e9dce321e",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "restore_marketplace_booking_payment_guards"
+    },
+    {
+      "file": "supabase/migrations/20260929135000_harden_paid_booking_cancellation_race.sql",
+      "version": "20260929135000",
+      "name": "harden_paid_booking_cancellation_race",
+      "sha256": "3d637651074f410e18b71253a1bd46184d0b5c49f02b9a6d874b6a3bea72c395",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "harden_paid_booking_cancellation_race"
+    },
+    {
+      "file": "supabase/migrations/20260929135500_lock_order_reservation_release_after_checkout.sql",
+      "version": "20260929135500",
+      "name": "lock_order_reservation_release_after_checkout",
+      "sha256": "e198d211411d859734a08b24905e38557c3cf5573f7249bf049141086650a5df",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "lock_order_reservation_release_after_checkout"
+    },
+    {
+      "file": "supabase/migrations/20260929140000_harden_marketplace_quote_payment_readiness.sql",
+      "version": "20260929140000",
+      "name": "harden_marketplace_quote_payment_readiness",
+      "sha256": "d43138348e38d818b62b20a343cec4e372c8992564232ecd6a68aeffc6d5c4f0",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "harden_marketplace_quote_payment_readiness"
+    },
+    {
+      "file": "supabase/migrations/20260930084000_restore_paid_order_and_job_integrity.sql",
+      "version": "20260930084000",
+      "name": "restore_paid_order_and_job_integrity",
+      "sha256": "15e6898c160d94cfec2be93afcdba067fd154e4ffa6fecfed9020028c4dbca2f",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "restore_paid_order_and_job_integrity"
+    },
+    {
+      "file": "supabase/migrations/20260930085500_harden_cart_and_inventory_reactivation.sql",
+      "version": "20260930085500",
+      "name": "harden_cart_and_inventory_reactivation",
+      "sha256": "384a42c7b50ca16071a57984e11fa163b0ef547a8db17341ac077dc7e78ee42b",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "harden_cart_and_inventory_reactivation"
+    },
+    {
+      "file": "supabase/migrations/20260930090500_harden_instant_booking_payment_authority.sql",
+      "version": "20260930090500",
+      "name": "harden_instant_booking_payment_authority",
+      "sha256": "0a504ad9dd9abdf732a35ad56f6abb028a15ba89647865e13165f0dab0e4d126",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "harden_instant_booking_payment_authority"
+    },
+    {
+      "file": "supabase/migrations/20260930091500_enforce_order_creation_payment_readiness.sql",
+      "version": "20260930091500",
+      "name": "enforce_order_creation_payment_readiness",
+      "sha256": "1747010cd7878cbc67b4a64b3a506ce9021e451010703480a3e36bd859d55658",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "enforce_order_creation_payment_readiness"
+    },
+    {
+      "file": "supabase/migrations/20260930162000_service_checkout_retry_hardening.sql",
+      "version": "20260930162000",
+      "name": "service_checkout_retry_hardening",
+      "sha256": "3b90e664abb9a56e8dc6aff33fefa86d56d337d6ed3c6447d56c616faab3e27d",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "service_checkout_retry_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260930163041_optimize_rls_auth_initplans.sql",
+      "version": "20260930163041",
+      "name": "optimize_rls_auth_initplans",
+      "sha256": "7f6585cf79b6c0754dfd8124ec1efa9a29bee7db6976ff3b14f086dc0151da6d",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "optimize_rls_auth_initplans"
+    },
+    {
+      "file": "supabase/migrations/20260930163500_account_deletion_retention_hardening.sql",
+      "version": "20260930163500",
+      "name": "account_deletion_retention_hardening",
+      "sha256": "dc4aaf61214d75e0097f15054788c848897ac1960f5550fee7cda1a226f8f796",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "account_deletion_retention_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260930164612_lock_dispatch_candidate_helper_to_server.sql",
+      "version": "20260930164612",
+      "name": "lock_dispatch_candidate_helper_to_server",
+      "sha256": "5d1d90afefd36d761f6685e87e223565555b724f1c3696764f2b13ed35a15843",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "lock_dispatch_candidate_helper_to_server"
+    },
+    {
+      "file": "supabase/migrations/20260930165000_media_storage_permission_hardening.sql",
+      "version": "20260930165000",
+      "name": "media_storage_permission_hardening",
+      "sha256": "cf0e4fd1ebf89a3576b304c8476c5efca1b77f6f20e717608796852c51e5ae8a",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "media_storage_permission_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260930171000_cross_dispatch_assignment_exclusivity.sql",
+      "version": "20260930171000",
+      "name": "cross_dispatch_assignment_exclusivity",
+      "sha256": "b8ab4406cb7c1a2b67857d66c832896fd4708b1eeafee372cdfc194c4f6f62d4",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "cross_dispatch_assignment_exclusivity"
+    },
+    {
+      "file": "supabase/migrations/20260930173000_business_role_permission_boundary.sql",
+      "version": "20260930173000",
+      "name": "business_role_permission_boundary",
+      "sha256": "acd404c2147ed4e906011bdb588006bda8849cf16033b563a67f9f04103e453d",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "business_role_permission_boundary"
+    },
+    {
+      "file": "supabase/migrations/20260930174500_crm_growth_role_permission_boundary.sql",
+      "version": "20260930174500",
+      "name": "crm_growth_role_permission_boundary",
+      "sha256": "93b584484f7f20777e884bd56dd430f824470340dd8d80eea6c3de034cd5beba",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "crm_growth_role_permission_boundary"
+    },
+    {
+      "file": "supabase/migrations/20260930180000_social_crm_credit_role_hardening.sql",
+      "version": "20260930180000",
+      "name": "social_crm_credit_role_hardening",
+      "sha256": "61ebd1fa486c0ed20575045e05d8e807cca8c9e40bdbe7a7bae8895a54208883",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "social_crm_credit_role_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260930181500_service_role_user_permission_helper.sql",
+      "version": "20260930181500",
+      "name": "service_role_user_permission_helper",
+      "sha256": "f339e07d166c33c3fa1cb1a37915b55e76a4213de7c37c275228419fcb0c9072",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "service_role_user_permission_helper"
+    },
+    {
+      "file": "supabase/migrations/20260930183000_post_promotion_role_hardening.sql",
+      "version": "20260930183000",
+      "name": "post_promotion_role_hardening",
+      "sha256": "006eb167e3e1890c69e6fe6790b8b61494248268f624dcc5d9af3ec49f259912",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "post_promotion_role_hardening"
+    },
+    {
+      "file": "supabase/migrations/20260930184500_public_profile_column_privacy.sql",
+      "version": "20260930184500",
+      "name": "public_profile_column_privacy",
+      "sha256": "91526a632a64738feb469955e671888f535d2adbe510701ba79dd75c4151438a",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "public_profile_column_privacy"
+    },
+    {
+      "file": "supabase/migrations/20260930190000_connect_membership_package_billing.sql",
+      "version": "20260930190000",
+      "name": "connect_membership_package_billing",
+      "sha256": "7f42bb296209da0deb2d3a325e49577c66def658842e3d52587896d93c10b7ea",
+      "state": "APPLIED_HISTORY_CONTENT_UNVERIFIED",
+      "remoteName": "connect_membership_package_billing"
+    },
+    {
+      "file": "supabase/migrations/20261018032359_phase5_public_discovery.sql",
+      "version": "20261018032359",
+      "name": "phase5_public_discovery",
+      "sha256": "50e021013bf44bdb715601a8b46e8d9add4736cee9cfb2578a78e268c77e581d",
+      "state": "PENDING_RELEASE_GATE",
+      "remoteName": null
+    },
+    {
+      "file": "supabase/migrations/20261019034703_phase6_live_matching_correctness.sql",
+      "version": "20261019034703",
+      "name": "phase6_live_matching_correctness",
+      "sha256": "e0ed8ab8c164b7d8c59c15b5143ede25048e8aa2e2ba58a2834aab1ecdffcd41",
+      "state": "PENDING_RELEASE_GATE",
+      "remoteName": null
+    },
+    {
+      "file": "supabase/migrations/20261019035131_phase6_authorized_comment_moderation.sql",
+      "version": "20261019035131",
+      "name": "phase6_authorized_comment_moderation",
+      "sha256": "c0f685697e8c0bcfee3f32c9bc6aecbbd985ffe18f4e838ac9c9f0e28741a51a",
+      "state": "PENDING_RELEASE_GATE",
+      "remoteName": null
+    },
+    {
+      "file": "supabase/migrations/20261019035613_phase6_live_request_quote_lifecycle.sql",
+      "version": "20261019035613",
+      "name": "phase6_live_request_quote_lifecycle",
+      "sha256": "097be277062bf76161a9c9224c886ce34fe692ba4c60ec3b8c15845eb2e9c7aa",
+      "state": "PENDING_RELEASE_GATE",
+      "remoteName": null
+    },
+    {
+      "file": "supabase/migrations/20261019081535_phase7_quote_acceptance_lock_order.sql",
+      "version": "20261019081535",
+      "name": "phase7_quote_acceptance_lock_order",
+      "sha256": "0fe6830d723227d1f41e9ecdc44fbcc35c0e4cd36c40013202ee7d0ba89392fc",
+      "state": "PENDING_RELEASE_GATE",
+      "remoteName": null
+    }
+  ],
+  "remoteOnly": [
+    {
+      "version": "20261002125208",
+      "name": "business_listing_payout_override",
+      "source_md5": "999f2ee02a62d29e21d902b085444b1a",
+      "statement_count": 1
+    },
+    {
+      "version": "20261003043651",
+      "name": "lc_events_client_intake_storage",
+      "source_md5": "097005123c6c3bce137f3ec6c0a3fa9a",
+      "statement_count": 1
+    },
+    {
+      "version": "20261003043838",
+      "name": "lc_events_delivery_settings",
+      "source_md5": "813bb9de26d8f7030bd0ed3d92df1e38",
+      "statement_count": 1
+    },
+    {
+      "version": "20261003050944",
+      "name": "fix_lc_edge_service_role_table_privileges",
+      "source_md5": "64b7972d56ef99e32be3b1524b83b2bd",
+      "statement_count": 1
+    }
+  ]
+}

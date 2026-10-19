@@ -1,5 +1,7 @@
 # Phase 6 — backend correctness and launch hardening
 
+> Historical Phase 6 checkpoint at `152188f`. See [Phase 7 evidence](../phase7-evidence/README.md) for the acceptance lock-order correction, updated migration inventory and current release gates.
+
 **Recommendation: NO-GO for the next production release.** The local corrections and review branch are complete. Real staging lifecycle/realtime verification, migration-history reconciliation and physical-device acceptance remain release gates. This report does not label fixtures as staging or production validation.
 
 Review PR: [#110](https://github.com/daksh-07/-Everest-Local-App/pull/110). Base/main/production verified as `95b8d489c98109717bcb8d6ef53d54674c4b5ab7`; #108 and #109 are merged. #107 is open at `068566b`, reconciled here with only its `vercel.json` conflict resolved. #97 remains open at `afbaa855`; neither its geographic migration nor its broad guest-search migration was copied. No payment, pricing, commission, checkout, messaging or booking behavior was changed beyond #107's recovery integration; existing payment-bearing SQL was tested unchanged with controlled fixture dependencies.

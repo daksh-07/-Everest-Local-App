@@ -1,0 +1,518 @@
+{
+  "policies": [
+    {
+      "cmd": "SELECT",
+      "qual": "((customer_id = ( SELECT auth.uid() AS uid)) OR is_admin() OR has_business_permission(business_id, 'JOB_VIEW_ALL'::text) OR can_operate_business_booking(id))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "bookings",
+      "permissive": "PERMISSIVE",
+      "policyname": "bookings_participant_access",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((owner_id = ( SELECT auth.uid() AS uid)) OR is_admin())",
+      "roles": [
+        "public"
+      ],
+      "tablename": "businesses",
+      "permissive": "PERMISSIVE",
+      "policyname": "businesses_owner_update",
+      "schemaname": "public",
+      "with_check": "((owner_id = ( SELECT auth.uid() AS uid)) OR is_admin())"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "public"
+      ],
+      "tablename": "businesses",
+      "permissive": "PERMISSIVE",
+      "policyname": "businesses_owner_write",
+      "schemaname": "public",
+      "with_check": "(owner_id = ( SELECT auth.uid() AS uid))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(((status = 'ACTIVE'::business_status) AND (verification_status = 'VERIFIED'::verification_status)) OR (owner_id = ( SELECT auth.uid() AS uid)) OR is_admin())",
+      "roles": [
+        "public"
+      ],
+      "tablename": "businesses",
+      "permissive": "PERMISSIVE",
+      "policyname": "businesses_public_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "post_comments",
+      "permissive": "PERMISSIVE",
+      "policyname": "post_comments_insert",
+      "schemaname": "public",
+      "with_check": "((( SELECT auth.uid() AS uid) = author_id) AND (EXISTS ( SELECT 1\n   FROM posts p\n  WHERE ((p.id = post_comments.post_id) AND (p.status = 'PUBLISHED'::text) AND (p.comments_enabled = true)))))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((status = 'VISIBLE'::text) AND (EXISTS ( SELECT 1\n   FROM posts p\n  WHERE ((p.id = post_comments.post_id) AND (p.status = 'PUBLISHED'::text) AND ((p.visibility = 'PUBLIC'::text) OR (p.author_id = ( SELECT auth.uid() AS uid)) OR ((p.visibility = 'FOLLOWERS'::text) AND (EXISTS ( SELECT 1\n           FROM follows f\n          WHERE ((f.follower_id = ( SELECT auth.uid() AS uid)) AND (((p.business_id IS NULL) AND (f.followed_user_id = p.author_id)) OR (f.business_id = p.business_id)))))))))))",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "tablename": "post_comments",
+      "permissive": "PERMISSIVE",
+      "policyname": "post_comments_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((( SELECT auth.uid() AS uid) = author_id) OR (EXISTS ( SELECT 1\n   FROM posts p\n  WHERE ((p.id = post_comments.post_id) AND (p.author_id = ( SELECT auth.uid() AS uid))))) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "post_comments",
+      "permissive": "PERMISSIVE",
+      "policyname": "post_comments_update",
+      "schemaname": "public",
+      "with_check": "((( SELECT auth.uid() AS uid) = author_id) OR (EXISTS ( SELECT 1\n   FROM posts p\n  WHERE ((p.id = post_comments.post_id) AND (p.author_id = ( SELECT auth.uid() AS uid))))) OR is_admin())"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "(has_business_permission(business_id, 'CATALOG_MANAGE'::text) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "products",
+      "permissive": "PERMISSIVE",
+      "policyname": "products_business_delete",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "products",
+      "permissive": "PERMISSIVE",
+      "policyname": "products_business_insert",
+      "schemaname": "public",
+      "with_check": "(has_business_permission(business_id, 'CATALOG_MANAGE'::text) OR is_admin())"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(has_business_permission(business_id, 'CATALOG_MANAGE'::text) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "products",
+      "permissive": "PERMISSIVE",
+      "policyname": "products_business_update",
+      "schemaname": "public",
+      "with_check": "(has_business_permission(business_id, 'CATALOG_MANAGE'::text) OR is_admin())"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(((status = ANY (ARRAY['ACTIVE'::product_status, 'OUT_OF_STOCK'::product_status])) AND (EXISTS ( SELECT 1\n   FROM businesses b\n  WHERE ((b.id = products.business_id) AND (b.status = 'ACTIVE'::business_status) AND (b.verification_status = 'VERIFIED'::verification_status))))) OR is_business_member(business_id) OR is_admin())",
+      "roles": [
+        "public"
+      ],
+      "tablename": "products",
+      "permissive": "PERMISSIVE",
+      "policyname": "products_public_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((customer_id = ( SELECT auth.uid() AS uid)) OR has_business_permission(business_id, 'CRM_VIEW'::text) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "quotes",
+      "permissive": "PERMISSIVE",
+      "policyname": "quotes_participant_access",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "true",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "service_booking_settings",
+      "permissive": "PERMISSIVE",
+      "policyname": "service_booking_settings_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "((customer_id = ( SELECT auth.uid() AS uid)) OR is_admin())",
+      "roles": [
+        "public"
+      ],
+      "tablename": "service_requests",
+      "permissive": "PERMISSIVE",
+      "policyname": "requests_customer_access",
+      "schemaname": "public",
+      "with_check": "((customer_id = ( SELECT auth.uid() AS uid)) OR is_admin())"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "(has_business_permission(business_id, 'CATALOG_MANAGE'::text) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "services",
+      "permissive": "PERMISSIVE",
+      "policyname": "services_business_delete",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "services",
+      "permissive": "PERMISSIVE",
+      "policyname": "services_business_insert",
+      "schemaname": "public",
+      "with_check": "(has_business_permission(business_id, 'CATALOG_MANAGE'::text) OR is_admin())"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(has_business_permission(business_id, 'CATALOG_MANAGE'::text) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "services",
+      "permissive": "PERMISSIVE",
+      "policyname": "services_business_update",
+      "schemaname": "public",
+      "with_check": "(has_business_permission(business_id, 'CATALOG_MANAGE'::text) OR is_admin())"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(((active = true) AND (EXISTS ( SELECT 1\n   FROM businesses b\n  WHERE ((b.id = services.business_id) AND (b.status = 'ACTIVE'::business_status) AND (b.verification_status = 'VERIFIED'::verification_status))))) OR is_business_member(business_id) OR is_admin())",
+      "roles": [
+        "public"
+      ],
+      "tablename": "services",
+      "permissive": "PERMISSIVE",
+      "policyname": "services_public_read",
+      "schemaname": "public",
+      "with_check": null
+    }
+  ],
+  "functions": [
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "args": "",
+      "name": "public.notify_booking_change",
+      "owner": "postgres",
+      "definition_sha256": "46dfe70b9868618d47d0fef5dfac85d6cf5371948bba07ffe6ae5eaa948c213d",
+      "sql_body_token_sha256": "9336e6a2ca60f1100b039d3196c67467e11f61224f707232ab5a333620c5335b"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ],
+      "args": "",
+      "name": "public.is_admin",
+      "owner": "postgres",
+      "definition_sha256": "ff345815d8807eac185794ccb18321f72f281ac33876a8b54549ecc1980d31fc",
+      "sql_body_token_sha256": "d7679f6b57eb2ae617701341c7cafd3201e1522e18a193c9113eb78f82bb7495"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "args": "",
+      "name": "private.growth_booking_completed",
+      "owner": "postgres",
+      "definition_sha256": "f616e5bff3bfe065f9c3fbf4db2d30fe87de9b005a64912c1cbefa3640fa7242",
+      "sql_body_token_sha256": "3fdfd7dd1a6a4041f58a2e974a60b7861b2c461aa6bddbd3f096f70003fa229c"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "args": "",
+      "name": "public.notify_quote_change",
+      "owner": "postgres",
+      "definition_sha256": "ebc4b567715f578fe3ef0229e13620dbaf8fdfcaf8d86ba8eef233edb81fb3c4",
+      "sql_body_token_sha256": "6a8eccf312d4739720435143fc7fc6a7a8208e7d261296723e3e0c537687dcbd"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "args": "p_request_id uuid, p_radius_km numeric, p_stage integer",
+      "name": "public.release_everest_live_wave",
+      "owner": "postgres",
+      "definition": "CREATE OR REPLACE FUNCTION public.release_everest_live_wave(p_request_id uuid, p_radius_km numeric, p_stage integer)\n RETURNS integer\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare r public.service_requests; released integer:=0;\nbegin\n select * into r from public.service_requests where id=p_request_id for update;\n if r.id is null or not r.is_live or r.live_status not in ('SEARCHING','NOTIFYING','NO_PROVIDER_FOUND') then return 0; end if;\n if r.live_expires_at<=now() then\n  update public.service_requests set live_status='EXPIRED',status='CANCELLED',updated_at=now() where id=r.id;\n  update public.opportunities set status='EXPIRED' where request_id=r.id and status='OPEN';\n  return 0;\n end if;\n\n with eligible as (\n  select distinct on (b.id) b.id business_id,\n   public.everest_distance_km(r.latitude,r.longitude,b.latitude,b.longitude) distance_km,\n   coalesce((\n     select min(public.dispatch_eta_proxy_seconds(r.latitude,r.longitude,l.latitude,l.longitude,coalesce(cfg.travel_speed_kmh,35)))\n     from public.business_members bm\n     join public.driver_availability da on da.driver_id=bm.user_id and da.status='ONLINE'\n     join public.service_provider_locations l on l.provider_id=bm.user_id\n     left join public.service_dispatch_provider_config cfg on cfg.provider_id=bm.user_id\n     where bm.business_id=b.id\n       and bm.status='ACTIVE'\n       and l.recorded_at>=now()-interval '10 minutes'\n   ),null) eta_seconds\n  from public.businesses b\n  join public.services s on s.business_id=b.id and s.active\n   and (r.service_id is null or s.id=r.service_id)\n   and (r.service_definition_id is null or s.service_definition_id=r.service_definition_id)\n   and (s.delivery_mode=r.delivery_mode or s.delivery_mode='BOTH')\n  join public.business_availability ba on ba.business_id=b.id and ba.status='AVAILABLE_NOW'\n   and (ba.available_until is null or ba.available_until>now())\n  where b.status='ACTIVE' and b.verification_status='VERIFIED' and b.accepts_requests\n   and (r.category_id is null or b.category_id=r.category_id or s.category_id=r.category_id)\n   and not exists(select 1 from public.opportunities old where old.request_id=r.id and old.business_id=b.id)\n   and not exists(\n     select 1 from public.service_dispatch_assignments a\n     join public.business_members bm on bm.user_id=a.provider_id\n     where bm.business_id=b.id and a.completed_at is null\n   )\n   and (\n    r.delivery_mode='REMOTE'\n    or (\n      r.latitude is not null and r.longitude is not null and b.latitude is not null and b.longitude is not null\n      and public.everest_distance_km(r.latitude,r.longitude,b.latitude,b.longitude)<=p_radius_km\n      and public.everest_distance_km(r.latitude,r.longitude,b.latitude,b.longitude)<=coalesce((\n        select max(da.service_radius_km)\n        from public.business_members bm\n        join public.driver_availability da on da.driver_id=bm.user_id and da.status='ONLINE'\n        where bm.business_id=b.id\n          and bm.status='ACTIVE'\n      ),p_radius_km)\n    )\n    or exists(select 1 from public.service_areas a where a.business_id=b.id and a.active and lower(a.suburb)=lower(r.suburb) and lower(a.city)=lower(r.city) and lower(a.state)=lower(r.state))\n   )\n  order by b.id,distance_km nulls last\n ), inserted_matches as (\n  insert into public.service_matches(request_id,business_id,score,reason)\n  select r.id,e.business_id,greatest(0,260-coalesce(round(e.distance_km*5)::integer,0)),\n   jsonb_build_object('everest_live',true,'exact_service_niche',r.service_definition_id is not null,'radius_stage',p_stage,'distance_km',case when e.distance_km is null then null else round(e.distance_km,1) end,'eta_seconds',e.eta_seconds)\n  from eligible e on conflict(request_id,business_id) do update set score=excluded.score,reason=excluded.reason\n  returning business_id,reason\n )\n insert into public.opportunities(request_id,business_id,status,expires_at,is_live,notified_at,approximate_distance_km,eta_seconds)\n select r.id,m.business_id,'OPEN',least(r.live_expires_at,now()+interval '20 minutes'),true,now(),\n  (m.reason->>'distance_km')::numeric,(m.reason->>'eta_seconds')::integer from inserted_matches m\n on conflict(request_id,business_id) do nothing;\n get diagnostics released=row_count;\n\n update public.service_requests set live_radius_km=p_radius_km,live_radius_stage=p_stage,\n  live_status=case when released>0 then 'NOTIFYING' else 'SEARCHING' end,updated_at=now() where id=r.id;\n perform public.everest_live_audit(r.id,case when p_stage=1 then 'EVEREST_LIVE_STARTED' else 'EVEREST_LIVE_RADIUS_EXPANDED' end,\n  jsonb_build_object('radius_km',p_radius_km,'stage',p_stage,'providers_notified',released,'service_definition_id',r.service_definition_id));\n return released;\nend $function$\n",
+      "definition_sha256": "d5ab18e2b1d04c32f4cff230b5e48fbaa3b8a2faf5c3d4cd43228263e9c377dc",
+      "sql_body_token_sha256": "6050cabe807d7e5afb4fba57a648358c7810e5aa2a6e33455a00d3c8889aaea5"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ],
+      "args": "p_request_id uuid",
+      "name": "public.cancel_everest_live",
+      "owner": "postgres",
+      "definition_sha256": "c42c30d6bb25400e2b2d4ca444d701e008f2df8949e0faf05b9fd568f3e22171",
+      "sql_body_token_sha256": "a0c51209095afb6e6b0cb0a2c1bb08d66e77e19f6511e71866bc63e28459bb32"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "args": "",
+      "name": "public.everest_live_quote_response",
+      "owner": "postgres",
+      "definition_sha256": "a2ebbec2e3c034d525ba211f7b9de1de3e01472c1a85860f61b05b6043fabbfa",
+      "sql_body_token_sha256": "0ba126407a581b53f9f15fcd591049fc8c86765f67db8e72e1afa8457a6782f7"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "args": "",
+      "name": "public.sync_everest_live_request_lifecycle",
+      "owner": "postgres",
+      "definition_sha256": "1634afe3812609b8d8c0d46128b95851e59c60e55cbf97505e4ca81bb254733c",
+      "sql_body_token_sha256": "1839118affe0c52cbed305cc793806160c976798336016770e987585e96928c8"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "args": "",
+      "name": "public.cancel_service_dispatch_on_marketplace_change",
+      "owner": "postgres",
+      "definition_sha256": "9694d880bb8efc223676318dad7e6ff2c8a4a9e029ad54ed97bdf476dcfa9f53",
+      "sql_body_token_sha256": "63c5592633de219044407f605358325f65182c719313aa5800771d955f1ba850"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ],
+      "args": "p_business_id uuid, p_request_id uuid, p_service_id uuid, p_description text, p_line_items jsonb, p_price numeric, p_deposit numeric, p_total numeric, p_proposed_date date, p_proposed_time time without time zone, p_valid_until timestamp with time zone, p_terms text",
+      "name": "public.send_quote_for_business",
+      "owner": "postgres",
+      "definition_sha256": "d280505368b638e999ca3b9b55e81d4b2bd59ccefb224c08b6c778af29a3ab08",
+      "sql_body_token_sha256": "3a965000f37247aa80a171cf8fc07e604ca874e7c8555f6307e790b6f20a1d0a"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ],
+      "args": "p_request_id uuid, p_service_id uuid, p_description text, p_line_items jsonb, p_price numeric, p_deposit numeric, p_total numeric, p_proposed_date date, p_proposed_time time without time zone, p_valid_until timestamp with time zone, p_terms text",
+      "name": "public.send_quote",
+      "owner": "postgres",
+      "definition_sha256": "b1a5714c210c1e89f7502ab36e1bef81534bd1d00ddc1e2752c0ebc56ae5ef51",
+      "sql_body_token_sha256": "416a82bbfa6a263445ac0b6684eb2ba5cdd6dcd48875730ff3dee51a64738304"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ],
+      "args": "p_quote_id uuid",
+      "name": "public.accept_quote",
+      "owner": "postgres",
+      "definition": "CREATE OR REPLACE FUNCTION public.accept_quote(p_quote_id uuid)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  q public.quotes;\n  r public.service_requests;\n  bid uuid;\n  minimum_deposit numeric;\nbegin\n  if auth.uid() is null then raise exception 'Authentication required'; end if;\n\n  select * into q from public.quotes where id=p_quote_id for update;\n  if q.id is null or q.customer_id<>auth.uid() then raise exception 'Not authorized'; end if;\n\n  select * into r from public.service_requests where id=q.request_id for update;\n  if r.id is null or r.customer_id<>auth.uid() then raise exception 'Request not found'; end if;\n  if r.status<>'QUOTING' then raise exception 'This request is no longer accepting quote decisions'; end if;\n  if q.status not in ('SENT','VIEWED') then raise exception 'Quote cannot be accepted in its current state'; end if;\n\n  if q.valid_until is not null and q.valid_until<now() then\n    update public.quotes set status='EXPIRED',updated_at=now() where id=q.id;\n    raise exception 'Quote expired';\n  end if;\n\n  if not public.is_business_payment_ready(q.business_id) then\n    raise exception 'This business is not ready to receive Everest payments. Choose another quote or try again later';\n  end if;\n\n  minimum_deposit:=least(q.total,public.calculate_service_platform_fee(q.total));\n  if q.deposit<minimum_deposit then\n    update public.quotes set deposit=minimum_deposit,updated_at=now() where id=q.id;\n    q.deposit:=minimum_deposit;\n  end if;\n\n  update public.quotes set status='ACCEPTED',updated_at=now() where id=q.id;\n  update public.quotes set status='DECLINED',updated_at=now()\n  where request_id=q.request_id and id<>q.id and status in ('SENT','VIEWED');\n\n  insert into public.bookings(\n    request_id,quote_id,customer_id,business_id,price,\n    scheduled_date,scheduled_time,status,marketplace_payment_required\n  )\n  values(\n    q.request_id,q.id,q.customer_id,q.business_id,q.total,\n    q.proposed_date,q.proposed_time,'PENDING_PAYMENT',true\n  )\n  returning id into bid;\n\n  update public.service_requests set status='BOOKED',updated_at=now() where id=q.request_id;\n\n  insert into public.notifications(user_id,kind,title,body,data)\n  values(\n    (select owner_id from public.businesses where id=q.business_id),\n    'QUOTE_ACCEPTED','Quote accepted',\n    'A customer accepted your quote. The booking is secured after the Everest deposit is paid.',\n    jsonb_build_object('quote_id',q.id,'booking_id',bid)\n  );\n\n  return bid;\nend\n$function$\n",
+      "definition_sha256": "48d58eecb2ff6c89d6379713f8d03bb0637e44170807401d04e39c0f6af15433",
+      "sql_body_token_sha256": "48c045e764d9f42a0bbf3087bb955622e07b004054fb987b0f5d31afb79020c5"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ],
+      "args": "p_query text, p_kind text, p_limit integer, p_offset integer",
+      "name": "public.universal_search",
+      "owner": "postgres",
+      "definition": "CREATE OR REPLACE FUNCTION public.universal_search(p_query text, p_kind text DEFAULT 'TOP'::text, p_limit integer DEFAULT 20, p_offset integer DEFAULT 0)\n RETURNS TABLE(kind text, id uuid, title text, subtitle text, score integer, metadata jsonb)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nwith q as (select lower(trim(coalesce(p_query,''))) t),\npeople as (\n select 'PERSON'::text as kind,pp.id as id,coalesce(pp.display_name,'Everest member') as title,\n   case when pp.username is not null then '@'||pp.username else coalesce(pp.bio,'Person') end as subtitle,\n   (case when lower(coalesce(pp.display_name,''))=(select t from q) then 100 when lower(coalesce(pp.display_name,'')) like (select t from q)||'%' then 80 else 50 end)::int as score,\n   jsonb_build_object('avatar_url',pp.avatar_url,'username',pp.username) as metadata\n from public.public_profiles pp\n join public.user_social_preferences sp on sp.user_id=pp.id\n where (select t from q)<>''\n and pp.visibility='PUBLIC' and sp.search_visible\n and not public.users_blocked(auth.uid(),pp.id)\n and (lower(coalesce(pp.display_name,'')) like '%'||(select t from q)||'%' or lower(coalesce(pp.username,'')) like '%'||(select t from q)||'%' or lower(coalesce(pp.bio,'')) like '%'||(select t from q)||'%')\n),\nbusinesses_q as (\n select 'BUSINESS',b.id,b.name,coalesce(b.description,'Registered Everest business'),\n  (case when lower(b.name)=(select t from q) then 100 when lower(b.name) like (select t from q)||'%' then 80 else 50 end)::int,\n  jsonb_build_object('logo_url',b.logo_url,'suburb',b.suburb,'verified',b.verification_status='VERIFIED')\n from public.businesses b where b.status='ACTIVE' and b.verification_status='VERIFIED'\n and ((select t from q)='' or lower(b.name) like '%'||(select t from q)||'%' or lower(coalesce(b.description,'')) like '%'||(select t from q)||'%' or lower(coalesce(b.suburb,'')) like '%'||(select t from q)||'%')\n),\nservices_q as (\n select 'SERVICE',s.id,s.name,coalesce(s.description,'Service'),60,jsonb_build_object('business_id',s.business_id,'base_price',s.base_price)\n from public.services s join public.businesses b on b.id=s.business_id\n where s.active and b.status='ACTIVE' and b.verification_status='VERIFIED'\n and ((select t from q)='' or lower(s.name) like '%'||(select t from q)||'%' or lower(coalesce(s.description,'')) like '%'||(select t from q)||'%')\n),\nposts_q as (\n select case when exists(select 1 from public.post_media pm where pm.post_id=p.id and pm.media_type='VIDEO') then 'VIDEO' else 'POST' end,\n p.id,coalesce(nullif(p.caption,''),replace(p.post_type,'_',' ')),replace(p.post_type,'_',' '),45,\n jsonb_build_object('author_id',p.author_id,'business_id',p.business_id)\n from public.posts p where p.status='PUBLISHED' and p.visibility='PUBLIC'\n and not public.users_blocked(auth.uid(),p.author_id)\n and (p.business_id is null or exists(select 1 from public.businesses b where b.id=p.business_id and b.status='ACTIVE' and b.verification_status='VERIFIED'))\n and ((select t from q)='' or lower(coalesce(p.caption,'')) like '%'||(select t from q)||'%')\n),\nproducts_q as (\n select 'PRODUCT',p.id,p.name,coalesce(p.description,'Product'),50,jsonb_build_object('business_id',p.business_id,'price',p.price,'sale_price',p.sale_price)\n from public.products p join public.businesses b on b.id=p.business_id\n where p.status='ACTIVE' and b.status='ACTIVE' and b.verification_status='VERIFIED'\n and ((select t from q)='' or lower(p.name) like '%'||(select t from q)||'%' or lower(coalesce(p.description,'')) like '%'||(select t from q)||'%')\n),\nall_rows as (\n select * from people union all select * from businesses_q union all select * from services_q union all select * from posts_q union all select * from products_q\n)\nselect * from all_rows\nwhere upper(coalesce(p_kind,'TOP')) in ('TOP','ALL') or kind=upper(p_kind)\norder by score desc,lower(title),id\nlimit least(greatest(p_limit,1),50) offset greatest(p_offset,0);\n$function$\n",
+      "definition_sha256": "bb5ed9546442c2478762f277aa62dc3b410e3177603b99c92f112664d231727e",
+      "sql_body_token_sha256": "22737b203ddf6950037f0ddbc2a2cee996ac12769505f8ba3596fa0872bdef46"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "args": "",
+      "name": "private.crm_sync_marketplace_quote",
+      "owner": "postgres",
+      "definition_sha256": "b44828f7b357a92c46653bf05d827eee7d371906f89d32f2e6e790fae5c58134",
+      "sql_body_token_sha256": "f461479b933738ef6add8989409af1cf0927b20b3829efb246dba49466d302c3"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "args": "",
+      "name": "private.crm_sync_marketplace_booking",
+      "owner": "postgres",
+      "definition_sha256": "f818f425bfff36b52ec4b994ecb9d18d616f67d227446f895e7eedb88a420524",
+      "sql_body_token_sha256": "415777e712e9e71412d73a00cf5d74ddf1a76276facb3556a985ba50d3d80084"
+    }
+  ],
+  "privileges": [
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "bookings",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT",
+      "with_hierarchy": "YES"
+    },
+    {
+      "grantee": "anon",
+      "grantor": "postgres",
+      "table_name": "post_comments",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT",
+      "with_hierarchy": "YES"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "post_comments",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "INSERT",
+      "with_hierarchy": "NO"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "post_comments",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT",
+      "with_hierarchy": "YES"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "post_comments",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "UPDATE",
+      "with_hierarchy": "NO"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "quotes",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT",
+      "with_hierarchy": "YES"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "service_booking_settings",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT",
+      "with_hierarchy": "YES"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "service_requests",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT",
+      "with_hierarchy": "YES"
+    }
+  ],
+  "column_privileges": [
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "service_booking_settings",
+      "column_name": "instant_booking_enabled",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "service_booking_settings",
+      "column_name": "recurring_enabled",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "service_booking_settings",
+      "column_name": "service_id",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "service_booking_settings",
+      "column_name": "updated_at",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "service_booking_settings",
+      "column_name": "updated_by",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT"
+    }
+  ],
+  "scope": "Production read-only catalog snapshot 2026-10-19. Three release-replaced definitions retained; other definitions fingerprinted. No customer data or secrets. Not a full database backup."
+}

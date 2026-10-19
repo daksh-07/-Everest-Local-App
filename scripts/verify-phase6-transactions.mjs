@@ -2,6 +2,7 @@
 // Real payment-readiness and fee helper SQL; driver/membership dependencies remain controlled fixtures.
 // This verifies transaction contracts, NOT Stripe, PostgREST, push or staging.
 import assert from 'node:assert/strict';
+import {setTimeout} from 'node:timers';
 import fs from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {disposablePostgres} from './lib/phase6-postgres.mjs';
@@ -43,7 +44,7 @@ try{
  const sources={};for(const name of ['respond_service_dispatch_offer','accept_quote','cancel_everest_live','update_booking_status']){const source=await latestFunction(name);sources[name]=source.file;await db.exec(source.sql);await db.exec(`revoke all on function public.${name}(${name==='respond_service_dispatch_offer'?'uuid,text':name==='update_booking_status'?'uuid,booking_status':'uuid'}) from public,anon;grant execute on function public.${name}(${name==='respond_service_dispatch_offer'?'uuid,text':name==='update_booking_status'?'uuid,booking_status':'uuid'}) to authenticated;`);}
  // Include the actual Live triggers: without the BEFORE request lifecycle
  // trigger a fixture would incorrectly allow cancellation after booking.
- for(const name of ['sync_everest_live_request_lifecycle','everest_live_quote_response','cancel_service_dispatch_on_marketplace_change'])await db.exec((await latestFunction(name)).sql);
+ for(const name of ['sync_everest_live_request_lifecycle','everest_live_quote_response','cancel_service_dispatch_on_marketplace_change']){await db.exec((await latestFunction(name)).sql);await db.exec(`revoke all on function public.${name}() from public,anon,authenticated`);}
  await db.exec(`create trigger live_request_lifecycle before update of status on service_requests for each row execute function sync_everest_live_request_lifecycle();
  create trigger live_quote_response after insert or update of status on quotes for each row execute function everest_live_quote_response();
  create trigger dispatch_request_lifecycle after update of status on service_requests for each row execute function cancel_service_dispatch_on_marketplace_change();
@@ -122,6 +123,21 @@ try{
   const current=(await latestFunction('accept_quote')).sql;
   const tail=sql=>sql.slice(sql.indexOf("  if r.status<>'QUOTING'")).split('$$;')[0];
   assert.equal(tail(current),tail(original));
+ });
+ await check('focused acceptance rollback and reapply restore exact baseline definition and ACL',async()=>{
+  const baseline=await fs.readFile('supabase/migrations/20260929140000_harden_marketplace_quote_payment_readiness.sql','utf8');const start=baseline.indexOf('create or replace function public.accept_quote(');const sql=baseline.slice(start,baseline.indexOf('$$;',start)+3);
+  const count=(await db.query('select count(*) n from bookings')).rows[0].n;await db.exec(sql);
+  assert.equal((await db.query("select md5(pg_get_functiondef('public.accept_quote(uuid)'::regprocedure)) hash")).rows[0].hash,'6c382d3ba10baee61594ad34bb72060b');
+  await db.exec(await fs.readFile('supabase/migrations/'+(await latestFunction('accept_quote')).file,'utf8'));
+  const acl=(await db.query("select has_function_privilege('authenticated','public.accept_quote(uuid)','EXECUTE') member,has_function_privilege('anon','public.accept_quote(uuid)','EXECUTE') guest")).rows[0];assert.equal(acl.member,true);assert.equal(acl.guest,false);assert.equal((await db.query('select count(*) n from bookings')).rows[0].n,count);
+ });
+ await check('installed Live lifecycle trigger SQL tokens match captured production definitions',async()=>{
+  const baseline=JSON.parse(await fs.readFile('docs/phase7-evidence/catalog-baseline.json','utf8'));
+  for(const name of ['sync_everest_live_request_lifecycle','everest_live_quote_response','cancel_service_dispatch_on_marketplace_change']){
+   const body=(await db.query('select prosrc from pg_proc where oid=$1::regprocedure',[name+'()'])).rows[0].prosrc;
+   const tokens=body.match(/'(?:''|[^'])*'|\w+|<>|>=|<=|:=|::|[^\s]/g);
+   assert.equal(createHash('sha256').update(tokens.join('\x1f')).digest('hex'),baseline.functions.find(f=>f.name==='public.'+name).sql_body_token_sha256);
+  }
  });
  await check('provider acceptance matches production SQL body tokens despite formatting',async()=>{const {sql}=await latestFunction('respond_service_dispatch_offer');const body=sql.match(/\bas\s+(\$\w*\$)([\s\S]*?)\1/i)[2];const tokens=body.match(/'(?:''|[^'])*'|\w+|<>|>=|<=|:=|::|[^\s]/g);assert.equal(createHash('sha256').update(tokens.join('\x1f')).digest('hex'),'a6f07ca9fec1d5000fb821905a11cf80db5ea2e4ff1cf81ecfc484afe7824ec8');});
  tests.push({name:'exact function source provenance',pass:true,sources});

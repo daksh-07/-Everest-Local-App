@@ -126,6 +126,14 @@
       "pass": true
     },
     {
+      "name": "focused acceptance rollback and reapply restore exact baseline definition and ACL",
+      "pass": true
+    },
+    {
+      "name": "installed Live lifecycle trigger SQL tokens match captured production definitions",
+      "pass": true
+    },
+    {
       "name": "provider acceptance matches production SQL body tokens despite formatting",
       "pass": true
     },
@@ -141,6 +149,6 @@
     }
   ],
   "findings": [],
-  "passed": 33,
+  "passed": 35,
   "failed": 0
 }

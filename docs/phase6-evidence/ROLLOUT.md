@@ -1,5 +1,7 @@
 # Database rollout and rollback — separate release gate required
 
+> Historical Phase 6 checkpoint at `152188f`. See [Phase 7 evidence](../phase7-evidence/README.md) for the acceptance lock-order correction, updated migration inventory and current release gates.
+
 **Current recommendation: NO-GO for production.** The PR is for code/SQL review. No migration has been applied to production, no production test transaction was created, and no deployment was initiated. Merging main can trigger its existing deployment integration: do not merge before the database and staging gates below are signed off.
 
 ## Before any rollout
