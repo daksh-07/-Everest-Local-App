@@ -52,7 +52,8 @@ async function open(path,state={},authenticated=false){
   if(state.delays?.[name])await new Promise(resolve=>setTimeout(resolve,state.delays[name]));
   if(name==='accept_quote'&&state.acceptRace){state.liveStatus='BOOKED';state.quotes=false;state.bookingId='other-booking';}
   if(name==='accept_quote'&&state.lostAcceptResponse){state.liveStatus='BOOKED';state.quotes=false;state.bookingId='recovered-booking';return route.abort('failed');}
-  if(name==='accept_quote'&&state.acceptNoCommit)return route.abort('failed');
+  if(name==='accept_quote'&&state.acceptNoCommit){state.holdQuoteRefresh=state.holdAfterUnconfirmed;return route.abort('failed');}
+  if(name==='quotes'&&state.holdQuoteRefresh&&!url.searchParams.has('id'))await new Promise(resolve=>{state.quoteReleases??=[];state.quoteReleases.push(resolve);state.releaseQuoteRefresh=()=>{for(const release of state.quoteReleases)release();state.quoteReleases=[];};});
   if(state.fail?.includes(name)||(state.failCounts&&name==='bookings'&&req.method()==='HEAD'))return route.fulfill({status:state.denied?403:400,json:{code:state.denied?'42501':'XX000',message:state.denied?'permission denied':'Fixture unavailable'},headers:cors}).catch(()=>{});
   let rows=[];const today=new Date().toISOString().slice(0,10);
   if(name==='get_my_workspace_context')rows={mode:authenticated?'BUSINESS':'CUSTOMER',active_business_id:authenticated?biz:null,businesses:authenticated?[{...business,...state.role}]:[]};
@@ -195,12 +196,13 @@ try{
  }
  // Both acceptance entry points recover commits and never replay uncertain writes.
  for(const path of ['/everest-live?requestId=live1','/quotes?requestId=live1'])for(const mode of ['lost-response','unconfirmed','already-committed']){
-  const state={quotes:true,liveStatus:'RESPONSES_AVAILABLE',lostAcceptResponse:mode==='lost-response',acceptNoCommit:mode==='unconfirmed',bookingId:mode==='already-committed'?'existing-booking':null};
+  const state={quotes:true,liveStatus:'RESPONSES_AVAILABLE',lostAcceptResponse:mode==='lost-response',acceptNoCommit:mode==='unconfirmed',holdAfterUnconfirmed:mode==='unconfirmed',bookingId:mode==='already-committed'?'existing-booking':null};
   const {page,context,calls}=await open(path,state,true);
   await page.getByRole('button',{name:path.startsWith('/quotes')?/Review and accept/:/Review and book/}).first().click();
   await page.getByRole('button',{name:path.startsWith('/quotes')?/^Accept quote ·/:/^Book ·/}).click();
   if(mode==='unconfirmed'){
-   await page.getByText('We could not confirm your choice. Check your bookings before choosing again.',{exact:true}).waitFor();
+   await page.getByText('We could not confirm your choice. Check your bookings before choosing again.',{exact:true}).waitFor({timeout:3000});
+   assert.equal(typeof state.releaseQuoteRefresh,'function');state.holdQuoteRefresh=false;state.releaseQuoteRefresh();
    await page.getByRole('button',{name:'Check bookings',exact:true}).click();await page.waitForURL('**/bookings');
   }else await page.waitForURL('**/booking?id='+(mode==='lost-response'?'recovered-booking':'existing-booking'));
   assert.equal(calls.filter(c=>c.name==='accept_quote'&&c.method==='POST').length,mode==='already-committed'?0:1);
