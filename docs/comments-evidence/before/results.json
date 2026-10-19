@@ -1,0 +1,18 @@
+{
+  "engine": "chromium",
+  "before": true,
+  "fixture": true,
+  "scenarios": [
+    "Main clears the draft on reopen",
+    "Main comment options immediately hides without confirmation",
+    {
+      "mainReadFailureLooksEmpty": true,
+      "pageErrors": [
+        "Comments are temporarily unavailable."
+      ]
+    }
+  ],
+  "layouts": [],
+  "accessibility": [],
+  "errors": []
+}

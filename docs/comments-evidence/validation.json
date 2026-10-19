@@ -1,0 +1,39 @@
+{
+  "base": "d9faf4f62365e3a620effbfc422ad15d7cbd88ea",
+  "unit": {
+    "passed": 465,
+    "failed": 0
+  },
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 12
+  },
+  "webExport": "passed",
+  "staticAudit": {
+    "files": 699,
+    "routes": 96
+  },
+  "migrationAudit": {
+    "checked": 235,
+    "changes": 0
+  },
+  "browsers": {
+    "chromium": {
+      "scenarios": 11,
+      "layouts": 70,
+      "accessibilityScans": 2,
+      "violations": 0,
+      "pageErrors": 0
+    },
+    "webkit": {
+      "scenarios": 11,
+      "layouts": 70,
+      "accessibilityScans": 2,
+      "violations": 0,
+      "pageErrors": 0
+    }
+  },
+  "backend": "fixture only; no production writes",
+  "deployment": "not deployed"
+}

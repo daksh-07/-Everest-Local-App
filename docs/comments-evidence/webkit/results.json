@@ -1,0 +1,433 @@
+{
+  "engine": "webkit",
+  "before": false,
+  "fixture": true,
+  "scenarios": [
+    "Read failure/retry preserves draft; drafts survive reopen and stay scoped to their post",
+    "Comment bodies remain readable during delayed identity and unavailable likes; local likes retry",
+    "Failed posting preserves draft and retries successfully",
+    "Committed-but-lost response reconciles one comment on retry",
+    "Nested replies keep their context; moderation confirms and cancel is inert",
+    "Own-comment editing and cancellation retain the independent composer draft",
+    "Stable cursor pagination loads beyond the first page",
+    "Guest read-only conversation",
+    "Disabled comments remain readable",
+    "Genuine empty conversation",
+    "Account switch cannot expose the previous viewer draft, including stale feed identity"
+  ],
+  "layouts": [
+    {
+      "width": 320,
+      "theme": "LIGHT",
+      "motion": "reduce"
+    },
+    {
+      "width": 375,
+      "theme": "LIGHT",
+      "motion": "reduce"
+    },
+    {
+      "width": 390,
+      "theme": "LIGHT",
+      "motion": "reduce"
+    },
+    {
+      "width": 430,
+      "theme": "LIGHT",
+      "motion": "reduce"
+    },
+    {
+      "width": 1280,
+      "theme": "LIGHT",
+      "motion": "reduce"
+    },
+    {
+      "width": 320,
+      "theme": "LIGHT",
+      "motion": "no-preference"
+    },
+    {
+      "width": 375,
+      "theme": "LIGHT",
+      "motion": "no-preference"
+    },
+    {
+      "width": 390,
+      "theme": "LIGHT",
+      "motion": "no-preference"
+    },
+    {
+      "width": 430,
+      "theme": "LIGHT",
+      "motion": "no-preference"
+    },
+    {
+      "width": 1280,
+      "theme": "LIGHT",
+      "motion": "no-preference"
+    },
+    {
+      "width": 320,
+      "theme": "DARK",
+      "motion": "reduce"
+    },
+    {
+      "width": 375,
+      "theme": "DARK",
+      "motion": "reduce"
+    },
+    {
+      "width": 390,
+      "theme": "DARK",
+      "motion": "reduce"
+    },
+    {
+      "width": 430,
+      "theme": "DARK",
+      "motion": "reduce"
+    },
+    {
+      "width": 1280,
+      "theme": "DARK",
+      "motion": "reduce"
+    },
+    {
+      "width": 320,
+      "theme": "DARK",
+      "motion": "no-preference"
+    },
+    {
+      "width": 375,
+      "theme": "DARK",
+      "motion": "no-preference"
+    },
+    {
+      "width": 390,
+      "theme": "DARK",
+      "motion": "no-preference"
+    },
+    {
+      "width": 430,
+      "theme": "DARK",
+      "motion": "no-preference"
+    },
+    {
+      "width": 1280,
+      "theme": "DARK",
+      "motion": "no-preference"
+    },
+    {
+      "mode": "empty",
+      "theme": "LIGHT",
+      "width": 320,
+      "motion": "reduce"
+    },
+    {
+      "mode": "empty",
+      "theme": "LIGHT",
+      "width": 375,
+      "motion": "reduce"
+    },
+    {
+      "mode": "empty",
+      "theme": "LIGHT",
+      "width": 390,
+      "motion": "reduce"
+    },
+    {
+      "mode": "empty",
+      "theme": "LIGHT",
+      "width": 430,
+      "motion": "reduce"
+    },
+    {
+      "mode": "empty",
+      "theme": "LIGHT",
+      "width": 1280,
+      "motion": "reduce"
+    },
+    {
+      "mode": "empty",
+      "theme": "DARK",
+      "width": 320,
+      "motion": "reduce"
+    },
+    {
+      "mode": "empty",
+      "theme": "DARK",
+      "width": 375,
+      "motion": "reduce"
+    },
+    {
+      "mode": "empty",
+      "theme": "DARK",
+      "width": 390,
+      "motion": "reduce"
+    },
+    {
+      "mode": "empty",
+      "theme": "DARK",
+      "width": 430,
+      "motion": "reduce"
+    },
+    {
+      "mode": "empty",
+      "theme": "DARK",
+      "width": 1280,
+      "motion": "reduce"
+    },
+    {
+      "mode": "error",
+      "theme": "LIGHT",
+      "width": 320,
+      "motion": "reduce"
+    },
+    {
+      "mode": "error",
+      "theme": "LIGHT",
+      "width": 375,
+      "motion": "reduce"
+    },
+    {
+      "mode": "error",
+      "theme": "LIGHT",
+      "width": 390,
+      "motion": "reduce"
+    },
+    {
+      "mode": "error",
+      "theme": "LIGHT",
+      "width": 430,
+      "motion": "reduce"
+    },
+    {
+      "mode": "error",
+      "theme": "LIGHT",
+      "width": 1280,
+      "motion": "reduce"
+    },
+    {
+      "mode": "error",
+      "theme": "DARK",
+      "width": 320,
+      "motion": "reduce"
+    },
+    {
+      "mode": "error",
+      "theme": "DARK",
+      "width": 375,
+      "motion": "reduce"
+    },
+    {
+      "mode": "error",
+      "theme": "DARK",
+      "width": 390,
+      "motion": "reduce"
+    },
+    {
+      "mode": "error",
+      "theme": "DARK",
+      "width": 430,
+      "motion": "reduce"
+    },
+    {
+      "mode": "error",
+      "theme": "DARK",
+      "width": 1280,
+      "motion": "reduce"
+    },
+    {
+      "mode": "disabled",
+      "theme": "LIGHT",
+      "width": 320,
+      "motion": "reduce"
+    },
+    {
+      "mode": "disabled",
+      "theme": "LIGHT",
+      "width": 375,
+      "motion": "reduce"
+    },
+    {
+      "mode": "disabled",
+      "theme": "LIGHT",
+      "width": 390,
+      "motion": "reduce"
+    },
+    {
+      "mode": "disabled",
+      "theme": "LIGHT",
+      "width": 430,
+      "motion": "reduce"
+    },
+    {
+      "mode": "disabled",
+      "theme": "LIGHT",
+      "width": 1280,
+      "motion": "reduce"
+    },
+    {
+      "mode": "disabled",
+      "theme": "DARK",
+      "width": 320,
+      "motion": "reduce"
+    },
+    {
+      "mode": "disabled",
+      "theme": "DARK",
+      "width": 375,
+      "motion": "reduce"
+    },
+    {
+      "mode": "disabled",
+      "theme": "DARK",
+      "width": 390,
+      "motion": "reduce"
+    },
+    {
+      "mode": "disabled",
+      "theme": "DARK",
+      "width": 430,
+      "motion": "reduce"
+    },
+    {
+      "mode": "disabled",
+      "theme": "DARK",
+      "width": 1280,
+      "motion": "reduce"
+    },
+    {
+      "mode": "guest",
+      "theme": "LIGHT",
+      "width": 320,
+      "motion": "reduce"
+    },
+    {
+      "mode": "guest",
+      "theme": "LIGHT",
+      "width": 375,
+      "motion": "reduce"
+    },
+    {
+      "mode": "guest",
+      "theme": "LIGHT",
+      "width": 390,
+      "motion": "reduce"
+    },
+    {
+      "mode": "guest",
+      "theme": "LIGHT",
+      "width": 430,
+      "motion": "reduce"
+    },
+    {
+      "mode": "guest",
+      "theme": "LIGHT",
+      "width": 1280,
+      "motion": "reduce"
+    },
+    {
+      "mode": "guest",
+      "theme": "DARK",
+      "width": 320,
+      "motion": "reduce"
+    },
+    {
+      "mode": "guest",
+      "theme": "DARK",
+      "width": 375,
+      "motion": "reduce"
+    },
+    {
+      "mode": "guest",
+      "theme": "DARK",
+      "width": 390,
+      "motion": "reduce"
+    },
+    {
+      "mode": "guest",
+      "theme": "DARK",
+      "width": 430,
+      "motion": "reduce"
+    },
+    {
+      "mode": "guest",
+      "theme": "DARK",
+      "width": 1280,
+      "motion": "reduce"
+    },
+    {
+      "mode": "likes-error",
+      "theme": "LIGHT",
+      "width": 320,
+      "motion": "reduce"
+    },
+    {
+      "mode": "likes-error",
+      "theme": "LIGHT",
+      "width": 375,
+      "motion": "reduce"
+    },
+    {
+      "mode": "likes-error",
+      "theme": "LIGHT",
+      "width": 390,
+      "motion": "reduce"
+    },
+    {
+      "mode": "likes-error",
+      "theme": "LIGHT",
+      "width": 430,
+      "motion": "reduce"
+    },
+    {
+      "mode": "likes-error",
+      "theme": "LIGHT",
+      "width": 1280,
+      "motion": "reduce"
+    },
+    {
+      "mode": "likes-error",
+      "theme": "DARK",
+      "width": 320,
+      "motion": "reduce"
+    },
+    {
+      "mode": "likes-error",
+      "theme": "DARK",
+      "width": 375,
+      "motion": "reduce"
+    },
+    {
+      "mode": "likes-error",
+      "theme": "DARK",
+      "width": 390,
+      "motion": "reduce"
+    },
+    {
+      "mode": "likes-error",
+      "theme": "DARK",
+      "width": 430,
+      "motion": "reduce"
+    },
+    {
+      "mode": "likes-error",
+      "theme": "DARK",
+      "width": 1280,
+      "motion": "reduce"
+    }
+  ],
+  "accessibility": [
+    {
+      "theme": "LIGHT",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "theme": "DARK",
+      "width": 390,
+      "violations": []
+    }
+  ],
+  "errors": []
+}
