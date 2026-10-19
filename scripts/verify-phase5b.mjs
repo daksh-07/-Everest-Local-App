@@ -202,6 +202,7 @@ try{
   await page.getByRole('button',{name:path.startsWith('/quotes')?/^Accept quote ·/:/^Book ·/}).click();
   if(mode==='unconfirmed'){
    await page.getByText('We could not confirm your choice. Check your bookings before choosing again.',{exact:true}).waitFor({timeout:3000});
+   for(let i=0;i<50&&typeof state.releaseQuoteRefresh!=='function';i++)await page.waitForTimeout(20);
    assert.equal(typeof state.releaseQuoteRefresh,'function');state.holdQuoteRefresh=false;state.releaseQuoteRefresh();
    await page.getByRole('button',{name:'Check bookings',exact:true}).click();await page.waitForURL('**/bookings');
   }else await page.waitForURL('**/booking?id='+(mode==='lost-response'?'recovered-booking':'existing-booking'));

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {withTimeout} from '../lib/resilience.ts';
-import {acceptQuoteWithRecovery,QuoteAcceptanceUnconfirmedError} from '../lib/quote-acceptance.ts';
+import {acceptQuoteWithRecovery,QuoteAcceptanceUnconfirmedError,QuoteAcceptanceRejectedError} from '../lib/quote-acceptance.ts';
 
 test('previously committed booking is read before any mutation',async()=>{
  let writes=0;assert.equal(await acceptQuoteWithRecovery({readBooking:async()=>'existing-booking',mutate:async()=>{writes++;return 'unexpected';}}),'existing-booking');assert.equal(writes,0);
@@ -32,4 +32,12 @@ test('hung reconciliation ends with check-bookings feedback, no automatic replay
 });
 test('late mutation resolution after uncertainty cannot navigate or submit again',async()=>{
  let finish,writes=0;await assert.rejects(acceptQuoteWithRecovery({readBooking:async()=>null,mutate:()=>{writes++;return withTimeout(new Promise(resolve=>{finish=resolve;}),250);}}),QuoteAcceptanceUnconfirmedError);finish('late-booking');await Promise.resolve();assert.equal(writes,1);
+});
+
+test('definite database rejection retains safe feedback after read reconciliation',async()=>{
+ const rejection=new QuoteAcceptanceRejectedError('Quote expired.');let writes=0;
+ await assert.rejects(acceptQuoteWithRecovery({readBooking:async()=>null,mutate:async()=>{writes++;throw rejection;}}),e=>e===rejection);assert.equal(writes,1);
+});
+test('another committed winner is recovered even after a definite rejection',async()=>{
+ let reads=0;assert.equal(await acceptQuoteWithRecovery({readBooking:async()=>++reads===1?null:'other-booking',mutate:async()=>{throw new QuoteAcceptanceRejectedError('This request is no longer accepting quote decisions.');}}),'other-booking');
 });

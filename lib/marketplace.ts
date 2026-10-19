@@ -1,5 +1,5 @@
 import {withTimeout} from './resilience';
-import {acceptQuoteWithRecovery} from './quote-acceptance';
+import {acceptQuoteWithRecovery,QuoteAcceptanceRejectedError} from './quote-acceptance';
 import { supabase, requireSupabaseConfig } from './supabase';
 import { userFacingError } from './errors';
 import type { MarketplaceBusiness, Product, Quote, ServiceRequest, Profile } from './types';
@@ -53,7 +53,7 @@ export async function acceptQuote(quoteId:string){
   const booking=await supabase.from('bookings').select('id').eq('request_id',requestId).eq('customer_id',user.id).neq('status','CANCELLED').order('created_at',{ascending:false}).limit(1).maybeSingle();
   if(booking.error)throw booking.error;return booking.data?.id??null;
  };
- return acceptQuoteWithRecovery({readBooking:()=>withTimeout(readBooking(),15000,'Checking your booking'),mutate:()=>withTimeout((async()=>{const {data,error}=await supabase.rpc('accept_quote',{p_quote_id:quoteId});if(error)throw error;return data as string;})(),20000,'Choosing a provider')});
+ return acceptQuoteWithRecovery({readBooking:()=>withTimeout(readBooking(),15000,'Checking your booking'),mutate:()=>withTimeout((async()=>{const {data,error}=await supabase.rpc('accept_quote',{p_quote_id:quoteId});if(error){if(/^[0-9A-Z]{5}$/.test(error.code??''))throw new QuoteAcceptanceRejectedError(safeBackendError(error,'This quote could not be accepted. Refresh your offers and try again.').message);throw error;}return data as string;})(),20000,'Choosing a provider')});
 }
 export type BookingServiceLocation={request_id:string;address_line1:string|null;suburb:string|null;city:string|null;state:string|null;postal_code:string|null;country:string|null;service_address_label:string|null;latitude:number|null;longitude:number|null};
 export async function getBookingServiceLocation(bookingId:string):Promise<BookingServiceLocation|null>{requireSupabaseConfig();if(!bookingId.trim())return null;const {data,error}=await supabase.rpc('get_booking_service_location',{p_booking_id:bookingId});if(error)throw safeBackendError(error,'The service address could not be loaded.');const row=(data??[])[0];if(!row)return null;return{...row,latitude:row.latitude==null?null:Number(row.latitude),longitude:row.longitude==null?null:Number(row.longitude)} as BookingServiceLocation;}

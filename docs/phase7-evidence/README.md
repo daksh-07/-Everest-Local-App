@@ -11,7 +11,7 @@ Review package remains [PR #110](https://github.com/daksh-07/-Everest-Local-App/
 | A audit / red test | `a1c437c` | Current GitHub/public build/Supabase state; strengthened unmodified-API deadlock regression |
 | B correction | `3285126` | Minimal request-first acceptance migration, ownership/request revalidation, client reconciliation and 11 recovery tests |
 | C reconciliation / verification | `4343697` | Complete version/name inventory, catalog/ACL baseline, 35 transaction checks, both entry-point browser recovery, staged setup and rollback package |
-| D available acceptance | Final evidence commit in PR | 485 unit tests; Chromium/WebKit each 33 core scenario groups, zero page errors; full final CI requested on the release source |
+| D available acceptance | Final evidence commit in PR | 487 unit tests; Chromium/WebKit each 33 core scenario groups, zero page errors; full final CI requested on the release source |
 | E release decision | This report | NO-GO; no production mutation. Exact missing gates below |
 
 ## Deadlock cause and correction
@@ -20,7 +20,7 @@ Each old customer decision locked its own quote, then the shared request. The wi
 
 The new migration resolves the request through an unlocked owned-quote lookup, locks the request first, then locks and revalidates the selected quote's owner AND request. It preserves all state, expiry, fee, deposit, payment-readiness, booking and notification behavior after that block byte for byte. No Stripe configuration, payment amount, commission or settlement logic changed. Existing quote-write privileges require the authoritative authenticated RPC.
 
-Both Live and Quotes now check existing authorized request booking state before submitting. Acceptance is a single bounded mutation. A failed/lost/missing response triggers a bounded read reconciliation; either competing quote's committed booking can be recovered. If still unknown, Check bookings navigates to authoritative reads, without automatically replaying the write. Quotes has an immediate ref lock and action feedback separated from read refreshes. Existing timeout utilities are reused.
+Both Live and Quotes now check existing authorized request booking state before submitting. Acceptance is a single bounded mutation. A failed/lost/missing response triggers a bounded read reconciliation; either competing quote's committed booking can be recovered. If still unknown, Check bookings navigates to authoritative reads, without automatically replaying the write. Quotes has an immediate ref lock and action feedback separated from read refreshes. Both screens show the result before starting background refresh, so a held read cannot delay feedback. Definite database rejections retain safe existing error messages after reconciliation; transport uncertainty offers Check bookings. Existing timeout utilities are reused.
 
 [Isolated SQL review / complete traced trigger path](ACCEPTANCE-SQL-REVIEW.md) · [Before regression](before-regression.json) · [After transactions](after-transactions.json).
 
@@ -31,8 +31,8 @@ Both Live and Quotes now check existing authorized request booking state before 
 | Strengthened concurrency regression BEFORE | 12 | 1 | 40P01 reproduced; one booking survived |
 | Expanded transaction suite AFTER | 35 | 0 | PostgreSQL 17.6; real fee/readiness helpers and actual Live/dispatch lifecycle triggers; controlled driver/membership dependencies |
 | Included concurrent runs | 50 | 0 | 20 gated different-quote, 10 same-quote, 20 cancellation races; no deadlock and at most one booking |
-| Client recovery unit cases | 11 | 0 | Prior commit, lost response, other winner, failed preflight, empty confirmation, unavailable verification, bounded hung operation and late result |
-| Entire unit suite | 485 | 0 | Includes the 11 recovery tests |
+| Client recovery unit cases | 13 | 0 | Prior commit, lost response, other winner, failed preflight, empty confirmation, unavailable verification, bounded hung operation and late result |
+| Entire unit suite | 487 | 0 | Includes the 13 recovery tests |
 | Chromium operational core | 33 | 0 | Seven new recovery groups plus existing flows; zero page errors |
 | WebKit operational core | 33 | 0 | Same cases; zero page errors |
 
@@ -44,7 +44,7 @@ The Phase 6 local permission/matching/comment evidence is retained (33 matching,
 
 Phase 6 full visual evidence spans 320/375/390/430/768/1024/1280, both themes and applicable reduced/default motion. Final CI repeats principal browser matrices (224 discovery, 392 operations, 98 comments per engine), accessibility, typography and booking regression. Native/device results are **unavailable**, not passed. Existing [screenshots and Safari/booking evidence](../phase6-evidence/README.md) remain identified as the earlier checkpoint.
 
-Preliminary failures are not relabelled as passes: browser server startup was not ready on the first Chromium attempt; a new Quotes test initially used its visible label rather than accessible name; a cancellation fixture omitted the real Live lifecycle trigger; one trigger definition had different formatting but identical 197 SQL body tokens. These were corrected with actual state/trigger/token checks. Assertions and accessibility checks were not disabled.
+Preliminary failures are not relabelled as passes: browser server startup was not ready on the first Chromium attempt; a new Quotes test initially used its visible label rather than accessible name; a cancellation fixture omitted the real Live lifecycle trigger; one trigger definition had different formatting but identical 197 SQL body tokens. These were corrected with actual state/trigger/token checks. A final held-response regression also reproduced action feedback delayed behind background reads; the corrected screens display it immediately while that read remains held ([before evidence](feedback-before.txt)). Assertions and accessibility checks were not disabled.
 
 ## Migration and security findings
 
