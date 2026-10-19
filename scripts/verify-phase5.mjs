@@ -5,6 +5,7 @@ import {URL} from 'node:url';
 import {setTimeout} from 'node:timers';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import {trackFixtureReads,settleFixtureReads} from './lib/browser-fixture.mjs';
 const {chromium,webkit}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const engine=process.env.EVEREST_QA_BROWSER||'chromium';
 const base=process.env.EVEREST_PREVIEW_URL||'http://localhost:8083';
@@ -24,12 +25,12 @@ async function open(path,state={},authenticated=false){
  const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
  await context.addInitScript(({session,authenticated})=>{if(!localStorage.getItem('everest-local-theme'))localStorage.setItem('everest-local-theme','LIGHT');if(authenticated)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session))},{session,authenticated});
  console.log('Fixture',path,state.fail??'healthy');
- const page=await context.newPage();page.setDefaultTimeout(15000);const calls=[];
+ const page=await context.newPage();trackFixtureReads(page);page.setDefaultTimeout(15000);const calls=[];
  page.on('pageerror',error=>report.errors.push(error.message));
  await page.routeWebSocket('**/realtime/**',ws=>ws.close());
  await page.route(/supabase\.co/,async route=>{
   const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').pop();calls.push(name);
-  const cors={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,apikey,content-type,x-client-info,prefer,accept,range,x-supabase-client-platform,x-supabase-client-platform-version,x-supabase-client-runtime,x-supabase-client-runtime-version','access-control-allow-methods':'GET,POST,HEAD,OPTIONS'};
+  const cors={'access-control-allow-origin':'*','access-control-allow-headers':req.headers()['access-control-request-headers']||'authorization,apikey,content-type,x-client-info,prefer,accept,range,x-supabase-client-platform,x-supabase-client-platform-version,x-supabase-client-runtime,x-supabase-client-runtime-version','access-control-allow-methods':'GET,POST,HEAD,OPTIONS'};
   if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:cors});
   if(url.pathname.includes('/auth/'))return route.fulfill({json:authenticated?user:{user:null},headers:cors});
   if(req.method()!=='GET'&&req.method()!=='HEAD'&&!url.pathname.includes('/rpc/'))return route.fulfill({status:403,json:{message:'Fixture blocks writes'},headers:cors});
@@ -58,8 +59,8 @@ async function open(path,state={},authenticated=false){
 }
 // Let fixture reads settle before navigation/teardown. WebKit otherwise reports
 // interrupted cross-origin reads as access-control page errors during teardown.
-async function reload(page){await page.waitForLoadState('networkidle');await page.reload();await page.waitForLoadState('networkidle')}
-async function closePage(page,context){await page.waitForLoadState('networkidle');await context.close()}
+async function reload(page){await settleFixtureReads(page);await page.reload();await page.waitForLoadState('networkidle')}
+async function closePage(page,context){await settleFixtureReads(page);await context.close()}
 async function shot(page,name){
  if(name==='home-shop-unavailable')await page.getByRole('button',{name:'Retry shop',exact:true}).scrollIntoViewIfNeeded();
  if(name==='home-shop'&&baseline)await page.getByText('Browse products from local businesses',{exact:true}).scrollIntoViewIfNeeded();
@@ -170,7 +171,7 @@ try{
     await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);
     await page.waitForTimeout(300);
     assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--everest-canvas')),theme==='DARK'?'#000000':'#F8FAFC','Theme actually applied');
-    for(const width of [320,375,390,430,1280]){
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
      await page.setViewportSize({width,height:width===320?568:844});await page.waitForTimeout(250);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${name} ${theme} ${width}: document fits`);
      await page.waitForFunction(()=>[...document.querySelectorAll('[role="button"], [role="link"], input')].every(e=>{
@@ -211,18 +212,18 @@ try{
     if(name==='search')await page.getByText('No Everest results',{exact:true}).waitFor();
     if(name==='profile')await page.getByText('This business hasn’t listed services yet. You can still describe what you need.',{exact:true}).waitFor();
     if(name==='today')await page.getByText('You’re all caught up',{exact:true}).waitFor();
-    for(const width of [320,375,390,430,1280]){await page.setViewportSize({width,height:844});await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);report.emptyLayouts.push({name,theme,width})}
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){await page.setViewportSize({width,height:844});await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);report.emptyLayouts.push({name,theme,width})}
     state.empty=false;
     const [failed,label]=({home:['shop_products','Retry shop'],search:['universal_search','Try again'],profile:['services','Retry services'],today:['crm_opportunities','Retry sales']})[name];
     state.fail=[failed];await reload(page);
     const retry=page.getByRole('button',{name:label,exact:true});await retry.waitFor();
-    for(const width of [320,375,390,430,1280]){await page.setViewportSize({width,height:844});await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await retry.scrollIntoViewIfNeeded();const rect=await retry.boundingBox();assert.ok(rect&&rect.height>=44&&rect.x>=0&&rect.x+rect.width<=width+1);report.errorLayouts.push({name,theme,width})}
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){await page.setViewportSize({width,height:844});await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await retry.scrollIntoViewIfNeeded();const rect=await retry.boundingBox();assert.ok(rect&&rect.height>=44&&rect.x>=0&&rect.x+rect.width<=width+1);report.errorLayouts.push({name,theme,width})}
     state.fail=[];await retry.click();await retry.waitFor({state:'hidden'});
    }
    state.empty=false;await page.emulateMedia({reducedMotion:'no-preference'});await reload(page);await page.waitForTimeout(400);
    for(const theme of ['LIGHT','DARK']){
     await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);await page.waitForTimeout(150);
-    for(const width of [320,375,390,430,1280]){await page.setViewportSize({width,height:844});await page.waitForTimeout(50);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);report.layouts.push({name,theme,width,reducedMotion:false})}
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){await page.setViewportSize({width,height:844});await page.waitForTimeout(50);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);report.layouts.push({name,theme,width,reducedMotion:false})}
    }
    await closePage(page,context);
   }

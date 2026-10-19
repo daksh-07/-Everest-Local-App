@@ -5,6 +5,7 @@ import {URL} from 'node:url';
 import {setTimeout} from 'node:timers';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import {trackFixtureReads,settleFixtureReads} from './lib/browser-fixture.mjs';
 const {chromium,webkit}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const engine=process.env.EVEREST_QA_BROWSER||'chromium';
 const base=process.env.EVEREST_PREVIEW_URL||'http://localhost:8083';
@@ -25,7 +26,7 @@ async function open(path,state={},authenticated=false){
  const context=await browser.newContext({viewport:{width:state.width||390,height:844},reducedMotion:state.motion||'reduce',isMobile:Boolean(state.touch),hasTouch:Boolean(state.touch)});
  await context.addInitScript(({session,authenticated,theme})=>{if(!localStorage.getItem('everest-local-theme'))localStorage.setItem('everest-local-theme',theme);if(authenticated)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session))},{session,authenticated,theme:state.theme||'LIGHT'});
  console.log('Fixture',path,state.fail??'healthy');
- const page=await context.newPage();if(state.clock)await page.clock.install();page.setDefaultTimeout(15000);const calls=[];
+ const page=await context.newPage();trackFixtureReads(page);if(state.clock)await page.clock.install();page.setDefaultTimeout(15000);const calls=[];
  page.on('pageerror',error=>report.errors.push(error.message));
  const sockets=[];
  await page.routeWebSocket('**/realtime/**',ws=>{
@@ -40,12 +41,13 @@ async function open(path,state={},authenticated=false){
  });
  await page.route(/supabase\.co/,async route=>{
   const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').pop();calls.push({name,method:req.method(),url:req.url(),body:req.postData()});
-  const cors={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,apikey,content-type,x-client-info,prefer,accept,range,x-supabase-client-platform,x-supabase-client-platform-version,x-supabase-client-runtime,x-supabase-client-runtime-version','access-control-allow-methods':'GET,POST,HEAD,OPTIONS'};
+  const cors={'access-control-allow-origin':'*','access-control-allow-headers':req.headers()['access-control-request-headers']||'authorization,apikey,content-type,x-client-info,prefer,accept,range,x-supabase-client-platform,x-supabase-client-platform-version,x-supabase-client-runtime,x-supabase-client-runtime-version','access-control-allow-methods':'GET,POST,HEAD,OPTIONS'};
   if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:cors});
   if(url.pathname.includes('/auth/'))return route.fulfill({json:authenticated?user:{user:null},headers:cors});
   if(req.method()!=='GET'&&req.method()!=='HEAD'&&!url.pathname.includes('/rpc/'))return route.fulfill({status:403,json:{message:'Fixture blocks writes'},headers:cors});
   if(state.offline)return route.abort('internetdisconnected');
   if(state.delayToday&&name==='bookings'&&req.method()==='GET'&&url.searchParams.get('scheduled_date')?.startsWith('eq.'))await new Promise(resolve=>setTimeout(resolve,2500));
+  if(state.holdMap&&name==='get_everest_live_map_points')await new Promise(resolve=>{state.releaseMap=resolve;});
   if(state.delays?.[name])await new Promise(resolve=>setTimeout(resolve,state.delays[name]));
   if(name==='accept_quote'&&state.acceptRace){state.liveStatus='BOOKED';state.quotes=false;}
   if(state.fail?.includes(name)||(state.failCounts&&name==='bookings'&&req.method()==='HEAD'))return route.fulfill({status:state.denied?403:400,json:{code:state.denied?'42501':'XX000',message:state.denied?'permission denied':'Fixture unavailable'},headers:cors}).catch(()=>{});
@@ -85,8 +87,8 @@ async function open(path,state={},authenticated=false){
 }
 // Let fixture reads settle before navigation/teardown. WebKit otherwise reports
 // interrupted cross-origin reads as access-control page errors during teardown.
-async function reload(page){await page.waitForLoadState('networkidle');await page.reload();await page.waitForLoadState('networkidle')}
-async function closePage(page,context){await page.waitForLoadState('networkidle');await context.close()}
+async function reload(page){await settleFixtureReads(page);await page.reload();await page.waitForLoadState('networkidle')}
+async function closePage(page,context){await settleFixtureReads(page);await context.close()}
 async function shot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:true})}
 try{
  if(!layoutOnly){
@@ -108,6 +110,7 @@ try{
  {
   const state={fail:['get_everest_live_state']};const {page,context}=await open('/everest-live?requestId=live1',state,true);await page.getByText('Live request unavailable',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
   const retry=page.getByRole('button',{name:/Reconnect|Try again|Retry/});
+  if(!baseline)await retry.waitFor();
   report.scenarios.push({screen:'live',initialFailureHasRetry:await retry.count()});
   if(!baseline){assert.ok(await retry.count(),'Live initial error must be retryable');state.fail=[];await retry.click();await page.getByText('Everest Live',{exact:true}).waitFor();}
   await shot(page,'live-initial-error');await closePage(page,context);
@@ -131,6 +134,7 @@ try{
  {
   const clockState={clock:true,noRealtime:true};const {page,context,calls}=await open('/everest-live?requestId=live1',clockState,true);
   await page.getByText('Everest Live',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
+  await page.getByText('2 businesses notified',{exact:true}).waitFor();await page.clock.runFor(50);
   clockState.viewed=1;await page.clock.fastForward(30000);await page.getByText('1',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
   await page.clock.fastForward(16000);await page.waitForLoadState('networkidle');
   if(!baseline)await page.getByText(/(Search area|Searching within) 7 km/).waitFor();
@@ -140,9 +144,10 @@ try{
  if(!baseline){
  // A delayed map must not delay status or provider responses.
  {
-  const {page,context}=await open('/everest-live?requestId=live1',{quotes:true,liveStatus:'RESPONSES_AVAILABLE',delays:{get_everest_live_map_points:4000}},true);
-  await page.getByText('Your responses are ready',{exact:true}).waitFor({timeout:2000});
-  await page.getByText('Available for garden care',{exact:true}).waitFor({timeout:2000});
+  const state={quotes:true,liveStatus:'RESPONSES_AVAILABLE',holdMap:true};const {page,context}=await open('/everest-live?requestId=live1',state,true);
+  await page.getByText('Your responses are ready',{exact:true}).waitFor();
+  await page.getByText('Available for garden care',{exact:true}).waitFor();
+  assert.equal(typeof state.releaseMap,'function','map remains held while healthy sections render');state.holdMap=false;state.releaseMap();
   report.scenarios.push('Live status and responses arrive before delayed map');await closePage(page,context);
  }
  // Opportunity-only updates and an offline read recover without inventing fresh state.
@@ -261,7 +266,7 @@ try{
    await page.getByText(path.includes('everest-live')?'Your responses are ready':path.includes('business-jobs')?'Open job':path.includes('business-calendar')?'Scheduled garden visit':path.includes('business-inbox')?'No customer conversations yet':path.includes('business-crm')?'Garden lead':path.includes('business-my-work')?'You’re clear.':'Save availability',{exact:true}).first().waitFor();
    await page.waitForLoadState('networkidle');
    await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);
-   for(const width of [320,375,390,430,1280]){
+   for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
     await page.setViewportSize({width,height:width===320?568:844});
     await page.waitForTimeout(220);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,path+' overflow '+width);
@@ -270,7 +275,7 @@ try{
    if(motion==='reduce'&&(width===390||width===1280)){
     const audit=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
     report.accessibility.push({path,theme,width,violations:audit.violations});await fs.writeFile(`${output}/accessibility.json`,JSON.stringify(report.accessibility,null,2));
-    const fresh=audit.violations.filter(v=>!(v.id==='aria-required-parent'&&v.nodes.every(n=>/role="tab"/.test(n.html)&&/aria-label="(Today|Jobs|Calendar|Inbox|Business|Customer)"/.test(n.html)))&&!(v.id==='aria-prohibited-attr'&&v.nodes.every(n=>n.html.includes('aria-label="Switch mode"'))));
+    const fresh=audit.violations; // Phase 6 integrates the shared navigation accessibility fixes: no allowlist.
     assert.deepEqual(fresh.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,html:n.html}))})),[],path+' new accessibility violations');
    }
    }
@@ -283,7 +288,7 @@ try{
    const {page,context}=await open(path,state,true);await page.waitForLoadState('networkidle');
    for(const theme of ['LIGHT','DARK']){
     await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);
-    for(const width of [320,375,390,430,1280]){
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
      await page.setViewportSize({width,height:844});await page.waitForTimeout(150);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,path+' '+mode+' overflow');
      report.layouts.push({path,theme,motion:'reduce',width,state:mode});

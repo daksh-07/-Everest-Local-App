@@ -3,6 +3,7 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'scripts/lib/browser-fixture.mjs'
       - 'app/social.tsx'
       - 'components/PostCommentsSheet.tsx'
       - 'lib/social.ts'
@@ -55,6 +56,7 @@ jobs:
           AXE_MODULE: /tmp/everest-browser-tools/node_modules/@axe-core/playwright/dist/index.mjs
           EVEREST_PREVIEW_URL: http://127.0.0.1:4173
           EVEREST_QA_BROWSER: ${{ matrix.browser }}
+          EVEREST_QA_TABLET: '1'
           EVEREST_QA_ARTIFACTS: /tmp/everest-comments-qa
         run: |
           if [ "$EVEREST_QA_BROWSER" = chromium ]; then

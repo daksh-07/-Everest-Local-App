@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main, 'codex/experience-foundation-2026-10-12']
     paths:
+      - 'scripts/lib/browser-fixture.mjs'
       - 'assets/fonts/**'
       - 'public/fonts/**'
       - 'components/ui/AppText*'
@@ -101,6 +102,7 @@ jobs:
           PLAYWRIGHT_MODULE: /tmp/everest-browser-tools/node_modules/playwright/index.mjs
           EVEREST_PREVIEW_URL: http://127.0.0.1:4173
           EVEREST_QA_BROWSER: ${{ matrix.browser }}
+          EVEREST_QA_TABLET: '1'
           EVEREST_QA_ARTIFACTS: /tmp/everest-discovery-qa
         run: |
           if [ "$EVEREST_QA_BROWSER" = chromium ]; then
