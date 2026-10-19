@@ -1,8 +1,8 @@
-import { useCallback,useEffect,useMemo,useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
+import { ActivityIndicator, AppState, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router,useFocusEffect } from 'expo-router';
 import { Ionicons } from '@/components/ui/Icon';
 import { formatWhen } from '@/lib/format';
 import { BusinessTabBar } from '@/components/BusinessTabBar';
@@ -14,28 +14,36 @@ import { type ThemeColors,useAppTheme } from '@/lib/theme';
 type Conversation={id:string;request_id:string|null;booking_id:string|null;quote_id:string|null;created_at:string;messages:Array<{id:string;body:string;created_at:string;read_at:string|null;sender_id:string}>};
 
 export default function BusinessInbox(){
+ const generation=useRef(0);const scope=useRef('');
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);
  const [business,setBusiness]=useState<BusinessWorkspace|null>(null);const [items,setItems]=useState<Conversation[]>([]);
  const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState('');const [userId,setUserId]=useState('');
- const load=useCallback(async(refresh=false)=>{if(refresh)setRefreshing(true);else setLoading(true);setError('');
+ const load=useCallback(async(refresh=false)=>{const version=++generation.current;const currentRead=()=>version===generation.current;if(refresh)setRefreshing(true);else setLoading(true);setError('');
   try{
    const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
-   const current=ctx.businesses.find(item=>item.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
+   const current=ctx.businesses.find(item=>item.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');if(!currentRead())return;if(scope.current!==current.id){setItems([]);setLoading(true);scope.current=current.id;}setBusiness(current);
+   if(!current.can_view_inbox){setItems([]);setError('Your role does not have access to the business inbox.');return;}
    if(current.verification_status!=='VERIFIED'){setItems([]);return;}
-   const {data:{user}}=await supabase.auth.getUser();setUserId(user?.id??'');
+   const {data:{user},error:authError}=await supabase.auth.getUser();if(authError||!user)throw authError??new Error('Sign in required');if(!currentRead())return;setUserId(user.id);
    const {data,error:queryError}=await supabase.from('conversations').select('id,request_id,booking_id,quote_id,created_at,messages(id,body,created_at,read_at,sender_id)').eq('business_id',current.id).order('created_at',{ascending:false});
-   if(queryError)throw queryError;setItems((data??[]) as unknown as Conversation[]);
-  }catch{setError('Your inbox couldn’t load. Check your connection and try again.');}
-  finally{setLoading(false);setRefreshing(false);}
+   if(queryError)throw queryError;if(!currentRead())return;setItems((data??[]) as unknown as Conversation[]);
+  }catch{if(currentRead()){setItems([]);setError('Your inbox couldn’t load. Check your connection and try again.');}}
+  finally{if(currentRead()){setLoading(false);setRefreshing(false);}}
  },[]);
- useEffect(()=>{void load();},[load]);
+ useFocusEffect(useCallback(()=>{void load(true);return()=>{generation.current++;};},[load]));
+ useEffect(()=>{
+  if(!business?.can_view_inbox)return;
+  const channel=supabase.channel(`operations-inbox:${business.id}`).on('postgres_changes',{event:'*',schema:'public',table:'messages'},()=>void load(true)).subscribe(status=>{if(status==='SUBSCRIBED')void load(true)});
+  const app=AppState.addEventListener('change',state=>{if(state==='active')void load(true)});
+  return()=>{app.remove();void supabase.removeChannel(channel);};
+ },[business?.id,business?.can_view_inbox,load]);
  const sorted=items.map(item=>({...item,messages:[...(item.messages??[])].sort((a,b)=>b.created_at.localeCompare(a.created_at))})).sort((a,b)=>(b.messages[0]?.created_at??b.created_at).localeCompare(a.messages[0]?.created_at??a.created_at));
  const verified=business?.verification_status==='VERIFIED';
  return <SafeAreaView style={st.safe} edges={['top']}><View style={{flex:1}}><ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)} tintColor={colors.accent}/>} contentContainerStyle={st.page}>
   <View style={st.header}><View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={st.name}>{business?.name??'Business'}</Text><Text style={st.mode}>Business mode</Text></View><ModeSwitcher compact/></View>
   <Text accessibilityRole="header" variant="title" style={st.title}>Inbox</Text><Text style={st.copy}>Enquiries, quotes and booking conversations. Personal chats stay in Customer mode.</Text>
   {!verified&&business?<View style={st.restricted}><Text style={st.restrictedTitle}>Inbox is locked until you’re verified</Text><Text style={st.copy}>Complete verification before operating customer conversations.</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/business-verification')} style={st.restrictedAction}><Text style={st.restrictedActionText}>Continue verification</Text></Pressable></View>:null}
-  {verified?(loading?<ActivityIndicator color={colors.accent} style={{marginTop:40}}/>:sorted.length?<View style={st.list}>{sorted.map((conversation,index)=>{
+  {verified?((loading||(refreshing&&!items.length))?<ActivityIndicator color={colors.accent} style={{marginTop:40}}/>:sorted.length?<View style={st.list}>{sorted.map((conversation,index)=>{
    const last=conversation.messages[0];
    const unread=(conversation.messages??[]).filter(message=>message.sender_id!==userId&&!message.read_at).length;
    const context=conversation.booking_id?'Booking':conversation.quote_id?'Quote':conversation.request_id?'Enquiry':'Customer';
@@ -48,8 +56,8 @@ export default function BusinessInbox(){
      <View style={st.rowTop}><Text style={[st.context,unread>0&&st.strong]}>{context}</Text><Text style={[st.time,unread>0&&{color:colors.text}]}>{when}</Text></View>
      <View style={st.rowTop}><Text style={[st.preview,unread>0&&st.previewUnread]} numberOfLines={2}>{preview}</Text>{unread>0?<View style={st.badge}><Text style={st.badgeText}>{unread>99?'99+':unread}</Text></View>:null}</View>
     </View>
-   </Pressable>})}</View>:<View style={st.empty}><Ionicons name="chatbubbles-outline" size={24} color={colors.accent}/><Text style={st.emptyTitle}>No customer conversations yet</Text><Text style={st.copy}>Enquiries and booking chats appear here as soon as a customer messages you.</Text></View>):null}
-  {error?<View style={st.errorBox} accessibilityRole="alert"><Text style={st.error}>{error}</Text><Pressable accessibilityRole="button" onPress={()=>void load()} style={st.retry}><Text style={st.retryText}>Try again</Text></Pressable></View>:null}
+   </Pressable>})}</View>:error?null:<View style={st.empty}><Ionicons name="chatbubbles-outline" size={24} color={colors.accent}/><Text style={st.emptyTitle}>No customer conversations yet</Text><Text style={st.copy}>Enquiries and booking chats appear here as soon as a customer messages you.</Text></View>):null}
+  {error?<View style={st.errorBox} accessibilityRole="alert"><Text style={st.error}>{error}</Text><Pressable accessibilityRole="button" onPress={()=>void load(true)} style={st.retry}><Text style={st.retryText}>Try again</Text></Pressable></View>:null}
  </ScrollView><BusinessTabBar active="/business-inbox"/></View></SafeAreaView>;
 }
 const styles=(c:ThemeColors)=>StyleSheet.create({

@@ -1,0 +1,37 @@
+{
+  "base": "d9faf4f",
+  "unitTests": 459,
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 11
+  },
+  "webExport": "passed",
+  "browsers": {
+    "chromium": {
+      "workflowGroups": 26,
+      "layouts": 280,
+      "axeScans": 28,
+      "unexpectedPageErrors": 0,
+      "newAxeViolations": 0,
+      "knownAxeDependency": "PR #107 ModeSwitcher and BusinessTabBar"
+    },
+    "webkit": {
+      "workflowGroups": 26,
+      "layouts": 280,
+      "axeScans": 28,
+      "unexpectedPageErrors": 0,
+      "newAxeViolations": 0,
+      "knownAxeDependency": "PR #107 ModeSwitcher and BusinessTabBar"
+    }
+  },
+  "safariMessagingCases": 110,
+  "disposablePostgres": {
+    "checksPassed": 5,
+    "eligibilityIssues": 3
+  },
+  "productionDeployment": false,
+  "databaseChanges": false,
+  "staticAudit": "Static audit passed: 702 source/config files inspected and 96 Expo Router routes validated.",
+  "migrationAudit": "Migration audit passed: 235 migrations checked (34 legacy + 201 timestamped)."
+}

@@ -4,12 +4,14 @@ import { AppText as Text } from '@/components/ui/AppText';
 import MapView,{Circle,Marker,type MapStyleElement,type Region} from 'react-native-maps';
 import {Ionicons} from '@/components/ui/Icon';
 import {type LiveMapPoint} from '@/lib/everest-live';
+import {useReducedMotion} from '@/lib/motion';
 import {useAppTheme} from '@/lib/theme';
 
 export function LiveSearchMap({customer,businesses,radiusKm}:{customer:LiveMapPoint|null;businesses:LiveMapPoint[];radiusKm:number}){
  const {colors,isDark}=useAppTheme();const ref=useRef<MapView|null>(null);
- const region=useMemo<Region|null>(()=>{if(!customer)return null;const latDelta=Math.max(.025,(radiusKm/111)*2.6);const lonScale=Math.max(.2,Math.cos(customer.latitude*Math.PI/180));return{latitude:customer.latitude,longitude:customer.longitude,latitudeDelta:latDelta,longitudeDelta:Math.max(.025,latDelta/lonScale)}},[customer,radiusKm]);
- useEffect(()=>{if(region)ref.current?.animateToRegion(region,450)},[region]);
+ const reducedMotion=useReducedMotion();const latitude=customer?.latitude;const longitude=customer?.longitude;
+ const region=useMemo<Region|null>(()=>{if(latitude==null||longitude==null)return null;const latDelta=Math.max(.025,(radiusKm/111)*2.6);const lonScale=Math.max(.2,Math.cos(latitude*Math.PI/180));return{latitude,longitude,latitudeDelta:latDelta,longitudeDelta:Math.max(.025,latDelta/lonScale)}},[latitude,longitude,radiusKm]);
+ useEffect(()=>{if(region)ref.current?.animateToRegion(region,reducedMotion?0:450)},[region,reducedMotion]);
  if(!customer)return <View style={[s.empty,{backgroundColor:colors.soft,borderColor:colors.border}]}><Ionicons name="map-outline" size={28} color={colors.muted}/><Text style={[s.emptyText,{color:colors.muted}]}>Waiting for the confirmed service pin…</Text></View>;
  return <MapView ref={ref} style={StyleSheet.absoluteFill} initialRegion={region??undefined} rotateEnabled={false} pitchEnabled={false} toolbarEnabled={false} showsCompass={false} showsBuildings showsTraffic={false} showsPointsOfInterest={false} customMapStyle={isDark?darkMapStyle:premiumLightMapStyle}>
   <Circle center={{latitude:customer.latitude,longitude:customer.longitude}} radius={Math.max(100,radiusKm*1000)} strokeWidth={1.4} strokeColor="rgba(115,222,210,.58)" fillColor="rgba(115,222,210,.035)"/>

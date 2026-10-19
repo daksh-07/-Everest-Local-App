@@ -5,6 +5,7 @@ import {router,usePathname} from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {supabase} from '@/lib/supabase';
 import {getWorkspaceContext} from '@/lib/workspace';
+import {useReducedMotion} from '@/lib/motion';
 import {useAppTheme} from '@/lib/theme';
 
 type AlertOpportunity={
@@ -16,7 +17,7 @@ const POLL_MS=30_000;
 const MAX_SEEN=200;
 
 export function BusinessOpportunityAlert(){
- const pathname=usePathname();
+ const reducedMotion=useReducedMotion();const pathname=usePathname();
  const {colors}=useAppTheme();
  const [item,setItem]=useState<AlertOpportunity|null>(null);
  const activeBusiness=useRef<string|null>(null);
@@ -30,8 +31,9 @@ export function BusinessOpportunityAlert(){
  const hide=useCallback(()=>{
   if(timer.current)clearTimeout(timer.current);
   timer.current=null;
+  if(reducedMotion){translateY.setValue(500);setItem(null);return;}
   Animated.timing(translateY,{toValue:500,duration:180,useNativeDriver:true}).start(()=>{if(mounted.current)setItem(null)});
- },[translateY]);
+ },[translateY,reducedMotion]);
 
  const remember=useCallback((id:string)=>{
   seen.current.add(id);
@@ -44,10 +46,10 @@ export function BusinessOpportunityAlert(){
   remember(next.id);
   setItem(next);
   void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(()=>undefined);
-  Animated.spring(translateY,{toValue:0,useNativeDriver:true,damping:20,stiffness:220,mass:.8}).start();
+  if(reducedMotion)translateY.setValue(0);else Animated.spring(translateY,{toValue:0,useNativeDriver:true,damping:20,stiffness:220,mass:.8}).start();
   if(timer.current)clearTimeout(timer.current);
   timer.current=setTimeout(hide,DISPLAY_MS);
- },[hide,remember,translateY]);
+ },[hide,remember,translateY,reducedMotion]);
 
  const check=useCallback(async()=>{
   if(checking.current){checkAgain.current=true;return;}
@@ -57,8 +59,11 @@ export function BusinessOpportunityAlert(){
     checkAgain.current=false;
     const ctx=await getWorkspaceContext();
     if(!mounted.current)return;
-    if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){activeBusiness.current=null;continue;}
+    if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){activeBusiness.current=null;if(timer.current)clearTimeout(timer.current);setItem(null);continue;}
+    const business=ctx.businesses.find(row=>row.id===ctx.active_business_id);
+    if(activeBusiness.current!==ctx.active_business_id){if(timer.current)clearTimeout(timer.current);translateY.stopAnimation();setItem(null);}
     activeBusiness.current=ctx.active_business_id;
+    if(!business||business.status!=='ACTIVE'||business.verification_status!=='VERIFIED'||!(business.can_view_all_jobs||business.can_view_crm||business.can_assign_jobs)){setItem(null);continue;}
     const cutoff=new Date(Date.now()-2*60*1000).toISOString();
     const {data,error}=await supabase.from('opportunities')
      .select('id,request_id,created_at,is_live,approximate_distance_km,eta_seconds,service_requests(description,suburb,city,state,preferred_date,preferred_time,budget,requested_arrival_window)')
@@ -69,12 +74,13 @@ export function BusinessOpportunityAlert(){
      .limit(1)
      .maybeSingle();
     if(error)throw error;
+    if(checkAgain.current||!mounted.current)continue;
     if(data)show(data as unknown as AlertOpportunity);
    }while(checkAgain.current&&mounted.current);
   }catch{
    // Passive alerts never block the app; polling/realtime will recover.
   }finally{checking.current=false}
- },[show]);
+ },[show,translateY]);
 
  useEffect(()=>{
   mounted.current=true;
@@ -119,7 +125,7 @@ export function BusinessOpportunityAlert(){
   const requestId=item.request_id;
   const opportunityId=item.id;
   hide();
-  void supabase.rpc('view_live_opportunity',{p_opportunity_id:opportunityId});
+  void supabase.rpc('view_live_opportunity',{p_opportunity_id:opportunityId}).then(()=>undefined,()=>undefined);
   router.push({pathname:'/opportunities',params:{requestId}});
  }
 
@@ -147,8 +153,8 @@ export function BusinessOpportunityAlert(){
    </View>
    <Text style={[s.note,{color:colors.muted}]}>Interested opens a fast quote. It does not confirm a booking, and the customer’s exact address stays private until booking. The request stays in Opportunities if you ignore it.</Text>
    <View style={s.actions}>
-    <Pressable onPress={()=>void decline()} style={[s.secondary,{borderColor:colors.border}]}><Text style={[s.secondaryText,{color:colors.text}]}>Pass</Text></Pressable>
-    <Pressable onPress={view} style={[s.primary,{backgroundColor:colors.brand}]}><Text style={[s.primaryText,{color:colors.onBrand}]}>Interested</Text></Pressable>
+    <Pressable accessibilityRole="button" onPress={()=>void decline()} style={[s.secondary,{borderColor:colors.border}]}><Text style={[s.secondaryText,{color:colors.text}]}>Pass</Text></Pressable>
+    <Pressable accessibilityRole="button" onPress={view} style={[s.primary,{backgroundColor:colors.brand}]}><Text style={[s.primaryText,{color:colors.onBrand}]}>Interested</Text></Pressable>
    </View>
   </Animated.View>
  </View>;

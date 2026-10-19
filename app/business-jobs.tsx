@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useMemo,useState} from 'react';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {formatMoney,formatSchedule,formatStatus} from '@/lib/format';
@@ -11,49 +11,55 @@ import {ModeSwitcher} from '@/components/ModeSwitcher';
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {supabase} from '@/lib/supabase';
 import {getOrCreateBookingConversation} from '@/lib/marketplace';
+import {operationalRead} from '@/lib/operational-reads';
 import type {BookingStatus} from '@/lib/types';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 
 type Tab='TODAY'|'UPCOMING'|'ACTIVE'|'COMPLETED';
 type Job={id:string;request_id:string|null;business_id:string;price:number|null;scheduled_date:string|null;scheduled_time:string|null;status:BookingStatus;created_at:string};
-type Counts={TODAY:number;UPCOMING:number;ACTIVE:number;COMPLETED:number};
+type Counts={TODAY:number|null;UPCOMING:number|null;ACTIVE:number|null;COMPLETED:number|null};
 
 const dateKey=(d=new Date())=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 
 export default function BusinessJobs(){
+ const generation=useRef(0);const scope=useRef('');const [countError,setCountError]=useState(false);
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);
  const [business,setBusiness]=useState<BusinessWorkspace|null>(null);
  const [items,setItems]=useState<Job[]>([]);
- const [counts,setCounts]=useState<Counts>({TODAY:0,UPCOMING:0,ACTIVE:0,COMPLETED:0});
- const [tab,setTab]=useState<Tab>('TODAY');
+ const [counts,setCounts]=useState<Counts>({TODAY:null,UPCOMING:null,ACTIVE:null,COMPLETED:null});
+ const [tab,setTab]=useState<Tab>('TODAY');const [loadedTab,setLoadedTab]=useState<Tab|null>(null);
  const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);
  const [busy,setBusy]=useState<string|null>(null);const [error,setError]=useState('');
 
- const load=useCallback(async(refresh=false)=>{
-  if(refresh)setRefreshing(true);else setLoading(true);setError('');
+ const load=useCallback(async(refresh=false,countsOnly=false)=>{
+  const version=++generation.current;const currentRead=()=>version===generation.current;
+  if(refresh)setRefreshing(true);else setLoading(true);if(!countsOnly)setError('');setCountError(false);
   try{
    const ctx=await getWorkspaceContext();
    if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return}
    const current=ctx.businesses.find(item=>item.id===ctx.active_business_id);
    if(!current){router.replace('/');return}
+   if(!currentRead())return;
+   if(scope.current!==current.id){countsOnly=false;setLoading(true);setItems([]);setCounts({TODAY:null,UPCOMING:null,ACTIVE:null,COMPLETED:null});scope.current=current.id;}
    setBusiness(current);
 
    if(!current.can_view_all_jobs){
     router.replace('/business-my-work');
     return;
    }
-   if(current.verification_status!=='VERIFIED'){setItems([]);setCounts({TODAY:0,UPCOMING:0,ACTIVE:0,COMPLETED:0});return}
+   if(current.verification_status!=='VERIFIED'){setItems([]);setCounts({TODAY:null,UPCOMING:null,ACTIVE:null,COMPLETED:null});return}
 
    const today=dateKey();
-   const [todayCount,upcomingCount,activeCount,completedCount]=await Promise.all([
-    supabase.from('bookings').select('id',{count:'exact',head:true}).eq('business_id',current.id).eq('scheduled_date',today).in('status',['CONFIRMED','UPCOMING','IN_PROGRESS']),
-    supabase.from('bookings').select('id',{count:'exact',head:true}).eq('business_id',current.id).gt('scheduled_date',today).in('status',['CONFIRMED','UPCOMING']),
-    supabase.from('bookings').select('id',{count:'exact',head:true}).eq('business_id',current.id).eq('status','IN_PROGRESS'),
-    supabase.from('bookings').select('id',{count:'exact',head:true}).eq('business_id',current.id).eq('status','COMPLETED'),
-   ]);
-   for(const result of [todayCount,upcomingCount,activeCount,completedCount])if(result.error)throw result.error;
-   setCounts({TODAY:todayCount.count??0,UPCOMING:upcomingCount.count??0,ACTIVE:activeCount.count??0,COMPLETED:completedCount.count??0});
+   const countsRead=Promise.all((['TODAY','UPCOMING','ACTIVE','COMPLETED'] as const).map(value=>operationalRead(async()=>{
+    let query=supabase.from('bookings').select('id',{count:'exact',head:true}).eq('business_id',current.id);
+    if(value==='TODAY')query=query.eq('scheduled_date',today).in('status',['CONFIRMED','UPCOMING','IN_PROGRESS']);
+    if(value==='UPCOMING')query=query.gt('scheduled_date',today).in('status',['CONFIRMED','UPCOMING']);
+    if(value==='ACTIVE')query=query.eq('status','IN_PROGRESS');
+    if(value==='COMPLETED')query=query.eq('status','COMPLETED');
+    const result=await query;if(result.error)throw result.error;return result.count;
+   },count=>setCounts(previous=>({...previous,[value]:count})),()=>setCounts(previous=>({...previous,[value]:null})),status=>{if(status==='error')setCountError(true)},currentRead)));
 
+   if(countsOnly){await countsRead;return;}
    let query=supabase.from('bookings')
     .select('id,request_id,business_id,price,scheduled_date,scheduled_time,status,created_at')
     .eq('business_id',current.id)
@@ -65,13 +71,15 @@ export default function BusinessJobs(){
    if(tab==='COMPLETED')query=query.eq('status','COMPLETED').order('scheduled_date',{ascending:false,nullsFirst:false});
 
    const {data,error:queryError}=await query;
+   if(!currentRead())return;
    if(queryError)throw queryError;
-   setItems((data??[]) as Job[]);
-  }catch{setError('Jobs couldn’t load. Check your connection and try again.')}
-  finally{setLoading(false);setRefreshing(false)}
+   setItems((data??[]) as Job[]);setLoadedTab(tab);setLoading(false);
+   await countsRead;
+  }catch{if(currentRead()){setItems([]);setLoadedTab(tab);setError('Jobs couldn’t load. Check your connection and try again.')}}
+  finally{if(currentRead()){setLoading(false);setRefreshing(false)}}
  },[tab]);
 
- useEffect(()=>{void load()},[load]);
+ useEffect(()=>{const guard=generation;void load();return()=>{guard.current++;}},[load]);
 
  async function message(job:Job){
   if(!business||!job.request_id)return;
@@ -94,10 +102,11 @@ export default function BusinessJobs(){
    {!verified&&business?<View style={st.restricted}><Text style={st.restrictedTitle}>Jobs are locked until you’re verified</Text><Text style={st.copy}>Complete business verification before operating customer bookings.</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/business-verification')} style={st.restrictedAction}><Text style={st.restrictedActionText}>Continue verification</Text></Pressable></View>:null}
 
    {verified?<><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.tabs} accessibilityRole="tablist">
-    {(['TODAY','UPCOMING','ACTIVE','COMPLETED'] as const).map(value=><Pressable key={value} accessibilityRole="tab" accessibilityState={{selected:tab===value}} accessibilityLabel={`${TAB_LABEL[value]}, ${counts[value]}`} onPress={()=>setTab(value)} style={[st.tab,tab===value&&st.tabOn]}><Text style={[st.tabText,tab===value&&st.tabTextOn]}>{TAB_LABEL[value]}</Text><Text tabular style={[st.tabCount,tab===value&&st.tabCountOn]}>{counts[value]}</Text></Pressable>)}
+    {(['TODAY','UPCOMING','ACTIVE','COMPLETED'] as const).map(value=><Pressable key={value} accessibilityRole="tab" accessibilityState={{selected:tab===value}} accessibilityLabel={`${TAB_LABEL[value]}, ${counts[value]??'count unavailable'}`} onPress={()=>setTab(value)} style={[st.tab,tab===value&&st.tabOn]}><Text style={[st.tabText,tab===value&&st.tabTextOn]}>{TAB_LABEL[value]}</Text><Text tabular style={[st.tabCount,tab===value&&st.tabCountOn]}>{counts[value]??'—'}</Text></Pressable>)}
    </ScrollView>
 
-   {loading?<ActivityIndicator color={colors.accent} style={{marginTop:45}}/>:items.length?<View style={st.list}>{items.map(job=>{
+   {countError?<View style={st.errorBox}><Text style={st.error}>Job counts unavailable. Loaded jobs are still shown.</Text><Pressable accessibilityRole="button" onPress={()=>void load(true,true)} style={st.retry}><Text style={st.retryText}>Retry counts</Text></Pressable></View>:null}
+   {(loading||loadedTab!==tab||(refreshing&&!items.length))?<ActivityIndicator color={colors.accent} style={{marginTop:45}}/>:items.length?<View style={st.list}>{items.map(job=>{
     const date=job.scheduled_date?new Date(job.scheduled_date+'T12:00:00'):null;
     const when=formatSchedule(job.scheduled_date,job.scheduled_time)||'Time to confirm';
     return <Pressable accessibilityRole="button" accessibilityLabel={`${when}, ${formatStatus(job.status)}${job.price!=null?', '+formatMoney(job.price):''}. Open job`} onPress={()=>router.push({pathname:'/business-job',params:{id:job.id}})} style={({pressed})=>[st.card,pressed&&{opacity:.72}]} key={job.id}>
@@ -108,7 +117,7 @@ export default function BusinessJobs(){
       <View style={st.actions}>{job.request_id?<Pressable accessibilityRole="button" accessibilityLabel="Message customer" disabled={!!busy} onPress={event=>{event.stopPropagation();void message(job)}} style={({pressed})=>[st.secondary,pressed&&{opacity:.7}]}><Ionicons name="chatbubble-outline" size={15} color={colors.text}/><Text style={st.secondaryText}>{busy==='message:'+job.id?'Opening…':'Message'}</Text></Pressable>:null}<View style={st.openHint}><Text style={st.openHintText}>Open job</Text><Ionicons name="chevron-forward" size={16} color={colors.textSecondary}/></View></View>
      </View>
     </Pressable>
-   })}</View>:<View style={st.empty}><View style={st.emptyIcon}><Ionicons name={tab==='COMPLETED'?'checkmark-circle-outline':'briefcase-outline'} size={23} color={colors.accent}/></View><View style={{flex:1}}><Text style={st.emptyTitle}>{tab==='TODAY'?'No booked work today':tab==='ACTIVE'?'Nothing in progress':tab==='UPCOMING'?'No upcoming jobs':'No completed jobs yet'}</Text><Text style={st.copy}>{tab==='TODAY'?'Accepted work appears here automatically.':'Pull down to refresh, or check New work.'}</Text></View></View>}</>:null}
+   })}</View>:error?null:<View style={st.empty}><View style={st.emptyIcon}><Ionicons name={tab==='COMPLETED'?'checkmark-circle-outline':'briefcase-outline'} size={23} color={colors.accent}/></View><View style={{flex:1}}><Text style={st.emptyTitle}>{tab==='TODAY'?'No booked work today':tab==='ACTIVE'?'Nothing in progress':tab==='UPCOMING'?'No upcoming jobs':'No completed jobs yet'}</Text><Text style={st.copy}>{tab==='TODAY'?'Accepted work appears here automatically.':'Pull down to refresh, or check New work.'}</Text></View></View>}</>:null}
 
    {error?<View style={st.errorBox} accessibilityRole="alert"><Ionicons name="alert-circle-outline" size={16} color={colors.danger}/><Text style={st.error}>{error}</Text><Pressable accessibilityRole="button" onPress={()=>void load()} style={st.retry}><Text style={st.retryText}>Try again</Text></Pressable></View>:null}
   </ScrollView>

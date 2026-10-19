@@ -1,0 +1,15 @@
+{
+  "scope": "Disposable PostgreSQL; exact checked-in release_everest_live_wave, minimal table fixtures, no notification triggers or production permissions",
+  "checks": [
+    "Nearby provider offered once, repeated wave creates no duplicate",
+    "Offline provider excluded",
+    "Expired availability excluded",
+    "Expired Live request stops wave",
+    "Remote capability matching is global and bypasses geographic radius; remote map presentation needs product review"
+  ],
+  "blockers": [
+    "A Sydney provider with a Carlton named service area receives a 3 km Melbourne wave",
+    "AVAILABLE_NOW with a future available_from is still notified",
+    "Unfinished assignment belonging to a removed member excludes the business"
+  ]
+}

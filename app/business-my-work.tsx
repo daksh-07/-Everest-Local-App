@@ -1,6 +1,6 @@
 import {Ionicons} from '@/components/ui/Icon';
-import {router} from 'expo-router';
-import {useCallback,useEffect,useMemo,useState} from 'react';
+import {router,useFocusEffect} from 'expo-router';
+import {useCallback,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {AskEverestButton} from '@/components/AskEverestButton';
@@ -11,6 +11,7 @@ import {getMyAssignedJobs,updateAssignmentStatus,type AssignedJob} from '@/lib/b
 import {getWorkspaceContext,type BusinessWorkspace} from '@/lib/workspace';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import {haptic} from '@/lib/haptics';
+import {ConfirmSheet,ErrorBanner} from '@/components/ui';
 import {userMessage} from '@/lib/errors';
 
 const nextAction=(status:string):{label:string;next:'ACCEPTED'|'EN_ROUTE'|'ARRIVED'|'IN_PROGRESS'|'COMPLETED';icon:keyof typeof Ionicons.glyphMap}|null=>{
@@ -25,25 +26,28 @@ const schedule=(value:string|null)=>value?new Date(value).toLocaleString(undefin
 const money=(value:number|null)=>value==null?'':new Intl.NumberFormat(undefined,{style:'currency',currency:'AUD'}).format(Number(value));
 
 export default function BusinessMyWork(){
+ const generation=useRef(0);const scope=useRef('');const [completeJob,setCompleteJob]=useState<AssignedJob|null>(null);
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);
  const [business,setBusiness]=useState<BusinessWorkspace|null>(null);const [jobs,setJobs]=useState<AssignedJob[]>([]);
  const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [busy,setBusy]=useState('');const [error,setError]=useState('');
  const load=useCallback(async(refresh=false)=>{
+  const version=++generation.current;const currentRead=()=>version===generation.current;
   if(refresh)setRefreshing(true);else setLoading(true);setError('');
   try{
    const ctx=await getWorkspaceContext();
    if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
    const current=ctx.businesses.find(x=>x.id===ctx.active_business_id);
    if(!current)throw new Error('Business access unavailable.');
-   setBusiness(current);setJobs(await getMyAssignedJobs(current.id));
-  }catch(e){setError(userMessage(e,'Your work queue could not be loaded.'));}
-  finally{setLoading(false);setRefreshing(false);}
+   if(!currentRead())return;if(scope.current!==current.id){setJobs([]);setCompleteJob(null);setLoading(true);scope.current=current.id;}setBusiness(current);const rows=await getMyAssignedJobs(current.id);if(currentRead())setJobs(rows);
+  }catch(e){if(currentRead()){setJobs([]);setError(userMessage(e,'Your work queue could not be loaded.'));}}
+  finally{if(currentRead()){setLoading(false);setRefreshing(false);}}
  },[]);
- useEffect(()=>{void load();},[load]);
+ useFocusEffect(useCallback(()=>{void load(true);return()=>{generation.current++;};},[load]));
 
- async function advance(job:AssignedJob,next:ReturnType<typeof nextAction>){
+ async function advance(job:AssignedJob,next:ReturnType<typeof nextAction>,confirmed=false){
+  if(next?.next==='COMPLETED'&&!confirmed){setCompleteJob(job);return;}
   if(!next||busy)return;setBusy(job.assignment_id);setError('');
-  try{await updateAssignmentStatus(job.assignment_id,next.next);void haptic.success();await load(true);}
+  try{await updateAssignmentStatus(job.assignment_id,next.next);setCompleteJob(null);void haptic.success();await load(true);}
   catch(e){setError(userMessage(e,'The job could not be updated.'));}
   finally{setBusy('');}
  }
@@ -62,8 +66,8 @@ export default function BusinessMyWork(){
   contentContainerStyle={st.page} showsVerticalScrollIndicator={false}>
   <View style={st.header}><View style={{flex:1,minWidth:0}}><Text style={st.eyebrow}>My work</Text><Text numberOfLines={1} style={st.business}>{business?.name??'Business'}</Text></View><ModeSwitcher compact/><AskEverestButton/></View>
   <Text style={st.title}>Your shift, without the noise.</Text><Text style={st.copy}>Only work assigned to you or your crew appears here. Company finance, payouts and admin stay with authorised roles.</Text>
-  {error?<View style={st.errorBox}><Ionicons name="alert-circle-outline" size={18} color={colors.danger}/><Text style={st.error}>{error}</Text></View>:null}
-  {loading?<ActivityIndicator color={colors.accent} style={{marginTop:55}}/>:<>
+  {error?<ErrorBanner message={error} onRetry={()=>void load(true)} retryLabel="Retry work queue"/>:null}
+  {(loading||(refreshing&&!jobs.length))?<ActivityIndicator color={colors.accent} style={{marginTop:55}}/>:error&&!jobs.length?null:<>
    <View style={st.summary}>
     <View><Text style={st.summaryN}>{active.length}</Text><Text style={st.summaryL}>Active jobs</Text></View>
     <View style={st.divider}/><View><Text style={st.summaryN}>{active.filter(x=>x.status==='IN_PROGRESS').length}</Text><Text style={st.summaryL}>In progress</Text></View>
@@ -75,16 +79,16 @@ export default function BusinessMyWork(){
    {active.length>1?<><Text style={st.section}>Upcoming</Text>{active.slice(1).map(job=><JobCard key={job.assignment_id} job={job} busy={busy} onAdvance={advance} onDecline={decline} colors={colors}/>)}</>:null}
    {completed.length?<><Text style={st.section}>Recently completed</Text>{completed.map(job=><View key={job.assignment_id} style={st.completed}><View style={st.doneIcon}><Ionicons name="checkmark" size={17} color={colors.onBrand}/></View><View style={{flex:1}}><Text style={st.completedTitle}>{job.label}</Text><Text style={st.completedMeta}>{job.customer_name} · {schedule(job.scheduled_at)}</Text></View></View>)}</>:null}
   </>}
- </ScrollView><BusinessTabBar active="/business-my-work"/></View></SafeAreaView>;
+ </ScrollView><ConfirmSheet visible={Boolean(completeJob)} title="Complete this assignment?" subtitle={completeJob?.label} note="Confirm that your assigned work is finished. The team will see the completed status." busy={Boolean(busy)} confirmLabel="Complete assignment" onCancel={()=>setCompleteJob(null)} onConfirm={()=>{if(completeJob)void advance(completeJob,nextAction(completeJob.status),true);}}/><BusinessTabBar active="/business-my-work"/></View></SafeAreaView>;
 }
 
 function JobActions({job,busy,onAdvance,onDecline,colors}:{job:AssignedJob;busy:string;onAdvance:(job:AssignedJob,next:ReturnType<typeof nextAction>)=>void;onDecline:(job:AssignedJob)=>void;colors:ThemeColors}){
- const s=useMemo(()=>styles(colors),[colors]);const action=nextAction(job.status);const waiting=busy===job.assignment_id;
+ const s=useMemo(()=>styles(colors),[colors]);const action=nextAction(job.status);const waiting=busy===job.assignment_id;const disabled=Boolean(busy);
  return <View style={s.actions}>
-  {job.source==='EVEREST'&&job.booking_id?<Pressable disabled={waiting} onPress={()=>router.push({pathname:'/business-job',params:{id:job.booking_id!}})} style={s.secondary}><Ionicons name="clipboard-outline" size={17} color={colors.text}/><Text style={s.secondaryText}>Job details</Text></Pressable>:null}
-  {job.location?<Pressable disabled={waiting} onPress={()=>void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location!)}`)} style={s.secondary}><Ionicons name="navigate-outline" size={17} color={colors.text}/><Text style={s.secondaryText}>Directions</Text></Pressable>:null}
-  {action?<Pressable disabled={waiting} onPress={()=>void onAdvance(job,action)} style={s.primary}><Ionicons name={action.icon} size={17} color={colors.onBrand}/><Text style={s.primaryText}>{waiting?'Updating…':action.label}</Text></Pressable>:null}
-  {job.status==='ASSIGNED'?<Pressable disabled={waiting} onPress={()=>void onDecline(job)} style={s.decline}><Text style={s.declineText}>Decline</Text></Pressable>:null}
+  {job.source==='EVEREST'&&job.booking_id?<Pressable accessibilityRole="button" disabled={disabled} onPress={()=>router.push({pathname:'/business-job',params:{id:job.booking_id!}})} style={s.secondary}><Ionicons name="clipboard-outline" size={17} color={colors.text}/><Text style={s.secondaryText}>Job details</Text></Pressable>:null}
+  {job.location?<Pressable accessibilityRole="button" disabled={disabled} onPress={()=>void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location!)}`)} style={s.secondary}><Ionicons name="navigate-outline" size={17} color={colors.text}/><Text style={s.secondaryText}>Directions</Text></Pressable>:null}
+  {action?<Pressable accessibilityRole="button" disabled={disabled} onPress={()=>void onAdvance(job,action)} style={s.primary}><Ionicons name={action.icon} size={17} color={colors.onBrand}/><Text style={s.primaryText}>{waiting?'Updating…':action.label}</Text></Pressable>:null}
+  {job.status==='ASSIGNED'?<Pressable accessibilityRole="button" disabled={disabled} onPress={()=>void onDecline(job)} style={s.decline}><Text style={s.declineText}>Decline</Text></Pressable>:null}
  </View>;
 }
 function JobCard({job,busy,onAdvance,onDecline,colors}:{job:AssignedJob;busy:string;onAdvance:(job:AssignedJob,next:ReturnType<typeof nextAction>)=>void;onDecline:(job:AssignedJob)=>void;colors:ThemeColors}){
