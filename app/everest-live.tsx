@@ -5,6 +5,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@/components/ui/Icon';
 import {router,useLocalSearchParams} from 'expo-router';
 import {acceptQuote} from '@/lib/marketplace';
+import {QuoteAcceptanceUnconfirmedError} from '@/lib/quote-acceptance';
 import {cancelEverestLive,expandEverestLive,getEverestLiveMapPoints,getEverestLiveState,listLiveQuotes,type EverestLiveState,type LiveMapSnapshot,type LiveQuote} from '@/lib/everest-live';
 import {supabase} from '@/lib/supabase';
 import {useAppTheme,type ThemeColors} from '@/lib/theme';
@@ -37,6 +38,7 @@ function LiveRequest({id}:{id:string}){
  const [secondaryWarning,setSecondaryWarning]=useState('');
  const [error,setError]=useState('');
  const [actionError,setActionError]=useState('');
+ const [checkBooking,setCheckBooking]=useState(false);
  const [busy,setBusy]=useState(false);
  const [reviewing,setReviewing]=useState<string|null>(null);
  const [confirmCancel,setConfirmCancel]=useState(false);
@@ -136,7 +138,7 @@ function LiveRequest({id}:{id:string}){
 
 
  async function cancel(){if(mutationLock.current)return;mutationLock.current=true;setBusy(true);setActionError('');try{if(!await cancelEverestLive(id))throw new Error('Cancellation was not confirmed. Retry to check your request.');setConfirmCancel(false);router.replace('/activity')}catch(e){setConfirmCancel(false);if(mounted.current)setActionError(userMessage(e,'Could not cancel the search.'))}finally{mutationLock.current=false;if(mounted.current)setBusy(false)}}
- async function choose(quoteId:string){if(mutationLock.current)return;mutationLock.current=true;setBusy(true);setActionError('');try{const bookingId=await acceptQuote(quoteId);setReviewing(null);void haptic.success();router.replace(`/booking?id=${bookingId}`)}catch(e){setReviewing(null);await refresh('silent');if(mounted.current)setActionError(userMessage(e,'This provider could not be selected.'))}finally{mutationLock.current=false;if(mounted.current)setBusy(false)}}
+ async function choose(quoteId:string){if(mutationLock.current)return;mutationLock.current=true;setBusy(true);setActionError('');setCheckBooking(false);try{const bookingId=await acceptQuote(quoteId);setReviewing(null);void haptic.success();router.replace(`/booking?id=${bookingId}`)}catch(e){setReviewing(null);await refresh('silent');if(mounted.current){setCheckBooking(e instanceof QuoteAcceptanceUnconfirmedError);setActionError(userMessage(e,'This provider could not be selected.'))}}finally{mutationLock.current=false;if(mounted.current)setBusy(false)}}
  const status=state?.live_status;const presentation=livePresentation(status,reconnecting);const finished=presentation.finished;const searching=presentation.searching;const label=state?.quote_count?`${state.quote_count} provider response${state.quote_count===1?'':'s'}`:state?.viewed_count?`${state.viewed_count} business${state.viewed_count===1?' has':'es have'} viewed your request`:state?.notified_count?`${state.notified_count} business${state.notified_count===1?'':'es'} notified`:'Finding available businesses nearby';
  if(!id||(!loading&&!state&&!error))return <SafeAreaView style={s.safe}><EmptyState icon="radio-outline" title="Live request unavailable" description={error||'Open an active request from My Everest, or start a new search.'} actionLabel="My Everest" onAction={()=>router.replace('/activity')}/></SafeAreaView>;
  if(!loading&&!state&&error)return <SafeAreaView style={s.safe}><EmptyState icon="cloud-offline-outline" title="Live request unavailable" description={error} actionLabel={statusStale?(refreshing?'Reconnecting…':'Reconnect'):'My Everest'} onAction={()=>statusStale?void refresh('manual'):router.replace('/activity')}/></SafeAreaView>;
@@ -156,7 +158,7 @@ function LiveRequest({id}:{id:string}){
    {finished?<View style={s.alternatives}><Text style={s.sectionTitle}>What would you like to do?</Text><Pressable disabled={busy||status==='EXPIRED'||state?.radius_stage===4} accessibilityRole="button" onPress={()=>void expand()} style={[s.option,state?.radius_stage===4&&s.disabled]}><Ionicons name="expand-outline" size={19} color={colors.accent}/><Text style={s.optionText}>Keep searching farther away</Text></Pressable><Pressable onPress={()=>router.replace(`/request?retry=${id}`)} style={s.option}><Ionicons name="time-outline" size={19} color={colors.accent}/><Text style={s.optionText}>Change arrival window or schedule later</Text></Pressable><Pressable onPress={()=>router.replace('/activity')} style={s.option}><Ionicons name="document-text-outline" size={19} color={colors.accent}/><Text style={s.optionText}>View your requests</Text></Pressable></View>:null}
    {secondaryWarning?<View style={s.errorWrap}><ErrorBanner message={secondaryWarning} onRetry={()=>void refresh('manual')} retryLabel="Retry details"/></View>:null}
    {error?<View style={s.errorWrap}><ErrorBanner message={error} onRetry={()=>void refresh('manual')} retryLabel="Reconnect"/></View>:null}
-   {actionError?<View style={s.errorWrap}><ErrorBanner message={actionError} onRetry={()=>{setActionError('');void refresh('manual')}} retryLabel="Check request"/></View>:null}
+   {actionError?<View style={s.errorWrap}><ErrorBanner message={actionError} onRetry={()=>{if(checkBooking){router.push('/bookings');return;}setActionError('');void refresh('manual')}} retryLabel={checkBooking?'Check bookings':'Check request'}/></View>:null}
    <View style={s.bottomActions}><Pressable onPress={()=>router.push(`/request?edit=${id}`)} style={s.edit}><Ionicons name="pencil-outline" size={16} color={colors.text}/><Text style={s.editText}>Edit request</Text></Pressable><Pressable accessibilityRole="button" disabled={busy||presentation.terminal} onPress={()=>setConfirmCancel(true)} style={s.cancel}><Text style={s.cancelText}>Cancel search</Text></Pressable></View>
   </ScrollView>
   {(()=>{const q=quotes.find(x=>x.id===reviewing);return <ConfirmSheet visible={Boolean(q)} title="Book this provider?" subtitle={q?.businesses?.name??'Local business'} busy={busy}

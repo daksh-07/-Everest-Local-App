@@ -1,10 +1,11 @@
-name: Validate Phase 6 backend contracts
+name: Validate Phase 6 and 7 backend contracts
 on:
   pull_request:
     branches: [main]
     paths:
       - 'supabase/migrations/*phase5_public_discovery.sql'
       - 'supabase/migrations/*phase6*.sql'
+      - 'supabase/migrations/*phase7*.sql'
       - 'lib/social.ts'
       - 'scripts/verify-phase6-*.mjs'
       - 'scripts/lib/phase6-*.mjs'

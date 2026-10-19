@@ -5,6 +5,9 @@ on:
     paths:
       - 'scripts/lib/browser-fixture.mjs'
       - 'app/everest-live.tsx'
+      - 'app/quotes.tsx'
+      - 'lib/marketplace.ts'
+      - 'lib/quote-acceptance.ts'
       - 'app/business-*.tsx'
       - 'components/LiveSearchMap*'
       - 'components/OperationalFeedback.tsx'

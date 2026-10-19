@@ -1,3 +1,4 @@
+import {acceptQuoteWithRecovery} from './quote-acceptance';
 import { supabase, requireSupabaseConfig } from './supabase';
 import { userFacingError } from './errors';
 import type { MarketplaceBusiness, Product, Quote, ServiceRequest, Profile } from './types';
@@ -41,7 +42,18 @@ export async function createServiceRequest(input:{idempotencyKey:string;category
 }
 export async function myRequests():Promise<ServiceRequest[]>{const user=await currentUser();if(!user)return[];const {data,error}=await supabase.from('service_requests').select('*').eq('customer_id',user.id).order('created_at',{ascending:false});if(error)throw safeBackendError(error,'Your service requests could not be loaded. Please try again.');return (data??[]) as ServiceRequest[];}
 export async function myQuotes(requestId?:string):Promise<Quote[]>{const user=await currentUser();if(!user)return[];let query=supabase.from('quotes').select('*').eq('customer_id',user.id).order('created_at',{ascending:false});if(requestId?.trim())query=query.eq('request_id',requestId.trim());const {data,error}=await query;if(error)throw safeBackendError(error,'Your quotes could not be loaded. Please try again.');return (data??[]) as Quote[];}
-export async function acceptQuote(quoteId:string){requireSupabaseConfig();if(!quoteId.trim())throw new Error('Quote reference is required.');const {data,error}=await supabase.rpc('accept_quote',{p_quote_id:quoteId});if(error)throw safeBackendError(error,'This quote could not be accepted. Please refresh and try again.');return data as string;}
+export async function acceptQuote(quoteId:string){
+ requireSupabaseConfig();if(!quoteId.trim())throw new Error('Quote reference is required.');
+ const user=await currentUser();if(!user)throw new Error('Please sign in to choose a provider.');
+ let requestId:string|null=null;
+ const readBooking=async()=>{
+  if(!requestId){const quote=await supabase.from('quotes').select('request_id').eq('id',quoteId).eq('customer_id',user.id).maybeSingle();
+  if(quote.error)throw quote.error;if(!quote.data?.request_id)throw new Error('Quote unavailable');requestId=quote.data.request_id;}
+  const booking=await supabase.from('bookings').select('id').eq('request_id',requestId).eq('customer_id',user.id).neq('status','CANCELLED').order('created_at',{ascending:false}).limit(1).maybeSingle();
+  if(booking.error)throw booking.error;return booking.data?.id??null;
+ };
+ return acceptQuoteWithRecovery({readBooking,mutate:async()=>{const {data,error}=await supabase.rpc('accept_quote',{p_quote_id:quoteId});if(error)throw error;return data as string;}});
+}
 export type BookingServiceLocation={request_id:string;address_line1:string|null;suburb:string|null;city:string|null;state:string|null;postal_code:string|null;country:string|null;service_address_label:string|null;latitude:number|null;longitude:number|null};
 export async function getBookingServiceLocation(bookingId:string):Promise<BookingServiceLocation|null>{requireSupabaseConfig();if(!bookingId.trim())return null;const {data,error}=await supabase.rpc('get_booking_service_location',{p_booking_id:bookingId});if(error)throw safeBackendError(error,'The service address could not be loaded.');const row=(data??[])[0];if(!row)return null;return{...row,latitude:row.latitude==null?null:Number(row.latitude),longitude:row.longitude==null?null:Number(row.longitude)} as BookingServiceLocation;}
 

@@ -5,13 +5,15 @@ import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@/components/ui/Icon';
 import {acceptQuote} from '@/lib/marketplace';
+import {QuoteAcceptanceUnconfirmedError} from '@/lib/quote-acceptance';
 import {getOrCreateConversation} from '@/lib/messaging';
 import {supabase} from '@/lib/supabase';
 import {type ThemeColors,useAppTheme} from '@/lib/theme';
 import type {Quote} from '@/lib/types';
 import {formatDay,formatMoney,formatSchedule} from '@/lib/format';
-import {ConfirmSheet,ScreenHeader} from '@/components/ui';
+import {ConfirmSheet,ScreenHeader,ErrorBanner} from '@/components/ui';
 import {haptic} from '@/lib/haptics';
+import {userMessage} from '@/lib/errors';
 
 type Biz={id:string;name:string;logo_url:string|null;verification_status:string};
 type QuoteRow=Quote&{businesses:Biz|Biz[]|null};
@@ -21,7 +23,7 @@ type Ranked={quote:QuoteRow;business:Biz|null;score:number;distance:number|null;
 
 export default function Quotes(){
  const {requestId}=useLocalSearchParams<{requestId?:string}>();const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
- const [items,setItems]=useState<Ranked[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [showAll,setShowAll]=useState(false);const [accepting,setAccepting]=useState<string|null>(null);const [messaging,setMessaging]=useState<string|null>(null);const [error,setError]=useState('');const [reviewing,setReviewing]=useState<string|null>(null);const loadRef=useRef(false);
+ const [items,setItems]=useState<Ranked[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [showAll,setShowAll]=useState(false);const [accepting,setAccepting]=useState<string|null>(null);const [messaging,setMessaging]=useState<string|null>(null);const [error,setError]=useState('');const [reviewing,setReviewing]=useState<string|null>(null);const loadRef=useRef(false);const acceptanceLock=useRef(false);const [acceptanceError,setAcceptanceError]=useState('');const [checkBooking,setCheckBooking]=useState(false);
  const load=useCallback(async(refresh=false)=>{if(loadRef.current)return;loadRef.current=true;if(refresh)setRefreshing(true);else setLoading(true);setError('');
   try{
    const {data:{user}}=await supabase.auth.getUser();if(!user){router.replace('/auth');return;}
@@ -40,7 +42,7 @@ export default function Quotes(){
  },[requestId]);
  useEffect(()=>{void load();},[load]);
  useEffect(()=>{let channel:ReturnType<typeof supabase.channel>|null=null;void(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;channel=supabase.channel('customer-quotes-'+user.id).on('postgres_changes',{event:'*',schema:'public',table:'quotes',filter:'customer_id=eq.'+user.id},()=>void load(true)).subscribe();})();return()=>{if(channel)void supabase.removeChannel(channel);};},[load]);
- async function accept(id:string){if(accepting||messaging)return;setAccepting(id);setError('');try{await acceptQuote(id);setReviewing(null);router.replace('/bookings');}catch{setError('This offer could not be chosen. Refresh and check that it is still available.');}finally{setAccepting(null);}}
+ async function accept(id:string){if(acceptanceLock.current||accepting||messaging)return;acceptanceLock.current=true;setAccepting(id);setAcceptanceError('');setCheckBooking(false);try{const bookingId=await acceptQuote(id);setReviewing(null);router.replace(`/booking?id=${bookingId}`);}catch(e){setReviewing(null);await load(true);setCheckBooking(e instanceof QuoteAcceptanceUnconfirmedError);setAcceptanceError(userMessage(e,'This offer could not be chosen. Refresh and check that it is still available.'));}finally{acceptanceLock.current=false;setAccepting(null);}}
  async function message(item:Ranked){if(accepting||messaging)return;setMessaging(item.quote.id);setError('');try{const id=await getOrCreateConversation({requestId:item.quote.request_id,businessId:item.quote.business_id,quoteId:item.quote.id});router.push({pathname:'/messages',params:{conversationId:id}});}catch{setError('Conversation could not be opened.');}finally{setMessaging(null);}}
  const valid=items.filter(x=>x.quote.status==='SENT'||x.quote.status==='VIEWED');const shown=showAll?valid:valid.slice(0,3);
  // Badges must reflect evidence, not list position: "Best match" only when match scores differ,
@@ -55,6 +57,7 @@ export default function Quotes(){
   <ScreenHeader title={requestId?'Best options for you':'Quotes'} subtitle={requestId?'Ordered by service match, distance and real reviews where available. Nothing is booked until you accept.':'Quotes businesses have sent you. Nothing is booked until you accept.'} fallback="/activity" style={{marginBottom:8}}/>
   {loading&&!items.length?<ActivityIndicator color={colors.accent} style={{marginTop:40}}/>:null}
   {error?<View style={s.warning}><Text style={s.warningText}>{error}</Text><Pressable accessibilityRole="button" onPress={()=>void load(true)} style={s.retryButton}><Text style={s.retry}>Retry</Text></Pressable></View>:null}
+  {acceptanceError?<ErrorBanner message={acceptanceError} retryLabel={checkBooking?'Check bookings':'Refresh offers'} onRetry={()=>{if(checkBooking)router.push('/bookings');else void load(true)}}/>:null}
   {!loading&&!valid.length?<View style={s.empty}><Ionicons name="hourglass-outline" size={24} color={colors.accent}/><Text style={s.emptyTitle}>No quotes yet</Text><Text style={s.emptyCopy}>Matched businesses appear here as they respond. Everest notifies businesses in waves rather than all at once.</Text></View>:null}
   {shown.map(item=>{const quote=item.quote;const badges:string[]=[];if(quote.id===bestMatch)badges.push('Best match');if(lowestUnique&&Number(quote.total)===lowest)badges.push('Lowest price');if(quote.id===closest)badges.push('Closest');if(quote.id===highestRated)badges.push('Highest rated');const verified=item.business?.verification_status==='VERIFIED';const name=item.business?.name??'Business';const deposit=Number(quote.deposit);
    return <View style={[s.card,quote.id===bestMatch&&s.bestCard]} key={quote.id}>
