@@ -1,0 +1,74 @@
+{
+  "scope": "PostgreSQL 17.6 loopback; independent transactions, synthetic request/confirmed-booking fixtures and controlled authorization/readiness helpers. Not full schema, staging, Stripe or realtime.",
+  "tests": [
+    {
+      "name": "two providers concurrently accept: exactly one committed assignment",
+      "pass": true
+    },
+    {
+      "name": "repeat acceptance after lost response cannot create duplicate assignment",
+      "pass": true
+    },
+    {
+      "name": "stale offer cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "offline provider cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "stale location cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "cancelled request cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "missing capability cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "outside provider radius cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "another account cannot accept a provider offer",
+      "pass": true
+    },
+    {
+      "name": "completion progresses through allowed states and is authorized",
+      "pass": true
+    },
+    {
+      "name": "customer cancellation expires offers and is not repeat-success",
+      "pass": true
+    },
+    {
+      "name": "provider cannot cancel customer request",
+      "pass": true
+    },
+    {
+      "name": "simultaneous customer quote decisions have no deadlock and exactly one booking",
+      "pass": false,
+      "error": "customer acceptance must not deadlock\n\ntrue !== false\n"
+    }
+  ],
+  "findings": [
+    {
+      "kind": "quote-concurrency",
+      "results": [
+        {
+          "value": "13ea70af-d93d-41fe-a176-4a4ceefd45dc"
+        },
+        {
+          "code": "40P01",
+          "message": "deadlock detected"
+        }
+      ]
+    }
+  ],
+  "passed": 12,
+  "failed": 1
+}
