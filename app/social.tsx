@@ -1,15 +1,14 @@
-import {useReducedMotion} from '@/lib/motion';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import { ActivityIndicator, FlatList, Image, Modal, Pressable, RefreshControl, Share, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, Share, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
-import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
+import {PostCommentsSheet} from '@/components/PostCommentsSheet';
 import {PagerAwareScrollView as ScrollView} from '@/components/PagerAwareScrollView';
 import {Ionicons} from '@/components/ui/Icon';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useGlobalSearchParams} from 'expo-router';
 import {
-  addPostComment,getAccessiblePost,getCommentEngagement,getPostEngagement,hidePostComment,listPostComments,listPublicPosts,recordPostView,setPostCommentsEnabled,
-  toggleCommentLike,togglePostLike,toggleSavedPost,type CommentEngagement,type PostComment,type PostEngagement,type SocialPost
+  getAccessiblePost,getPostEngagement,listPublicPosts,recordPostView,setPostCommentsEnabled,
+  togglePostLike,toggleSavedPost,type PostEngagement,type SocialPost
 } from '@/lib/social';
 import {signedPostMediaResilient} from '@/lib/request-post-media';
 import {supabase} from '@/lib/supabase';
@@ -48,7 +47,7 @@ let exploreLoad:Promise<void>|null=null;
 
 export default function Social(){const hosted=useCustomerRouteHost();return hosted?null:<SocialScreen/>}
 export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS';active?:boolean}={}){
- const reducedMotion=useReducedMotion();const pager=useCustomerPager();
+ const pager=useCustomerPager();
  const fallbackProgress=useSharedValue(2);const sceneProgress=pager?.progress??fallbackProgress;
  const [segmentWidth,setSegmentWidth]=useState(0);
  const segmentMotion=useAnimatedStyle(()=>({transform:[{translateX:Math.max(0,Math.min(1,sceneProgress.value-1))*Math.max(0,(segmentWidth-8)/2)}]}),[segmentWidth]);
@@ -63,9 +62,9 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  useEffect(()=>{setImmersiveMedia(active&&mode==='CLIPS');return()=>setImmersiveMedia(false)},[active,mode]);const [activeClipId,setActiveClipId]=useState<string|null>(null);const [loading,setLoading]=useState(()=>!cachedFeed);const [refreshing,setRefreshing]=useState(false);
  useEffect(()=>{if(!pager)fallbackProgress.value=mode==='CLIPS'?2:1},[fallbackProgress,mode,pager]);
  const [error,setError]=useState('');const [locality,setLocality]=useState(()=>cachedFeed?.locality??'Near you');const [userId,setUserId]=useState<string|null>(()=>cachedFeed?.userId??null);
- const [commentPost,setCommentPost]=useState<FeedPost|null>(null);const [comments,setComments]=useState<PostComment[]>([]);const [commentText,setCommentText]=useState('');
- const [commentLikes,setCommentLikes]=useState<Record<string,CommentEngagement>>({});const [replyTo,setReplyTo]=useState<PostComment|null>(null);
- const [commentsBusy,setCommentsBusy]=useState(false);const [menuPost,setMenuPost]=useState<string|null>(null);const lastDeepLinkedPost=useRef<string|null>(null);
+ const [commentPost,setCommentPost]=useState<FeedPost|null>(null);
+ const commentSettingsLock=useRef(false);const [commentSettingsBusy,setCommentSettingsBusy]=useState(false);
+ const [menuPost,setMenuPost]=useState<string|null>(null);const lastDeepLinkedPost=useRef<string|null>(null);
  const viewedPosts=useRef(new Set<string>());const listRef=useRef<FlatList<FeedPost>>(null);const scrollOffsets=useRef<Record<'POSTS'|'CLIPS',number>>({POSTS:0,CLIPS:0});
  const activeRef=useRef(active);activeRef.current=active;
  const viewabilityConfig=useRef({itemVisiblePercentThreshold:60,minimumViewTime:900}).current;
@@ -203,42 +202,14 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  async function share(post:FeedPost){
   await Share.share({message:[post.caption||'See this post on Everest Local',post.location_label?('📍 '+post.location_label):''].filter(Boolean).join('\n')});
  }
- async function openComments(post:FeedPost){
-  setCommentPost(post);setCommentsBusy(true);setComments([]);setCommentLikes({});setCommentText('');setReplyTo(null);
-  try{
-   const rows=await listPostComments(post.id);
-   setComments(rows);
-   setCommentLikes(await getCommentEngagement(rows.map(x=>x.id)));
-  }finally{setCommentsBusy(false)}
- }
- async function sendComment(){
-  if(!commentPost||!commentText.trim())return;setCommentsBusy(true);
-  try{
-   const row=await addPostComment(commentPost.id,commentText,replyTo?.id??null);
-   setComments(v=>[...v,row]);setCommentLikes(v=>({...v,[row.id]:{likeCount:0,likedByMe:false}}));
-   setCommentText('');setReplyTo(null);updateEngagement(commentPost.id,e=>({...e,commentCount:e.commentCount+1}));void haptic.success();
-  }catch(e){setError(userMessage(e,'Could not add comment.'))}finally{setCommentsBusy(false)}
- }
- async function hideComment(commentId:string){
-  if(!commentPost)return;
-  try{
-   await hidePostComment(commentId);
-   setComments(v=>v.filter(x=>x.id!==commentId));
-   updateEngagement(commentPost.id,e=>({...e,commentCount:Math.max(0,e.commentCount-1)}));
-  }catch(e){setError(userMessage(e,'Could not hide comment.'))}
- }
- async function likeComment(commentId:string){
-  const before=commentLikes[commentId]??{likeCount:0,likedByMe:false};
-  setCommentLikes(current=>({...current,[commentId]:{likedByMe:!before.likedByMe,likeCount:Math.max(0,before.likeCount+(before.likedByMe?-1:1))}}));
-  void haptic.selection();
-  try{await toggleCommentLike(commentId,before.likedByMe)}
-  catch{setCommentLikes(current=>({...current,[commentId]:before}))}
- }
- const commentTime=(value:string)=>formatAgo(value);
+ function openComments(post:FeedPost){setCommentPost(post);}
  async function toggleComments(post:FeedPost){
-  await setPostCommentsEnabled(post.id,!post.comments_enabled);
-  setPosts(v=>v.map(x=>x.id===post.id?{...x,comments_enabled:!x.comments_enabled}:x));setMenuPost(null);
+  if(commentSettingsLock.current)return;commentSettingsLock.current=true;setCommentSettingsBusy(true);
+  try{await setPostCommentsEnabled(post.id,!post.comments_enabled);setPosts(previous=>previous.map(item=>item.id===post.id?{...item,comments_enabled:!post.comments_enabled}:item));}
+  catch(e){setError(userMessage(e,'Comment settings could not be saved. Try again.'));}
+  finally{commentSettingsLock.current=false;setCommentSettingsBusy(false);setMenuPost(null);}
  }
+
  const mediaWidth=Math.min(width-24,720);const clipHeight=Math.min(Math.max(height-210,520),760);
  function switchMode(next:'POSTS'|'CLIPS'){if(next===mode)return;if(pager){pager.navigate(next==='POSTS'?1:2);return}setMode(next);setActiveClipId(next==='CLIPS'?(clips[0]?.id??null):null);router.setParams({mode:next==='CLIPS'?'clips':'posts'});void haptic.selection()}
  const audibleTracks=(post:FeedPost)=>post.audioTracks?.filter(track=>!track.muted&&Boolean(track.url))??[];
@@ -308,12 +279,12 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
      <Pressable style={{flex:1}} onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))}>
       <View style={s.nameLine}><Text style={s.name}>{item.businesses?.name??item.profile?.display_name??'Everest member'}</Text>{item.is_promoted?<View style={s.promotedBadge}><Ionicons name="rocket" size={11} color={colors.onTertiaryContainer}/><Text style={s.promotedText}>Promoted</Text></View>:null}</View>
       {item.collaborator_labels?.length?<Text numberOfLines={1} style={s.collab}>with {item.collaborator_labels.join(' · ')}</Text>:null}
-      <Text style={s.meta}>{[item.location_label,commentTime(item.created_at)].filter(Boolean).join(' · ')}</Text>
+      <Text style={s.meta}>{[item.location_label,formatAgo(item.created_at)].filter(Boolean).join(' · ')}</Text>
      </Pressable>
      <Pressable accessibilityRole="button" accessibilityLabel="Post options" accessibilityState={{expanded:menuPost===item.id}} onPress={()=>setMenuPost(menuPost===item.id?null:item.id)} style={s.more}><Ionicons name="ellipsis-horizontal" size={21} color={colors.text}/></Pressable>
     </View>
     {menuPost===item.id?<View style={s.menu}>
-      {item.author_id===userId?<Pressable onPress={()=>void toggleComments(item)} style={s.menuItem}><Ionicons name={item.comments_enabled?'chatbubble-outline':'chatbubble-ellipses-outline'} size={17} color={colors.text}/><Text style={s.menuText}>{item.comments_enabled?'Turn comments off':'Turn comments on'}</Text></Pressable>:null}
+      {item.author_id===userId?<Pressable accessibilityRole="button" disabled={commentSettingsBusy} onPress={()=>void toggleComments(item)} style={[s.menuItem,{minHeight:44}]}><Ionicons name={item.comments_enabled?'chatbubble-outline':'chatbubble-ellipses-outline'} size={17} color={colors.text}/><Text style={s.menuText}>{commentSettingsBusy?'Updating comments…':item.comments_enabled?'Turn comments off':'Turn comments on'}</Text></Pressable>:null}
       <Pressable onPress={()=>void share(item)} style={s.menuItem}><Ionicons name="share-outline" size={17} color={colors.text}/><Text style={s.menuText}>Share post</Text></Pressable>
     </View>:null}
     {item.media?.length?<View style={s.mediaWrap}>{item.media.slice(0,1).map((uri,index)=><PostMediaImage key={uri} postId={item.id} uri={uri} index={index} style={[s.media,{width:mediaWidth,height:Math.min(mediaWidth*1.05,650)}]}/>)}
@@ -341,45 +312,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
    </View>}
   />
   <CustomerTabBar active="/social"/>
-  <Modal visible={Boolean(commentPost)} transparent animationType={reducedMotion?'none':'slide'} onRequestClose={()=>setCommentPost(null)}>
-   <Pressable style={s.scrim} onPress={()=>setCommentPost(null)}/>
-   <View style={s.sheet}>
-    <View style={s.sheetHandle}/>
-    <View style={s.sheetHeader}>
-     <View><Text style={s.sheetTitle}>Comments</Text><Text style={s.sheetSubtitle}>{comments.length?comments.length+' in the conversation':'Start the conversation'}</Text></View>
-     <Pressable accessibilityRole="button" accessibilityLabel="Close comments" onPress={()=>setCommentPost(null)} style={s.closeButton}><Ionicons name="close" size={21} color={colors.text}/></Pressable>
-    </View>
-    {commentsBusy&&!comments.length?<ActivityIndicator style={{margin:30}}/>:<FlatList
-     data={comments}
-     keyExtractor={x=>x.id}
-     style={{maxHeight:440}}
-     contentContainerStyle={{paddingBottom:14}}
-     ListEmptyComponent={<View style={s.emptyComments}><View style={s.emptyCommentIcon}><Ionicons name="chatbubbles-outline" size={24} color={colors.accent}/></View><Text style={s.emptyCommentTitle}>No comments yet</Text><Text style={s.noComments}>Drop the first thought, question or reaction.</Text></View>}
-     renderItem={({item})=>{const e=commentLikes[item.id]??{likeCount:0,likedByMe:false};const isOp=item.author_id===commentPost?.author_id;return <View style={[s.comment,item.parent_id&&s.replyComment]}>
-      {item.profile?.avatar_url?<Image source={{uri:item.profile.avatar_url}} style={s.commentAvatarImage}/>:<View style={s.commentAvatar}><Text style={s.commentAvatarText}>{(item.profile?.display_name??'E')[0]?.toUpperCase()}</Text></View>}
-      <View style={{flex:1,minWidth:0}}>
-       <View style={s.commentMetaRow}><Text numberOfLines={1} style={s.commentName}>{item.profile?.display_name??'Everest member'}</Text>{isOp?<View style={s.opBadge}><Text style={s.opBadgeText}>OP</Text></View>:null}<Text style={s.commentTime}>{commentTime(item.created_at)}</Text></View>
-       <Text style={s.commentBody}>{item.body}</Text>
-       <View style={s.commentActions}>
-        <Pressable onPress={()=>{setReplyTo(item);void haptic.selection()}}><Text style={s.commentActionText}>Reply</Text></Pressable>
-        {e.likeCount>0?<Text style={s.commentLikeCount}>{e.likeCount} {e.likeCount===1?'like':'likes'}</Text>:null}
-       </View>
-      </View>
-      <Pressable accessibilityLabel={e.likedByMe?'Unlike comment':'Like comment'} onPress={()=>void likeComment(item.id)} style={s.commentHeart}><Ionicons name={e.likedByMe?'heart':'heart-outline'} size={18} color={e.likedByMe?colors.danger:colors.muted}/></Pressable>
-      {(item.author_id===userId||commentPost?.author_id===userId)?<Pressable accessibilityLabel="Comment options" onPress={()=>void hideComment(item.id)} style={s.commentControl}><Ionicons name="ellipsis-horizontal" size={17} color={colors.muted}/></Pressable>:null}
-     </View>}}
-    />}
-    {commentPost?.comments_enabled?<View style={s.composerArea}>
-     {replyTo?<View style={s.replyBanner}><Ionicons name="return-down-forward" size={15} color={colors.accent}/><Text numberOfLines={1} style={s.replyBannerText}>Replying to {replyTo.profile?.display_name??'Everest member'}</Text><Pressable accessibilityRole="button" accessibilityLabel="Cancel reply" hitSlop={13} onPress={()=>setReplyTo(null)}><Ionicons name="close-circle" size={18} color={colors.muted}/></Pressable></View>:null}
-     <View style={s.quickEmojiRow}>{['❤️','😂','🔥','🙌'].map(emoji=><Pressable key={emoji} onPress={()=>setCommentText(v=>v+emoji)} style={s.quickEmoji}><Text style={s.quickEmojiText}>{emoji}</Text></Pressable>)}</View>
-     <View style={s.composer}>
-      <View style={s.composerAvatar}><Ionicons name="person" size={14} color={colors.accent}/></View>
-      <TextInput value={commentText} onChangeText={setCommentText} placeholder={replyTo?'Write a reply…':'Add a comment…'} placeholderTextColor={colors.muted} style={s.input} multiline/>
-      <Pressable accessibilityRole="button" accessibilityLabel="Post comment" onPress={()=>void sendComment()} disabled={!commentText.trim()||commentsBusy} style={[s.sendButton,(!commentText.trim()||commentsBusy)&&{opacity:.35}]}><Ionicons name="arrow-up" size={18} color={colors.onBrand}/></Pressable>
-     </View>
-    </View>:<Text style={s.noComments}>Comments are turned off for this post.</Text>}
-   </View>
-  </Modal>
+  {commentPost?<PostCommentsSheet key={`${commentPost.id}:${userId??'guest'}`} post={commentPost} linkedCommentId={typeof params.commentId==='string'?params.commentId:undefined} onClose={()=>setCommentPost(null)} onCountChange={(delta,total)=>{updateEngagement(commentPost.id,engagement=>({...engagement,commentCount:total??Math.max(0,engagement.commentCount+delta)}));setCommentPost(previous=>previous?{...previous,engagement:{...previous.engagement,commentCount:total??Math.max(0,previous.engagement.commentCount+delta)}}:previous);}}/>:null}
  </SafeAreaView>
 }
 
@@ -398,7 +331,5 @@ const styles=(c:ThemeColors)=>StyleSheet.create({
  verified:{marginHorizontal:13,marginTop:9,flexDirection:'row',alignItems:'center',gap:5},verifiedText:{fontSize:12,fontWeight:'900',color:c.accent},commerceRow:{flexDirection:'row',gap:8,paddingHorizontal:13,paddingTop:11},commerce:{borderRadius:18,backgroundColor:c.brand,paddingHorizontal:13,paddingVertical:9},commerceText:{fontSize:12,fontWeight:'900',color:c.onBrand},
  empty:{padding:70,alignItems:'center'},emptyTitle:{fontSize:19,fontWeight:'900',color:c.text,marginTop:12},emptyCopy:{fontSize:14,lineHeight:20,color:c.muted,textAlign:'center',marginTop:5},emptyCta:{marginTop:16,height:40,borderRadius:20,backgroundColor:c.brand,paddingHorizontal:16,alignItems:'center',justifyContent:'center'},emptyCtaText:{fontSize:12,fontWeight:'900',color:c.onBrand},
  clipCard:{backgroundColor:'#000',marginBottom:10,overflow:'hidden'},clipMedia:{position:'relative',width:'100%',backgroundColor:'#000'},clipMissing:{flex:1,alignItems:'center',justifyContent:'center',gap:8},clipMissingText:{fontSize:12,fontWeight:'800',color:'#fff'},clipTop:{position:'absolute',left:12,right:12,top:12,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},clipLocal:{maxWidth:'70%',height:30,borderRadius:15,backgroundColor:'rgba(0,0,0,.42)',paddingHorizontal:9,flexDirection:'row',alignItems:'center',gap:4},clipLocalText:{fontSize:12,fontWeight:'800',color:'#fff'},clipPromoted:{height:28,borderRadius:14,backgroundColor:'rgba(0,0,0,.52)',paddingHorizontal:9,alignItems:'center',justifyContent:'center'},clipPromotedText:{fontSize:12,fontWeight:'900',color:'#fff'},clipSide:{position:'absolute',right:10,bottom:95,gap:10,alignItems:'center'},clipAction:{width:46,minHeight:48,alignItems:'center',justifyContent:'center'},clipActionText:{fontSize:14,fontWeight:'900',color:'#fff',marginTop:2},clipBottom:{position:'absolute',left:14,right:68,bottom:16},clipAuthor:{flexDirection:'row',alignItems:'center',gap:8},clipAvatar:{width:34,height:34,borderRadius:17,borderWidth:1,borderColor:'rgba(255,255,255,.55)',backgroundColor:'rgba(0,0,0,.35)',alignItems:'center',justifyContent:'center',overflow:'hidden'},clipAvatarImage:{width:34,height:34,borderRadius:17},clipName:{maxWidth:'80%',fontSize:13,fontWeight:'900',color:'#fff'},clipCaption:{fontSize:12,lineHeight:18,color:'#fff',marginTop:8,textShadowColor:'rgba(0,0,0,.45)',textShadowRadius:4},clipMusic:{marginTop:7,flexDirection:'row',alignItems:'center',gap:5},clipMusicText:{flex:1,fontSize:12,fontWeight:'800',color:'#fff'},clipCommerce:{flexDirection:'row',gap:7,marginTop:9},clipCommerceButton:{height:34,borderRadius:17,backgroundColor:'rgba(255,255,255,.92)',paddingHorizontal:12,alignItems:'center',justifyContent:'center'},clipCommerceText:{fontSize:12,fontWeight:'900',color:'#111'},
- scrim:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,.5)'},sheet:{position:'absolute',left:0,right:0,bottom:0,maxHeight:'82%',backgroundColor:c.surface,borderTopLeftRadius:28,borderTopRightRadius:28,paddingBottom:20,shadowColor:'#000',shadowOpacity:.18,shadowRadius:24,shadowOffset:{width:0,height:-8},elevation:24},sheetHandle:{width:42,height:5,borderRadius:3,backgroundColor:c.border,alignSelf:'center',marginTop:9},sheetHeader:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:18,paddingTop:12,paddingBottom:14,borderBottomWidth:1,borderColor:c.border},sheetTitle:{fontSize:20,fontWeight:'900',color:c.text},sheetSubtitle:{fontSize:14,color:c.muted,marginTop:2},closeButton:{width:38,height:38,borderRadius:19,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},noComments:{paddingHorizontal:24,textAlign:'center',color:c.muted,fontSize:12,lineHeight:18},emptyComments:{paddingVertical:38,alignItems:'center'},emptyCommentIcon:{width:52,height:52,borderRadius:26,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},emptyCommentTitle:{fontSize:16,fontWeight:'900',color:c.text,marginTop:12,marginBottom:4},
- comment:{flexDirection:'row',gap:10,paddingHorizontal:16,paddingVertical:12,alignItems:'flex-start'},replyComment:{marginLeft:36,borderLeftWidth:2,borderLeftColor:c.soft,paddingLeft:12},commentControl:{width:28,height:32,alignItems:'center',justifyContent:'center'},commentHeart:{width:30,height:34,alignItems:'center',justifyContent:'center'},commentAvatar:{width:36,height:36,borderRadius:18,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},commentAvatarImage:{width:36,height:36,borderRadius:18,backgroundColor:c.soft},commentAvatarText:{fontSize:13,fontWeight:'900',color:c.text},commentMetaRow:{flexDirection:'row',alignItems:'center',gap:6},commentName:{maxWidth:'62%',fontSize:12,fontWeight:'900',color:c.text},commentTime:{fontSize:12,color:c.muted},opBadge:{borderRadius:7,backgroundColor:c.soft,paddingHorizontal:6,paddingVertical:2},opBadgeText:{fontSize:12,fontWeight:'900',color:c.accent},commentBody:{fontSize:13,lineHeight:19,color:c.text,marginTop:3},commentActions:{flexDirection:'row',alignItems:'center',gap:12,marginTop:6},commentActionText:{fontSize:14,fontWeight:'900',color:c.muted},commentLikeCount:{fontSize:12,fontWeight:'800',color:c.muted},
- composerArea:{borderTopWidth:1,borderTopColor:c.border,paddingTop:8},replyBanner:{marginHorizontal:14,marginBottom:7,minHeight:32,borderRadius:12,backgroundColor:c.soft,paddingHorizontal:10,flexDirection:'row',alignItems:'center',gap:7},replyBannerText:{flex:1,fontSize:12,fontWeight:'800',color:c.text},quickEmojiRow:{flexDirection:'row',gap:7,paddingHorizontal:14,paddingBottom:7},quickEmoji:{width:34,height:30,borderRadius:15,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},quickEmojiText:{fontSize:16},composer:{marginHorizontal:12,borderWidth:1,borderColor:c.border,borderRadius:24,minHeight:50,paddingLeft:8,paddingRight:6,flexDirection:'row',alignItems:'center',gap:8,backgroundColor:c.canvas},composerAvatar:{width:30,height:30,borderRadius:15,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'},input:{flex:1,maxHeight:90,color:c.text,fontSize:16,paddingVertical:10},sendButton:{width:36,height:36,borderRadius:18,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}
+
 });

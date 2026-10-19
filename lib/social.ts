@@ -1,3 +1,4 @@
+import {commentCursorFilter,commentLength,COMMENT_LIMIT,type CommentOrder} from './comment-conversation';
 import { supabase, requireSupabaseConfig } from './supabase';
 
 export type PostType =
@@ -270,33 +271,63 @@ export async function toggleSavedPost(postId:string,currentlySaved:boolean):Prom
   }
 }
 
+export async function listPostCommentPage(postId:string,options:{order?:CommentOrder;cursor?:Pick<PostComment,'id'|'created_at'>;limit?:number}={}){
+ requireSupabaseConfig();const order=options.order??'NEWEST';const limit=Math.max(1,Math.min(100,options.limit??30));
+ let query=supabase.from('post_comments').select('id,post_id,author_id,body,parent_id,status,created_at,updated_at').eq('post_id',postId).eq('status','VISIBLE').order('created_at',{ascending:order==='OLDEST'}).order('id',{ascending:order==='OLDEST'}).limit(limit+1);
+ if(options.cursor)query=query.or(commentCursorFilter(options.cursor,order));
+ const {data,error}=await query;if(error)throw new Error(error.message);
+ const pageRows=((data??[]) as PostComment[]).slice(0,limit);let rows=[...pageRows];const seen=new Set(rows.map(row=>row.id));
+ // Fetch bounded, same-post parent context so a recent reply does not lose its conversation.
+ for(let depth=0;depth<4;depth++){
+  const missing=[...new Set(rows.map(row=>row.parent_id).filter((id):id is string=>Boolean(id)&&!seen.has(id as string)))];if(!missing.length)break;
+  const parents=await supabase.from('post_comments').select('id,post_id,author_id,body,parent_id,status,created_at,updated_at').eq('post_id',postId).eq('status','VISIBLE').in('id',missing);
+  if(parents.error||!parents.data?.length)break;for(const row of parents.data)seen.add(row.id);rows=[...rows,...parents.data as PostComment[]];
+ }
+ return {comments:rows,hasMore:(data?.length??0)>limit,cursor:pageRows.at(-1)??null};
+}
+export async function getPostComment(postId:string,commentId:string):Promise<PostComment|null>{
+ requireSupabaseConfig();const {data,error}=await supabase.from('post_comments').select('id,post_id,author_id,body,parent_id,status,created_at,updated_at').eq('post_id',postId).eq('id',commentId).eq('status','VISIBLE').maybeSingle();
+ if(error)throw new Error(error.message);return data as PostComment|null;
+}
+export async function getCommentProfiles(authorIds:string[]){
+ if(!authorIds.length)return new Map<string,NonNullable<PostComment['profile']>>();
+ const {data,error}=await supabase.from('public_profiles').select('id,display_name,avatar_url').in('id',[...new Set(authorIds)]);
+ if(error)throw new Error(error.message);return new Map((data??[]).map(profile=>[profile.id,profile]));
+}
 export async function listPostComments(postId:string):Promise<PostComment[]>{
-  requireSupabaseConfig();
-  const {data,error}=await supabase.from('post_comments').select('id,post_id,author_id,body,parent_id,status,created_at,updated_at').eq('post_id',postId).eq('status','VISIBLE').order('created_at',{ascending:true}).limit(100);
-  if(error)throw new Error(error.message);
-  const rows=(data??[]) as PostComment[];
-  const ids=[...new Set(rows.map(r=>r.author_id))];
-  if(!ids.length)return rows;
-  const profiles=await supabase.from('public_profiles').select('id,display_name,avatar_url').in('id',ids);
-  const map=Object.fromEntries((profiles.data??[]).map(p=>[p.id,p]));
-  return rows.map(r=>({...r,profile:map[r.author_id]??null}));
+ const page=await listPostCommentPage(postId,{order:'OLDEST',limit:100});const profiles=await getCommentProfiles(page.comments.map(row=>row.author_id)).catch(()=>new Map());return page.comments.map(row=>({...row,profile:profiles.get(row.author_id)??null}));
 }
 
-export async function addPostComment(postId:string,body:string,parentId?:string|null):Promise<PostComment>{
+export async function addPostComment(postId:string,body:string,parentId?:string|null,clientId?:string):Promise<PostComment>{
   requireSupabaseConfig();
   const {data:{user}}=await supabase.auth.getUser();
   if(!user)throw new Error('Sign in to comment.');
   const clean=body.trim();
   if(!clean)throw new Error('Write a comment first.');
-  const {data,error}=await supabase.from('post_comments').insert({post_id:postId,author_id:user.id,body:clean,parent_id:parentId??null}).select('id,post_id,author_id,body,parent_id,status,created_at,updated_at').single();
+  if(commentLength(clean)>COMMENT_LIMIT)throw new Error('Keep comments within 2,000 characters.');
+  if(parentId){const parent=await supabase.from('post_comments').select('id').eq('id',parentId).eq('post_id',postId).eq('status','VISIBLE').maybeSingle();if(parent.error)throw new Error(parent.error.message);if(!parent.data)throw new Error('The comment you are replying to is unavailable. Keep your draft and choose another reply.');}
+  const {data,error}=await supabase.from('post_comments').insert({...(clientId?{id:clientId}:{}),post_id:postId,author_id:user.id,body:clean,parent_id:parentId??null}).select('id,post_id,author_id,body,parent_id,status,created_at,updated_at').single();
+  if(error?.code==='23505'&&clientId){
+   const existing=await supabase.from('post_comments').select('id,post_id,author_id,body,parent_id,status,created_at,updated_at').eq('id',clientId).eq('post_id',postId).eq('author_id',user.id).maybeSingle();
+   if(!existing.error&&existing.data?.body===clean&&existing.data.parent_id===(parentId??null))return existing.data as PostComment;
+  }
   if(error)throw new Error(error.message);
   return data as PostComment;
 }
 
+export async function getPostCommentCount(postId:string){
+ const {count,error}=await supabase.from('post_comments').select('id',{count:'exact',head:true}).eq('post_id',postId).eq('status','VISIBLE');
+ if(error)throw new Error(error.message);if(count==null)throw new Error('Comment count unavailable.');return count;
+}
 export async function hidePostComment(commentId:string):Promise<void>{
-  requireSupabaseConfig();
-  const {error}=await supabase.from('post_comments').update({status:'HIDDEN',updated_at:new Date().toISOString()}).eq('id',commentId);
-  if(error)throw new Error(error.message);
+ requireSupabaseConfig();const {error,count}=await supabase.from('post_comments').update({status:'HIDDEN',updated_at:new Date().toISOString()},{count:'exact'}).eq('id',commentId).eq('status','VISIBLE');
+ if(error)throw new Error(error.message);if(count!==1)throw new Error('This comment is no longer available. Refresh the conversation.');
+}
+export async function editPostComment(comment:PostComment,body:string):Promise<PostComment>{
+ requireSupabaseConfig();const {data:{user},error:authError}=await supabase.auth.getUser();if(authError||!user)throw new Error('Sign in to edit your comment.');
+ const clean=body.trim();if(!clean||commentLength(clean)>COMMENT_LIMIT)throw new Error('Use between 1 and 2,000 characters.');
+ const {data,error}=await supabase.from('post_comments').update({body:clean,updated_at:new Date().toISOString()}).eq('id',comment.id).eq('post_id',comment.post_id).eq('author_id',user.id).eq('status','VISIBLE').eq('updated_at',comment.updated_at).select('id,post_id,author_id,body,parent_id,status,created_at,updated_at').maybeSingle();
+ if(error)throw new Error(error.message);if(!data)throw new Error('This comment changed. Refresh before editing it again.');return data as PostComment;
 }
 
 export async function setPostCommentsEnabled(postId:string,enabled:boolean):Promise<void>{
