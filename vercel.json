@@ -11,7 +11,7 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "codex/post-comments-ux": false
+      "codex/phase5b-live-operations-ux": false
     }
   }
 }
