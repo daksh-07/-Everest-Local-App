@@ -1,0 +1,1 @@
+PASS Search at 42 width/mode/theme combinations, categories, account guidance, stale request cancellation, clear, failure/retry and back. chromium emulation; transport fixtures labelled above.

@@ -1,6 +1,7 @@
 // Destructive test databases are allowed only on an explicitly supplied loopback server.
 // This helper never connects to Supabase or accepts a remote database URL.
 import assert from 'node:assert/strict';
+import {URL} from 'node:url';
 export async function disposablePostgres(){
  const url=new URL(process.env.PHASE6_DATABASE_URL||'');
  assert.ok(['127.0.0.1','localhost','[::1]'].includes(url.hostname),'Phase 6 SQL tests require loopback PostgreSQL');

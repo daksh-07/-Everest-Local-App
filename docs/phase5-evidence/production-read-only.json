@@ -1,0 +1,37 @@
+{
+  "observed_date": "2026-10-18",
+  "baseline_production_main": "d9faf4f62365e3a620effbfc422ad15d7cbd88ea",
+  "origin": "https://bmwbljefnamvjnmuvkvv.supabase.co",
+  "authentication": "Anonymous requests using the existing public app configuration; no user session",
+  "writes": "None; the POST is a search read RPC",
+  "responses": [
+    {
+      "method": "POST",
+      "path": "/rest/v1/rpc/universal_search",
+      "body": {
+        "p_query": "clean",
+        "p_kind": "SERVICE",
+        "p_limit": 3,
+        "p_offset": 0
+      },
+      "status": 401,
+      "code": "42501",
+      "message": "permission denied for function universal_search"
+    },
+    {
+      "method": "GET",
+      "path": "/rest/v1/businesses?select=id,name&status=eq.ACTIVE&limit=1",
+      "status": 401,
+      "code": "42501",
+      "message": "permission denied for function is_admin"
+    },
+    {
+      "method": "GET",
+      "path": "/rest/v1/service_booking_settings?select=service_id,instant_booking_enabled&limit=1",
+      "status": 401,
+      "code": "42501",
+      "message": "permission denied for table service_booking_settings"
+    }
+  ],
+  "rollout": "Migration prepared and tested only in disposable PostgreSQL; not applied to production"
+}
