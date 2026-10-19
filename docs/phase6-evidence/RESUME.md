@@ -2,7 +2,7 @@
 
 Branch: `codex/phase6-backend-hardening`, based on deployed/main `95b8d48`. Review PR #110. Production remains unchanged. Read checkpoint A/B/C/D notes and ROLLOUT.md before continuing.
 
-Completed source: three Live matching fixes, #107 reconciliation (only vercel.json conflicted), actual-RLS comment moderation correction, and Live MATCHING-to-QUOTING boundary correction. No payment functions changed. SQL evidence is in sql/; independent provider acceptance passes while customer quote contention records a 40P01 deadlock without duplicate bookings.
+Completed source: three Live matching fixes, #107 reconciliation (only vercel.json conflicted), actual-RLS comment moderation correction, and Live MATCHING-to-QUOTING boundary correction. Live action-failure feedback now survives healthy background reads; deterministic held-response browser coverage reproduces the previous loss. No payment functions changed. SQL evidence is in sql/; independent provider acceptance passes while customer quote contention records a 40P01 deadlock without duplicate bookings.
 
 Staging gate is blocked: only the production Supabase project is accessible. Never use its default main branch as staging. No staging test accounts or physical devices were supplied. A request for nonproduction project/account setup is pending in the conversation.
 

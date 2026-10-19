@@ -1,0 +1,67 @@
+{
+  "engine": "webkit",
+  "baseline": false,
+  "scenarios": [
+    {
+      "screen": "calendar",
+      "partialRecovery": true,
+      "text": "Phase Five Garden Care\nBusiness mode\n\nCalendar\nEverest jobs, external CRM bookings, follow-ups and blocked time in one operational schedule.\n\nBooking\nTask\nBlock\nDay\nWeek\nAgenda\n\nMonday, Oct 19, 2026\n\nAvailability unknown\nDay schedule · 3 items\n9:00 am\n19 Oct\n\nCRM booking\nScheduled garden visit\nConfirmed · until 10:00 am\n\n9:00 am\n19 Oct\n\nEverest\nBooked through Everest\nIn progress · $90.00\n\n9:00 am\n19 Oct\n\nTask\nCall local customer\nFollow up · NORMAL\n\n\nSomething needs attention\nAvailability unavailable. Other loaded information is still shown.\nRetry availability\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "jobs",
+      "partialRecovery": true,
+      "text": "Phase Five Garden Care\nBusiness mode\n\nJobs\n\nNew work\nBooked work. Requests you haven’t answered stay in New work.\nToday\n—\nUpcoming\n—\nIn progress\n—\nCompleted\n—\nJob counts unavailable. Loaded jobs are still shown.\nRetry counts\n19\nOct\nToday · 9:00 am\n$90.00\nIn progress\nOpen job\n\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "inbox",
+      "partialRecovery": true,
+      "text": "Phase Five Garden Care\nBusiness mode\n\nInbox\nEnquiries, quotes and booking conversations. Personal chats stay in Customer mode.\nYour inbox couldn’t load. Check your connection and try again.\nTry again\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "my-work",
+      "partialRecovery": true,
+      "text": "My work\nPhase Five Garden Care\n\n\nYour shift, without the noise.\nOnly work assigned to you or your crew appears here. Company finance, payouts and admin stay with authorised roles.\n\nSomething needs attention\nYour work queue could not be loaded.\nRetry work queue\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "crm",
+      "partialRecovery": true,
+      "text": "Phase Five Garden Care\nBusiness mode\n\nCustomers & deals\nContacts, deals and follow-ups. Jobs and quotes stay linked.\n\nNew deal\n\nPipeline\n\nContacts\n\nTasks\n\nReports\n1\nNew leads\n0\nOverdue\n0\nQuotes waiting\n—\nUnread\nA$250 open pipeline · 1 deal\nThis month: 0 won (A$0) · 0 lost · conversion not yet measurable\nToday: 1 appointment · 1 follow-ups due · A$180 booked\nDeals by stage\n1 open · A$250\nNew leads\n1\nCustomer\nGarden lead\nManual\nA$250\n0d old\nNo next step\nRecently active customers\nAll contacts\n\nSomething needs attention\nInbox unavailable. Other loaded information is still shown.\nRetry inbox\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "availability",
+      "partialRecovery": true,
+      "text": "Business mode\nPhase Five Garden Care\n\nAvailability\nTell nearby customers when you can actually take work. Matching still applies verification, capability, location and marketplace eligibility.\n\nSomething needs attention\nFixture unavailable\nRetry availability\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "live",
+      "initialFailureHasRetry": 1
+    },
+    {
+      "providerReadOnlyAlert": 0,
+      "baseline": false
+    },
+    {
+      "lateJobsTabResponse": 0,
+      "baseline": false
+    },
+    "Live expansion survives equivalent polling snapshots",
+    "Live status and responses arrive before delayed map",
+    "Opportunity realtime update, offline stale-status feedback, manual reconnect restores authoritative responses",
+    "WebSocket resubscription refreshes missed provider activity before fallback polling",
+    "Rejected acceptance refreshes terminal state and removes obsolete provider actions",
+    "Provider interested sends one scoped intent without booking",
+    "Provider pass sends one scoped intent without booking",
+    "Refused cancellation stays on the active request with retry feedback",
+    "Calendar local retry while another dataset is delayed",
+    "Employee completion confirmation, inert cancellation, one status mutation",
+    "Mobile touch calendar filters and date recovery at 320",
+    "Mobile touch calendar filters and date recovery at 390",
+    "Mobile touch calendar filters and date recovery at 430",
+    "/business-calendar restricted role",
+    "/business-crm restricted role",
+    "/business-inbox restricted role",
+    "/business-availability restricted role"
+  ],
+  "layouts": [],
+  "errors": []
+}

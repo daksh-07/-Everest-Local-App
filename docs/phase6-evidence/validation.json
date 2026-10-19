@@ -130,5 +130,39 @@
   "physicalDevices": "not available; not verified",
   "production": "read-only catalog, migration metadata, public API probes and deployment SHA only",
   "deployment": "not performed",
-  "releaseRecommendation": "NO-GO"
+  "releaseRecommendation": "NO-GO",
+  "followup": {
+    "scope": "Live action-feedback regression after final Chromium CI findings",
+    "unit": {
+      "passed": 474,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "lint": {
+      "errors": 0,
+      "existingWarnings": 11
+    },
+    "export": "passed",
+    "commentsChromium156": {
+      "scenarioGroups": 11,
+      "layouts": 98,
+      "pageErrors": 0
+    },
+    "liveFeedbackBefore": {
+      "failed": 1,
+      "scope": "held status read erases cancellation error"
+    },
+    "liveFeedbackAfter": {
+      "chromium156": {
+        "scenarioGroups": 26,
+        "pageErrors": 0,
+        "scope": "core operational scenarios, including held-response cancellation feedback regression"
+      },
+      "webkit": {
+        "scenarioGroups": 26,
+        "pageErrors": 0,
+        "scope": "core operational scenarios, including held-response cancellation feedback regression"
+      }
+    }
+  }
 }
