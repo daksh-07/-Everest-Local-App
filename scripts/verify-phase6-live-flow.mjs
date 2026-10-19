@@ -35,7 +35,7 @@ async function reset(){
  insert into services values('${biz}','${biz}',true,null,'LOCAL',null);
  insert into business_availability values('${biz}','AVAILABLE_NOW',null,null);`);
 }
-async function release(){return (await db.query('select release_everest_live_wave($1,3,1) as count',[req])).rows[0].count;}
+
 
 
 await db.exec(`create schema auth;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;

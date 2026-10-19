@@ -1,0 +1,28 @@
+{
+  "scope": "Actual start/release functions in focused disposable database; synthetic quote-state guard only, not complete quote/payment flow",
+  "baseline": false,
+  "tests": [
+    {
+      "name": "released Live request is eligible for the existing QUOTING contract",
+      "pass": true
+    },
+    {
+      "name": "lost start response retry retains one OPEN offer",
+      "pass": true
+    },
+    {
+      "name": "initial Live start offers are not reset by duplicate actions",
+      "pass": true
+    },
+    {
+      "name": "another customer cannot start this request",
+      "pass": true
+    },
+    {
+      "name": "unconfirmed local address cannot start Live",
+      "pass": true
+    }
+  ],
+  "passed": 5,
+  "failed": 0
+}

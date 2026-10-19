@@ -67,9 +67,9 @@ const cases=[
 ];
 try{
  if(!baseline){
-  const migration=(await fs.readdir('supabase/migrations')).find(name=>name.endsWith('_phase6_live_matching_correctness.sql'));
-  if(!migration)throw new Error('Phase 6 matching migration is missing');
-  await db.exec("do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;end$$;");await db.exec(await fs.readFile('supabase/migrations/'+migration,'utf8'));
+  const migrations=(await fs.readdir('supabase/migrations')).filter(name=>name.endsWith('_phase6_live_matching_correctness.sql')||name.endsWith('_phase6_live_request_quote_lifecycle.sql')).sort();
+  if(!migrations.length)throw new Error('Phase 6 matching migration is missing');
+  await db.exec("do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;end$$;");for(const migration of migrations)await db.exec(await fs.readFile('supabase/migrations/'+migration,'utf8'));
  }
  for(const [name,sql,expected,regression] of cases){
   if(baseline&&!regression)continue;await reset();if(sql)await db.exec(sql);const actual=await release();report.tests.push({name,expected,actual,pass:actual===expected});

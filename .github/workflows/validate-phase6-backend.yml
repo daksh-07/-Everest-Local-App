@@ -1,0 +1,55 @@
+name: Validate Phase 6 backend contracts
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/*phase5_public_discovery.sql'
+      - 'supabase/migrations/*phase6*.sql'
+      - 'lib/social.ts'
+      - 'scripts/verify-phase6-*.mjs'
+      - 'scripts/lib/phase6-*.mjs'
+      - '.github/workflows/validate-phase6-backend.yml'
+permissions:
+  contents: read
+jobs:
+  postgres-contracts:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 55436:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Install isolated SQL test tools
+        run: npm install --prefix /tmp/everest-sql-tools --no-audit --no-fund pg@8.16.3 @electric-sql/pglite@0.5.10
+      - name: Verify exact migrations in PostgreSQL and PGlite
+        env:
+          PHASE6_DATABASE_URL: postgresql://postgres@127.0.0.1:55436/postgres
+          PG_MODULE: /tmp/everest-sql-tools/node_modules/pg/lib/index.js
+          PGLITE_MODULE: /tmp/everest-sql-tools/node_modules/@electric-sql/pglite/dist/index.js
+          EVEREST_QA_ARTIFACTS: /tmp/everest-phase6-sql/postgres
+        run: |
+          node scripts/verify-phase6-live.mjs
+          node scripts/verify-phase6-live-flow.mjs
+          node scripts/verify-phase6-permissions.mjs
+          node scripts/verify-phase6-comments-sql.mjs
+          node scripts/verify-phase6-transactions.mjs
+          PHASE6_DATABASE_URL='' EVEREST_QA_ARTIFACTS=/tmp/everest-phase6-sql/pglite node scripts/verify-phase6-live.mjs
+          PHASE6_DATABASE_URL='' EVEREST_QA_ARTIFACTS=/tmp/everest-phase6-sql/pglite node scripts/verify-phase6-permissions.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: phase6-database-contracts
+          path: /tmp/everest-phase6-sql
+          if-no-files-found: error
