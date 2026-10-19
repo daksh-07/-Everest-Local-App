@@ -1,10 +1,9 @@
 // Executes the checked-in Live wave function in disposable PostgreSQL, never production.
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
-const {PGlite}=await import(process.env.PGLITE_MODULE||'@electric-sql/pglite');
-const db=new PGlite();
+const {db}=process.env.PHASE6_DATABASE_URL?await (await import('./lib/phase6-postgres.mjs')).disposablePostgres():{db:new (await import(process.env.PGLITE_MODULE||'@electric-sql/pglite')).PGlite()};
 const baseline=process.env.PHASE6_BASELINE==='1';
-const report={scope:'Disposable PostgreSQL/PGlite; exact repository SQL with minimal fixtures, not Supabase staging',baseline,tests:[]};
+const report={scope:(process.env.PHASE6_DATABASE_URL?'PostgreSQL 17 loopback':'PGlite')+'; exact repository SQL with minimal fixtures, not Supabase staging',baseline,tests:[]};
 const source=await fs.readFile('supabase/migrations/20260928172000_active_business_membership_and_live_hardening.sql','utf8');
 const initial=await fs.readFile('supabase/migrations/20260926112442_everest_live_marketplace.sql','utf8');
 const distance=initial.slice(initial.indexOf('create or replace function public.everest_distance_km('),initial.indexOf('revoke all on function public.everest_distance_km'));
@@ -70,7 +69,7 @@ try{
  if(!baseline){
   const migration=(await fs.readdir('supabase/migrations')).find(name=>name.endsWith('_phase6_live_matching_correctness.sql'));
   if(!migration)throw new Error('Phase 6 matching migration is missing');
-  await db.exec('create role anon;create role authenticated;');await db.exec(await fs.readFile('supabase/migrations/'+migration,'utf8'));
+  await db.exec("do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;end$$;");await db.exec(await fs.readFile('supabase/migrations/'+migration,'utf8'));
  }
  for(const [name,sql,expected,regression] of cases){
   if(baseline&&!regression)continue;await reset();if(sql)await db.exec(sql);const actual=await release();report.tests.push({name,expected,actual,pass:actual===expected});
