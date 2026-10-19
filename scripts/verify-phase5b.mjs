@@ -26,7 +26,7 @@ async function open(path,state={},authenticated=false){
  const context=await browser.newContext({viewport:{width:state.width||390,height:844},reducedMotion:state.motion||'reduce',isMobile:Boolean(state.touch),hasTouch:Boolean(state.touch)});
  await context.addInitScript(({session,authenticated,theme})=>{if(!localStorage.getItem('everest-local-theme'))localStorage.setItem('everest-local-theme',theme);if(authenticated)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session))},{session,authenticated,theme:state.theme||'LIGHT'});
  console.log('Fixture',path,state.fail??'healthy');
- const page=await context.newPage();trackFixtureReads(page);if(state.clock)await page.clock.install();page.setDefaultTimeout(15000);const calls=[];
+ const page=await context.newPage();await trackFixtureReads(page);if(state.clock)await page.clock.install();page.setDefaultTimeout(15000);const calls=[];
  page.on('pageerror',error=>report.errors.push(error.message));
  const sockets=[];
  await page.routeWebSocket('**/realtime/**',ws=>{
@@ -47,7 +47,7 @@ async function open(path,state={},authenticated=false){
   if(req.method()!=='GET'&&req.method()!=='HEAD'&&!url.pathname.includes('/rpc/'))return route.fulfill({status:403,json:{message:'Fixture blocks writes'},headers:cors});
   if(state.offline)return route.abort('internetdisconnected');
   if(state.delayToday&&name==='bookings'&&req.method()==='GET'&&url.searchParams.get('scheduled_date')?.startsWith('eq.'))await new Promise(resolve=>setTimeout(resolve,2500));
-  if(state.holdMap&&name==='get_everest_live_map_points')await new Promise(resolve=>{state.releaseMap=resolve;});
+  if(state.holdMap&&name==='get_everest_live_map_points')await new Promise(resolve=>{state.releaseMaps??=[];state.releaseMaps.push(resolve);state.releaseMap=()=>{for(const release of state.releaseMaps)release();state.releaseMaps=[];};});
   if(state.delays?.[name])await new Promise(resolve=>setTimeout(resolve,state.delays[name]));
   if(name==='accept_quote'&&state.acceptRace){state.liveStatus='BOOKED';state.quotes=false;}
   if(state.fail?.includes(name)||(state.failCounts&&name==='bookings'&&req.method()==='HEAD'))return route.fulfill({status:state.denied?403:400,json:{code:state.denied?'42501':'XX000',message:state.denied?'permission denied':'Fixture unavailable'},headers:cors}).catch(()=>{});

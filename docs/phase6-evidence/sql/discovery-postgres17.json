@@ -31,7 +31,7 @@
       "pass": true
     },
     {
-      "name": "guest admin boolean is false",
+      "name": "guest admin boolean is false and private block predicate stays restricted",
       "pass": true
     },
     {

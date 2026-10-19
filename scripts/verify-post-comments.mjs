@@ -17,12 +17,12 @@ const comment=(n,body,author_id=other,parent_id=null,pid=postId)=>({id:id(n),pos
 const initial=()=>[comment(1,'Can I book a gardener for Saturday?'),comment(2,'Does morning work?',uid,id(1)),comment(3,'Morning works for me.',other,id(2)),comment(4,'Happy to help with the garden.',uid),comment(5,'A separate post conversation.',other,null,post2)];
 const report={engine,before,fixture:true,scenarios:[],layouts:[],accessibility:[],errors:[]};
 async function open(state={}){
- state.comments??=initial();const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce',isMobile:true,hasTouch:true});
- await context.addInitScript(({session,guest})=>{
-  if(!guest)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session));if(!localStorage.getItem('everest-local-theme'))localStorage.setItem('everest-local-theme','LIGHT');
+ state.comments??=initial();const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:state.motion||'reduce',isMobile:true,hasTouch:true});
+ await context.addInitScript(({session,guest,theme})=>{
+  if(!guest)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session));if(!localStorage.getItem('everest-local-theme'))localStorage.setItem('everest-local-theme',theme);
   const vv=Object.assign(new EventTarget(),{height:844,width:390,offsetTop:0,offsetLeft:0,scale:1});Object.defineProperty(window,'visualViewport',{configurable:true,value:vv});window.__commentsViewport=(height,offsetTop=0)=>{Object.assign(vv,{height,offsetTop});vv.dispatchEvent(new Event('resize'));};
- },{session,guest:state.guest});
- const page=await context.newPage();trackFixtureReads(page);page.setDefaultTimeout(15000);const calls=[];const errors=[];page.on('pageerror',e=>{errors.push(e.message);report.errors.push(e.message);});await page.routeWebSocket('**/realtime/**',ws=>ws.close());
+ },{session,guest:state.guest,theme:state.theme||'LIGHT'});
+ const page=await context.newPage();await trackFixtureReads(page);page.setDefaultTimeout(15000);const calls=[];const errors=[];page.on('pageerror',e=>{errors.push(e.message);report.errors.push(e.message);});await page.routeWebSocket('**/realtime/**',ws=>ws.close());
  await page.route(/supabase\.co/,async route=>{
   const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').pop(),method=req.method();
   const headers={'access-control-allow-origin':'*','access-control-allow-headers':req.headers()['access-control-request-headers']||'authorization,apikey,content-type,x-client-info,prefer,accept,range,x-supabase-client-platform,x-supabase-client-platform-version,x-supabase-client-runtime,x-supabase-client-runtime-version','access-control-allow-methods':'GET,POST,PATCH,DELETE,HEAD,OPTIONS','access-control-expose-headers':'content-range'};
@@ -113,7 +113,7 @@ try{
   }
   const {default:AxeBuilder}=await import(process.env.AXE_MODULE||'@axe-core/playwright');
   for(const theme of ['LIGHT','DARK'])for(const motion of ['reduce','no-preference']){
-   const f=await open();await f.page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await settleFixtureReads(f.page);await f.page.reload();await f.page.getByRole('button',{name:'Comments',exact:true}).first().waitFor();await f.page.emulateMedia({reducedMotion:motion});await f.comments();await f.page.getByText('Can I book a gardener for Saturday?',{exact:true}).waitFor();await f.page.waitForLoadState('networkidle');
+   const f=await open({theme,motion});await f.comments();await f.page.getByText('Can I book a gardener for Saturday?',{exact:true}).waitFor();await f.page.waitForLoadState('networkidle');
    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
     await f.page.setViewportSize({width,height:844});await f.page.evaluate(()=>window.__commentsViewport(844));await f.page.waitForTimeout(180);const dialog=f.page.getByRole('dialog',{name:'Post comments',exact:true});const bounds=await dialog.boundingBox();assert.ok(bounds.x>=-1&&bounds.x+bounds.width<=width+1);assert.equal(await f.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);report.layouts.push({width,theme,motion});
     if(width===390&&motion==='reduce'){await shot(f.page,'comments-'+theme.toLowerCase());const audit=await new AxeBuilder({page:f.page}).include('[role="dialog"][aria-label="Post comments"]').withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();report.accessibility.push({theme,width,violations:audit.violations});assert.deepEqual(audit.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.html)})),[]);}

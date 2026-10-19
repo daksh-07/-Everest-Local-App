@@ -25,7 +25,7 @@ async function open(path,state={},authenticated=false){
  const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
  await context.addInitScript(({session,authenticated})=>{if(!localStorage.getItem('everest-local-theme'))localStorage.setItem('everest-local-theme','LIGHT');if(authenticated)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session))},{session,authenticated});
  console.log('Fixture',path,state.fail??'healthy');
- const page=await context.newPage();trackFixtureReads(page);page.setDefaultTimeout(15000);const calls=[];
+ const page=await context.newPage();await trackFixtureReads(page);page.setDefaultTimeout(15000);const calls=[];
  page.on('pageerror',error=>report.errors.push(error.message));
  await page.routeWebSocket('**/realtime/**',ws=>ws.close());
  await page.route(/supabase\.co/,async route=>{

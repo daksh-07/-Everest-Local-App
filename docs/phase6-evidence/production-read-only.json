@@ -1,0 +1,23 @@
+{
+  "scope": "Read-only anonymous production API probes through configured proxy; no record contents, sessions or writes retained.",
+  "tests": [
+    {
+      "name": "guest search",
+      "http": 401,
+      "errorCode": "42501",
+      "rows": null
+    },
+    {
+      "name": "guest public businesses",
+      "http": 401,
+      "errorCode": "42501",
+      "rows": null
+    },
+    {
+      "name": "guest public booking affordance",
+      "http": 401,
+      "errorCode": "42501",
+      "rows": null
+    }
+  ]
+}

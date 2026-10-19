@@ -7,6 +7,7 @@ export async function disposablePostgres(){
  assert.ok(['127.0.0.1','localhost','[::1]'].includes(url.hostname),'Phase 6 SQL tests require loopback PostgreSQL');
  const {default:pg}=await import(process.env.PG_MODULE||'pg');
  const admin=new pg.Client({connectionString:url.href});await admin.connect();
+ await admin.query("do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;end$$;");
  const name=`phase6_${process.pid}_${Date.now()}`;
  await admin.query(`create database ${name}`);
  url.pathname='/'+name;const clients=[];

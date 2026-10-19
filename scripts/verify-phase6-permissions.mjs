@@ -56,7 +56,7 @@ try{
  await db.exec("insert into public.profiles values('716edb35-a0cb-4cbf-99b2-41fa8500ffd3','ADMIN')");
 
  const socialSource=await fs.readFile('supabase/migrations/20260924220801_universal_search_connections_messaging.sql','utf8');
- await db.exec('create table user_blocks(blocker_id uuid,blocked_id uuid);drop function public.users_blocked(uuid,uuid)');const blockStart=socialSource.indexOf('create or replace function public.users_blocked(');await db.exec(socialSource.slice(blockStart,socialSource.indexOf('$$;',blockStart)+3));
+ await db.exec('create table user_blocks(blocker_id uuid,blocked_id uuid);drop function public.users_blocked(uuid,uuid)');const blockStart=socialSource.indexOf('create or replace function public.users_blocked(');await db.exec(socialSource.slice(blockStart,socialSource.indexOf('$$;',blockStart)+3));await db.exec('revoke all on function public.users_blocked(uuid,uuid) from public,anon;grant execute on function public.users_blocked(uuid,uuid) to authenticated');
  await db.exec('set role anon');
  await check('baseline anon business read fails missing predicate permission',()=>assert.rejects(db.query('select id from businesses'),/permission denied for function is_admin/));
  await db.exec('reset role');await db.exec(await fs.readFile('supabase/migrations/'+migration,'utf8'));
@@ -76,7 +76,7 @@ try{
   if(label==='guest'){
    await check('guest booking settings have exact two-column allowlist',async()=>{const rows=(await db.query('select service_id,instant_booking_enabled from service_booking_settings')).rows;assert.equal(rows.length,1);await assert.rejects(db.query('select * from service_booking_settings'),/permission denied/);await assert.rejects(db.query('select updated_by from service_booking_settings'),/permission denied/);await assert.rejects(db.query('update service_booking_settings set instant_booking_enabled=false'),/permission denied/);});
    await check('guest cannot access any people/community search branch',async()=>{for(const kind of ['PERSON','POST','VIDEO'])assert.equal((await db.query('select * from universal_search($1,$2)', ['garden',kind])).rows.length,0);});
-   await check('guest admin boolean is false',async()=>assert.equal((await db.query('select is_admin() value')).rows[0].value,false));
+   await check('guest admin boolean is false and private block predicate stays restricted',async()=>{assert.equal((await db.query('select is_admin() value')).rows[0].value,false);await assert.rejects(db.query('select users_blocked(null,null)'),/permission denied/);});
    await check('search pagination clamp and invalid kind are safe',async()=>{assert.equal((await db.query("select * from universal_search('garden','TOP',1,-1)")).rows.length,1);assert.equal((await db.query("select * from universal_search('garden','NOT_A_KIND')")).rows.length,0);});
   }
   if(label==='administrator'){
