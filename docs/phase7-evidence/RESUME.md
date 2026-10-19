@@ -1,0 +1,21 @@
+# Phase 7 resumption — no repeated audit required without drift
+
+PR #110 / branch `codex/phase6-backend-hardening`, workspace `/workspace/everest-phase6`. Production/main `95b8d48`. Phase 6 base `152188f`. Checkpoints: `a1c437c` red regression/current audit; `3285126` lock-order/client correction; `4343697` reconciliation and expanded verification. Final evidence/CI head is recorded in the PR. Do not create another overlapping PR or push main.
+
+Implemented: `20261019081535_phase7_quote_acceptance_lock_order.sql` resolves quote without lock → locks request → locks/revalidates quote owner/request → byte-identical original financial/state tail. Client reconciliation in lib/quote-acceptance.ts and lib/marketplace.ts, wired to app/everest-live.tsx and app/quotes.tsx. It reuses withTimeout, reads before submitting, never blindly retries and offers Check bookings on uncertainty.
+
+Completed local: 35 transaction checks, including 50 concurrent races (20 distinct quote / 10 same quote / 20 cancellation), no deadlock/duplicates; actual fee/readiness and Live/dispatch lifecycle triggers; focused function rollback/reapply; 11 client recovery tests; 485 full units; TS/lint/export/audits. Chromium/WebKit each 33 core groups, no page errors. Before-regression JSON intentionally contains 12 pass/1 fail/40P01. Evidence is durable here; Phase 6 evidence remains historical.
+
+Migration metadata captured: 239 remote entries, 235 local version/name matches, four remote-only entries; five pending release files. Of matched sources, 26 trimmed-byte matches and 209 unverified representation/content. `node scripts/audit-phase7-migrations.mjs` regenerates the offline report from the captured snapshot, not a new remote audit. Do not repair/blanket push. The existing default MIGRATIONS_FAILED record is dated Sep 17; production reports healthy. Read MIGRATIONS.md, ACCEPTANCE-SQL-REVIEW.md and ROLLOUT.md.
+
+BLOCKED: only production Supabase exists in accessible connections. No staging accounts/manifest or physical devices. Vercel project listing works but deployment access returns 403; CLI not available/configured. No PITR/restore capability verified. A staging setup question was sent asynchronously; no answer was available when this note was written. STAGING.md specifies setup and real acceptance gates. No real multi-account lifecycle/realtime or native acceptance claim is allowed. No production mutation/deployment/merge has occurred.
+
+Runtime still available (temporary, may need recreation after environment restart):
+
+- PostgreSQL 17.6 loopback 55436, `/tmp/everest-phase6-tools/node_modules/@embedded-postgres/linux-x64/native/bin`; data `/tmp/everest-phase6-pg/data`.
+- `PG_MODULE=/tmp/everest-phase6-tools/node_modules/pg/lib/index.js`, `PHASE6_DATABASE_URL=postgresql://postgres@127.0.0.1:55436/postgres`. SQL script creates/drops a unique disposable DB and rejects remote/parameter-overridden URLs.
+- `node scripts/verify-phase6-transactions.mjs` is now the expanded Phase 7 contract suite. Full SQL workflow also runs matching, state, permissions and comments. Never aim fixtures at staging or production.
+- Playwright/axe `/tmp/everest-qa/node_modules`; Chromium156 `/home/agent/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome`. Export served by absolute path `/workspace/everest-phase6/dist` on8087. Build after source change; `--clear` if shared-worktree Metro context is stale.
+- Core browser command: `PLAYWRIGHT_MODULE=/tmp/everest-qa/node_modules/playwright/index.mjs AXE_MODULE=/tmp/everest-qa/node_modules/@axe-core/playwright/dist/index.mjs EVEREST_PREVIEW_URL=http://127.0.0.1:8087 EVEREST_BROWSER_PATH=/home/agent/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome PHASE5B_NO_MATRIX=1 node scripts/verify-phase5b.mjs`. WebKit: EVEREST_QA_BROWSER=webkit, PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1. Full matrices run in CI.
+
+Next: inspect final PR head/checks once. If green and no access supplied, retain NO-GO and finish with exact blockers. If a real isolated staging connection is supplied, verify its reference is not production, execute STAGING.md acceptance and full rollback rehearsal, obtain independent SQL review/device evidence, then present exact SHA/migration inventory for explicit production approval. Approval is not inferred from elapsed time or a generic continue instruction.

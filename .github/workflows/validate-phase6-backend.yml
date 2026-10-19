@@ -7,6 +7,7 @@ on:
       - 'supabase/migrations/*phase6*.sql'
       - 'supabase/migrations/*phase7*.sql'
       - 'lib/social.ts'
+      - 'docs/phase7-evidence/catalog-baseline.json'
       - 'scripts/verify-phase6-*.mjs'
       - 'scripts/lib/phase6-*.mjs'
       - '.github/workflows/validate-phase6-backend.yml'
