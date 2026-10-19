@@ -47,6 +47,7 @@ async function open(path,state={},authenticated=false){
   if(req.method()!=='GET'&&req.method()!=='HEAD'&&!url.pathname.includes('/rpc/'))return route.fulfill({status:403,json:{message:'Fixture blocks writes'},headers:cors});
   if(state.offline)return route.abort('internetdisconnected');
   if(state.delayToday&&name==='bookings'&&req.method()==='GET'&&url.searchParams.get('scheduled_date')?.startsWith('eq.'))await new Promise(resolve=>setTimeout(resolve,2500));
+  if(state.holdStatus&&name==='get_everest_live_state')await new Promise(resolve=>{state.statusReleases??=[];state.statusReleases.push(resolve);state.releaseStatus=()=>{for(const release of state.statusReleases)release();state.statusReleases=[];};});
   if(state.holdMap&&name==='get_everest_live_map_points')await new Promise(resolve=>{state.releaseMaps??=[];state.releaseMaps.push(resolve);state.releaseMap=()=>{for(const release of state.releaseMaps)release();state.releaseMaps=[];};});
   if(state.delays?.[name])await new Promise(resolve=>setTimeout(resolve,state.delays[name]));
   if(name==='accept_quote'&&state.acceptRace){state.liveStatus='BOOKED';state.quotes=false;}
@@ -203,9 +204,11 @@ try{
  }
  // A refused cancellation must not navigate away as though it succeeded.
  {
-  const {page,context,calls}=await open('/everest-live?requestId=live1',{cancelResult:false},true);
+  const state={cancelResult:false,holdStatus:true};const {page,context,calls}=await open('/everest-live?requestId=live1',state,true);
   await page.getByRole('button',{name:'Cancel search',exact:true}).click();
   await page.getByRole('button',{name:'Cancel request',exact:true}).click();
+  await page.getByText('Cancellation was not confirmed. Retry to check your request.',{exact:true}).waitFor();
+  assert.equal(typeof state.releaseStatus,'function');state.holdStatus=false;state.releaseStatus();await page.getByText('2 businesses notified',{exact:true}).waitFor();await settleFixtureReads(page);
   await page.getByText('Cancellation was not confirmed. Retry to check your request.',{exact:true}).waitFor();
   assert.ok(page.url().includes('/everest-live'));
   assert.equal(calls.filter(c=>c.name==='cancel_everest_live'&&c.method==='POST').length,1);
