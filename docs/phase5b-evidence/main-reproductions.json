@@ -1,0 +1,51 @@
+{
+  "engine": "chromium",
+  "baseline": true,
+  "scenarios": [
+    {
+      "screen": "calendar",
+      "issue": true,
+      "text": "Phase Five Garden Care\nBusiness mode\n\nCalendar\nEverest jobs, external CRM bookings, follow-ups and blocked time in one operational schedule.\n\nBooking\nTask\nBlock\nDay\nWeek\nAgenda\n\nMonday, Oct 19, 2026\n\nOffline\nDay schedule · 0 items\nNothing scheduled\nCreate a booking, task or blocked time without leaving the calendar.\nYour calendar couldn’t load. Check your connection and try again.\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "jobs",
+      "issue": true,
+      "text": "Phase Five Garden Care\nBusiness mode\n\nJobs\n\nNew work\nBooked work. Requests you haven’t answered stay in New work.\nToday\n0\nUpcoming\n0\nIn progress\n0\nCompleted\n0\n\nNo booked work today\nAccepted work appears here automatically.\n\nJobs couldn’t load. Check your connection and try again.\nTry again\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "inbox",
+      "issue": true,
+      "text": "Phase Five Garden Care\nBusiness mode\n\nInbox\nEnquiries, quotes and booking conversations. Personal chats stay in Customer mode.\n\nNo customer conversations yet\nEnquiries and booking chats appear here as soon as a customer messages you.\nYour inbox couldn’t load. Check your connection and try again.\nTry again\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "my-work",
+      "issue": true,
+      "text": "My work\nPhase Five Garden Care\n\n\nYour shift, without the noise.\nOnly work assigned to you or your crew appears here. Company finance, payouts and admin stay with authorised roles.\n\nYour work queue could not be loaded.\n0\nActive jobs\n0\nIn progress\n0\nRecently done\n\nYou’re clear.\nNo active work is assigned to you or your crew.\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "crm",
+      "issue": true,
+      "text": "Phase Five Garden Care\nBusiness mode\n\nCustomers & deals\nContacts, deals and follow-ups. Jobs and quotes stay linked.\n\nNew deal\n\nPipeline\n\nContacts\n\nTasks\n\nReports\n0\nNew leads\n0\nOverdue\n0\nQuotes waiting\n0\nUnread\nA$0 open pipeline · 0 deals\nThis month: 0 won (A$0) · 0 lost · conversion not yet measurable\nToday: 0 appointments · 0 follow-ups due · A$0 booked\nDeals by stage\n0 open · A$0\nRecently active customers\nAll contacts\nFixture unavailable\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "availability",
+      "issue": true,
+      "text": "Business mode\nPhase Five Garden Care\n\nAvailability\nTell nearby customers when you can actually take work. Matching still applies verification, capability, location and marketplace eligibility.\nAVAILABLE NOW\nReady for new work now\nAVAILABLE LATER\nSet the next time you can take work\nBUSY\nTemporarily exclude me from available-now results\nOFFLINE\nDo not show me as currently available\nInstant booking\nAllow customers to book a real time slot\nOnly enabled services can be booked. Everest checks capacity and calendar conflicts again at checkout.\nEveryday working hours\nMaximum concurrent jobs\nSave availability\nFixture unavailable\n\nToday\n\nJobs\n\nCalendar\n\nInbox\n\nBusiness"
+    },
+    {
+      "screen": "live",
+      "initialFailureHasRetry": 0
+    },
+    {
+      "providerReadOnlyAlert": 1,
+      "baseline": true
+    },
+    {
+      "lateJobsTabResponse": 1,
+      "baseline": true
+    },
+    "Live expansion survives equivalent polling snapshots"
+  ],
+  "layouts": [],
+  "errors": []
+}

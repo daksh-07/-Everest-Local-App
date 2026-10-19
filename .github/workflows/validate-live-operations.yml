@@ -1,0 +1,75 @@
+name: Validate Live and business operations
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/everest-live.tsx'
+      - 'app/business-*.tsx'
+      - 'components/LiveSearchMap*'
+      - 'components/OperationalFeedback.tsx'
+      - 'lib/operational-reads.ts'
+      - 'scripts/verify-phase5b.mjs'
+      - 'scripts/audit-phase5b-live.mjs'
+      - 'tests/operational-reads.test.mjs'
+      - '.github/workflows/validate-live-operations.yml'
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck && npm run lint && npm run audit && npm run audit:migrations
+      - run: node --experimental-strip-types --test tests/*.test.mjs
+      - name: Audit matching in disposable PostgreSQL
+        run: |
+          npm install --prefix /tmp/everest-audit @electric-sql/pglite@0.5.10
+          PGLITE_MODULE=/tmp/everest-audit/node_modules/@electric-sql/pglite/dist/index.js node scripts/audit-phase5b-live.mjs
+  browser:
+    needs: quality
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:web
+      - name: Install isolated browser tools
+        run: |
+          npm install --prefix /tmp/everest-browser-tools playwright@1.64.1 @axe-core/playwright@4.14.0 serve@14.2.4
+          /tmp/everest-browser-tools/node_modules/.bin/playwright install --with-deps ${{ matrix.browser }}
+      - name: Serve local export
+        run: |
+          /tmp/everest-browser-tools/node_modules/.bin/serve -s dist -l 4173 >/tmp/everest-operations-serve.log 2>&1 &
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          exit 1
+      - name: Verify Live and operational workflows
+        env:
+          PLAYWRIGHT_MODULE: /tmp/everest-browser-tools/node_modules/playwright/index.mjs
+          AXE_MODULE: /tmp/everest-browser-tools/node_modules/@axe-core/playwright/dist/index.mjs
+          EVEREST_PREVIEW_URL: http://127.0.0.1:4173
+          EVEREST_QA_BROWSER: ${{ matrix.browser }}
+          EVEREST_QA_ARTIFACTS: /tmp/everest-operations-qa
+        run: |
+          if [ "$EVEREST_QA_BROWSER" = chromium ]; then
+            export EVEREST_BROWSER_PATH="$(node --input-type=module -e 'import {chromium} from "/tmp/everest-browser-tools/node_modules/playwright/index.mjs"; console.log(chromium.executablePath())')"
+          fi
+          node scripts/verify-phase5b.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: operations-${{ matrix.browser }}
+          path: /tmp/everest-operations-qa
+          if-no-files-found: ignore
