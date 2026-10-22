@@ -9,6 +9,10 @@ import { supabase } from '@/lib/supabase';
 import { DriverApplication, DriverDocument, DriverCompliance, adminSetDriverApplication, adminSetDriverCredentialDetails, adminSetDriverDocumentStatus, adminSetDriverVehicleVerification, getDriverDocumentSignedUrl } from '@/lib/driver';
 import {userMessage} from '@/lib/errors';
 
+// Drafts are never shown: opening the driver page creates one, so they are not submissions.
+const REVIEW_ORDER=['SUBMITTED','UNDER_REVIEW','MORE_INFORMATION_REQUIRED','APPROVED','SUSPENDED','REJECTED','EXPIRED'];
+function reviewPriority(status:string){const index=REVIEW_ORDER.indexOf(status);return index<0?REVIEW_ORDER.length:index;}
+
 type ReviewApplication = DriverApplication & { user_id: string; compliance?: DriverCompliance | null; history?: Array<{action:string;previous_status:string|null;new_status:string|null;reason:string|null;created_at:string}> };
 
 function Pill({ label, good=false }: { label:string; good?:boolean }) {const s=useThemedStyles(create_s); return <View style={[s.pill,good&&s.pillGood]}><Text style={[s.pillText,good&&s.pillGoodText]}>{label}</Text></View>; }
@@ -19,7 +23,7 @@ export default function DriverVerificationAdmin(){const s=useThemedStyles(create
  async function load(){setLoading(true);setError('');try{
   const {data:user}=await supabase.auth.getUser(); if(!user.user)throw new Error('Authentication required');
   const {data:profile,error:pe}=await supabase.from('profiles').select('role').eq('id',user.user.id).single(); if(pe)throw pe; if(profile?.role!=='ADMIN')throw new Error('Admin authorization required');
-  const {data:rows,error:ae}=await supabase.from('driver_applications').select('id,user_id,status,legal_first_name,legal_last_name,date_of_birth,address_line,postcode,suburb,city,state,service_area,availability,notes,status_reason,submitted_at,last_submitted_at').order('submitted_at',{ascending:false}).limit(100); if(ae)throw ae;
+  const {data:rows,error:ae}=await supabase.from('driver_applications').select('id,user_id,status,legal_first_name,legal_last_name,date_of_birth,address_line,postcode,suburb,city,state,service_area,availability,notes,status_reason,submitted_at,last_submitted_at').neq('status','DRAFT').order('submitted_at',{ascending:false,nullsFirst:false}).limit(100); if(ae)throw ae;
   const enriched=await Promise.all(((rows??[]) as ReviewApplication[]).map(async app=>{
    const [v,vehicle,docs,complianceResult,historyResult]=await Promise.all([
     supabase.from('driver_verifications').select('identity_status,licence_status,registration_status,insurance_status,verification_method,verification_provider,verification_reference,licence_jurisdiction,licence_number,licence_class,licence_expiry,licence_restrictions,insurance_provider,insurance_policy_reference,insurance_type,insurance_expiry').eq('application_id',app.id).maybeSingle(),
@@ -29,7 +33,7 @@ export default function DriverVerificationAdmin(){const s=useThemedStyles(create
     supabase.from('driver_status_history').select('action,previous_status,new_status,reason,created_at').eq('application_id',app.id).order('created_at',{ascending:false}).limit(20)
    ]); if(v.error)throw v.error;if(vehicle.error)throw vehicle.error;if(docs.error)throw docs.error;if(complianceResult.error)throw complianceResult.error;if(historyResult.error)throw historyResult.error;
    if(vehicle.data) setVehicleChecks(current=>({...current,[app.id]:{registrationExpiry:vehicle.data?.registration_expiry??'',registrationRestrictions:vehicle.data?.registration_restrictions??'',ctpProvider:vehicle.data?.ctp_provider??'',ctpExpiry:vehicle.data?.ctp_expiry??''}})); if(v.data) setCredentialChecks(current=>({...current,[app.id]:{licenceExpiry:v.data?.licence_expiry??'',insuranceProvider:v.data?.insurance_provider??'',insurancePolicyReference:v.data?.insurance_policy_reference??'',insuranceType:(v.data?.insurance_type??''),insuranceExpiry:v.data?.insurance_expiry??''}})); return {...app,verification:v.data as ReviewApplication['verification'],vehicle:vehicle.data as ReviewApplication['vehicle'],documents:(docs.data??[]) as DriverDocument[],declarations:[],compliance:complianceResult.data as DriverCompliance,history:(historyResult.data??[])};
-  })); setApplications(enriched);
+  })); setApplications(enriched.sort((a,b)=>reviewPriority(a.status)-reviewPriority(b.status)));
  }catch(e){setError(userMessage(e,'Unable to load driver verification.'))}finally{setLoading(false)}}
  useEffect(()=>{void load()},[]);
  async function action(app:ReviewApplication,status:'UNDER_REVIEW'|'MORE_INFORMATION_REQUIRED'|'APPROVED'|'REJECTED'|'SUSPENDED'){

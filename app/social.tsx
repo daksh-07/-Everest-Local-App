@@ -2,6 +2,7 @@ import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, Share, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {PostCommentsSheet} from '@/components/PostCommentsSheet';
+import {ReportPostSheet} from '@/components/ReportPostSheet';
 import {PagerAwareScrollView as ScrollView} from '@/components/PagerAwareScrollView';
 import {Ionicons} from '@/components/ui/Icon';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -41,6 +42,8 @@ type FeedPost=SocialPost&{
 
 const emptyEngagement:PostEngagement={likeCount:0,commentCount:0,likedByMe:false,savedByMe:false};
 const FEED_CACHE_MS=5*60_000;
+// Posts the viewer reported this session stay out of their feed even if a refresh returns them.
+const reportedPostIds=new Set<string>();
 let feedCache:{posts:FeedPost[];locality:string;userId:string|null;at:number}|null=null;
 let exploreSnapshot:{posts:FeedPost[];clips:FeedPost[];stories:StoryCard[];locality:string;userId:string|null;at:number}|null=null;
 let exploreLoad:Promise<void>|null=null;
@@ -64,7 +67,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  const [error,setError]=useState('');const [locality,setLocality]=useState(()=>cachedFeed?.locality??'Near you');const [userId,setUserId]=useState<string|null>(()=>cachedFeed?.userId??null);
  const [commentPost,setCommentPost]=useState<FeedPost|null>(null);
  const commentSettingsLock=useRef(false);const [commentSettingsBusy,setCommentSettingsBusy]=useState(false);
- const [menuPost,setMenuPost]=useState<string|null>(null);const lastDeepLinkedPost=useRef<string|null>(null);
+ const [menuPost,setMenuPost]=useState<string|null>(null);const [reportingPost,setReportingPost]=useState<string|null>(null);const lastDeepLinkedPost=useRef<string|null>(null);
  const viewedPosts=useRef(new Set<string>());const listRef=useRef<FlatList<FeedPost>>(null);const scrollOffsets=useRef<Record<'POSTS'|'CLIPS',number>>({POSTS:0,CLIPS:0});
  const activeRef=useRef(active);activeRef.current=active;
  const viewabilityConfig=useRef({itemVisiblePercentThreshold:60,minimumViewTime:900}).current;
@@ -220,7 +223,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  return <SafeAreaView style={s.safe}>
   <FlatList
    ref={listRef}
-   data={mode==='CLIPS'?clips:posts}
+   data={reportedPostIds.size?(mode==='CLIPS'?clips:posts).filter(item=>!reportedPostIds.has(item.id)):mode==='CLIPS'?clips:posts}
    key={mode}
    keyExtractor={x=>x.id}
    initialNumToRender={mode==='CLIPS'?2:4}
@@ -263,6 +266,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
       <Pressable onPress={()=>void openComments(item)} style={s.clipAction}><Ionicons name="chatbubble-outline" size={25} color="#fff"/><Text style={s.clipActionText}>{item.engagement.commentCount}</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={item.engagement.savedByMe?'Remove from saved':'Save'} onPress={()=>void save(item)} style={s.clipAction}><Ionicons name={item.engagement.savedByMe?'bookmark':'bookmark-outline'} size={25} color="#fff"/></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Share" onPress={()=>void share(item)} style={s.clipAction}><Ionicons name="paper-plane-outline" size={25} color="#fff"/></Pressable>
+      {item.author_id!==userId?<Pressable accessibilityRole="button" accessibilityLabel="Report clip" onPress={()=>{if(!userId){router.push('/auth');return;}setReportingPost(item.id)}} style={s.clipAction}><Ionicons name="flag-outline" size={23} color="#fff"/></Pressable>:null}
      </View>
      <View style={s.clipBottom}>
       <Pressable onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))} style={s.clipAuthor}><View style={s.clipAvatar}>{(item.businesses?.logo_url||item.profile?.avatar_url)?<Image source={{uri:item.businesses?.logo_url??item.profile?.avatar_url??''}} style={s.clipAvatarImage}/>:<Ionicons name={item.business_id?'business':'person'} size={17} color="#fff"/>}</View><Text numberOfLines={1} style={s.clipName}>{item.businesses?.name??item.profile?.display_name??'Everest member'}</Text></Pressable>
@@ -286,6 +290,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
     {menuPost===item.id?<View style={s.menu}>
       {item.author_id===userId?<Pressable accessibilityRole="button" disabled={commentSettingsBusy} onPress={()=>void toggleComments(item)} style={[s.menuItem,{minHeight:44}]}><Ionicons name={item.comments_enabled?'chatbubble-outline':'chatbubble-ellipses-outline'} size={17} color={colors.text}/><Text style={s.menuText}>{commentSettingsBusy?'Updating comments…':item.comments_enabled?'Turn comments off':'Turn comments on'}</Text></Pressable>:null}
       <Pressable onPress={()=>void share(item)} style={s.menuItem}><Ionicons name="share-outline" size={17} color={colors.text}/><Text style={s.menuText}>Share post</Text></Pressable>
+      {item.author_id!==userId?<Pressable accessibilityRole="button" onPress={()=>{setMenuPost(null);if(!userId){router.push('/auth');return;}setReportingPost(item.id)}} style={s.menuItem}><Ionicons name="flag-outline" size={17} color={colors.danger}/><Text style={[s.menuText,{color:colors.danger}]}>Report post</Text></Pressable>:null}
     </View>:null}
     {item.media?.length?<View style={s.mediaWrap}>{item.media.slice(0,1).map((uri,index)=><PostMediaImage key={uri} postId={item.id} uri={uri} index={index} style={[s.media,{width:mediaWidth,height:Math.min(mediaWidth*1.05,650)}]}/>)}
       {item.media.length>1?<View style={s.mediaCount}><Text style={s.mediaCountText}>1/{item.media.length}</Text></View>:null}
@@ -312,6 +317,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
    </View>}
   />
   <CustomerTabBar active="/social"/>
+  <ReportPostSheet postId={reportingPost} kind={mode==='CLIPS'?'clip':'post'} onClose={()=>setReportingPost(null)} onReported={id=>{reportedPostIds.add(id);setPosts(current=>current.filter(post=>post.id!==id));setClips(current=>current.filter(clip=>clip.id!==id));}}/>
   {commentPost?<PostCommentsSheet key={`${commentPost.id}:${userId??'guest'}`} post={commentPost} linkedCommentId={typeof params.commentId==='string'?params.commentId:undefined} onClose={()=>setCommentPost(null)} onCountChange={(delta,total)=>{updateEngagement(commentPost.id,engagement=>({...engagement,commentCount:total??Math.max(0,engagement.commentCount+delta)}));setCommentPost(previous=>previous?{...previous,engagement:{...previous.engagement,commentCount:total??Math.max(0,previous.engagement.commentCount+delta)}}:previous);}}/>:null}
  </SafeAreaView>
 }
