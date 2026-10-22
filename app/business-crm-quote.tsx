@@ -22,7 +22,7 @@ export default function BusinessCrmQuote(){
  const [discount,setDiscount]=useState('0');const [tax,setTax]=useState('0');const [deposit,setDeposit]=useState('0');const [notes,setNotes]=useState('');const [terms,setTerms]=useState('');const [expiry,setExpiry]=useState(()=>new Date(Date.now()+7*86400000));
  const [step,setStep]=useState(0);const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
  const load=useCallback(async()=>{setLoading(true);setError('');try{
-  const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}const current=ctx.businesses.find(b=>b.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
+  const ctx=await getWorkspaceContext({preferBusiness:true});if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}const current=ctx.businesses.find(b=>b.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
   const [contactRows,dealRows]=await Promise.all([listBusinessContacts(current.id),listCrmOpportunities(current.id)]);setContacts(contactRows);setDeals(dealRows);
   if(params.id){const loaded=await getCrmQuote(current.id,params.id);if(!loaded.quote)throw new Error('Quote not found.');setQuote(loaded.quote);setSavedItems(loaded.items);setContactId(loaded.quote.contact_id);setOpportunityId(loaded.quote.opportunity_id??'');}
  }catch(e){setError(userMessage(e,'Quote could not be loaded.'));}finally{setLoading(false);}},[params.id]);

@@ -42,7 +42,10 @@ export function businessHomeRoute(business:BusinessWorkspace){
   return isWorkforceWorkspace(business)?'/business-my-work' as const:'/business-today' as const;
 }
 
-export async function getWorkspaceContext():Promise<WorkspaceContext>{
+// Opening a business screen directly (push notification, link, bookmark) is a clear
+// intent to work as that business, so preferBusiness switches a member out of
+// Customer mode instead of sending them back to the customer home.
+export async function getWorkspaceContext(options:{preferBusiness?:boolean}={}):Promise<WorkspaceContext>{
   requireSupabaseConfig();
   const {data,error}=await retryRead(()=>supabase.rpc('get_my_workspace_context'));
   if(error)throw new Error(error.message);
@@ -54,6 +57,11 @@ export async function getWorkspaceContext():Promise<WorkspaceContext>{
   const serverMode:AppMode=server.mode==='BUSINESS'?'BUSINESS':'CUSTOMER';
   const desiredMode:AppMode=localMode==='BUSINESS'&&businesses.length?'BUSINESS':localMode==='CUSTOMER'?'CUSTOMER':serverMode;
   const active=desiredMode==='BUSINESS'?(validLocalBusiness??server.active_business_id??businesses[0]?.id??null):null;
+  if(options.preferBusiness&&desiredMode==='CUSTOMER'&&businesses.length){
+    const target=validLocalBusiness??server.active_business_id??businesses[0].id;
+    try{await setWorkspacePreference('BUSINESS',target);}catch{return {mode:'CUSTOMER',active_business_id:null,businesses};}
+    return {mode:'BUSINESS',active_business_id:target,businesses};
+  }
   return {mode:desiredMode==='BUSINESS'&&active?'BUSINESS':'CUSTOMER',active_business_id:active,businesses};
 }
 

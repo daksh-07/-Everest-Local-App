@@ -18,7 +18,7 @@ export function ModeSwitcher({compact=false}:{compact?:boolean}){
   if(busy)return;setBusy(true);setError('');
   try{
    await setWorkspacePreference(nextMode,businessId);if(Platform.OS!=='web')await Haptics.selectionAsync();setMode(nextMode);setActive(businessId);setOpen(false);
-   if(nextMode==='CUSTOMER'){router.replace('/');return;}
+   if(nextMode==='CUSTOMER'){if(router.canDismiss())router.dismissAll();router.replace('/');return;}
    const selected=businesses.find(b=>b.id===businessId);router.replace(selected?businessHomeRoute(selected):'/business-today');
   }catch(e){setError(userMessage(e,'Workspace could not be switched.'));}
   finally{setBusy(false)}

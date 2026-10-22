@@ -26,7 +26,7 @@ export default function BusinessToday(){
  const experience=useExperience();const insets=useSafeAreaInsets();
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);const [business,setBusiness]=useState<BusinessWorkspace|null>(null);const [payoutReady,setPayoutReady]=useState(false);const [snap,setSnap]=useState<Snapshot>({newLeads:0,openDeals:0,pipelineValue:0,overdue:0,quotesWaiting:0,jobsToday:0,activeJobs:0,unread:0,stale:0,orders:0,revenue:null,completed:0});const [priority,setPriority]=useState<Priority[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState('');
  const load=useCallback(async(refresh=false)=>{if(refresh)setRefreshing(true);else setLoading(true);setError('');try{
-  const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}const current=ctx.businesses.find(item=>item.id===ctx.active_business_id);if(!current){router.replace('/');return;}setBusiness(current);
+  const ctx=await getWorkspaceContext({preferBusiness:true});if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}const current=ctx.businesses.find(item=>item.id===ctx.active_business_id);if(!current){router.replace('/');return;}setBusiness(current);
   const payoutState=await supabase.from('businesses').select('stripe_connect_status,stripe_details_submitted,stripe_charges_enabled,stripe_payouts_enabled,stripe_connected_account_id').eq('id',current.id).maybeSingle();
   if(payoutState.error)throw payoutState.error;
   const ps=payoutState.data;

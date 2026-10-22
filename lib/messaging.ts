@@ -81,6 +81,18 @@ export async function sendMessage(conversationId: string, body: string) {
   return data.id;
 }
 
+export type ConversationCustomer = { conversation_id: string; customer_id: string; display_name: string; avatar_url: string | null };
+
+/** Customer identity for conversations the caller works on as a business. Best effort: an empty map keeps the old labels. */
+export async function businessConversationPeople(conversationIds: string[]): Promise<Record<string, ConversationCustomer>> {
+  requireSupabaseConfig();
+  const ids = [...new Set(conversationIds.filter(Boolean))].slice(0, 200);
+  if (!ids.length) return {};
+  const { data, error } = await supabase.rpc('get_business_conversation_people', { p_conversation_ids: ids });
+  if (error || !Array.isArray(data)) return {};
+  return Object.fromEntries((data as ConversationCustomer[]).map(row => [row.conversation_id, row]));
+}
+
 export async function markMessageRead(messageId: string) {
   requireSupabaseConfig();
   const { data, error } = await supabase.rpc('mark_message_read', { p_message_id: messageId });

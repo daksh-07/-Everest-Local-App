@@ -6,7 +6,7 @@ import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {Ionicons} from '@/components/ui/Icon';
 import {router,useGlobalSearchParams} from 'expo-router';
 import {SafeAreaView,useSafeAreaInsets} from 'react-native-safe-area-context';
-import {conversations,messages,sendMessage} from '@/lib/messaging';
+import {businessConversationPeople,conversations,markMessageRead,messages,sendMessage} from '@/lib/messaging';
 import {currentUser} from '@/lib/marketplace';
 import {
  blockUser,deletePersonalMessageForEveryone,deletePersonalMessageForMe,editPersonalMessage,hidePersonalConversation,
@@ -156,12 +156,16 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
     businessRows=result.data??[];
    }
    const names=Object.fromEntries(businessRows.map(x=>[x.id,x]));
-   setMarket(rows.map(x=>({...x,counterpart_name:names[x.business_id]?.name??'Business conversation',logo_url:names[x.business_id]?.logo_url??null})));
+   const people=await businessConversationPeople(rows.filter(x=>x.customer_id!==user?.id).map(x=>x.id));
+   const withCounterpart=(x:MarketConversation):MarketConversation=>x.customer_id!==user?.id&&people[x.id]
+    ?{...x,counterpart_name:people[x.id].display_name,logo_url:people[x.id].avatar_url}
+    :{...x,counterpart_name:names[x.business_id]?.name??'Business conversation',logo_url:names[x.business_id]?.logo_url??null};
+   setMarket(rows.map(withCounterpart));
    if(requestedPersonalId&&openedPersonalLink.current!==requestedPersonalId){
     const found=[...p,...r].find(x=>x.id===requestedPersonalId);
     if(found){openedPersonalLink.current=requestedPersonalId;setSelectedMarket(null);setSelectedPersonal(found);setTab(found.status==='REQUEST'&&found.initiated_by!==user?.id?'REQUESTS':'CHATS')}
    }
-   if(requestedMarketId&&openedMarketLink.current!==requestedMarketId){const found=rows.find(x=>x.id===requestedMarketId);if(found){openedMarketLink.current=requestedMarketId;setSelectedPersonal(null);setSelectedMarket({...found,counterpart_name:names[found.business_id]?.name??'Business conversation',logo_url:names[found.business_id]?.logo_url??null})}}
+   if(requestedMarketId&&openedMarketLink.current!==requestedMarketId){const found=rows.find(x=>x.id===requestedMarketId);if(found){openedMarketLink.current=requestedMarketId;setSelectedPersonal(null);setSelectedMarket(withCounterpart(found))}}
   }catch{if(!silent)setError('Messages could not be loaded.')}
   finally{if(!silent)setLoading(false)}
  },[requestedPersonalId,requestedMarketId]);
@@ -197,8 +201,10 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
     });
     return unchanged?current:rows;
    });
+   const unread=rows.filter(message=>userId&&message.sender_id!==userId&&!message.read_at).slice(-50);
+   if(unread.length)await Promise.all(unread.map(message=>markMessageRead(message.id).catch(()=>false)));
   }catch{if(selectedMarketRef.current?.id===id)setError('Conversation could not be loaded.')}finally{if(selectedMarketRef.current?.id===id)setThreadLoading(false)}
- },[]);
+ },[userId]);
 
  async function loadOlder(){
   if(!selectedPersonal||loadingOlder||!hasOlder||!personalThread.length)return;
@@ -446,7 +452,7 @@ export function MessagesScreen({visible=true}:{visible?:boolean}={}){
   <ChatKeyboardFrame>
    <GlassSurface intensity={64} style={{minHeight:60,paddingHorizontal:12,paddingVertical:7,flexDirection:'row',alignItems:'center',gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:c.border,zIndex:2}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Back to messages" onPress={()=>{Keyboard.dismiss();setSelectedMarket(null);setMarketThread([]);void loadHome(true)}} style={({pressed})=>({width:44,height:44,borderRadius:22,alignItems:'center',justifyContent:'center',backgroundColor:pressed?c.soft:'transparent',transform:[{scale:pressed?.95:1}]})}><Ionicons name="chevron-back" size={25} color={c.text}/></Pressable>
-    {selectedMarket.logo_url?<Image source={{uri:selectedMarket.logo_url}} style={{width:46,height:46,borderRadius:16}}/>:<View style={{width:46,height:46,borderRadius:16,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name="storefront-outline" size={22} color={c.accent}/></View>}
+    {selectedMarket.logo_url?<Image source={{uri:selectedMarket.logo_url}} style={{width:46,height:46,borderRadius:16}}/>:<View style={{width:46,height:46,borderRadius:16,backgroundColor:c.soft,alignItems:'center',justifyContent:'center'}}><Ionicons name={selectedMarket.customer_id!==userId?"person-outline":"storefront-outline"} size={22} color={c.accent}/></View>}
     <View style={{flex:1}}><Text style={{fontSize:17,fontWeight:'800',letterSpacing:-.45,color:c.text}}>{selectedMarket.counterpart_name}</Text><Text numberOfLines={1} style={{fontSize:13,color:c.textSecondary,marginTop:1}}>{selectedMarket.context_type==='PRODUCT'?'Product · '+(selectedMarket.context_title??'Enquiry'):selectedMarket.context_type==='SERVICE'?'Service · '+(selectedMarket.context_title??'Enquiry'):'Business conversation'}</Text></View>
    </GlassSurface>
    {(selectedMarket.booking_id||selectedMarket.request_id||selectedMarket.context_type==='SERVICE')?<View style={{marginHorizontal:12,marginTop:8,paddingHorizontal:12,paddingVertical:9,borderRadius:12,backgroundColor:c.soft,borderWidth:1,borderColor:c.border,flexDirection:'row',gap:8,alignItems:'center'}}><Ionicons name="shield-checkmark-outline" size={17} color={c.accent}/><Text style={{flex:1,fontSize:13,lineHeight:18,color:c.text}}><Text style={{fontWeight:'600'}}>Keep service payments in Everest.</Text> Payments made outside Everest are not counted toward the booking balance or marketplace protection.</Text></View>:null}
@@ -615,7 +621,7 @@ function MarketThread({refValue,items,userId,colors:c,onNearBottomChange}:{refVa
   marketNearBottomRef.current=contentSize.height-(contentOffset.y+layoutMeasurement.height)<120;onNearBottomChange(marketNearBottomRef.current);
  };
  return <ScrollView ref={node=>{refValue.current=node}} onLayout={()=>{if(marketNearBottomRef.current)scrollThreadToEndAfterLayout(refValue,false,()=>marketNearBottomRef.current)}} style={{flex:1,minHeight:0,backgroundColor:c.canvas}} keyboardDismissMode={Platform.OS==='ios'?'interactive':'none'} keyboardShouldPersistTaps="always" onScroll={onScroll} scrollEventThrottle={32} onContentSizeChange={()=>{if(marketNearBottomRef.current)refValue.current?.scrollToEnd({animated:false})}} contentContainerStyle={{flexGrow:1,justifyContent:'flex-end',paddingHorizontal:12,paddingVertical:8}}>
-  {items.map((m,index)=>{const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;const groupedPrev=Boolean(prev&&prev.sender_id===m.sender_id&&sameDay(prev.created_at,m.created_at));const groupedNext=Boolean(next&&next.sender_id===m.sender_id&&sameDay(next.created_at,m.created_at));return <View key={m.id} style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}><View style={{maxWidth:'79%',backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:StyleSheet.hairlineWidth,borderColor:c.border,borderRadius:22,borderTopRightRadius:mine&&groupedPrev?9:22,borderTopLeftRadius:!mine&&groupedPrev?9:22,borderBottomRightRadius:mine&&!groupedNext?6:22,borderBottomLeftRadius:!mine&&!groupedNext?6:22,paddingHorizontal:14,paddingVertical:10}}>{m.is_automated?<Text style={{fontSize:12,fontWeight:'600',color:mine?c.onBrand:c.accent,marginBottom:3}}>{m.automation_source==='EVEREST_AI'?'Everest AI · Automated':'Automated answer'}</Text>:null}<Text style={{fontSize:16,lineHeight:22.5,letterSpacing:-.12,color:mine?c.onBrand:c.text}}>{m.body}</Text></View>{!groupedNext?<DeliveryMeta createdAt={m.created_at} mine={mine} seen={Boolean(m.read_at)} colors={c}/>:null}</View>})}
+  {items.map((m,index)=>{const prev=items[index-1];const next=items[index+1];const mine=m.sender_id===userId;const groupedPrev=Boolean(prev&&prev.sender_id===m.sender_id&&sameDay(prev.created_at,m.created_at));const groupedNext=Boolean(next&&next.sender_id===m.sender_id&&sameDay(next.created_at,m.created_at));const showDate=!prev||!sameDay(prev.created_at,m.created_at);return <View key={m.id}>{showDate?<View accessibilityRole="header" style={{alignItems:'center',marginTop:18,marginBottom:10}}><Text selectable={false} style={{fontSize:12,lineHeight:16,fontWeight:'600',color:c.textSecondary}}>{dateLabel(m.created_at)}</Text></View>:null}<View style={{alignItems:mine?'flex-end':'flex-start',marginTop:groupedPrev?1:7}}><View style={{maxWidth:'79%',backgroundColor:mine?c.brand:c.elevated,borderWidth:mine?0:StyleSheet.hairlineWidth,borderColor:c.border,borderRadius:22,borderTopRightRadius:mine&&groupedPrev?9:22,borderTopLeftRadius:!mine&&groupedPrev?9:22,borderBottomRightRadius:mine&&!groupedNext?6:22,borderBottomLeftRadius:!mine&&!groupedNext?6:22,paddingHorizontal:14,paddingVertical:10}}>{m.is_automated?<Text style={{fontSize:12,fontWeight:'600',color:mine?c.onBrand:c.accent,marginBottom:3}}>{m.automation_source==='EVEREST_AI'?'Everest AI · Automated':'Automated answer'}</Text>:null}<Text style={{fontSize:16,lineHeight:22.5,letterSpacing:-.12,color:mine?c.onBrand:c.text}}>{m.body}</Text></View>{!groupedNext?<DeliveryMeta createdAt={m.created_at} mine={mine} seen={Boolean(m.read_at)} colors={c}/>:null}</View></View>})}
  </ScrollView>;
 }
 
