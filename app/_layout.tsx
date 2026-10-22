@@ -28,14 +28,14 @@ const deliveryRoutes = new Set(['/delivery','/driver-dashboard']);
 const driverApplicationRoutes = new Set(['/driver-onboarding']);
 
 function StartupError({ onRetry }: { onRetry: () => void }) {
-  const {colors}=useAppTheme();return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>Everest Local</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>We could not load your account access right now. Please retry.</Text><Pressable onPress={onRetry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>Retry</Text></Pressable></View>;
+  const {colors}=useAppTheme();return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>Everest Local</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>We could not load your account access right now. Please retry.</Text><Pressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>Retry</Text></Pressable></View>;
 }
 function sanitizeDebug(value: string) { return value.replace(/https?:\/\/[^\s)]+/gi,'[url]').replace(/(anon[_-]?key|service[_-]?role|secret|password|token)=?[^\s&]+/gi,'$1=[redacted]'); }
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   const dark=useColorScheme()==='dark';const colors=dark?{canvas:darkPalette.canvas,text:darkPalette.text,muted:darkPalette.muted}:{canvas:lightPalette.canvas,text:lightPalette.text,muted:lightPalette.textSecondary};
   const pathname=usePathname();const message=sanitizeDebug(error?.message||String(error)||'Unknown runtime error.');const stack=sanitizeDebug(error?.stack||'');
   if(typeof console!=='undefined') console.error('[Everest Local runtime error]',{pathname,name:error?.name,message,stack});
-  return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>Everest Local</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>The app hit an unexpected problem. Retry to continue.</Text><Pressable onPress={retry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>Retry</Text></Pressable></View>;
+  return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>Everest Local</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>The app hit an unexpected problem. Retry to continue.</Text><Pressable accessibilityRole="button" onPress={retry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>Retry</Text></Pressable></View>;
 }
 function ThemedRootLayout() {
   const pathname=usePathname();const nav=useRouter();

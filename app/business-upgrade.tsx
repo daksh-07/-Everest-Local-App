@@ -81,14 +81,14 @@ export default function BusinessUpgrade(){
      :nativeStore?
      <View style={st.notice}><Ionicons name="phone-portrait-outline" size={18} color={colors.accent}/><Text style={st.noticeText}>{active?'Your existing Everest Pro access remains active. Subscription management is not offered through this store build.':'Everest Pro purchasing is not offered through this store build yet. Core marketplace and business tools remain available.'}</Text></View>
      :
-     <Pressable disabled={working} onPress={()=>void billing()} style={[st.primary,working&&{opacity:.65}]}>
+     <Pressable accessibilityRole="button" disabled={working} onPress={()=>void billing()} style={[st.primary,working&&{opacity:.65}]}>
       {working?<ActivityIndicator color={colors.onBrand}/>:<><Text style={st.primaryText}>{active?'Manage subscription':'Start Everest Pro subscription'}</Text><Ionicons name="arrow-forward" size={15} color={colors.onBrand}/></>}
      </Pressable>
     }
    </>}
 
    {error?<View style={st.errorBox}><Ionicons name="alert-circle-outline" size={17} color={colors.danger}/><Text style={st.error}>{error}</Text></View>:null}
-   <Pressable onPress={()=>router.back()} style={st.secondary}><Text style={st.secondaryText}>Back to integrations</Text></Pressable>
+   <Pressable accessibilityRole="button" onPress={()=>router.back()} style={st.secondary}><Text style={st.secondaryText}>Back to integrations</Text></Pressable>
   </ScrollView>
  </SafeAreaView>
 }

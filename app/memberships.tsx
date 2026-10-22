@@ -39,10 +39,10 @@ export default function MembershipWallet(){
       <View style={s.details}><Detail label="Service credits" value={String(credits.get(m.id)??0)} colors={colors}/><Detail label="Next payment" value={m.current_period_end?new Date(m.current_period_end).toLocaleDateString():'After approval'} colors={colors}/><Detail label="Included each period" value={String(m.included_credits_per_period)} colors={colors}/></View>
       {m.description?<Text style={s.description}>{m.description}</Text>:null}
       <View style={s.actions}>
-       {approve?<Pressable disabled={busy===m.id} onPress={()=>void act(m.id,()=>approveMembership(m.id))} style={s.primary}><Text style={s.primaryText}>{busy===m.id?'Opening…':'Review & approve'}</Text></Pressable>:null}
-       {connected?<Pressable disabled={busy===m.id} onPress={()=>void act(m.id,()=>openMembershipPortal(m.id))} style={s.secondary}><Text style={s.secondaryText}>Payment method & billing</Text></Pressable>:null}
-       {['ACTIVE','TRIALING','PAST_DUE','PAUSED'].includes(m.status)?<Pressable disabled={busy===m.id} onPress={()=>cancel(m)} style={s.linkButton}><Text style={s.linkText}>Cancel at period end</Text></Pressable>:null}
-       {m.status==='CANCEL_AT_PERIOD_END'?<Pressable disabled={busy===m.id} onPress={()=>void act(m.id,()=>resumeMembership(m.id))} style={s.linkButton}><Text style={s.linkText}>Keep membership</Text></Pressable>:null}
+       {approve?<Pressable accessibilityRole="button" disabled={busy===m.id} onPress={()=>void act(m.id,()=>approveMembership(m.id))} style={s.primary}><Text style={s.primaryText}>{busy===m.id?'Opening…':'Review & approve'}</Text></Pressable>:null}
+       {connected?<Pressable accessibilityRole="button" disabled={busy===m.id} onPress={()=>void act(m.id,()=>openMembershipPortal(m.id))} style={s.secondary}><Text style={s.secondaryText}>Payment method & billing</Text></Pressable>:null}
+       {['ACTIVE','TRIALING','PAST_DUE','PAUSED'].includes(m.status)?<Pressable accessibilityRole="button" disabled={busy===m.id} onPress={()=>cancel(m)} style={s.linkButton}><Text style={s.linkText}>Cancel at period end</Text></Pressable>:null}
+       {m.status==='CANCEL_AT_PERIOD_END'?<Pressable accessibilityRole="button" disabled={busy===m.id} onPress={()=>void act(m.id,()=>resumeMembership(m.id))} style={s.linkButton}><Text style={s.linkText}>Keep membership</Text></Pressable>:null}
       </View>
      </View>
     })}

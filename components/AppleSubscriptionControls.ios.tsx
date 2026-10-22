@@ -99,15 +99,15 @@ export function AppleSubscriptionControls({businessId,active,provider,onActivate
   </View>
 
   {active?
-   <Pressable onPress={()=>void manage()} style={st.primary}>
+   <Pressable accessibilityRole="button" onPress={()=>void manage()} style={st.primary}>
     <Text style={st.primaryText}>Manage Apple subscription</Text><Ionicons name="open-outline" size={15} color={colors.onBrand}/>
    </Pressable>
    :
    <>
-    <Pressable disabled={working} onPress={()=>void subscribe()} style={[st.primary,working&&{opacity:.65}]}>
+    <Pressable accessibilityRole="button" disabled={working} onPress={()=>void subscribe()} style={[st.primary,working&&{opacity:.65}]}>
      {working?<ActivityIndicator color={colors.onBrand}/>:<><Text style={st.primaryText}>Subscribe with Apple</Text><Ionicons name="logo-apple" size={16} color={colors.onBrand}/></>}
     </Pressable>
-    <Pressable disabled={working} onPress={()=>void restore()} style={st.secondary}><Text style={st.secondaryText}>Restore purchases</Text></Pressable>
+    <Pressable accessibilityRole="button" disabled={working} onPress={()=>void restore()} style={st.secondary}><Text style={st.secondaryText}>Restore purchases</Text></Pressable>
    </>
   }
 

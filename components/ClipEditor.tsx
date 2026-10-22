@@ -45,14 +45,14 @@ export function ClipEditor({
   else patch({trimEndMs:Math.min(maxMs,Math.max(start+500,end+delta))});
  };
  const setText=(value:string)=>setDraft(current=>normalizeClipEditManifest({...current,text:value?{value,position:current.text?.position??'CENTER',style:current.text?.style??'BOLD'}:null},durationMs));
- const choose=<T extends string|number,>(items:ReadonlyArray<T>,value:T,onChange:(v:T)=>void,label:(v:T)=>string=String)=><View style={s.choices}>{items.map(item=><Pressable key={String(item)} onPress={()=>{onChange(item);void haptic.selection()}} style={[s.choice,item===value&&s.choiceActive]}><Text style={[s.choiceText,item===value&&s.choiceTextActive]}>{label(item)}</Text></Pressable>)}</View>;
+ const choose=<T extends string|number,>(items:ReadonlyArray<T>,value:T,onChange:(v:T)=>void,label:(v:T)=>string=String)=><View style={s.choices}>{items.map(item=><Pressable accessibilityRole="button" key={String(item)} onPress={()=>{onChange(item);void haptic.selection()}} style={[s.choice,item===value&&s.choiceActive]}><Text style={[s.choiceText,item===value&&s.choiceTextActive]}>{label(item)}</Text></Pressable>)}</View>;
 
  return <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
   <View style={s.safe}>
    <View style={s.header}>
     <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={s.circle}><Ionicons name="close" size={22} color={colors.text}/></Pressable>
     <View style={s.headerTitle}><Text style={s.kicker}>Everest Studio</Text><Text style={s.title}>Edit clip</Text></View>
-    <Pressable onPress={()=>{onDone(normalizeClipEditManifest(draft,durationMs));void haptic.success()}} style={s.done}><Text style={s.doneText}>Done</Text></Pressable>
+    <Pressable accessibilityRole="button" onPress={()=>{onDone(normalizeClipEditManifest(draft,durationMs));void haptic.success()}} style={s.done}><Text style={s.doneText}>Done</Text></Pressable>
    </View>
 
    <View style={[s.preview,{height:previewH,width:previewW}]}>
@@ -61,7 +61,7 @@ export function ClipEditor({
    </View>
 
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.toolRail}>
-    {tools.map(item=><Pressable key={item.id} onPress={()=>{setTool(item.id);void haptic.selection()}} style={s.tool}>
+    {tools.map(item=><Pressable accessibilityRole="button" key={item.id} onPress={()=>{setTool(item.id);void haptic.selection()}} style={s.tool}>
       <View style={[s.toolIcon,tool===item.id&&s.toolIconActive]}><Ionicons name={item.icon} size={20} color={tool===item.id?colors.onBrand:colors.text}/></View>
       <Text style={[s.toolLabel,tool===item.id&&{color:colors.accent}]}>{item.label}</Text>
     </Pressable>)}
@@ -69,18 +69,18 @@ export function ClipEditor({
 
    <ScrollView style={s.panelScroll} contentContainerStyle={s.panel} keyboardShouldPersistTaps="handled">
     {tool==='TRIM'?<>
-     <View style={s.panelHead}><View><Text style={s.panelTitle}>Trim</Text><Text style={s.panelCopy}>Set exactly where the clip starts and ends.</Text></View><Pressable onPress={()=>patch({trimStartMs:0,trimEndMs:durationMs&&durationMs>0?Math.min(durationMs,90_000):null})}><Text style={s.resetText}>Full clip</Text></Pressable></View>
+     <View style={s.panelHead}><View><Text style={s.panelTitle}>Trim</Text><Text style={s.panelCopy}>Set exactly where the clip starts and ends.</Text></View><Pressable accessibilityRole="button" onPress={()=>patch({trimStartMs:0,trimEndMs:durationMs&&durationMs>0?Math.min(durationMs,90_000):null})}><Text style={s.resetText}>Full clip</Text></Pressable></View>
      <View style={s.trimBar}><View style={s.trimFill}/><View style={[s.trimHandle,{left:percent(Math.min(96,(start/maxMs)*96))}]}/><View style={[s.trimHandle,{left:percent(Math.min(96,(end/maxMs)*96))}]}/></View>
      <View style={s.trimRow}>
-      <View style={s.timeCard}><Text style={s.timeLabel}>Start</Text><Text style={s.timeValue}>{time(start)}</Text><View style={s.stepRow}><Pressable onPress={()=>setTrim('START',-500)} style={s.step}><Text style={s.stepText}>−0.5</Text></Pressable><Pressable onPress={()=>setTrim('START',500)} style={s.step}><Text style={s.stepText}>+0.5</Text></Pressable></View></View>
-      <View style={s.timeCard}><Text style={s.timeLabel}>End</Text><Text style={s.timeValue}>{time(end)}</Text><View style={s.stepRow}><Pressable onPress={()=>setTrim('END',-500)} style={s.step}><Text style={s.stepText}>−0.5</Text></Pressable><Pressable onPress={()=>setTrim('END',500)} style={s.step}><Text style={s.stepText}>+0.5</Text></Pressable></View></View>
+      <View style={s.timeCard}><Text style={s.timeLabel}>Start</Text><Text style={s.timeValue}>{time(start)}</Text><View style={s.stepRow}><Pressable accessibilityRole="button" onPress={()=>setTrim('START',-500)} style={s.step}><Text style={s.stepText}>−0.5</Text></Pressable><Pressable accessibilityRole="button" onPress={()=>setTrim('START',500)} style={s.step}><Text style={s.stepText}>+0.5</Text></Pressable></View></View>
+      <View style={s.timeCard}><Text style={s.timeLabel}>End</Text><Text style={s.timeValue}>{time(end)}</Text><View style={s.stepRow}><Pressable accessibilityRole="button" onPress={()=>setTrim('END',-500)} style={s.step}><Text style={s.stepText}>−0.5</Text></Pressable><Pressable accessibilityRole="button" onPress={()=>setTrim('END',500)} style={s.step}><Text style={s.stepText}>+0.5</Text></Pressable></View></View>
      </View>
-     <View style={s.quickRow}>{[15,30,60].filter(sec=>sec*1000<=maxMs).map(sec=><Pressable key={sec} onPress={()=>patch({trimStartMs:0,trimEndMs:sec*1000})} style={s.quick}><Text style={s.quickText}>First {sec}s</Text></Pressable>)}</View>
+     <View style={s.quickRow}>{[15,30,60].filter(sec=>sec*1000<=maxMs).map(sec=><Pressable accessibilityRole="button" key={sec} onPress={()=>patch({trimStartMs:0,trimEndMs:sec*1000})} style={s.quick}><Text style={s.quickText}>First {sec}s</Text></Pressable>)}</View>
     </>:null}
 
     {tool==='SOUND'?<>
      <View style={s.panelHead}><View><Text style={s.panelTitle}>Sound</Text><Text style={s.panelCopy}>Use original audio, licensed music, your own audio file, or record a voiceover.</Text></View></View>
-     <Pressable onPress={onOpenSound} style={s.musicCard}><View style={s.musicIcon}><Ionicons name={sound?.source==='VOICEOVER'?'mic':sound?.source==='USER_UPLOAD'?'cloud-upload':'musical-notes'} size={21} color={colors.accent}/></View><View style={{flex:1}}><Text style={s.musicTitle}>{sound?sound.title:'Add sound'}</Text><Text style={s.musicArtist}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase()):'Music · Original · Upload · Voiceover'}</Text></View><Ionicons name="chevron-forward" size={19} color={colors.muted}/></Pressable>
+     <Pressable accessibilityRole="button" onPress={onOpenSound} style={s.musicCard}><View style={s.musicIcon}><Ionicons name={sound?.source==='VOICEOVER'?'mic':sound?.source==='USER_UPLOAD'?'cloud-upload':'musical-notes'} size={21} color={colors.accent}/></View><View style={{flex:1}}><Text style={s.musicTitle}>{sound?sound.title:'Add sound'}</Text><Text style={s.musicArtist}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase()):'Music · Original · Upload · Voiceover'}</Text></View><Ionicons name="chevron-forward" size={19} color={colors.muted}/></Pressable>
      {(sound||voiceover)?<View style={s.offsetCard}><View><Text style={s.timeLabel}>Background</Text><Text numberOfLines={1} style={s.timeValue}>{sound?sound.title:'None'}</Text></View><View><Text style={s.timeLabel}>Voiceover</Text><Text numberOfLines={1} style={s.timeValue}>{voiceover?'Added':'None'}</Text></View></View>:null}
     </>:null}
 
@@ -95,10 +95,10 @@ export function ClipEditor({
     {tool==='FILTER'?<><View style={s.panelHead}><View><Text style={s.panelTitle}>Filter</Text><Text style={s.panelCopy}>Fast looks that stay live in preview and playback.</Text></View></View>{choose(['ORIGINAL','WARM','COOL','FADE','GOLD','NIGHT'] as const,draft.filter??'ORIGINAL',v=>patch({filter:v}),v=>v[0]+v.slice(1).toLowerCase())}</>:null}
     {tool==='EFFECT'?<><View style={s.panelHead}><View><Text style={s.panelTitle}>Effects</Text><Text style={s.panelCopy}>Lightweight motion effects without destroying the original file.</Text></View></View>{choose(['NONE','PULSE','FLASH','FOCUS'] as const,draft.effect??'NONE',v=>patch({effect:v}),v=>v[0]+v.slice(1).toLowerCase())}</>:null}
     {tool==='SPEED'?<><View style={s.panelHead}><View><Text style={s.panelTitle}>Speed</Text><Text style={s.panelCopy}>Slow it down or move faster.</Text></View></View>{choose([.5,.75,1,1.25,1.5,2] as const,draft.speed??1,v=>patch({speed:v}),v=>String(v)+'×')}</>:null}
-    {tool==='FRAME'?<><View style={s.panelHead}><View><Text style={s.panelTitle}>Frame</Text><Text style={s.panelCopy}>Fill the screen or preserve the entire video.</Text></View></View>{choose(['FILL','FIT'] as const,draft.fit??'FILL',v=>patch({fit:v}),v=>v==='FILL'?'Fill screen':'Fit video')}<Pressable onPress={()=>patch({mirror:!draft.mirror})} style={[s.toggle,draft.mirror&&s.toggleActive]}><Ionicons name="swap-horizontal" size={18} color={draft.mirror?colors.onBrand:colors.text}/><Text style={[s.toggleText,draft.mirror&&{color:colors.onBrand}]}>Mirror video</Text><Ionicons name={draft.mirror?'checkmark-circle':'ellipse-outline'} size={20} color={draft.mirror?colors.onBrand:colors.muted}/></Pressable></>:null}
+    {tool==='FRAME'?<><View style={s.panelHead}><View><Text style={s.panelTitle}>Frame</Text><Text style={s.panelCopy}>Fill the screen or preserve the entire video.</Text></View></View>{choose(['FILL','FIT'] as const,draft.fit??'FILL',v=>patch({fit:v}),v=>v==='FILL'?'Fill screen':'Fit video')}<Pressable accessibilityRole="button" onPress={()=>patch({mirror:!draft.mirror})} style={[s.toggle,draft.mirror&&s.toggleActive]}><Ionicons name="swap-horizontal" size={18} color={draft.mirror?colors.onBrand:colors.text}/><Text style={[s.toggleText,draft.mirror&&{color:colors.onBrand}]}>Mirror video</Text><Ionicons name={draft.mirror?'checkmark-circle':'ellipse-outline'} size={20} color={draft.mirror?colors.onBrand:colors.muted}/></Pressable></>:null}
     {tool==='VOLUME'?<><View style={s.panelHead}><View><Text style={s.panelTitle}>Original audio</Text><Text style={s.panelCopy}>Balance the recorded sound against your added sound.</Text></View></View>{choose([0,.25,.5,.75,1] as const,draft.originalVolume??1,v=>patch({originalVolume:v}),v=>Number(v)===0?'Muted':Math.round(Number(v)*100)+'%')}</>:null}
 
-    <Pressable onPress={()=>{setDraft(normalizeClipEditManifest({},durationMs));void haptic.selection()}} style={s.reset}><Ionicons name="refresh-outline" size={16} color={colors.text}/><Text style={s.resetButtonText}>Reset all edits</Text></Pressable>
+    <Pressable accessibilityRole="button" onPress={()=>{setDraft(normalizeClipEditManifest({},durationMs));void haptic.selection()}} style={s.reset}><Ionicons name="refresh-outline" size={16} color={colors.text}/><Text style={s.resetButtonText}>Reset all edits</Text></Pressable>
    </ScrollView>
   </View>
  </Modal>;

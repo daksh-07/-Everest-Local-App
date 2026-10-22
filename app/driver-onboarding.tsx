@@ -46,7 +46,7 @@ function Field({ label, value, onChangeText, placeholder, keyboardType = 'defaul
 }
 
 function Choice({ label, selected, onPress }: { label:string; selected:boolean; onPress:()=>void }) {const s=useThemedStyles(create_s);
-  return <Pressable onPress={onPress} style={[s.choice,selected&&s.choiceSelected]}>
+  return <Pressable accessibilityRole="button" onPress={onPress} style={[s.choice,selected&&s.choiceSelected]}>
     <Text style={[s.choiceText,selected&&s.choiceTextSelected]}>{label}</Text>
   </Pressable>;
 }
@@ -70,8 +70,8 @@ function DocumentCard({ label, hint, type, documents, onUpload, disabled, expire
     {onSetExpiry&&<Field label="Expiry date" value={expiresAt??''} onChangeText={onSetExpiry} placeholder="YYYY-MM-DD"/>}
     {!!documentSubtype&&<Text style={s.meta}>Document type: {documentSubtype.replaceAll('_',' ')}</Text>}
     {!disabled&&<View style={s.docActions}>
-      <Pressable onPress={()=>onUpload(type,true)} style={s.smallButton}><Text style={s.smallButtonText}>Take photo</Text></Pressable>
-      <Pressable onPress={()=>onUpload(type,false)} style={s.smallOutline}><Text style={s.smallOutlineText}>Choose photo</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={()=>onUpload(type,true)} style={s.smallButton}><Text style={s.smallButtonText}>Take photo</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={()=>onUpload(type,false)} style={s.smallOutline}><Text style={s.smallOutlineText}>Choose photo</Text></Pressable>
     </View>}
     {!!doc?.rejection_reason&&<Text style={s.docError}>{doc.rejection_reason}</Text>}
     {doc?.status==='VERIFIED'&&<Text style={s.verifiedNote}>Verified documents cannot be silently replaced. Contact Everest if the evidence needs to change.</Text>}
@@ -209,13 +209,13 @@ export default function DriverOnboarding() {const s=useThemedStyles(create_s);
 
   return <SafeAreaView style={s.safe}>
     <ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">
-      <View style={s.top}><Pressable onPress={()=>void back()}><Text style={s.back}>‹</Text></Pressable><Text style={s.topTitle}>Driver onboarding</Text><View style={{width:28}}/></View>
+      <View style={s.top}><Pressable accessibilityRole="button" onPress={()=>void back()}><Text style={s.back}>‹</Text></Pressable><Text style={s.topTitle}>Driver onboarding</Text><View style={{width:28}}/></View>
       <Text style={s.eyebrow}>EVEREST DELIVERY / {application.compliance_jurisdiction}</Text>
       <Text style={s.title}>{application.status==='APPROVED'?'Driver verified.':application.status==='SUSPENDED'?'Driver access suspended.':'Become an Everest driver.'}</Text>
       <Text style={s.copy}>Everest separates applicant information from compliance decisions. An uploaded document is evidence for review, not proof of government verification.</Text>
       <View style={s.statusCard}><Text style={s.statusEyebrow}>Application status</Text><View style={s.statusLine}><Text style={s.statusTitle}>{application.status.replaceAll('_',' ')}</Text><StatusBadge value={compliance?.overall.status??application.status} good={compliance?.overall.status==='APPROVED'}/></View><Text style={s.statusCopy}>{application.status==='APPROVED'?'Operational access remains subject to current credentials.':application.status==='EXPIRED'?'A required credential has expired. Update it and request review again.':'You cannot accept delivery work until the server-side compliance gate passes.'}</Text></View>
 
-      {application.status==='APPROVED'&&<Pressable style={s.primaryWide} onPress={()=>router.replace('/delivery')}><Text style={s.primaryText}>Open driver dashboard</Text></Pressable>}
+      {application.status==='APPROVED'&&<Pressable accessibilityRole="button" style={s.primaryWide} onPress={()=>router.replace('/delivery')}><Text style={s.primaryText}>Open driver dashboard</Text></Pressable>}
 
       {editable&&<>
         <View style={s.progress}><View style={[s.progressFill,{width:`${((step+1)/STEPS.length)*100}%`}]}/></View>
@@ -292,7 +292,7 @@ export default function DriverOnboarding() {const s=useThemedStyles(create_s);
 
         {step===7&&<View>
           <Text style={s.sectionTitle}>8. Declarations</Text><Text style={s.sectionCopy}>These are Everest application declarations, not invented legal terms. The accepted text and version are stored server-side with the application.</Text>
-          {declarationTemplates.map(([key,text])=><Pressable key={key} disabled={busy} onPress={()=>void acceptDeclaration(key)} style={[s.declaration,declarationKeys.includes(key)&&s.declarationAccepted]}><View style={[s.checkbox,declarationKeys.includes(key)&&s.checkboxChecked]}><Text style={s.checkboxText}>{declarationKeys.includes(key)?'✓':''}</Text></View><View style={{flex:1}}><Text style={s.declarationTitle}>{key.replaceAll('_',' ')}</Text><Text style={s.declarationText}>{text}</Text></View></Pressable>)}
+          {declarationTemplates.map(([key,text])=><Pressable accessibilityRole="button" key={key} disabled={busy} onPress={()=>void acceptDeclaration(key)} style={[s.declaration,declarationKeys.includes(key)&&s.declarationAccepted]}><View style={[s.checkbox,declarationKeys.includes(key)&&s.checkboxChecked]}><Text style={s.checkboxText}>{declarationKeys.includes(key)?'✓':''}</Text></View><View style={{flex:1}}><Text style={s.declarationTitle}>{key.replaceAll('_',' ')}</Text><Text style={s.declarationText}>{text}</Text></View></Pressable>)}
         </View>}
 
         {step===8&&<View>
@@ -308,11 +308,11 @@ export default function DriverOnboarding() {const s=useThemedStyles(create_s);
         {step===9&&<View>
           <Text style={s.sectionTitle}>10. Submit</Text><Text style={s.sectionCopy}>Submitting moves the application to SUBMITTED. It does not approve you or perform a government check. Admin review remains required.</Text>
           {blocking.length>0&&<View style={s.warning}><Text style={s.warningTitle}>Complete the blocking items first</Text><Text style={s.warningCopy}>{blocking.join(', ').replaceAll('_',' ')}</Text></View>}
-          <Pressable disabled={busy||blocking.length>0} onPress={()=>void submit()} style={[s.primaryWide,(busy||blocking.length>0)&&s.disabled]}><Text style={s.primaryText}>{busy?'Submitting…':'Submit driver application'}</Text></Pressable>
+          <Pressable accessibilityRole="button" disabled={busy||blocking.length>0} onPress={()=>void submit()} style={[s.primaryWide,(busy||blocking.length>0)&&s.disabled]}><Text style={s.primaryText}>{busy?'Submitting…':'Submit driver application'}</Text></Pressable>
         </View>}
 
         {!!error&&<Text style={s.error}>{error}</Text>}
-        <View style={s.nav}>{step>0&&<Pressable disabled={busy} onPress={()=>setStep(current=>Math.max(0,current-1))} style={s.outline}><Text style={s.outlineText}>Back</Text></Pressable>}{step<9&&<Pressable disabled={busy} onPress={()=>void next()} style={s.primary}><Text style={s.primaryText}>{busy?'Saving…':'Save & continue'}</Text></Pressable>}</View>
+        <View style={s.nav}>{step>0&&<Pressable accessibilityRole="button" disabled={busy} onPress={()=>setStep(current=>Math.max(0,current-1))} style={s.outline}><Text style={s.outlineText}>Back</Text></Pressable>}{step<9&&<Pressable accessibilityRole="button" disabled={busy} onPress={()=>void next()} style={s.primary}><Text style={s.primaryText}>{busy?'Saving…':'Save & continue'}</Text></Pressable>}</View>
       </>}
     </ScrollView>
   </SafeAreaView>;

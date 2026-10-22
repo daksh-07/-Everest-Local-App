@@ -65,10 +65,10 @@ export default function BusinessInvite(){
    {loading?<ActivityIndicator color={colors.accent} style={{marginTop:24}}/>:<>
     {invite?<><Text style={s.copy}>Your access is ready. Everest will attach this role to your existing personal account, not create a second business identity.</Text>
       <View style={s.roleBox}><Text style={s.roleLabel}>Role</Text><Text style={s.role}>{String(invite.member_role).replaceAll('_',' ')}</Text>{invite.job_title?<Text style={s.meta}>{invite.job_title}</Text>:null}<Text style={s.meta}>Expires {new Date(invite.expires_at).toLocaleDateString()}</Text></View>
-      <Pressable disabled={busy} onPress={()=>void accept()} style={[s.primary,busy&&s.disabled]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<Text style={s.primaryText}>Accept & open workspace</Text>}</Pressable>
-    </>:!signedIn?<><Text style={s.copy}>Sign in or create your Everest Local account using the same email address that received this invitation.</Text><Pressable onPress={()=>void signIn()} style={s.primary}><Text style={s.primaryText}>Sign in to accept</Text></Pressable></>:null}
+      <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void accept()} style={[s.primary,busy&&s.disabled]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<Text style={s.primaryText}>Accept & open workspace</Text>}</Pressable>
+    </>:!signedIn?<><Text style={s.copy}>Sign in or create your Everest Local account using the same email address that received this invitation.</Text><Pressable accessibilityRole="button" onPress={()=>void signIn()} style={s.primary}><Text style={s.primaryText}>Sign in to accept</Text></Pressable></>:null}
     {error?<View style={s.error}><Ionicons name="alert-circle-outline" size={17} color={colors.danger}/><Text style={s.errorText}>{error}</Text></View>:null}
-    {signedIn&&!invite?<Pressable onPress={()=>void signIn()} style={s.secondary}><Text style={s.secondaryText}>Sign in with a different email</Text></Pressable>:null}
+    {signedIn&&!invite?<Pressable accessibilityRole="button" onPress={()=>void signIn()} style={s.secondary}><Text style={s.secondaryText}>Sign in with a different email</Text></Pressable>:null}
    </>}
   </View>
  </View></SafeAreaView>;
