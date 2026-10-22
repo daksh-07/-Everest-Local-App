@@ -54,7 +54,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  const [unread,setUnread]=useState(0);const [postMedia,setPostMedia]=useState<Record<string,string[]>>({});
  const [mediaWarning,setMediaWarning]=useState('');const [loadError,setLoadError]=useState('');const [weather,setWeather]=useState<CurrentWeather|null>(null);const [weatherLoading,setWeatherLoading]=useState(false);
  const [context,setContext]=useState<ContextCard|null>(null);const [refreshing,setRefreshing]=useState(false);const [locating,setLocating]=useState(false);const [navHidden,setNavHidden]=useState(false);
- useEffect(()=>{if(!visible)return;let mounted=true;void import('@/lib/workspace').then(({getWorkspaceContext})=>getWorkspaceContext()).then(workspace=>{if(mounted&&workspace.mode==='BUSINESS'&&workspace.active_business_id)router.replace('/business-today')}).catch(()=>undefined);return()=>{mounted=false}},[visible]);
+ useEffect(()=>{if(!visible)return;let mounted=true;void supabase.auth.getSession().then(async({data})=>{if(!data.session)return null;const {getWorkspaceContext}=await import('@/lib/workspace');return getWorkspaceContext()}).then(workspace=>{if(mounted&&workspace?.mode==='BUSINESS'&&workspace.active_business_id)router.replace('/business-today')}).catch(()=>undefined);return()=>{mounted=false}},[visible]);
  const enter=useRef(new Animated.Value(reduced?1:0)).current;const lastScrollY=useRef(0);const weatherCoordinates=useRef<{latitude:number;longitude:number}|null>(null);
 
  async function loadWeather(locality:Pick<CustomerLocality,'latitude'|'longitude'>){
