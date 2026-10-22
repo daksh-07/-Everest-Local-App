@@ -38,7 +38,7 @@ export default function BusinessCalendar(){
   let version=only?generation.current:++generation.current;const currentRead=()=>version===generation.current;
   if(refresh)setRefreshing(true);else setLoading(true);setError('');
   try{
-   const ctx=await getWorkspaceContext();if(!currentRead())return;
+   const ctx=await getWorkspaceContext({preferBusiness:true});if(!currentRead())return;
    if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}
    const current=ctx.businesses.find(b=>b.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');
    const scopeKey=[current.id,current.verification_status,current.can_view_crm,current.can_manage_crm,current.can_view_all_jobs].join(':');

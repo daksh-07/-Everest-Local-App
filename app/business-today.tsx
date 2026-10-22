@@ -28,7 +28,7 @@ export default function BusinessToday(){
  const experience=useExperience();const insets=useSafeAreaInsets();
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);
  const [refreshing,setRefreshing]=useState(false);
- const workspace=useSection('today-workspace',getWorkspaceContext);
+ const workspace=useSection('today-workspace',()=>getWorkspaceContext({preferBusiness:true}));
  const business=workspace.data?.businesses.find(item=>item.id===workspace.data?.active_business_id)??null;
  const verified=business?.verification_status==='VERIFIED';
  const key=workspace.data?.mode==='BUSINESS'&&verified?business!.id:null;

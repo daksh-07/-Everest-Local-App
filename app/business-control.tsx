@@ -19,7 +19,7 @@ export default function BusinessControl(){
  const [business,setBusiness]=useState<BusinessWorkspace|null>(null);const [finance,setFinance]=useState<Finance>({pendingPayouts:0,pendingAmount:0,paidAmount:0,orders:0,products:0,services:0});const [loading,setLoading]=useState(true);const [error,setError]=useState('');
  const load=useCallback(async()=>{setLoading(true);setError('');
   try{
-   const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
+   const ctx=await getWorkspaceContext({preferBusiness:true});if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
    const current=ctx.businesses.find(item=>item.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
    const payoutPromise=current.can_view_finance?supabase.from('payouts').select('status,net_amount').eq('business_id',current.id):Promise.resolve({data:[],error:null});
    const orderPromise=current.can_view_orders?supabase.from('orders').select('id',{count:'exact',head:true}).eq('business_id',current.id):Promise.resolve({count:0,error:null});

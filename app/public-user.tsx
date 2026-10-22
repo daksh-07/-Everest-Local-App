@@ -62,7 +62,7 @@ export default function PublicUser(){
   const messageInputRef=useRef<TextInput|null>(null);
 
   async function load(){
-    if(!userId)return;
+    if(!userId){setLoading(false);return;}
     setLoading(true);
     setError('');
     try{

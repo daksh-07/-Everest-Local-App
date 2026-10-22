@@ -27,7 +27,7 @@ export default function BusinessCustomers(){
 
  const load=useCallback(async(refresh=false)=>{if(refresh)setRefreshing(true);else setLoading(true);setError('');
   try{
-   const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}const current=ctx.businesses.find(b=>b.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
+   const ctx=await getWorkspaceContext({preferBusiness:true});if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}const current=ctx.businesses.find(b=>b.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
    if(current.verification_status!=='VERIFIED'){setContacts([]);setMetrics({});return;}
    const [contactRows,deals,crmBookings,tasks,nativeBookings]=await Promise.all([
     listBusinessContacts(current.id),listCrmOpportunities(current.id),listCrmBookings(current.id),listCrmTasks(current.id,{status:'OPEN'}),

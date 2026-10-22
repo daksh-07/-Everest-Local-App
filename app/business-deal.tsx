@@ -23,8 +23,8 @@ export default function BusinessDeal(){
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [moveOpen,setMoveOpen]=useState(false);const [selectedStage,setSelectedStage]=useState<CrmPipelineStage|null>(null);const [lostReason,setLostReason]=useState('');
  const [noteOpen,setNoteOpen]=useState(false);const [note,setNote]=useState('');const [taskOpen,setTaskOpen]=useState(false);const [taskTitle,setTaskTitle]=useState('');const [taskType,setTaskType]=useState<CrmTaskType>('FOLLOW_UP');const [taskPriority,setTaskPriority]=useState<CrmTaskPriority>('NORMAL');const [taskDue,setTaskDue]=useState(()=>new Date(Date.now()+86400000));
 
- const load=useCallback(async()=>{if(!id)return;setLoading(true);setError('');try{
-  const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}const current=ctx.businesses.find(b=>b.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
+ const load=useCallback(async()=>{if(!id){setError('Deal reference is missing.');setLoading(false);return;}setLoading(true);setError('');try{
+  const ctx=await getWorkspaceContext({preferBusiness:true});if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}const current=ctx.businesses.find(b=>b.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
   const opportunity=await getCrmOpportunity(current.id,id);if(!opportunity)throw new Error('Deal not found.');setDeal(opportunity);
   const [stageRows,taskRows,activityRows,quoteRows,bookingRows]=await Promise.all([listCrmPipelineStages(current.id,opportunity.pipeline_id),listCrmTasks(current.id,{opportunityId:id}),listCrmActivities(current.id,{opportunityId:id,limit:100}),listCrmQuotes(current.id,{opportunityId:id}),listCrmBookings(current.id,{opportunityId:id})]);
   setStages(stageRows);setTasks(taskRows);setActivities(activityRows);setQuotes(quoteRows);setBookings(bookingRows);

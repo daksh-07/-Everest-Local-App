@@ -12,7 +12,7 @@ import {getWorkspaceContext} from '@/lib/workspace';
 
 // Opportunities RLS also admits admins and members of other businesses, and send_quote would
 // pick the oldest authorised business for a request. Scope to, and quote as, the active workspace.
-async function activeBusinessId(){const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('No active business');return ctx.active_business_id}
+async function activeBusinessId(){const ctx=await getWorkspaceContext({preferBusiness:true});if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('No active business');return ctx.active_business_id}
 function openOpportunities(businessId:string){return supabase.from('opportunities').select('id,request_id,status,expires_at,service_requests(description,suburb,city,state,preferred_date,preferred_time,budget)').eq('business_id',businessId).eq('status','OPEN').order('created_at',{ascending:false})}
 
 export default function Opportunities(){

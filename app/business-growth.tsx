@@ -26,7 +26,7 @@ export default function BusinessGrowth(){
  const [selectedPlan,setSelectedPlan]=useState('');const [custom,setCustom]=useState(false);const [customTitle,setCustomTitle]=useState('');const [customPrice,setCustomPrice]=useState('');const [customUnit,setCustomUnit]=useState<BillingUnit>('MONTH');const [customCount,setCustomCount]=useState(1);const [customCredits,setCustomCredits]=useState('0');
 
  const load=useCallback(async()=>{setLoading(true);setError('');try{
-  const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}const current=ctx.businesses.find(x=>x.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
+  const ctx=await getWorkspaceContext({preferBusiness:true});if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return;}const current=ctx.businesses.find(x=>x.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);
   const [planRows,packageRows,growth]=await Promise.all([listBusinessMembershipPlans(current.id),listBusinessPackages(current.id),getBusinessGrowthMetrics(current.id)]);setPlans(planRows);setPackages(packageRows);setMetrics(growth);
   if(contactId){const c=await getBusinessContact(current.id,contactId);setContact(c);setSelectedPlan(value=>value||planRows.find(p=>p.active)?.id||'');}else setContact(null);
  }catch(e){setError(userMessage(e,'Growth could not be loaded.'))}finally{setLoading(false)}},[contactId]);

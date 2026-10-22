@@ -32,7 +32,7 @@ export default function BusinessOperations(){
  const [editing,setEditing]=useState<BusinessMember|null>(null);const [editRole,setEditRole]=useState<BusinessRole>('TECHNICIAN');const [editDispatch,setEditDispatch]=useState(false);
 
  const load=useCallback(async(refresh=false)=>{if(refresh)setRefreshing(true);else setLoading(true);setError('');try{
-  const ctx=await getWorkspaceContext();if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
+  const ctx=await getWorkspaceContext({preferBusiness:true});if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
   const current=ctx.businesses.find(x=>x.id===ctx.active_business_id);if(!current)throw new Error('Business access unavailable.');setBusiness(current);setData(await getOperationsDashboard(current.id));
  }catch(e){setError(userMessage(e,'Operations could not be loaded.'));}finally{setLoading(false);setRefreshing(false)}},[]);
  useEffect(()=>{void load()},[load]);
