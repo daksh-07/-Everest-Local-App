@@ -55,7 +55,7 @@ export default function PromotePost(){
      const audienceLabel=estimate?.estimatedMax
       ? estimate.estimatedMin+'–'+estimate.estimatedMax+' active users'
       : 'Building local audience';
-     return <Pressable key={item.id} onPress={()=>{setPlan(item.id);setError('');void haptic.selection();}} style={[s.plan,active&&s.planActive]}>
+     return <Pressable accessibilityRole="button" key={item.id} onPress={()=>{setPlan(item.id);setError('');void haptic.selection();}} style={[s.plan,active&&s.planActive]}>
       <View style={[s.radio,active&&s.radioActive]}>{active?<View style={s.radioDot}/>:null}</View>
       <View style={{flex:1}}>
        <View style={s.planTop}><Text style={s.planName}>{item.name}</Text><Text style={s.price}>{'$'}{item.price.toFixed(2)}</Text></View>
@@ -71,7 +71,7 @@ export default function PromotePost(){
     })}
     <View style={s.note}><Ionicons name="shield-checkmark-outline" size={20} color={colors.accent}/><Text style={s.noteText}>Audience numbers are estimates based on recently active Everest accounts in the relevant locality. Promotions increase ranking weight; they do not guarantee a fixed number of impressions, views or customers.</Text></View>
     {error?<Text style={s.error}>{error}</Text>:null}
-    <Pressable disabled={busy||!caption} onPress={()=>void checkout()} style={[s.pay,(busy||!caption)&&{opacity:.5}]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<><Text style={s.payText}>{error?'Try secure payment again':'Continue to secure payment'}</Text><Ionicons name="arrow-forward" size={18} color={colors.onBrand}/></>}</Pressable>
+    <Pressable accessibilityRole="button" disabled={busy||!caption} onPress={()=>void checkout()} style={[s.pay,(busy||!caption)&&{opacity:.5}]}>{busy?<ActivityIndicator color={colors.onBrand}/>:<><Text style={s.payText}>{error?'Try secure payment again':'Continue to secure payment'}</Text><Ionicons name="arrow-forward" size={18} color={colors.onBrand}/></>}</Pressable>
    </>}
   </ScrollView>
   <CustomerTabBar active="/account"/>

@@ -53,7 +53,7 @@ export function PhotoSoundPreview({
   <View style={s.top}><View style={s.badge}><Ionicons name="sparkles" size={12} color="#fff"/><Text style={s.badgeText}>Photo + sound</Text></View><Text style={s.duration}>{durationMs/1000}s</Text></View>
   <View style={s.bottom}>
    <Pressable accessibilityRole="button" accessibilityLabel={playing?'Pause':'Play'} onPress={toggle} disabled={!layers.length} style={s.play}><Ionicons name={playing?'pause':'play'} size={19} color="#111"/></Pressable>
-   <Pressable onPress={onEditSound} style={s.meta}><Text numberOfLines={1} style={s.title}>{sound?sound.title:'Voiceover'}</Text><Text numberOfLines={1} style={s.copy}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase()):'Voiceover'}{voiceover&&sound?' · voiceover mixed':''} · Tap to edit</Text></Pressable>
+   <Pressable accessibilityRole="button" onPress={onEditSound} style={s.meta}><Text numberOfLines={1} style={s.title}>{sound?sound.title:'Voiceover'}</Text><Text numberOfLines={1} style={s.copy}>{sound?(sound.artist??sound.source.replaceAll('_',' ').toLowerCase()):'Voiceover'}{voiceover&&sound?' · voiceover mixed':''} · Tap to edit</Text></Pressable>
    <Pressable accessibilityRole="button" accessibilityLabel="Edit sound" onPress={onEditSound} style={s.edit}><Ionicons name="options-outline" size={18} color="#fff"/></Pressable>
   </View>
   <View style={s.progressTrack}><View style={[s.progress,{width:percent(progress*100)}]}/></View>

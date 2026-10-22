@@ -98,7 +98,7 @@ function HistoryRow({
           paddingHorizontal:13,
         }}
       >
-        <Pressable
+        <Pressable accessibilityRole="button"
           onPress={onOpen}
           style={{flex:1,flexDirection:'row',alignItems:'center',gap:11,minHeight:60}}
         >
@@ -392,7 +392,7 @@ export default function Search(){
 
         {q.trim()?(
           <View style={{flexDirection:'row',gap:8,marginBottom:5}}>
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={()=>setFiltersOpen(true)}
               style={{minHeight:44,paddingHorizontal:14,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
             >
@@ -400,7 +400,7 @@ export default function Search(){
               <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>Filter</Text>
               {photoOnly||sortMode!=='RELEVANCE'?<View style={{width:6,height:6,borderRadius:3,backgroundColor:c.brand}}/>:null}
             </Pressable>
-            <Pressable
+            <Pressable accessibilityRole="button"
               disabled={savingSearch}
               onPress={()=>void saveCurrentSearch()}
               style={{flex:1,minHeight:44,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
@@ -432,7 +432,7 @@ export default function Search(){
                 <Text style={{fontSize:12,color:c.muted,marginTop:2}}>Up to 15 searches · swipe left to remove</Text>
               </View>
               {history.length?(
-                <Pressable onPress={()=>setManageHistory(value=>!value)} hitSlop={8}>
+                <Pressable accessibilityRole="button" onPress={()=>setManageHistory(value=>!value)} hitSlop={8}>
                   <Text style={{fontSize:12,fontWeight:'800',color:c.text}}>{manageHistory?'Done':'Manage'}</Text>
                 </Pressable>
               ):null}
@@ -457,7 +457,7 @@ export default function Search(){
           requiresSignIn?<View style={{paddingVertical:30}}><Text accessibilityRole="header" style={{fontSize:20,fontWeight:'800',color:c.text}}>Sign in to search Everest</Text><Text style={{fontSize:16,lineHeight:24,color:c.textSecondary,marginTop:8}}>Search is currently available to signed-in members. Your query stays here when you return.</Text><Pressable accessibilityRole="button" accessibilityLabel="Sign in to search" onPress={()=>{router.setParams({q:q.trim(),tab});void rememberSearch();router.push('/auth')}} style={{minHeight:48,marginTop:18,borderRadius:12,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:16,fontWeight:'700',color:c.onBrand}}>Sign in</Text></Pressable></View>:<ErrorBanner message={error} onRetry={()=>setRetry(value=>value+1)}/>
         ):tab==='JOB'?(
           jobs.length?jobs.map(job=>(
-            <Pressable
+            <Pressable accessibilityRole="button"
               key={job.id}
               onPress={()=>{void rememberSearch();router.push('/requests')}}
               style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:16,borderBottomWidth:1,borderBottomColor:c.border}}
@@ -483,7 +483,7 @@ export default function Search(){
           )
         ):filteredItems.length?(
           filteredItems.map(x=>(
-            <Pressable
+            <Pressable accessibilityRole="button"
               key={x.kind+':'+x.id}
               onPress={()=>open(x)}
               style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:16,borderBottomWidth:1,borderBottomColor:c.border}}
@@ -515,8 +515,8 @@ export default function Search(){
       </ScrollView>
 
       <Modal visible={menuOpen} transparent animationType={reducedMotion?'none':'fade'} onRequestClose={()=>setMenuOpen(false)}>
-        <Pressable onPress={()=>setMenuOpen(false)} style={{flex:1,backgroundColor:'rgba(0,0,0,0.45)',justifyContent:'flex-end'}}>
-          <Pressable
+        <Pressable accessibilityRole="button" onPress={()=>setMenuOpen(false)} style={{flex:1,backgroundColor:'rgba(0,0,0,0.45)',justifyContent:'flex-end'}}>
+          <Pressable accessibilityRole="button"
             onPress={()=>{}}
             style={{width:'100%',maxWidth:900,alignSelf:'center',borderTopLeftRadius:28,borderTopRightRadius:28,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,paddingHorizontal:18,paddingTop:10,paddingBottom:28}}
           >
@@ -529,7 +529,7 @@ export default function Search(){
               {icon:'time-outline' as const,title:'Manage history',subtitle:'Review or remove individual searches',action:()=>{setMenuOpen(false);setManageHistory(true);setQ('')}},
               {icon:'people-outline' as const,title:'Connections',subtitle:'View your Everest connections',action:()=>{setMenuOpen(false);router.push('/connections')}},
             ].map(item=>(
-              <Pressable
+              <Pressable accessibilityRole="button"
                 key={item.title}
                 onPress={item.action}
                 style={({pressed})=>({minHeight:58,borderRadius:16,paddingHorizontal:14,flexDirection:'row',alignItems:'center',backgroundColor:pressed?c.soft:c.input,marginBottom:8})}
@@ -545,7 +545,7 @@ export default function Search(){
               </Pressable>
             ))}
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               disabled={!history.length}
               onPress={deleteAllHistory}
               style={({pressed})=>({minHeight:58,borderRadius:16,paddingHorizontal:14,flexDirection:'row',alignItems:'center',backgroundColor:pressed?c.soft:c.input,opacity:history.length?1:0.45})}
@@ -563,8 +563,8 @@ export default function Search(){
       </Modal>
 
       <Modal visible={filtersOpen} transparent animationType={reducedMotion?'none':'slide'} onRequestClose={()=>setFiltersOpen(false)}>
-        <Pressable onPress={()=>setFiltersOpen(false)} style={{flex:1,backgroundColor:'rgba(0,0,0,0.45)',justifyContent:'flex-end'}}>
-          <Pressable
+        <Pressable accessibilityRole="button" onPress={()=>setFiltersOpen(false)} style={{flex:1,backgroundColor:'rgba(0,0,0,0.45)',justifyContent:'flex-end'}}>
+          <Pressable accessibilityRole="button"
             onPress={()=>{}}
             style={{width:'100%',maxWidth:900,alignSelf:'center',borderTopLeftRadius:28,borderTopRightRadius:28,backgroundColor:c.surface,borderWidth:1,borderColor:c.border,paddingHorizontal:18,paddingTop:10,paddingBottom:28}}
           >
@@ -574,7 +574,7 @@ export default function Search(){
                 <Text style={{fontSize:19,fontWeight:'900',color:c.text}}>Filter search</Text>
                 <Text style={{fontSize:12,color:c.muted,marginTop:3}}>Narrow results without losing your query</Text>
               </View>
-              <Pressable onPress={()=>{setPhotoOnly(false);setSortMode('RELEVANCE');setTab('TOP')}}>
+              <Pressable accessibilityRole="button" onPress={()=>{setPhotoOnly(false);setSortMode('RELEVANCE');setTab('TOP')}}>
                 <Text style={{fontSize:12,fontWeight:'800',color:c.text}}>Reset</Text>
               </Pressable>
             </View>
@@ -582,7 +582,7 @@ export default function Search(){
             <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>Search in</Text>
             <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
               {tabs.map(x=>(
-                <Pressable
+                <Pressable accessibilityRole="button"
                   key={x}
                   onPress={()=>setTab(x)}
                   style={{paddingHorizontal:12,paddingVertical:9,borderRadius:12,borderWidth:1,borderColor:tab===x?c.brand:c.border,backgroundColor:tab===x?c.brand:c.input}}
@@ -593,7 +593,7 @@ export default function Search(){
             </View>
 
             <Text style={{fontSize:12,fontWeight:'900',color:c.text,marginTop:22,marginBottom:9}}>Result quality</Text>
-            <Pressable
+            <Pressable accessibilityRole="button"
               disabled={tab==='JOB'}
               onPress={()=>setPhotoOnly(value=>!value)}
               style={{minHeight:54,borderRadius:16,backgroundColor:c.input,borderWidth:1,borderColor:c.border,paddingHorizontal:14,flexDirection:'row',alignItems:'center',opacity:tab==='JOB'?0.45:1}}
@@ -614,7 +614,7 @@ export default function Search(){
                 ['RELEVANCE','Most relevant'],
                 ['AZ','A–Z'],
               ] as [SortMode,string][]).map(([value,label])=>(
-                <Pressable
+                <Pressable accessibilityRole="button"
                   key={value}
                   disabled={tab==='JOB'}
                   onPress={()=>setSortMode(value)}
@@ -625,7 +625,7 @@ export default function Search(){
               ))}
             </View>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={()=>setFiltersOpen(false)}
               style={{height:50,borderRadius:16,backgroundColor:c.brand,alignItems:'center',justifyContent:'center',marginTop:24}}
             >

@@ -6,6 +6,7 @@ import {AppTextInput as TextInput} from '@/components/ui/AppTextInput';
 import {Ionicons} from '@/components/ui/Icon';
 import {useAppTheme} from '@/lib/theme';
 import {useReducedMotion} from '@/lib/motion';
+import {userMessage} from '@/lib/errors';
 import {POST_REPORT_REASONS,reportPost,type PostReportReason} from '@/lib/post-reports';
 
 /** Report a post or clip. Pick a reason, optionally add context, then confirm; the post is hidden for the reporter. */
@@ -19,12 +20,12 @@ export function ReportPostSheet({postId,kind='post',onClose,onReported}:{postId:
   if(!postId||!reason||busy)return;
   setBusy(true);setError('');
   try{await reportPost(postId,reason,details);setDone(true);onReported(postId);}
-  catch(e){setError(e instanceof Error?e.message:'Your report could not be sent. Try again.');}
+  catch(e){setError(userMessage(e,'Your report could not be sent. Try again.'));}
   finally{setBusy(false);}
  }
  return <Modal visible={Boolean(postId)} transparent animationType={reduced?'none':'slide'} onRequestClose={close}>
   <View style={[styles.overlay,{backgroundColor:c.overlay}]}>
-   <Pressable accessibilityLabel="Close report" style={StyleSheet.absoluteFill} onPress={close}/>
+   <Pressable accessibilityRole="button" accessibilityLabel="Close report" style={StyleSheet.absoluteFill} onPress={close}/>
    <SafeAreaView edges={['bottom']} style={[styles.sheet,{backgroundColor:c.canvas}]}>
     <View role="dialog" aria-modal accessibilityLabel={`Report ${kind}`}>
      <View style={[styles.handle,{backgroundColor:c.border}]}/>

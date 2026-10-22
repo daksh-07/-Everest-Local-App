@@ -1,3 +1,4 @@
+import {userMessage} from '@/lib/errors';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
@@ -40,7 +41,7 @@ export default function Quotes(){
  },[requestId]);
  useEffect(()=>{void load();},[load]);
  useEffect(()=>{let channel:ReturnType<typeof supabase.channel>|null=null;void(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;channel=supabase.channel('customer-quotes-'+user.id).on('postgres_changes',{event:'*',schema:'public',table:'quotes',filter:'customer_id=eq.'+user.id},()=>void load(true)).subscribe();})();return()=>{if(channel)void supabase.removeChannel(channel);};},[load]);
- async function accept(id:string){if(accepting||messaging)return;setAccepting(id);setError('');try{await acceptQuote(id);setReviewing(null);router.replace('/bookings');}catch{setError('This offer could not be chosen. Refresh and check that it is still available.');}finally{setAccepting(null);}}
+ async function accept(id:string){if(accepting||messaging)return;setAccepting(id);setError('');try{await acceptQuote(id);setReviewing(null);router.replace('/bookings');}catch(e){setReviewing(null);setError(userMessage(e,'This offer could not be chosen. Refresh and check that it is still available.'));}finally{setAccepting(null);}}
  async function message(item:Ranked){if(accepting||messaging)return;setMessaging(item.quote.id);setError('');try{const id=await getOrCreateConversation({requestId:item.quote.request_id,businessId:item.quote.business_id,quoteId:item.quote.id});router.push({pathname:'/messages',params:{conversationId:id}});}catch{setError('Conversation could not be opened.');}finally{setMessaging(null);}}
  const valid=items.filter(x=>x.quote.status==='SENT'||x.quote.status==='VIEWED');const shown=showAll?valid:valid.slice(0,3);
  // Badges must reflect evidence, not list position: "Best match" only when match scores differ,

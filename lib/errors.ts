@@ -17,6 +17,7 @@ const SAFE_MESSAGES = [
   'Selected service is not owned and active for this business.',
   'Invalid quote amounts.',
   'Conversation could not be opened.',
+  'This business is not ready to receive Everest payments. Choose another quote or try again later.',
   'Everest Local Stripe Connect is not activated yet. Complete Connect setup in the Stripe Dashboard, then try again.',
   'The Everest Local Stripe account is not fully activated for live payments yet. Complete Stripe account activation, then try again.',
   'Stripe key permission required: enable V2 Account Storer Write for the Everest Local Production Backend key, then try again.',
@@ -25,9 +26,10 @@ const SAFE_MESSAGES = [
 
 export function userFacingError(error: unknown, fallback: string): string {
   if (!(error instanceof Error)) return fallback;
-  const message = error.message.trim();
-  if (SAFE_MESSAGES.includes(message)) return message;
-  return fallback;
+  // Postgres raises these without a trailing full stop; compare without it.
+  const message = error.message.trim().replace(/\.$/, '');
+  const safe = SAFE_MESSAGES.find(item => item.replace(/\.$/, '') === message);
+  return safe ?? fallback;
 }
 
 // userFacingError is an allow-list for flows whose server messages are fully enumerated.

@@ -163,12 +163,12 @@ export default function BusinessVerification() {const s=useThemedStyles(create_s
                   <Text style={s.pendingTitle}>Next: connect payouts</Text>
                   <Text style={s.pendingCopy}>Your business is verified. Connect Stripe and a bank account before paid services or products can go live.</Text>
                 </View>
-                <Pressable onPress={() => router.push('/business-payouts')} style={s.button}>
+                <Pressable accessibilityRole="button" onPress={() => router.push('/business-payouts')} style={s.button}>
                   <Text style={s.buttonText}>Set up payments & payouts</Text>
                 </Pressable>
               </>
             ) : (
-              <Pressable
+              <Pressable accessibilityRole="button"
                 disabled={busy || !abnValid}
                 onPress={() => void submit()}
                 style={[s.button, (busy || !abnValid) ? s.buttonDisabled : null]}
