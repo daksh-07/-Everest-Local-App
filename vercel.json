@@ -11,7 +11,10 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "codex/phase5b-live-operations-ux": false
+      "codex/phase5b-live-operations-ux": false,
+      "codex/phase5-discovery-core-ux": false,
+      "codex/phase6-backend-hardening": false,
+      "main": false
     }
   }
 }
