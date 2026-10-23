@@ -1,0 +1,32 @@
+[
+  {
+    "number": 2,
+    "closed": true,
+    "reason": "The saved-business/product workflow is already implemented on main in lib/marketplace.ts, app/saved.tsx, Account, the business profile and product detail, with customer-scoped reads and writes. The old branch would replace newer UX and error handling. Closing as superseded; no code or migrations were merged from this PR."
+  },
+  {
+    "number": 4,
+    "closed": true,
+    "reason": "The ABR Edge Function is byte-identical on main; its automated verification, revalidation, case types and permission migrations already exist in the canonical production migration sequence (several with renamed timestamps). Current clients preserve the automated flow and newer authorization. Closing as superseded without importing duplicate migrations or restoring the older UI."
+  },
+  {
+    "number": 8,
+    "closed": true,
+    "reason": "Main already provides grouped Settings, profile identity/editing, privacy, appearance, notifications, support, sessions and account deletion using the current shared components. This older screen is superseded. Closing without overwriting current account/security behavior."
+  },
+  {
+    "number": 73,
+    "closed": true,
+    "reason": "Business operations are already implemented on main under canonical 20260927121749\u201320260927121851 migrations. Five of the eight original migration bodies have identical SQL tokens; the others add job-record prerequisites, workspace context and the corrected booking-based Live assignment join. Current RBAC and role-aware queues are covered by the regression suite. Closing as superseded; the old migration timestamps and Stripe handler will not be merged."
+  },
+  {
+    "number": 77,
+    "closed": true,
+    "reason": "Main already uses Today / Jobs / Calendar / Inbox / Business navigation for managers and Work / Inbox / Team / Business for staff, with CRM retained as a secondary workspace. Its Today screen also has newer independently recoverable sections. Closing the older work-first implementation as superseded."
+  },
+  {
+    "number": 78,
+    "closed": true,
+    "reason": "Main already revokes social_actor_name/avatar execution from PUBLIC, anon and authenticated in 20260928165049_lock_down_social_actor_helpers.sql. This denies client probing rather than reopening these helpers. Current privacy regressions pass. Closing as superseded; the older grants will not be reintroduced."
+  }
+]

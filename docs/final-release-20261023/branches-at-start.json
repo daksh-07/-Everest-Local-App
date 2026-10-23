@@ -1,0 +1,912 @@
+[
+  {
+    "name": "business-work-first",
+    "sha": "419e9b9ff9061faff443bd267f3f39d282407b26",
+    "lastCommitAt": "2026-09-29T01:09:35+10:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      77
+    ]
+  },
+  {
+    "name": "business-work-first-final",
+    "sha": "27fe362a9484f11f06f482f23ae7b47f4ea5a2e8",
+    "lastCommitAt": "2026-09-29T03:02:20+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "business-work-first-launch",
+    "sha": "2a38c83886c8c79dc318af1d1acfbe07f9af033d",
+    "lastCommitAt": "2026-09-29T01:07:44+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "chore/rive-agent-workflow-20261001",
+    "sha": "c5513231c24fd609c6804ff5cfd451ca329c04ac",
+    "lastCommitAt": "2026-10-01T03:29:48+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "claude/everest-local-app-testing-773e9t",
+    "sha": "da5e2c176e4dd744b0c4b7d3e616c1f9bdaff71d",
+    "lastCommitAt": "2026-10-22T18:09:43Z",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "codex/customer-discovery-2026-10-12",
+    "sha": "bf2fc354385dc4730390d59214a1b49848604898",
+    "lastCommitAt": "2026-10-13T04:47:41Z",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "codex/darkmode-neutral-black-2026-10-14",
+    "sha": "050542db9a092a3a11ef21fffdb7d0c49aa214b4",
+    "lastCommitAt": "2026-10-14T00:35:04+11:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "codex/experience-foundation-2026-10-12",
+    "sha": "5f21d570f7633ec8d4300de03f7579b945521e6d",
+    "lastCommitAt": "2026-10-12T14:59:46Z",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "codex/marketplace-audit-2026-10-09",
+    "sha": "afbaa8556a59403eb6f5ac143242891f32a728bb",
+    "lastCommitAt": "2026-10-09T08:42:02Z",
+    "ancestorOfMain": false,
+    "openPR": [
+      97
+    ]
+  },
+  {
+    "name": "codex/phase5-discovery-core-ux",
+    "sha": "068566b7267b220e4005e81e49d34a0d23771ca2",
+    "lastCommitAt": "2026-10-18T03:52:02Z",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "codex/phase5b-live-operations-ux",
+    "sha": "47f85721603df3677203263e5da98f7c13d9d18a",
+    "lastCommitAt": "2026-10-19T02:05:36Z",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "codex/phase6-backend-hardening",
+    "sha": "24064a16725c026a4eb20a291912c017f67654db",
+    "lastCommitAt": "2026-10-23T16:48:28+11:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "codex/post-comments-ux",
+    "sha": "f2334981277a71663a3b93bd2a4859d8d39242ec",
+    "lastCommitAt": "2026-10-19T14:34:41+11:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "codex/synsation-visual-refinement-2026-10-13",
+    "sha": "5609099253d374bc255b3859705b0ebca78d8f8a",
+    "lastCommitAt": "2026-10-13T12:46:27Z",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "codex/tinted-surface-aa-2026-10-13",
+    "sha": "d34acbabba6ea9f3cccf20fbe04016f9bb869587",
+    "lastCommitAt": "2026-10-13T05:29:18Z",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "design/everest-transformation-2026-10",
+    "sha": "c705947082da735d8d8475d32c79bf54ecb9c175",
+    "lastCommitAt": "2026-10-16T19:09:55Z",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "design/premium-mobile-refinement",
+    "sha": "e61db565b01e999812d2cf67dfd9cdc3132bab00",
+    "lastCommitAt": "2026-10-02T12:12:23+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "diag/google-calendar-client-20260926",
+    "sha": "771b73a4a241720382d0e5f9a6a5b9b6037ed281",
+    "lastCommitAt": "2026-09-26T13:55:04+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "diag/iphone-chat-focus-dom",
+    "sha": "8c087a7eebc409868b8b6c2bef283e685873d17c",
+    "lastCommitAt": "2026-09-25T12:58:10+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "diagnostic/expo-web-runtime",
+    "sha": "2d95f62bfd56825eff0b775db74395d8c66c1f3d",
+    "lastCommitAt": "2026-09-18T18:09:19+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "docs/final-hardening-runtime-native-20261001",
+    "sha": "a8c0183478691de23197ab5f7e649ff5f4b686bf",
+    "lastCommitAt": "2026-10-01T02:58:46+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "docs/native-ipad-release-gate-20261001",
+    "sha": "cc3e83773e1f6d442352bb3221c729cd70ae935a",
+    "lastCommitAt": "2026-10-01T02:54:57+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "everest-business-operations",
+    "sha": "446b5d737da201ec595144f75818078ffca7dff2",
+    "lastCommitAt": "2026-09-27T22:15:43+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "everest-live-push-alerts",
+    "sha": "f1ac25d9ff20ab4be5b04427b8e6b284a82e6b5b",
+    "lastCommitAt": "2026-09-28T22:39:44+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/abr-business-verification",
+    "sha": "1682234c7c130c674ad66618dc59fe360b9072e8",
+    "lastCommitAt": "2026-09-21T17:48:04+10:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      4
+    ]
+  },
+  {
+    "name": "feat/adaptive-experience-modes-20260926",
+    "sha": "9f3de5255c861d5ac4f4d28a45232446428758fb",
+    "lastCommitAt": "2026-09-26T02:16:55+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feat/ask-everest-premium-ai-20260926",
+    "sha": "99d6148731ba93aae86230400efc4c4014183702",
+    "lastCommitAt": "2026-09-26T02:08:30+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/business-growth-engine-p0-20260926",
+    "sha": "3d4e4ea2933504c0981cb00ca203913bb227456b",
+    "lastCommitAt": "2026-09-26T17:43:39+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/chat-2026-experience",
+    "sha": "24e4148ce4da53db1cf827f8a3b202da8ea4da0f",
+    "lastCommitAt": "2026-10-07T16:01:18+11:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/customer-calendar-ask-everest-20260926",
+    "sha": "30c116e36e6aab5bce32dc674473f6d256587377",
+    "lastCommitAt": "2026-09-26T02:11:55+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/customer-home-2026",
+    "sha": "a00cb21a1b2ca510f1cb63d1b56e17a8822474e8",
+    "lastCommitAt": "2026-09-25T13:48:43+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/customer-home-v3-20260927",
+    "sha": "f77e56fe09416d6abe23af75952d0273c5079db6",
+    "lastCommitAt": "2026-09-27T11:10:29+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/dual-role-business-mode-20260925",
+    "sha": "3463d68ea31444accd9d9e1fc6b8de5cac5368de",
+    "lastCommitAt": "2026-09-25T13:52:06+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/dual-role-business-mode-latest-20260925",
+    "sha": "82ce856deb1cd18960c0e4798c804be1a6c7c048",
+    "lastCommitAt": "2026-09-25T14:00:41+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feat/edge-to-edge-home-quick-actions",
+    "sha": "26ca9ba15728ea902c966eb11e613d358312f932",
+    "lastCommitAt": "2026-09-25T13:42:16+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/edge-to-edge-home-quick-actions-v2",
+    "sha": "65a9eae9cb4c66a5914d21f284af2991ba4f9a91",
+    "lastCommitAt": "2026-09-25T13:46:28+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feat/everest-live-20260926",
+    "sha": "6b12d21c950900621d319806d5bbba31443eb386",
+    "lastCommitAt": "2026-09-26T21:18:51+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/everest-live-background-miniplayer-20260926",
+    "sha": "f0e35fc38f4703444fe62dc1008cac39fd2ab9aa",
+    "lastCommitAt": "2026-09-26T22:09:15+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/external-business-phase2-20260923",
+    "sha": "9004a6daa8dde768244a6d8f289febcb37cae6a6",
+    "lastCommitAt": "2026-09-24T01:55:53+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feat/external-discovery-foundation",
+    "sha": "076999c2c92b2fa6d545bd9f633b037d9d40704f",
+    "lastCommitAt": "2026-09-23T15:24:07+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feat/global-local-crm-p0-20260925",
+    "sha": "feecd554d6f19a319f20b867158c8208198b0e1d",
+    "lastCommitAt": "2026-09-25T17:30:51+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feat/growth-engine-p1-20260926",
+    "sha": "56d0cf60ec095bdcb158528c321c5e8146f84df5",
+    "lastCommitAt": "2026-09-26T18:38:29+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/growth-execution-p2-20260926",
+    "sha": "5dd88c93e4e662401873ecfdcaa0e23ea30f0632",
+    "lastCommitAt": "2026-09-26T18:46:09+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/india-market-foundation",
+    "sha": "f54bcf338f6b6066d49207e907130463fd052362",
+    "lastCommitAt": "2026-10-06T01:01:40+11:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      93
+    ]
+  },
+  {
+    "name": "feat/india-market-phase2",
+    "sha": "1941450d7388a9459013c03a7b165678c541fdeb",
+    "lastCommitAt": "2026-10-06T03:27:36+11:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      94
+    ]
+  },
+  {
+    "name": "feat/india-market-phase3-payment-boundary-20261013",
+    "sha": "b3a557cb265ca1d085633033fadb98fc63bc04f1",
+    "lastCommitAt": "2026-10-13T17:00:11+11:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      101
+    ]
+  },
+  {
+    "name": "feat/instant-opportunity-alerts-20260926",
+    "sha": "cc4f0314a1c1248e0e5454243f17362f5d4eff04",
+    "lastCommitAt": "2026-09-26T18:22:30+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/marketplace-fee-engine-20260926",
+    "sha": "98f78f49fff6fd2debbbdb741732d6251d8012ac",
+    "lastCommitAt": "2026-09-26T22:55:47+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/messaging-motion-interactions-polish",
+    "sha": "f3ee657d3e131babc1fac3efe8098ab116a36da3",
+    "lastCommitAt": "2026-09-25T10:20:06+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feat/post-owner-actions-20260927",
+    "sha": "d148f0270fd894158ccfd7a14238b55358aab2d8",
+    "lastCommitAt": "2026-09-27T02:26:08+10:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      60
+    ]
+  },
+  {
+    "name": "feat/precise-service-location-live-map-20260927",
+    "sha": "c52e9174ccd9c549cefb7f1e8dcc1eca85939d2a",
+    "lastCommitAt": "2026-09-27T12:56:00+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/premium-integrations-ui-20260926",
+    "sha": "9ca5b09a21c17d70a1e39040e091c25839adabd7",
+    "lastCommitAt": "2026-09-26T13:31:01+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/product-marketplace-commerce-20260925",
+    "sha": "365a973376e575fdd314d3833138f8ed92a22325",
+    "lastCommitAt": "2026-09-25T14:21:07+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/product-service-dm-automation-20260926",
+    "sha": "ba38cb250dfe4450d85c4298135a1314dfa95deb",
+    "lastCommitAt": "2026-09-26T21:47:41+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feat/production-messaging-overhaul",
+    "sha": "fe86f5275728065011eeef92fbba12375f44a80c",
+    "lastCommitAt": "2026-09-25T08:59:13+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feat/professional-crm-v2-20260925",
+    "sha": "48075fdc725a536ac3ce845029d5772e7e8bfd83",
+    "lastCommitAt": "2026-09-25T22:29:24+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feat/request-posts-ux-20260925",
+    "sha": "79eddf5903cb3efad7da89c283f4b36c34f96c4f",
+    "lastCommitAt": "2026-09-25T15:43:41+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feat/retention-p0-20260926",
+    "sha": "ce2aacf2d14e91c54f1a500526ac6fac1cdd9429",
+    "lastCommitAt": "2026-09-26T17:31:21+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/service-payment-leakage-controls-20260926",
+    "sha": "e5274afca5b835db842eff7a42ddb0cfbe3b4f93",
+    "lastCommitAt": "2026-09-26T23:22:56+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/social-comments-engagement-notifications-20260926",
+    "sha": "7897101977efa58f474a29043fb183cba2c57d01",
+    "lastCommitAt": "2026-09-26T22:37:01+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/social-engagement-feed-20260926",
+    "sha": "c2c96fd7f8a1d439b7a01fca7bb76ac27d9e1957",
+    "lastCommitAt": "2026-09-26T21:51:22+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/social-expansion-foundation-20260927",
+    "sha": "fd71699cbccdf2ed51efc8be06cdf5fb7ed1e742",
+    "lastCommitAt": "2026-09-27T12:14:49+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/social-growth-profile-promotions-20260927",
+    "sha": "8a52a69983558710c16b6e92121a54c879a1ad70",
+    "lastCommitAt": "2026-09-27T10:57:03+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/social-growth-profile-promotions-v2-20260927",
+    "sha": "46974540b64778b4ba530f0a5cd8125a3237adb6",
+    "lastCommitAt": "2026-09-27T10:57:53+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/structured-service-niche-matching-20260926",
+    "sha": "1739dcb57fe6f4977af555a392595c3025230159",
+    "lastCommitAt": "2026-09-26T22:21:53+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feat/universal-search-social-connections",
+    "sha": "d54e4d0b2a4f6fdc3881cdb274f9702a928fdbce",
+    "lastCommitAt": "2026-09-25T08:06:26+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "feature/profile-business-images-20260922",
+    "sha": "0ceb979e294b871705ef45b9a318e32817341804",
+    "lastCommitAt": "2026-09-22T23:30:14+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "feature/saved-marketplace-items",
+    "sha": "86d0f8556347a038df79f90f79d852ab8e025b46",
+    "lastCommitAt": "2026-09-20T11:56:48+10:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      2
+    ]
+  },
+  {
+    "name": "feature/settings-profile-dark-mode",
+    "sha": "ab001b9fcfc1fc09b47901817ffd33f9dd41af99",
+    "lastCommitAt": "2026-09-23T01:17:10+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/business-abn-verification",
+    "sha": "c457c306422bdd23fb275d55cccdf32898abb157",
+    "lastCommitAt": "2026-09-20T21:14:01+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/crm-automatic-contact-ux-20260926",
+    "sha": "26e06b73959d25fad53edfda554499c7fae94f18",
+    "lastCommitAt": "2026-09-26T02:51:16+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/customer-nav-messages-motion-20260926",
+    "sha": "d5a23c5a8b52d2c5fdb29207838e7abf3b276395",
+    "lastCommitAt": "2026-09-26T22:30:17+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/dark-black-beige-20260923",
+    "sha": "9d9446b8d793399515b7fbcb99964a37f4282b85",
+    "lastCommitAt": "2026-09-23T17:39:52+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/dark-safe-area-20260922",
+    "sha": "9dd3b66139e37d985aa85c38f657d00757fdad6b",
+    "lastCommitAt": "2026-09-23T13:21:31+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/de-vibecode-home",
+    "sha": "75dd14eb2902aafe0349f7e0ef1f8c3a7511fcd0",
+    "lastCommitAt": "2026-10-13T01:25:03+11:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/dispatch-privilege-whitespace-20261001",
+    "sha": "a93bdc15c30411b464a853476a8580da960928b3",
+    "lastCommitAt": "2026-10-01T02:50:35+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/dispatch-security-regression-whitespace-20261001",
+    "sha": "ef07df01c44f80c16af20ff8ca9be6f27ee6e873",
+    "lastCommitAt": "2026-10-01T02:50:31+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/everest-live-start-20260926",
+    "sha": "d7e79ecac2b195343370415fa268eae893345c62",
+    "lastCommitAt": "2026-09-26T21:59:58+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/explore-rpc-account-failstate-20260927",
+    "sha": "45dafea15196e8c3015b69c70a26a4b6ecd7cc00",
+    "lastCommitAt": "2026-09-27T11:16:38+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/final-messaging-mobile-qa",
+    "sha": "39d1275024afaa0211453c858dfec9563b541c60",
+    "lastCommitAt": "2026-09-25T09:40:14+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "fix/google-calendar-oauth-callback-20260926",
+    "sha": "89516d60badf575bb81285e03713f1f43ebe40d5",
+    "lastCommitAt": "2026-09-26T13:47:13+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/growth-enrollment-migration-20260926",
+    "sha": "e98f2fc46cc8b363bfa3cc7b37c16581a416ea61",
+    "lastCommitAt": "2026-09-26T17:45:15+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/iphone-chat-interaction-final",
+    "sha": "1f0edd943e43d393abf6c2e89b550c9e05e1e052",
+    "lastCommitAt": "2026-09-25T10:37:26+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "fix/iphone-chat-rendered-dom-viewport-spotlight",
+    "sha": "4136ce37a3bcfef01e88320d6ea15bdf9ed40453",
+    "lastCommitAt": "2026-09-25T13:15:13+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "fix/launch-freeze-20260926",
+    "sha": "c84f3d398ea3e5b6b48cae94a51fb989db8094c7",
+    "lastCommitAt": "2026-09-26T19:05:47+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/launch-runtime-current-20261001",
+    "sha": "24904c2b39c0e2d70299635beb46f738d1ea347f",
+    "lastCommitAt": "2026-10-01T02:48:18+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/message-requests-deletion-search-followers",
+    "sha": "af6ed2181e812ab68ffeb4431aaa5db57c46dbbd",
+    "lastCommitAt": "2026-09-25T08:39:51+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "fix/order-delivery-authority-20260925",
+    "sha": "b061a49b0fb8e50d27e7c4927212884a510edfe8",
+    "lastCommitAt": "2026-09-25T09:00:44+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "fix/pending-service-payment-integrity-20260925",
+    "sha": "3512169c5957a685a5ea0957b4d8fa7bb25ce971",
+    "lastCommitAt": "2026-09-25T03:29:16+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "fix/premium-settings-ui-20260922",
+    "sha": "3fcac2e5678c2413b08bc47fc6e7f9ca22d23aac",
+    "lastCommitAt": "2026-09-22T23:50:10+10:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      8
+    ]
+  },
+  {
+    "name": "fix/private-beta-20260922",
+    "sha": "2d5b73bc5008471edaad4c8575e0b6ff42538b4b",
+    "lastCommitAt": "2026-09-22T21:20:38+10:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      5
+    ]
+  },
+  {
+    "name": "fix/product-image-table-grants-20260927",
+    "sha": "3eecdd054829b6e3560c19092bff615075ce3efb",
+    "lastCommitAt": "2026-09-27T10:28:16+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/product-image-upload-20260926",
+    "sha": "2d03de3ce467149a70283cb27e5360b4650c8c0d",
+    "lastCommitAt": "2026-09-26T02:53:39+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/promotion-cta-copy-20260927",
+    "sha": "4db1eae2d8df242caa7be16e90f8f079c891fda0",
+    "lastCommitAt": "2026-09-27T11:25:58+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/quick-actions-lint-20261001",
+    "sha": "6ba2ab4afab4c5067cef74f266c4e771505b52ba",
+    "lastCommitAt": "2026-10-01T02:40:02+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/request-location-and-submit-20260925",
+    "sha": "3d5689ebf9548128a18b619fdca02281bdcf45f1",
+    "lastCommitAt": "2026-09-25T16:40:50+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/request-picker-polish",
+    "sha": "7ac172f2db01adfb57360148abfae926a2b735d3",
+    "lastCommitAt": "2026-09-27T02:14:30+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/restore-updated-home-ui-20260922",
+    "sha": "b01dfc132c92c50d2b206e7be77902f0aa293a5f",
+    "lastCommitAt": "2026-09-22T22:36:57+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/retention-timezone-precedence-20260926",
+    "sha": "3377f128d350c282e8646463ffd9a40920257ce1",
+    "lastCommitAt": "2026-09-26T18:25:28+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/retention-trigger-execute-20260926",
+    "sha": "685020f18d7bfb2c86138f89ee643ba301d6ebdd",
+    "lastCommitAt": "2026-09-26T18:27:58+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/runtime-smoothness-current-20261001",
+    "sha": "a1dbcdfec18483d4b85f4114f6c815b33a8bb4eb",
+    "lastCommitAt": "2026-10-01T02:59:49+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "fix/runtime-smoothness-hooks-20261001",
+    "sha": "512e634084ff1b2a28186ba62edf6f938253c8b1",
+    "lastCommitAt": "2026-10-01T02:58:58+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "fix/spd-listing-payout-override",
+    "sha": "485d91d310da559b4258b206a161cdac11b3841b",
+    "lastCommitAt": "2026-10-02T12:16:50+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "fix/stripe-webhook-edge-runtime-20261001",
+    "sha": "0126842b0e40ee594b31e8e1bc3181f05d12895e",
+    "lastCommitAt": "2026-10-01T02:45:50+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "fix/web-startup-layout",
+    "sha": "29ed61c490699f70d65569c537337d8399340bf4",
+    "lastCommitAt": "2026-09-18T18:16:18+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "integration/final-release-20261023",
+    "sha": "70ddff57ebf92f1cffb0cda7951bdc82d2c20b11",
+    "lastCommitAt": "2026-10-23T06:20:23Z",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "launch-candidate-combined",
+    "sha": "27fe362a9484f11f06f482f23ae7b47f4ea5a2e8",
+    "lastCommitAt": "2026-09-29T03:02:20+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "launch-moderation-store-gate",
+    "sha": "49cb944617cbb509cb38f25fb53c89f9cd6697b4",
+    "lastCommitAt": "2026-09-29T03:12:59+10:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      80
+    ]
+  },
+  {
+    "name": "launch-security-hardening",
+    "sha": "d192d3aef652b96be6fb07f3bccea41ad19f3bf0",
+    "lastCommitAt": "2026-09-29T01:08:33+10:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      78
+    ]
+  },
+  {
+    "name": "main",
+    "sha": "2a20c7388cd76944b095557e2b1e47c6920ce97a",
+    "lastCommitAt": "2026-10-23T16:54:07+11:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "migration-history-repair-20260929",
+    "sha": "d9107a9c9fb4fa465c288a3ff39705998ea9abcd",
+    "lastCommitAt": "2026-09-29T13:41:33+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "native-store-hardening",
+    "sha": "162146e4c0f1982a3bfc10c2ba47adcabc31858c",
+    "lastCommitAt": "2026-09-29T01:59:14+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "native-store-readiness",
+    "sha": "769a5e1557e5575509dcdbe5af16e7968603ab8e",
+    "lastCommitAt": "2026-09-28T22:42:12+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  },
+  {
+    "name": "perf/media-cache-feed-smoothness-20260927",
+    "sha": "de4607f0fca2558a5ec24de7e442c586808a8943",
+    "lastCommitAt": "2026-09-27T10:42:47+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "phase4/marketplace-completion-20261017",
+    "sha": "29ab83da8eb3d286349188f63f195f7397314d56",
+    "lastCommitAt": "2026-10-17T12:28:11Z",
+    "ancestorOfMain": false,
+    "openPR": [
+      105
+    ]
+  },
+  {
+    "name": "polish/social-experience-v2-20260927",
+    "sha": "590552690270bb6dd4537b01cf9a7bd7ba9f041f",
+    "lastCommitAt": "2026-09-27T12:31:27+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "recovery/codex-phase4-20261017",
+    "sha": "a43e2a100e5bb52eea071e25fd145a93606b66a0",
+    "lastCommitAt": "2026-10-17T06:48:37Z",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "release/ask-everest-merge-20260926",
+    "sha": "a979517fd3fa827f36019bebd436cf0fd3565a71",
+    "lastCommitAt": "2026-09-26T13:38:04+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "release/eas-link-build-probe",
+    "sha": "fdb6fec09906ecc06fea8b748a3ba4d18ac01df6",
+    "lastCommitAt": "2026-09-25T13:56:14+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "release/final-launch-20260929",
+    "sha": "ace46aa8831d0163294d74b55a24399f7438cabb",
+    "lastCommitAt": "2026-09-29T23:13:57+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "release/launch-hardening-20261001",
+    "sha": "f4395d7489504891dd56553fd5e6ecfd2f64bf40",
+    "lastCommitAt": "2026-10-01T02:36:57+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "release/ui-polish-20261017",
+    "sha": "e6f3254ea546bdb66264aafbca0c411f394788af",
+    "lastCommitAt": "2026-10-17T13:06:30Z",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "security/social-rls-advisor-hardening-20260927",
+    "sha": "5eb39d2d630a476c40d50bd9765607f9210cc5ee",
+    "lastCommitAt": "2026-09-27T13:30:11+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "sol-business-operations",
+    "sha": "7744234bdc75f642d49073b25f0bf539ad54c316",
+    "lastCommitAt": "2026-09-27T20:31:45+10:00",
+    "ancestorOfMain": false,
+    "openPR": [
+      73
+    ]
+  },
+  {
+    "name": "stability/ui-backend-hardening-20260927",
+    "sha": "e81e5489b2adc7f507ee97bc2ac267bd837e3def",
+    "lastCommitAt": "2026-09-27T13:20:54+10:00",
+    "ancestorOfMain": false,
+    "openPR": []
+  },
+  {
+    "name": "test/complete-app",
+    "sha": "fb0c289c956fd21a6ddee7a4c2e738f2401701bf",
+    "lastCommitAt": "2026-09-18T17:33:30+10:00",
+    "ancestorOfMain": true,
+    "openPR": []
+  }
+]

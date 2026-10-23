@@ -1,0 +1,91 @@
+{
+  "scope": "Focused schema fixtures; complete staging acceptance remains BLOCKED",
+  "results": [
+    {
+      "name": "guest stock read reproduces missing privileges before repair",
+      "pass": true
+    },
+    {
+      "name": "guest reads stock only for public verified listings",
+      "pass": true
+    },
+    {
+      "name": "guest cannot write stock",
+      "pass": true
+    },
+    {
+      "name": "guest cannot inspect follows or connections",
+      "pass": true
+    },
+    {
+      "name": "guest reads published public posts only",
+      "pass": true
+    },
+    {
+      "name": "blocker cannot see blocked author",
+      "pass": true
+    },
+    {
+      "name": "blocked viewer cannot see blocking author",
+      "pass": true
+    },
+    {
+      "name": "author retains access to hidden and follower posts",
+      "pass": true
+    },
+    {
+      "name": "block helper answers only for current viewer",
+      "pass": true
+    },
+    {
+      "name": "conversation identity hides private alias and avatar",
+      "pass": true
+    },
+    {
+      "name": "removed membership loses conversation identity access",
+      "pass": true
+    },
+    {
+      "name": "guest cannot call conversation identity API",
+      "pass": true
+    },
+    {
+      "name": "ordinary users cannot read Stripe event metadata",
+      "pass": true
+    },
+    {
+      "name": "password plus MFA admin reads metadata",
+      "pass": true
+    },
+    {
+      "name": "admin without MFA cannot read metadata",
+      "pass": true
+    },
+    {
+      "name": "legacy driver verifier stays unavailable",
+      "pass": true
+    },
+    {
+      "name": "admin_set_driver_application denies non-admin before touching data",
+      "pass": true
+    },
+    {
+      "name": "admin_set_driver_document_status denies non-admin before touching data",
+      "pass": true
+    },
+    {
+      "name": "admin_set_driver_vehicle_verification denies non-admin before touching data",
+      "pass": true
+    },
+    {
+      "name": "rolling back restores prior guest stock denial",
+      "pass": true
+    },
+    {
+      "name": "rolling back removes new identity API and restores driver ACL",
+      "pass": true
+    }
+  ],
+  "passed": 21,
+  "failed": 0
+}

@@ -1,0 +1,102 @@
+{
+  "engineeringCommit": "0cf82161a09739d2f60f436e4b2984277df3ecb4",
+  "unit": {
+    "passed": 506,
+    "failed": 0
+  },
+  "postgres": {
+    "passed": 133,
+    "failed": 0
+  },
+  "pglite": {
+    "passed": 61,
+    "failed": 0
+  },
+  "expoDoctor": {
+    "passed": 18,
+    "failed": 0
+  },
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 11
+  },
+  "browser": {
+    "chromium": {
+      "phase5": {
+        "scenarios": 9,
+        "layouts": 128,
+        "errors": 0,
+        "emptyLayouts": 64,
+        "errorLayouts": 64,
+        "accessibility": 8
+      },
+      "phase5b": {
+        "scenarios": 33,
+        "layouts": 448,
+        "errors": 0,
+        "emptyLayouts": 0,
+        "errorLayouts": 0,
+        "accessibility": 28
+      },
+      "post-comments": {
+        "scenarios": 11,
+        "layouts": 112,
+        "errors": 0,
+        "emptyLayouts": 0,
+        "errorLayouts": 0,
+        "accessibility": 2
+      },
+      "release-admin": {
+        "scenarios": 5,
+        "layouts": 0,
+        "errors": 0,
+        "emptyLayouts": 0,
+        "errorLayouts": 0,
+        "accessibility": 0
+      }
+    },
+    "webkit": {
+      "phase5": {
+        "scenarios": 9,
+        "layouts": 128,
+        "errors": 0,
+        "emptyLayouts": 64,
+        "errorLayouts": 64,
+        "accessibility": 8
+      },
+      "phase5b": {
+        "scenarios": 33,
+        "layouts": 448,
+        "errors": 0,
+        "emptyLayouts": 0,
+        "errorLayouts": 0,
+        "accessibility": 28
+      },
+      "post-comments": {
+        "scenarios": 11,
+        "layouts": 112,
+        "errors": 0,
+        "emptyLayouts": 0,
+        "errorLayouts": 0,
+        "accessibility": 2
+      },
+      "release-admin": {
+        "scenarios": 5,
+        "layouts": 0,
+        "errors": 0,
+        "emptyLayouts": 0,
+        "errorLayouts": 0,
+        "accessibility": 0
+      }
+    }
+  },
+  "production": {
+    "commit": "95b8d489c98109717bcb8d6ef53d54674c4b5ab7",
+    "environment": "production"
+  },
+  "ci": {
+    "passed": 17,
+    "failed": 0,
+    "skipped": 1
+  }
+}
