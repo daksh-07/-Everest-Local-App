@@ -1,0 +1,32 @@
+[
+  {
+    "engine": "webkit",
+    "suite": "phase5b",
+    "exitCode": 0
+  },
+  {
+    "engine": "chromium",
+    "suite": "phase5",
+    "exitCode": 0
+  },
+  {
+    "engine": "chromium",
+    "suite": "post-comments",
+    "exitCode": 0
+  },
+  {
+    "engine": "webkit",
+    "suite": "post-comments",
+    "exitCode": 0
+  },
+  {
+    "engine": "chromium",
+    "suite": "release-admin",
+    "exitCode": 0
+  },
+  {
+    "engine": "webkit",
+    "suite": "release-admin",
+    "exitCode": 0
+  }
+]

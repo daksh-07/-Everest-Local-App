@@ -1,0 +1,1480 @@
+[
+  {
+    "number": 105,
+    "commits": [
+      {
+        "sha": "e0e96073865af2d8fd14f095afde4f53a3685fbd",
+        "subject": "fix(shop): recover stock-aware selection and cart safeguards"
+      },
+      {
+        "sha": "083686d8743368093ea8a1038f036120c4e38169",
+        "subject": "fix(chat): keep Safari PWA conversations attached to the keyboard vie\u2026"
+      },
+      {
+        "sha": "3f40de9c4a494c0548b3dce44b5e3964c8949165",
+        "subject": "fix(chat): cancel stale bottom anchoring and verify WebKit viewport t\u2026"
+      },
+      {
+        "sha": "05c7bfce99f7f1b79901b9443f8f33dbecefe972",
+        "subject": "test(shop): checkpoint verified product selection and cart interactions"
+      },
+      {
+        "sha": "bce798ef400fcb4cef033084635e997cce0b3f4f",
+        "subject": "fix(commerce): make checkout retries, stock settlement and order fulf\u2026"
+      },
+      {
+        "sha": "58a18e1ce3070977f9f2a87f0537cac8392a53ab",
+        "subject": "fix(booking): verify payment recovery and narrow mobile transaction l\u2026"
+      },
+      {
+        "sha": "29ab83da8eb3d286349188f63f195f7397314d56",
+        "subject": "fix(ux): make transaction loading, validation and expiry recovery res\u2026"
+      }
+    ],
+    "files": [
+      ".github/workflows/validate-chat-webkit.yml",
+      ".github/workflows/validate-discovery-browser.yml",
+      ".github/workflows/validate.yml",
+      "EVEREST_UX_RESEARCH_PLAYBOOK.md",
+      "app/+html.tsx",
+      "app/+native-intent.tsx",
+      "app/booking.tsx",
+      "app/business-orders.tsx",
+      "app/cart.tsx",
+      "app/messages.tsx",
+      "app/orders.tsx",
+      "app/product.tsx",
+      "components/OrderDetails.tsx",
+      "components/ui/StatusBadge.tsx",
+      "components/ui/TransactionLoading.tsx",
+      "docs/design/bug-fix-register.md",
+      "docs/phase4-delivery-report.md",
+      "docs/phase4-evidence/booking/README.md",
+      "docs/phase4-evidence/booking/after/booking-payment-dark-375.png",
+      "docs/phase4-evidence/booking/after/booking-payment-dark-430.png",
+      "docs/phase4-evidence/booking/after/booking-payment-light-1280.png",
+      "docs/phase4-evidence/booking/after/booking-payment-light-320.png",
+      "docs/phase4-evidence/booking/after/booking-payment-light-390.png",
+      "docs/phase4-evidence/booking/before/clipped-total-320-light.png",
+      "docs/phase4-evidence/booking/chromium-layout-report.json",
+      "docs/phase4-evidence/booking/webkit-layout-report.json",
+      "docs/phase4-evidence/commerce/README.md",
+      "docs/phase4-evidence/commerce/cart-dark-390x844.png",
+      "docs/phase4-evidence/commerce/cart-unavailable-dark-390x844.png",
+      "docs/phase4-evidence/commerce/orders-dark-390x844.png",
+      "docs/phase4-evidence/commerce/product-dark-390x844.png",
+      "docs/phase4-evidence/commerce/report.json",
+      "docs/phase4-evidence/commerce/transactions/business-orders-dark-390.png",
+      "docs/phase4-evidence/commerce/transactions/business-orders-light-1280.png",
+      "docs/phase4-evidence/commerce/transactions/cart-light-320.png",
+      "docs/phase4-evidence/commerce/transactions/payment-return-dark-390.png",
+      "docs/phase4-evidence/commerce/transactions/payment-return-light-320.png",
+      "docs/phase4-evidence/commerce/transactions/product-dark-390.png",
+      "docs/phase4-evidence/commerce/transactions/report.json",
+      "docs/phase4-evidence/commerce/transactions/webkit-report.json",
+      "docs/phase4-evidence/messaging/README.md",
+      "docs/phase4-evidence/messaging/after/chromium-DARK-390-closed.png",
+      "docs/phase4-evidence/messaging/after/chromium-DARK-390-empty.png",
+      "docs/phase4-evidence/messaging/after/chromium-DARK-390-keyboard-occlusion.png",
+      "docs/phase4-evidence/messaging/after/chromium-DARK-390-transitions.webm",
+      "docs/phase4-evidence/messaging/after/chromium-LIGHT-390-closed.png",
+      "docs/phase4-evidence/messaging/after/chromium-LIGHT-390-empty.png",
+      "docs/phase4-evidence/messaging/after/chromium-LIGHT-390-keyboard-occlusion.png",
+      "docs/phase4-evidence/messaging/after/chromium-LIGHT-390-transitions.webm",
+      "docs/phase4-evidence/messaging/after/partial-report.json",
+      "docs/phase4-evidence/messaging/after/report.json",
+      "docs/phase4-evidence/messaging/before/chromium-DARK-390-closed.png",
+      "docs/phase4-evidence/messaging/before/chromium-DARK-390-keyboard-occlusion.png",
+      "docs/phase4-evidence/messaging/before/chromium-LIGHT-390-closed.png",
+      "docs/phase4-evidence/messaging/before/chromium-LIGHT-390-keyboard-occlusion.png",
+      "docs/phase4-evidence/messaging/before/report.json",
+      "docs/phase4-evidence/messaging/webkit-report.json",
+      "docs/phase4-evidence/ux/README.md",
+      "docs/phase4-evidence/ux/booking-partial-error-light-390.png",
+      "docs/phase4-evidence/ux/booking-partial-loading-dark-430.png",
+      "docs/phase4-evidence/ux/booking-payment-light-1280.png",
+      "docs/phase4-evidence/ux/cart-address-error-dark-320.png",
+      "docs/phase4-evidence/ux/cart-loading-dark-375.png",
+      "docs/phase4-evidence/ux/chromium-navigation-cancellations.json",
+      "docs/phase4-evidence/ux/chromium-report.json",
+      "docs/phase4-evidence/ux/saved-checkout-light-320.png",
+      "docs/phase4-evidence/ux/webkit-navigation-cancellations.json",
+      "docs/phase4-evidence/ux/webkit-report.json",
+      "docs/phase4-task-register.md",
+      "docs/phase5-backlog.md",
+      "lib/cart-presentation.ts",
+      "lib/chat-layout.ts",
+      "lib/commerce.ts",
+      "lib/order-presentation.ts",
+      "lib/orders.ts",
+      "lib/payment-return.ts",
+      "lib/product-commerce.ts",
+      "lib/product-presentation.ts",
+      "lib/service-payments.ts",
+      "lib/visual-viewport.ts",
+      "package-lock.json",
+      "package.json",
+      "public/chat-layout.css",
+      "public/index.html",
+      "scripts/capture-design-evidence.mjs",
+      "scripts/verify-chat-layout.mjs",
+      "scripts/verify-chat-webkit.mjs",
+      "scripts/verify-commerce-flow.mjs",
+      "scripts/verify-web-export.mjs",
+      "supabase/functions/_shared/checkout-return.ts",
+      "supabase/functions/_shared/transaction-events.ts",
+      "supabase/functions/checkout/index.ts",
+      "supabase/functions/service-checkout/index.ts",
+      "supabase/functions/stripe-webhook/index.ts",
+      "supabase/migrations/20261017071853_phase4_order_inventory_and_pickup.sql",
+      "tests/booking-guidance.test.mjs",
+      "tests/cart-checkout-guard.test.mjs",
+      "tests/cart-presentation.test.mjs",
+      "tests/chat-layout.test.mjs",
+      "tests/checkout-handler.test.mjs"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "iOS App Store native gate",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "discovery-quality",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "webkit-chat",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Android Play Store native gate",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "discovery-browser (chromium)",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "discovery-browser (webkit)",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 101,
+    "commits": [
+      {
+        "sha": "1991c25cce7ec378126f690575e7c68f56315c35",
+        "subject": "fix(india): keep product Stripe checkout Australia-only at server bou\u2026"
+      },
+      {
+        "sha": "0dcdc69e8a7073bdba31ac745f99083474825885",
+        "subject": "fix(india): keep service Stripe checkout Australia-only at server bou\u2026"
+      },
+      {
+        "sha": "b8150dad0f2532ffba2eab2f891a58a7797107a4",
+        "subject": "test(india): assert AU-only server-side payment routing for products \u2026"
+      },
+      {
+        "sha": "771c6272f9e2af8ed48b4d7c1d24a1496e6128b6",
+        "subject": "docs(india): define secure Phase 3 release gates and AU/IN E2E matrix"
+      },
+      {
+        "sha": "32e6c39d5f9e6d66a2328cb387347c5285e9e08e",
+        "subject": "fix(india): block India business Stripe Connect onboarding server-side"
+      },
+      {
+        "sha": "531fffe76c0772d409fb5f6b7978fbcc1a9d03b7",
+        "subject": "fix(india): guard memberships and packages against non-AU Stripe chec\u2026"
+      },
+      {
+        "sha": "0d307b10294c8229487a8623e319d9b4602207c9",
+        "subject": "fix(india): block new India business Pro subscriptions on AU Stripe"
+      },
+      {
+        "sha": "5d3c39221a38a84130fb7cf05d0e9ca7cc072d70",
+        "subject": "fix(india): prevent India post promotions from falling through to AU \u2026"
+      },
+      {
+        "sha": "8cefbd34fa16e6b5131d091792bc63447708bdcd",
+        "subject": "test(india): cover all existing AU Stripe billing and onboarding endp\u2026"
+      },
+      {
+        "sha": "6d3df92e467ead06ba018bab618b1478f3a841a8",
+        "subject": "ci(india): run dedicated typecheck, security, web and Edge Function g\u2026"
+      },
+      {
+        "sha": "d5f3a3ecc3f15ae6a5f263ae4ef09a38c3fed67c",
+        "subject": "docs(india): inventory covered payment paths and dedicated CI checks"
+      },
+      {
+        "sha": "0c8dc12875d2d906fb2e28a101c02f8b5bf9d84d",
+        "subject": "test(india): update stale Phase 1 invariant to Phase 2 country resolver"
+      },
+      {
+        "sha": "b3a557cb265ca1d085633033fadb98fc63bc04f1",
+        "subject": "test(india): correct regex escapes in migrated market resolver assertion"
+      }
+    ],
+    "files": [
+      ".github/workflows/validate-india-phase3.yml",
+      "docs/INDIA_PHASE3_RELEASE_GATES.md",
+      "supabase/functions/business-subscription-billing/index.ts",
+      "supabase/functions/checkout/index.ts",
+      "supabase/functions/membership-billing/index.ts",
+      "supabase/functions/post-promotion-checkout/index.ts",
+      "supabase/functions/service-checkout/index.ts",
+      "supabase/functions/stripe-connect/index.ts",
+      "tests/india-market-phase2.test.mjs",
+      "tests/india-market.test.mjs"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "india-regressions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "india-regressions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "india-edge-functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "india-edge-functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 97,
+    "commits": [
+      {
+        "sha": "44bcbf1abd201bbf4848e024c38fcf3eb68ec9ee",
+        "subject": "Harden marketplace search, Live matching, permissions and checkout re\u2026"
+      },
+      {
+        "sha": "2ca63657c1bb93295a7f925e8ac9e287ad14d324",
+        "subject": "Make service discovery and manual location usable on small screens"
+      },
+      {
+        "sha": "afbaa8556a59403eb6f5ac143242891f32a728bb",
+        "subject": "Restore anonymous public listing policy evaluation"
+      }
+    ],
+    "files": [
+      "app/booking.tsx",
+      "app/everest-live.tsx",
+      "app/index.tsx",
+      "app/orders.tsx",
+      "app/search.tsx",
+      "components/CustomerLocationSelector.tsx",
+      "components/CustomerTabBar.tsx",
+      "components/DraggableAskEverest.tsx",
+      "lib/customer-location.ts",
+      "supabase/functions/checkout/index.ts",
+      "supabase/functions/post-promotion-checkout/index.ts",
+      "supabase/functions/service-checkout/index.ts",
+      "supabase/migrations/20261009081254_live_geographic_eligibility.sql",
+      "supabase/migrations/20261009082055_guest_marketplace_search.sql",
+      "tests/crm-integrations-automation.test.mjs",
+      "tests/edge-home-quick-actions.test.mjs",
+      "tests/everest-live.test.mjs",
+      "tests/product-marketplace-commerce.test.mjs",
+      "tests/social-discovery-security.test.mjs",
+      "tests/social-messaging-ux-fix.test.mjs",
+      "tests/stripe-connect-marketplace.test.mjs",
+      "tsconfig.json"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 94,
+    "commits": [
+      {
+        "sha": "028506b1b1506cd5e596dff9025c202a56127601",
+        "subject": "India market: add lib/markets.ts"
+      },
+      {
+        "sha": "1e566c5a42c9bd3177626455801af2e9def49baa",
+        "subject": "India market: add lib/market-region.tsx"
+      },
+      {
+        "sha": "3d2db0d23e2aa75af8333073bebaad6e0eb4576b",
+        "subject": "India market: add components/IndiaHomeScreen.tsx"
+      },
+      {
+        "sha": "5bced8734c0cb05f81437e7cbbb7a8e08da22705",
+        "subject": "India market: add tests/india-market.test.mjs"
+      },
+      {
+        "sha": "86b80a55537c34a45e4a750b8eb162a24bc67ad4",
+        "subject": "India market: install market region provider"
+      },
+      {
+        "sha": "cfe428a3fb1cca0a45bfffc44cb2ea0feba6dcf4",
+        "subject": "India market: route India users to dedicated home"
+      },
+      {
+        "sha": "82042c48f9db25ccd715b1e04748762dbedf2d2b",
+        "subject": "India market: make geocoding country-aware"
+      },
+      {
+        "sha": "f2177f9dfa2e2b1a5a51e13b10d6c0758a0cc0f2",
+        "subject": "India market: localize service request flow"
+      },
+      {
+        "sha": "676221f220970501a38cf1e7f00cb6adca9d15fe",
+        "subject": "India market: localize authentication brand"
+      },
+      {
+        "sha": "893a58c67c85393229243baa3be9c47bb6a9a1f7",
+        "subject": "India market: guard provider onboarding assumptions"
+      },
+      {
+        "sha": "aa28b6c48b0a799975fc747415d1887c6ec26874",
+        "subject": "India market: prevent Australia onboarding leakage"
+      },
+      {
+        "sha": "8c6508852dcb844a7dba7ae6866faefab7091ad4",
+        "subject": "India market: extend localization regression coverage"
+      },
+      {
+        "sha": "eaf56153793e81ceaf69ea48e85a952ba0b78fb2",
+        "subject": "India market: fix lint findings"
+      },
+      {
+        "sha": "f54bcf338f6b6066d49207e907130463fd052362",
+        "subject": "India market: fix Node test lint globals"
+      },
+      {
+        "sha": "c8dd1963869cb9518fd9cbbf4cf28aae1ba5f149",
+        "subject": "India phase 2: add current market resolver"
+      },
+      {
+        "sha": "ec081e25733807f5f15debda0c464cccdc109dc4",
+        "subject": "India phase 2: add marketplace country scope"
+      },
+      {
+        "sha": "a17310220f7c31a928efd7f9ea5bc39b35bd5ed9",
+        "subject": "India phase 2: add payment provider abstraction"
+      },
+      {
+        "sha": "01a5e833d4d4c97cac9a0c00e8dbba87a426374b",
+        "subject": "India phase 2: add India business client flows"
+      },
+      {
+        "sha": "b37062711da3d6bf0bb96774d1373acfda2548e2",
+        "subject": "India phase 2: add provider onboarding function"
+      },
+      {
+        "sha": "ba2e42981365b37fa0d811863bb463fed73f5155",
+        "subject": "India phase 2: add India verification function"
+      },
+      {
+        "sha": "db29cf7483ac6cab002d109e1b16a8159331732f",
+        "subject": "India phase 2: build provider onboarding UI"
+      },
+      {
+        "sha": "a90fbe7f95471481d629641fc5bae0bf352225cd",
+        "subject": "India phase 2: build verification UI"
+      },
+      {
+        "sha": "9cf9eccd0d3c9b7213ff781061c59877e046ed3c",
+        "subject": "India phase 2: add India payout foundation screen"
+      },
+      {
+        "sha": "4d9a2dbc16fd4c2416146cb77ed6abd4fdde0a72",
+        "subject": "India phase 2: centralize active market resolution"
+      },
+      {
+        "sha": "1f4b0627189dab05d1f3a1a9113e085fb3c86bfe",
+        "subject": "India phase 2: route provider onboarding by market"
+      },
+      {
+        "sha": "5727a05747d906fea3e6acc95ffb970d0e859ab1",
+        "subject": "India phase 2: route verification by market"
+      },
+      {
+        "sha": "c9faa398b1279b662ebf8a2556936e6b7097b0d3",
+        "subject": "India phase 2: expose business market fields"
+      },
+      {
+        "sha": "f9552cdf1320f944309625b69ed8dddc940e59a0",
+        "subject": "India phase 2: isolate marketplace search by country"
+      },
+      {
+        "sha": "b4e94839ce0068fd1f1e47fd3bd8442c93efa2cd",
+        "subject": "India phase 2: isolate shop and product detail by country"
+      },
+      {
+        "sha": "fbfa94c8f632b48b5e3cb492237766b58edf03da",
+        "subject": "India phase 2: block India product checkout until UPI is live"
+      },
+      {
+        "sha": "aec4bc35291d2f4ac3edddec06719ab8e1fb8c1f",
+        "subject": "India phase 2: block India service checkout until UPI is live"
+      },
+      {
+        "sha": "62cc4de24a40b4dc660f13abb5463fa308ffdad7",
+        "subject": "India phase 2: localize shop currency"
+      },
+      {
+        "sha": "59c468aa74798dac26e0630d2e7502fedea8e1e4",
+        "subject": "India phase 2: localize product primary prices"
+      },
+      {
+        "sha": "6c68ea8b2c913fdb2804f26d00db7ca3adf69786",
+        "subject": "India phase 2: localize product secondary prices"
+      },
+      {
+        "sha": "7569b06524471d2ea8bf384fcfcc664cce41e3b5",
+        "subject": "India phase 2: open provider onboarding"
+      },
+      {
+        "sha": "408f3e0f83ea1446a0bf2df0ad94d21f86caf12a",
+        "subject": "India phase 2: keep India out of Stripe payouts"
+      },
+      {
+        "sha": "85b4c2b36473b95e788e1d06f491adf5079bc8b8",
+        "subject": "India phase 2: isolate carts by market"
+      },
+      {
+        "sha": "ef2991e7a760935d04798c22551c5e7a09c0acff",
+        "subject": "India phase 2: localize cart and lock India checkout"
+      },
+      {
+        "sha": "5b0c6adfb8dabc0697c152669814e03c96467fdc",
+        "subject": "India phase 2: add market boundary regressions"
+      },
+      {
+        "sha": "8aecf99fe271000597d2bf70bcfb0a5bbc2cdfdb",
+        "subject": "India phase 2: run India boundary tests in CI"
+      },
+      {
+        "sha": "61c519d7cea2c73aefef29fd4715e8b21eb69b8f",
+        "subject": "docs: hand off Everest India phase 2"
+      },
+      {
+        "sha": "c28388732c497f9ca631324cc62345c779ebd84b",
+        "subject": "India phase 2: stamp service areas as India"
+      },
+      {
+        "sha": "454b55fbab3b4a060f9e723aaf91f1dd4d04553f",
+        "subject": "India phase 2: ignore placeholder Australia profile country"
+      },
+      {
+        "sha": "0c266c174ce0b1fbfe0798e33c1602a3d362d045",
+        "subject": "India phase 2: cover fresh India signup routing"
+      },
+      {
+        "sha": "fc2be831dc2d35a0e0f82925c9dbbe3c168e38ab",
+        "subject": "India phase 2: gate India payout route"
+      },
+      {
+        "sha": "c26696abe90a30ce81fdc4995a69de8a0c73fff2",
+        "subject": "India phase 2: localize product variant currency"
+      },
+      {
+        "sha": "aea74a599478c8653ed06c6ca8a8b19c12a136d3",
+        "subject": "India phase 2: keep India provider evidence status durable"
+      },
+      {
+        "sha": "695f648f0ec3691a22f55a2502ddab9e01e11a90",
+        "subject": "India phase 2: update verification metadata regression"
+      },
+      {
+        "sha": "80b5300832b73619051a1ca1e963ed513b6efa32",
+        "subject": "India phase 2: route verification operations to admin review"
+      },
+      {
+        "sha": "7178ecf037a316368d1144f2cea3dfdc88ed567e",
+        "subject": "India phase 2: expose India verification context to admin"
+      },
+      {
+        "sha": "cdd05fc21cf0dc809a6c8400d847f6f493722987",
+        "subject": "India phase 2: surface India evidence in admin review"
+      },
+      {
+        "sha": "513c672bd370d05d5dbc3354a2dd7d5caab85601",
+        "subject": "India phase 2: retain market country on remote requests"
+      },
+      {
+        "sha": "00fa5942d88cf9e127e6c6697538d52c7d6eafbd",
+        "subject": "India phase 2: persist customer market before matching"
+      },
+      {
+        "sha": "82898a2faa0278954f4a9193d7fe0a821327a924",
+        "subject": "India phase 2: isolate service dispatch by market"
+      },
+      {
+        "sha": "2d89cbb0deaa0631056025533d9500f6dd823e20",
+        "subject": "India phase 2: cover dispatch market isolation"
+      },
+      {
+        "sha": "2e7bc88e6d3a0a1703bfd180e4eef6b013282bd4",
+        "subject": "India phase 2: keep market persistence server-authoritative"
+      },
+      {
+        "sha": "c135eb564d3d7d848dc8a756e693ebd7b2de2cfc",
+        "subject": "India phase 2: assert server-side market persistence"
+      },
+      {
+        "sha": "1941450d7388a9459013c03a7b165678c541fdeb",
+        "subject": "India phase 2: clean regression lint"
+      }
+    ],
+    "files": [
+      "app/_layout.tsx",
+      "app/admin-operations.tsx",
+      "app/admin.tsx",
+      "app/auth.tsx",
+      "app/business-india-payouts.tsx",
+      "app/business-payouts.tsx",
+      "app/business-verification.tsx",
+      "app/business.tsx",
+      "app/cart.tsx",
+      "app/index.tsx",
+      "app/product.tsx",
+      "app/request.tsx",
+      "app/shop.tsx",
+      "components/IndiaBusinessOnboarding.tsx",
+      "components/IndiaBusinessVerification.tsx",
+      "components/IndiaHomeScreen.tsx",
+      "docs/INDIA_PHASE2.md",
+      "lib/admin-operations.ts",
+      "lib/catalog.ts",
+      "lib/commerce.ts",
+      "lib/current-market.ts",
+      "lib/customer-location.ts",
+      "lib/india-business.ts",
+      "lib/market-region.tsx",
+      "lib/market-scope.ts",
+      "lib/marketplace.ts",
+      "lib/markets.ts",
+      "lib/payment-provider.ts",
+      "lib/product-commerce.ts",
+      "lib/service-payments.ts",
+      "lib/universal-search.ts",
+      "package.json",
+      "supabase/functions/business-india-verify/index.ts",
+      "supabase/functions/india-business-setup/index.ts",
+      "supabase/migrations/20261005144500_india_market_dispatch_isolation.sql",
+      "tests/india-market-phase2.test.mjs",
+      "tests/india-market.test.mjs"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Validate mobile app",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "iOS App Store native gate",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "iOS App Store native gate",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Android Play Store native gate",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Android Play Store native gate",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 93,
+    "commits": [
+      {
+        "sha": "028506b1b1506cd5e596dff9025c202a56127601",
+        "subject": "India market: add lib/markets.ts"
+      },
+      {
+        "sha": "1e566c5a42c9bd3177626455801af2e9def49baa",
+        "subject": "India market: add lib/market-region.tsx"
+      },
+      {
+        "sha": "3d2db0d23e2aa75af8333073bebaad6e0eb4576b",
+        "subject": "India market: add components/IndiaHomeScreen.tsx"
+      },
+      {
+        "sha": "5bced8734c0cb05f81437e7cbbb7a8e08da22705",
+        "subject": "India market: add tests/india-market.test.mjs"
+      },
+      {
+        "sha": "86b80a55537c34a45e4a750b8eb162a24bc67ad4",
+        "subject": "India market: install market region provider"
+      },
+      {
+        "sha": "cfe428a3fb1cca0a45bfffc44cb2ea0feba6dcf4",
+        "subject": "India market: route India users to dedicated home"
+      },
+      {
+        "sha": "82042c48f9db25ccd715b1e04748762dbedf2d2b",
+        "subject": "India market: make geocoding country-aware"
+      },
+      {
+        "sha": "f2177f9dfa2e2b1a5a51e13b10d6c0758a0cc0f2",
+        "subject": "India market: localize service request flow"
+      },
+      {
+        "sha": "676221f220970501a38cf1e7f00cb6adca9d15fe",
+        "subject": "India market: localize authentication brand"
+      },
+      {
+        "sha": "893a58c67c85393229243baa3be9c47bb6a9a1f7",
+        "subject": "India market: guard provider onboarding assumptions"
+      },
+      {
+        "sha": "aa28b6c48b0a799975fc747415d1887c6ec26874",
+        "subject": "India market: prevent Australia onboarding leakage"
+      },
+      {
+        "sha": "8c6508852dcb844a7dba7ae6866faefab7091ad4",
+        "subject": "India market: extend localization regression coverage"
+      },
+      {
+        "sha": "eaf56153793e81ceaf69ea48e85a952ba0b78fb2",
+        "subject": "India market: fix lint findings"
+      },
+      {
+        "sha": "f54bcf338f6b6066d49207e907130463fd052362",
+        "subject": "India market: fix Node test lint globals"
+      }
+    ],
+    "files": [
+      "app/_layout.tsx",
+      "app/auth.tsx",
+      "app/index.tsx",
+      "app/request.tsx",
+      "components/IndiaHomeScreen.tsx",
+      "lib/customer-location.ts",
+      "lib/market-region.tsx",
+      "lib/markets.ts",
+      "tests/india-market.test.mjs"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "iOS App Store native gate",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Android Play Store native gate",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 80,
+    "commits": [
+      {
+        "sha": "14378c50669f30158aa061ccb1747eed34fab549",
+        "subject": "Add post reporting and enforce App Store toolchain"
+      },
+      {
+        "sha": "49684fad38f9e337aa869f566d0f50f78a5d0904",
+        "subject": "Route business accounts to role-aware home"
+      },
+      {
+        "sha": "49cb944617cbb509cb38f25fb53c89f9cd6697b4",
+        "subject": "Add public store support surface"
+      }
+    ],
+    "files": [
+      ".github/workflows/validate-ios-native.yml",
+      "app/business-dashboard.tsx",
+      "app/social.tsx",
+      "app/support.tsx",
+      "docs/STORE_SUBMISSION.md",
+      "lib/social.ts",
+      "package.json",
+      "supabase/migrations/20260928170252_secure_post_reporting.sql",
+      "tests/business-home-routing.test.mjs",
+      "tests/launch-legal-surfaces.test.mjs",
+      "tests/native-store-release.test.mjs",
+      "tests/post-reporting-security.test.mjs"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "iOS App Store native gate",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Android Play Store native gate",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 78,
+    "commits": [
+      {
+        "sha": "d192d3aef652b96be6fb07f3bccea41ad19f3bf0",
+        "subject": "Harden public social actor privacy"
+      }
+    ],
+    "files": [
+      "supabase/migrations/20260929011000_social_actor_privacy_hardening.sql",
+      "tests/social-discovery-security.test.mjs"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 77,
+    "commits": [
+      {
+        "sha": "f0f329358c75014fc8e73fa2a0ef685dff91ef58",
+        "subject": "Make Business Mode work-first"
+      },
+      {
+        "sha": "73622c18f356e73bd5a2e08abcc1024c9fa7d483",
+        "subject": "Update CRM navigation regression for work-first layout"
+      },
+      {
+        "sha": "419e9b9ff9061faff443bd267f3f39d282407b26",
+        "subject": "Update workspace navigation regression for Jobs"
+      }
+    ],
+    "files": [
+      "app/business-control.tsx",
+      "app/business-today.tsx",
+      "components/BusinessTabBar.tsx",
+      "tests/dual-role-workspace.test.mjs",
+      "tests/global-local-crm-p0.test.mjs",
+      "tests/professional-crm-v2.test.mjs"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 73,
+    "commits": [
+      {
+        "sha": "7744234bdc75f642d49073b25f0bf539ad54c316",
+        "subject": "Add multi-employee business operations and dispatch"
+      }
+    ],
+    "files": [
+      "app/business-control.tsx",
+      "app/business-my-work.tsx",
+      "app/business-operations.tsx",
+      "components/BusinessOperationsPrimitives.tsx",
+      "components/BusinessOperationsStyles.ts",
+      "components/BusinessTabBar.tsx",
+      "components/ModeSwitcher.tsx",
+      "lib/business-operations.ts",
+      "lib/workspace.ts",
+      "package.json",
+      "supabase/functions/stripe-connect/index.ts",
+      "supabase/migrations/20260927193000_business_ops_01_structure.sql",
+      "supabase/migrations/20260927193100_business_ops_02_permissions.sql",
+      "supabase/migrations/20260927193200_business_ops_03_members.sql",
+      "supabase/migrations/20260927193300_business_ops_04_assignment.sql",
+      "supabase/migrations/20260927193350_business_ops_04_dashboard.sql",
+      "supabase/migrations/20260927193400_business_ops_05_rls.sql",
+      "supabase/migrations/20260927193500_business_ops_06_job_lifecycle.sql",
+      "supabase/migrations/20260927193550_business_ops_06_messaging_live.sql",
+      "tests/business-operations.test.mjs"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "FAILURE"
+      },
+      {
+        "name": "ios-config",
+        "result": "FAILURE"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "FAILURE"
+      },
+      {
+        "name": "Vercel",
+        "result": "FAILURE"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 60,
+    "commits": [
+      {
+        "sha": "9c6264c13b581824b4ae75d43ad065adcdb50eae",
+        "subject": "Add reversible post archive and owner post management APIs"
+      },
+      {
+        "sha": "212816a9adb9229b55fe78529b2dbe0ca77cd71a",
+        "subject": "Add owner archive and delete actions to Explore posts"
+      },
+      {
+        "sha": "ce18f15166de84b2cb9a09aba2ad4420549277ec",
+        "subject": "Add My Posts entry to account"
+      },
+      {
+        "sha": "d24a261a2d258eea64d0308245c25cbd2c26395e",
+        "subject": "Add My Posts archive and deletion manager"
+      },
+      {
+        "sha": "d148f0270fd894158ccfd7a14238b55358aab2d8",
+        "subject": "Allow authors to manage archived posts"
+      }
+    ],
+    "files": [
+      "app/account.tsx",
+      "app/my-posts.tsx",
+      "app/social.tsx",
+      "lib/social.ts",
+      "supabase/migrations/20260927023000_post_owner_management.sql"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 8,
+    "commits": [
+      {
+        "sha": "3fcac2e5678c2413b08bc47fc6e7f9ca22d23aac",
+        "subject": "Redesign Settings with premium grouped account UI"
+      }
+    ],
+    "files": [
+      "app/settings.tsx"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "FAILURE"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 5,
+    "commits": [
+      {
+        "sha": "1241b07d005b083a26746ffbe0a5dc2e801e0257",
+        "subject": "Polish private beta customer experience"
+      },
+      {
+        "sha": "27a3eac1a206d889f6cf5b1e44d68d40866697f4",
+        "subject": "Fix mobile home hierarchy and duplicate Ask control"
+      },
+      {
+        "sha": "7d7c7b330fe4a9a3bf89f4802b9d9d7d5d300c94",
+        "subject": "Fix mobile search focus and Safari zoom"
+      },
+      {
+        "sha": "2d5b73bc5008471edaad4c8575e0b6ff42538b4b",
+        "subject": "Fix search focus styling TypeScript compatibility"
+      }
+    ],
+    "files": [
+      ".env.example",
+      ".github/workflows/validate.yml",
+      ".gitignore",
+      "app/_layout.tsx",
+      "app/account.tsx",
+      "app/activity.tsx",
+      "app/auth.tsx",
+      "app/bookings.tsx",
+      "app/cart.tsx",
+      "app/delivery.tsx",
+      "app/index.tsx",
+      "app/messages.tsx",
+      "app/product.tsx",
+      "app/request.tsx",
+      "app/requests.tsx",
+      "app/search.tsx",
+      "components/AuthRolePicker.tsx",
+      "components/CustomerTabBar.tsx",
+      "components/LoadingList.tsx",
+      "components/PwaInstallPrompt.tsx",
+      "docs/BETA_READINESS_2026-09-22.md",
+      "docs/FINAL_LAUNCH_GATE.md",
+      "docs/LAUNCH_READINESS.md",
+      "docs/SUPABASE_DEPLOYMENT.md",
+      "docs/UX_PRIVATE_BETA_2026-09-22.md",
+      "lib/service-dispatch.ts",
+      "lib/ui.ts",
+      "package-lock.json",
+      "package.json",
+      "supabase/functions/_shared/checkout-redirects.ts",
+      "supabase/functions/checkout/index.ts",
+      "supabase/functions/service-checkout/index.ts",
+      "supabase/functions/stripe-webhook/index.ts",
+      "supabase/migrations/20260922084533_repair_service_dispatch_client_contract.sql",
+      "tests/checkout-redirects.test.mjs",
+      "tests/customer-experience.test.mjs",
+      "tests/driver-dispatch-availability.test.mjs",
+      "tests/private-beta-critical-paths.test.mjs"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  },
+  {
+    "number": 4,
+    "commits": [
+      {
+        "sha": "2e75466212202515b42f2e09fd25dc3e3ddf9be2",
+        "subject": "feat: add ABR registry verification storage and audit"
+      },
+      {
+        "sha": "06410dc1b58b761fcaceba655cab940347cd6ae5",
+        "subject": "feat: add server-side ABR business verification"
+      },
+      {
+        "sha": "bf73a0f2701f99e464c9fdc501883797de88f0c4",
+        "subject": "feat: configure ABR verification edge function"
+      },
+      {
+        "sha": "c4944a333c8e75a80b35653a0bede6a039645a3f",
+        "subject": "feat: expose admin operations to admin accounts"
+      },
+      {
+        "sha": "4ade4b6066b9263a4b7063a4bcc2cfe48c8cb97d",
+        "subject": "feat: add ABR checks to admin verification dashboard"
+      },
+      {
+        "sha": "ba411422bf2e70d561b1559431333946a43fa619",
+        "subject": "fix: remove duplicate admin style keys"
+      },
+      {
+        "sha": "475ecc154feb049254b44102c72b32c5ebfede8b",
+        "subject": "docs: add ABR registry secret to config contract"
+      },
+      {
+        "sha": "9d0de57ea62b65533915f0968180a0bdb63b4905",
+        "subject": "docs: document ABR registry verification setup"
+      },
+      {
+        "sha": "3ecfef7926013da99d5551bbf93d4ed83f35bb51",
+        "subject": "fix: parse ABR GST date correctly"
+      },
+      {
+        "sha": "1878f083182a0cdfac0246a198d6e022c39145d9",
+        "subject": "fix: allow admins to read ABR verification evidence"
+      },
+      {
+        "sha": "0d2e38763003bceafb238bcbfa61ffc80411b59b",
+        "subject": "test: cover ABR verification security invariants"
+      },
+      {
+        "sha": "674887b3da607b9202f56393a39139f14524bc4f",
+        "subject": "fix: use official ABR SearchByABN web method"
+      },
+      {
+        "sha": "71bdc3159e377d304f6549c74bb20503eb7ac4f0",
+        "subject": "test: cover official ABR web method"
+      },
+      {
+        "sha": "d34994f87c8dbe703e30e28aac2cdd4b5c534478",
+        "subject": "fix: parse ABR XML business names accurately"
+      },
+      {
+        "sha": "5d0df3af91d4c473da720b2d999ed77a62527c6e",
+        "subject": "fix: harden ABR date parsing"
+      },
+      {
+        "sha": "317100a2f8e9b91b02dc35d911b4d8151c00d7dd",
+        "subject": "fix: use digit classes for ABR dates"
+      },
+      {
+        "sha": "bb645d986d0e4305dc540c8374caddc59f3615b8",
+        "subject": "fix: restore ABR registry migration"
+      },
+      {
+        "sha": "104657297d5a74a0941277651fbc8b671faf496d",
+        "subject": "fix: align ABR registry migration 20260920133001_abr_registry_columns\u2026"
+      },
+      {
+        "sha": "b2b71863a477f9c6bcdff12ae48fe9eb4bf9f3be",
+        "subject": "fix: align ABR registry migration 20260920133002_abr_registry_admin_p\u2026"
+      },
+      {
+        "sha": "7296a14100097cfd427fc526616ec44325a32478",
+        "subject": "fix: align ABR registry migration 20260920133003_abr_registry_record_\u2026"
+      },
+      {
+        "sha": "b797eabfb0f5973aac93093d45cc64a832b18e21",
+        "subject": "fix: align ABR migration history with production"
+      },
+      {
+        "sha": "8ab9988c3272c39b0662f9036df1d78b32b979f2",
+        "subject": "fix: keep ABR RPC non-public"
+      },
+      {
+        "sha": "453e0a6af59d28a7fd031870dc15b29637ebf4ef",
+        "subject": "chore: align ABR migration history"
+      },
+      {
+        "sha": "5590f067248fbd532942ec2df4ef9416a900f09f",
+        "subject": "fix: sync ABR migration version 20260921071633_abr_registry_columns.sql"
+      },
+      {
+        "sha": "a8a6a71539dd9cceaca67e2a49c5f4de4d88de1b",
+        "subject": "fix: sync ABR migration version 20260921071642_abr_registry_admin_pol\u2026"
+      },
+      {
+        "sha": "b9877570b1a79e3ea326d4da136ce2e875f4120d",
+        "subject": "fix: sync ABR migration version 20260921071653_abr_registry_record_rp\u2026"
+      },
+      {
+        "sha": "61d3a819f59d72d7dd90a8da6997aa690186ed90",
+        "subject": "fix: sync ABR migration version 20260921071819_restrict_abr_registry_\u2026"
+      },
+      {
+        "sha": "34d0a0d2a55f9b1a6814b0c3cb3970d82948a082",
+        "subject": "fix: remove stale ABR migration version"
+      },
+      {
+        "sha": "0720f176b54ca82cc057dc0bee9e9b0396341c72",
+        "subject": "fix: remove stale ABR migration version"
+      },
+      {
+        "sha": "f86b4f4c58c0f8dc0aa238b7fb701d5665228dd5",
+        "subject": "fix: remove stale ABR migration version"
+      },
+      {
+        "sha": "d6289d969cd0573aac864ae70d598f6e1e0c4459",
+        "subject": "chore: remove duplicate migration marker"
+      },
+      {
+        "sha": "0e0403616884affa3c2a1fdba5c99c546188de69",
+        "subject": "docs: document official ABR web method"
+      },
+      {
+        "sha": "31e64ec363310c8f5adbf683d88262be6af43646",
+        "subject": "feat: automate ABN verification and manual exceptions"
+      },
+      {
+        "sha": "f1b8e190e53dc6dabe3c62390f8d90104f6c74e4",
+        "subject": "feat: automate business ABN lookup verification"
+      },
+      {
+        "sha": "baff287b30408f6298c0cd1ccc68a74ce93a6707",
+        "subject": "fix: use existing business ABN verification function"
+      },
+      {
+        "sha": "959e29aa2091d7753d369707aa3c58b926f07f8a",
+        "subject": "refactor: remove duplicate ABN verification function"
+      },
+      {
+        "sha": "b9e12fe9e959687fc33c8a93186df22a8baf1540",
+        "subject": "fix: return business verification outcomes as safe results"
+      },
+      {
+        "sha": "8d662622cda0c9209feab5a5d5515c86c24fadd6",
+        "subject": "feat: connect business verification UI to automated ABN flow"
+      },
+      {
+        "sha": "57513bd2fdf2d86245f8325d805dcff9167a60ae",
+        "subject": "feat: support verification help and feedback cases"
+      },
+      {
+        "sha": "d22ab9aafa20c0d49313e3ddf5cbdc5fd5fbe51a",
+        "subject": "feat: automate business verification experience and exception support"
+      },
+      {
+        "sha": "651477b581db04c23d25580072c9d112681ab822",
+        "subject": "fix: allow controlled ABN retry after service failures"
+      },
+      {
+        "sha": "e6247357870ae5d1e4b4d67cae6eb5b3dd7f47e8",
+        "subject": "feat: make admin operations exception-focused for ABN verification"
+      },
+      {
+        "sha": "7464cd855b2ef605573dd19ff15e4ac111922e4d",
+        "subject": "test: cover fully automated ABN verification flow"
+      },
+      {
+        "sha": "264dc68b2085137bfaf7a74bc79867dce154bc4a",
+        "subject": "fix: document existing ABR lookup secret name"
+      },
+      {
+        "sha": "a579eb666f47c7bce610c8d7a86a4d4ca0c9c81d",
+        "subject": "docs: use existing ABR lookup credential name"
+      },
+      {
+        "sha": "1fc70dee42a1ecb639ed01c13c2e08eca406d026",
+        "subject": "fix: authorize automated rejection state transitions"
+      },
+      {
+        "sha": "9ca8bad84869b414bbb1c59f87d7a5fa16c8faca",
+        "subject": "fix: authorize all automated ABN state transitions"
+      },
+      {
+        "sha": "bfad783fe577e8a11b8b6b313e044238d98b175e",
+        "subject": "fix: return name mismatch as a handled verification result"
+      },
+      {
+        "sha": "7d60e385ee2ef1e5bad55868814b29ed7715a50b",
+        "subject": "feat: add 30-day ABN revalidation strategy"
+      },
+      {
+        "sha": "ba2db0413127fde919413331eee9f0737d80e9d9",
+        "subject": "feat: support controlled ABN revalidation"
+      },
+      {
+        "sha": "113dc5f7f1363f9e8bb2a26bcbfeab07a855dda9",
+        "subject": "fix: keep successful ABR timestamp distinct from retry attempts"
+      },
+      {
+        "sha": "e233d480f6c54858229c4e6a52157caed04f8b36",
+        "subject": "feat: expose controlled ABN revalidation to the business flow"
+      },
+      {
+        "sha": "49aeb26f35ce50aac289859bcbaa0356319e72f6",
+        "subject": "feat: revalidate verified ABNs only after 30 days"
+      },
+      {
+        "sha": "250f3a03f37b4d033ee6bcbd57637fab427d1135",
+        "subject": "fix: retry stale ABN revalidation after service failures"
+      },
+      {
+        "sha": "24e9141cdb0671ecdde62c9bd3834fd3d0b5b6e5",
+        "subject": "test: cover stale ABN revalidation"
+      },
+      {
+        "sha": "cb93cf380bb71c176c72b6e0a7b96ff62b89b1b3",
+        "subject": "test: point revalidation checks at its migration"
+      },
+      {
+        "sha": "73df3b13c935c2285d3ee4a2a12ee1bf278f897f",
+        "subject": "fix: keep business verification API compatible with automated flow"
+      },
+      {
+        "sha": "b4a6e0ced169f9ba879b3aa69ad9a499de872b7d",
+        "subject": "fix: preserve business verification diagnostic IDs"
+      },
+      {
+        "sha": "e21a5a4f4969e0d2e29c3824d6f9e4e064472e37",
+        "subject": "fix: restrict verification review RPCs to authenticated users"
+      },
+      {
+        "sha": "1eea400162abdf253db8a7bd40a3d33028050a9a",
+        "subject": "test: enforce authenticated-only review RPC access"
+      },
+      {
+        "sha": "1682234c7c130c674ad66618dc59fe360b9072e8",
+        "subject": "chore: remove obsolete ABN verification overload"
+      }
+    ],
+    "files": [
+      ".env.example",
+      "README.md",
+      "app/account.tsx",
+      "app/admin.tsx",
+      "app/business-verification.tsx",
+      "lib/business-verification.ts",
+      "lib/business.ts",
+      "supabase/config.toml",
+      "supabase/functions/business-abn-verify/index.ts",
+      "supabase/migrations/20260921071633_abr_registry_columns.sql",
+      "supabase/migrations/20260921071642_abr_registry_admin_policy.sql",
+      "supabase/migrations/20260921071653_abr_registry_record_rpc.sql",
+      "supabase/migrations/20260921071819_restrict_abr_registry_rpc_execute.sql",
+      "supabase/migrations/20260921073000_automated_business_abn_verification.sql",
+      "supabase/migrations/20260921073100_business_verification_case_types.sql",
+      "supabase/migrations/20260921073200_fix_automated_abn_status_transition.sql",
+      "supabase/migrations/20260921073300_add_abn_revalidation_strategy.sql",
+      "supabase/migrations/20260921073400_fix_abn_retry_timestamp.sql",
+      "supabase/migrations/20260921073500_harden_verification_review_rpc_execute.sql",
+      "supabase/migrations/20260921073600_remove_legacy_abn_begin_overload.sql",
+      "tests/business-verification.test.mjs"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Vercel",
+        "result": "FAILURE"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      }
+    ]
+  },
+  {
+    "number": 2,
+    "commits": [
+      {
+        "sha": "7059f24a29f2f99de78bca7a827af4d1a9601936",
+        "subject": "feat: add saved marketplace item data flows"
+      },
+      {
+        "sha": "446c231130dbd3ad764b5a8edfd83576cbbb2aa9",
+        "subject": "feat: add saved businesses and products screen"
+      },
+      {
+        "sha": "4b97aa56edbc75acc1df7efcadad4052ebb3dc8d",
+        "subject": "fix: type saved marketplace screen"
+      },
+      {
+        "sha": "d596a4ec8a49ba45d28bae504a0eb15cd70c312b",
+        "subject": "feat: expose saved items from account"
+      },
+      {
+        "sha": "281f0704337d51e3ed8f5615b8f4e53b6c59ff64",
+        "subject": "feat: add business save action"
+      },
+      {
+        "sha": "86d0f8556347a038df79f90f79d852ab8e025b46",
+        "subject": "feat: add product save action"
+      }
+    ],
+    "files": [
+      "app/account.tsx",
+      "app/business-profile.tsx",
+      "app/product.tsx",
+      "app/saved.tsx",
+      "lib/marketplace.ts"
+    ],
+    "ciAtInspection": [
+      {
+        "name": "Validate mobile app",
+        "result": "FAILURE"
+      },
+      {
+        "name": "Validate Supabase functions",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Supabase Preview",
+        "result": "SKIPPED"
+      },
+      {
+        "name": "Vercel",
+        "result": "SUCCESS"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "result": "SUCCESS"
+      }
+    ]
+  }
+]

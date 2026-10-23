@@ -76,7 +76,7 @@ export default function BusinessPayouts(){
    contentContainerStyle={s.page}
    showsVerticalScrollIndicator={false}>
    <View style={s.header}>
-    <Pressable accessibilityLabel="Go back" onPress={()=>router.back()} style={s.iconButton}><Ionicons name="chevron-back" size={21} color={colors.text}/></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={()=>router.back()} style={s.iconButton}><Ionicons name="chevron-back" size={21} color={colors.text}/></Pressable>
     <View style={{flex:1}}><Text style={s.eyebrow}>Business payouts</Text><Text style={s.title}>Payments & bank</Text></View>
    </View>
 
@@ -99,11 +99,11 @@ export default function BusinessPayouts(){
      <Status label="Payouts" ok={Boolean(status?.stripe_payouts_enabled)} colors={colors}/>
     </View>
 
-    {!ready?<Pressable disabled={busy||business.verification_status!=='VERIFIED'} onPress={()=>void onboard()} style={[s.primary,(busy||business.verification_status!=='VERIFIED')&&s.disabled]}>
+    {!ready?<Pressable accessibilityRole="button" disabled={busy||business.verification_status!=='VERIFIED'} onPress={()=>void onboard()} style={[s.primary,(busy||business.verification_status!=='VERIFIED')&&s.disabled]}>
      {busy?<ActivityIndicator color={colors.onBrand}/>:<><Ionicons name="open-outline" size={17} color={colors.onBrand}/><Text style={s.primaryText}>{status?.stripe_connected_account_id?'Continue Stripe setup':'Set up payouts with Stripe'}</Text></>}
-    </Pressable>:<Pressable onPress={()=>void load(true)} style={s.secondary}><Ionicons name="refresh" size={16} color={colors.text}/><Text style={s.secondaryText}>Refresh Stripe status</Text></Pressable>}
+    </Pressable>:<Pressable accessibilityRole="button" onPress={()=>void load(true)} style={s.secondary}><Ionicons name="refresh" size={16} color={colors.text}/><Text style={s.secondaryText}>Refresh Stripe status</Text></Pressable>}
 
-    {business.verification_status!=='VERIFIED'?<View style={s.notice}><Ionicons name="shield-checkmark-outline" size={20} color={colors.accent}/><View style={{flex:1}}><Text style={s.noticeTitle}>Business verification first</Text><Text style={s.copy}>Complete Everest business verification before Stripe payout onboarding.</Text><Pressable onPress={()=>router.push('/business-verification')}><Text style={s.link}>OPEN VERIFICATION →</Text></Pressable></View></View>:null}
+    {business.verification_status!=='VERIFIED'?<View style={s.notice}><Ionicons name="shield-checkmark-outline" size={20} color={colors.accent}/><View style={{flex:1}}><Text style={s.noticeTitle}>Business verification first</Text><Text style={s.copy}>Complete Everest business verification before Stripe payout onboarding.</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/business-verification')}><Text style={s.link}>OPEN VERIFICATION →</Text></Pressable></View></View>:null}
 
     {status?.requirements_due.length?<View style={s.notice}><Ionicons name="alert-circle-outline" size={20} color={colors.accent}/><View style={{flex:1}}><Text style={s.noticeTitle}>Stripe needs more information</Text><Text style={s.copy}>Continue Stripe setup to complete the remaining verification or bank requirements.</Text></View></View>:null}
 

@@ -45,7 +45,7 @@ export default function BusinessIntegrations(){
   setLoading(true);
   setError('');
   try{
-   const ctx=await getWorkspaceContext();
+   const ctx=await getWorkspaceContext({preferBusiness:true});
    if(ctx.mode!=='BUSINESS'||!ctx.active_business_id)throw new Error('Business Mode is not active.');
    const current=ctx.businesses.find(x=>x.id===ctx.active_business_id);
    if(!current)throw new Error('Business access unavailable.');
@@ -126,10 +126,10 @@ export default function BusinessIntegrations(){
 
        {locked?<View style={st.lockStrip}>
         <View style={st.lockInfo}><Ionicons name="diamond-outline" size={15} color={colors.accent}/><Text style={st.lockCopy}>Available with Everest Pro</Text></View>
-        <Pressable onPress={()=>openPremium(item)} style={st.upgradeButton}>
+        <Pressable accessibilityRole="button" onPress={()=>openPremium(item)} style={st.upgradeButton}>
          <Text style={st.upgradeText}>Unlock</Text><Ionicons name="arrow-forward" size={14} color={colors.onBrand}/>
         </Pressable>
-       </View>:item.provider==='OPENAI'?<View style={st.lockStrip}><View style={st.lockInfo}><Ionicons name="sparkles-outline" size={15} color={colors.accent}/><Text style={st.lockCopy}>Everest AI is included with Pro and is being connected next.</Text></View></View>:<Pressable disabled={working===item.provider||!item.available} onPress={()=>connected&&item.provider.includes('CALENDAR')?router.push('/business-calendar-integrations'):void connect(item.provider)} style={st.action}>
+       </View>:item.provider==='OPENAI'?<View style={st.lockStrip}><View style={st.lockInfo}><Ionicons name="sparkles-outline" size={15} color={colors.accent}/><Text style={st.lockCopy}>Everest AI is included with Pro and is being connected next.</Text></View></View>:<Pressable accessibilityRole="button" disabled={working===item.provider||!item.available} onPress={()=>connected&&item.provider.includes('CALENDAR')?router.push('/business-calendar-integrations'):void connect(item.provider)} style={st.action}>
         <Text style={st.actionText}>{working===item.provider?'Opening…':connected?'CONFIGURE':'CONNECT'}</Text>
         <Ionicons name={connected?'settings-outline':'arrow-forward'} size={15} color={colors.text}/>
        </Pressable>}
@@ -138,7 +138,7 @@ export default function BusinessIntegrations(){
     })}
 
     <View style={st.categoryRow}><Text style={st.category}>Automation</Text><Text style={st.freeLabel}>Included</Text></View>
-    <Pressable onPress={()=>router.push('/business-automations')} style={st.wideCard}>
+    <Pressable accessibilityRole="button" onPress={()=>router.push('/business-automations')} style={st.wideCard}>
      <View style={st.automationIcon}><Ionicons name="git-branch-outline" size={20} color={colors.accent}/></View>
      <View style={{flex:1}}>
       <Text style={st.cardTitle}>Automations & webhooks</Text>

@@ -35,7 +35,7 @@ export default function BusinessJobs(){
   const version=++generation.current;const currentRead=()=>version===generation.current;
   if(refresh)setRefreshing(true);else setLoading(true);if(!countsOnly)setError('');setCountError(false);
   try{
-   const ctx=await getWorkspaceContext();
+   const ctx=await getWorkspaceContext({preferBusiness:true});
    if(ctx.mode!=='BUSINESS'||!ctx.active_business_id){router.replace('/');return}
    const current=ctx.businesses.find(item=>item.id===ctx.active_business_id);
    if(!current){router.replace('/');return}

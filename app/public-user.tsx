@@ -62,7 +62,7 @@ export default function PublicUser(){
   const messageInputRef=useRef<TextInput|null>(null);
 
   async function load(){
-    if(!userId)return;
+    if(!userId){setLoading(false);return;}
     setLoading(true);
     setError('');
     try{
@@ -265,7 +265,7 @@ export default function PublicUser(){
 
       <Modal visible={composerOpen} transparent animationType="slide" onRequestClose={()=>setComposerOpen(false)}>
         <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1,justifyContent:'flex-end',backgroundColor:c.overlay}}>
-          <Pressable accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={()=>setComposerOpen(false)}/>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={()=>setComposerOpen(false)}/>
           <SafeAreaView edges={['bottom']} style={[pu.sheet,{backgroundColor:c.canvas}]}>
             <View style={[pu.handleBar,{backgroundColor:c.border}]}/>
             <Text accessibilityRole="header" style={[pu.sheetTitle,{color:c.text}]}>Message {p?.display_name??''}</Text>
@@ -283,11 +283,11 @@ export default function PublicUser(){
         animationType="fade"
         onRequestClose={()=>setMenuOpen(false)}
       >
-        <Pressable
+        <Pressable accessibilityRole="button"
           onPress={()=>setMenuOpen(false)}
           style={{flex:1,backgroundColor:'rgba(0,0,0,0.46)',justifyContent:'flex-end'}}
         >
-          <Pressable
+          <Pressable accessibilityRole="button"
             onPress={()=>{}}
             style={{
               width:'100%',
@@ -307,7 +307,7 @@ export default function PublicUser(){
             <Text style={{fontSize:17,fontWeight:'900',color:c.text}}>Profile actions</Text>
             <Text style={{fontSize:12,color:c.muted,marginTop:3,marginBottom:14}}>Safety and profile controls</Text>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={()=>void confirmReport()}
               style={({pressed})=>({
                 minHeight:54,
@@ -329,7 +329,7 @@ export default function PublicUser(){
               <Ionicons name="chevron-forward" size={17} color={c.muted}/>
             </Pressable>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={()=>void confirmBlock()}
               style={({pressed})=>({
                 minHeight:54,
@@ -350,7 +350,7 @@ export default function PublicUser(){
               <Ionicons name="chevron-forward" size={17} color={c.muted}/>
             </Pressable>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={()=>setMenuOpen(false)}
               style={({pressed})=>({
                 minHeight:48,

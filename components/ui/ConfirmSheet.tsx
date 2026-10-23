@@ -12,7 +12,7 @@ export function ConfirmSheet({visible,title,subtitle,rows,note,confirmLabel,canc
  const close=()=>{if(!busy)onCancel()};
  return <Modal visible={visible} transparent animationType={reduced?'none':'slide'} onRequestClose={close}>
   <View style={[styles.overlay,{backgroundColor:c.overlay}]}>
-   <Pressable accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={close}/>
+   <Pressable accessibilityRole="button" accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={close}/>
    <SafeAreaView edges={['bottom']} style={[styles.sheet,{backgroundColor:c.canvas}]}>
     <View style={[styles.handle,{backgroundColor:c.border}]}/>
     <Text accessibilityRole="header" style={[styles.title,{color:c.text}]}>{title}</Text>

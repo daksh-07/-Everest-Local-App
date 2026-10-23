@@ -57,6 +57,20 @@ function localDate(d: Date) {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+// Example copy that matches the chosen service, so the hint never talks about cars when you need an electrician.
+function detailsExample(service?: string | null) {
+  const name = (service ?? "").toLowerCase();
+  if (/electric/.test(name)) return "For example: Install two power points in the kitchen. The switchboard is in the garage.";
+  if (/plumb|drain|gas/.test(name)) return "For example: Kitchen tap is leaking and the shower drains slowly.";
+  if (/clean/.test(name)) return "For example: End-of-lease clean for a 2-bedroom apartment, including oven and windows.";
+  if (/garden|landscap|lawn|tree/.test(name)) return "For example: Mow and edge a 200 sqm backyard, trim hedges and take away green waste.";
+  if (/paint/.test(name)) return "For example: Repaint two bedrooms, walls and ceilings, colours already chosen.";
+  if (/mov|remov/.test(name)) return "For example: Move a 1-bedroom flat 5 km across town, second floor with a lift.";
+  if (/car|detail|auto|mechanic/.test(name)) return "For example: Interior and exterior detail for a sedan. The seats need deep cleaning.";
+  if (/hair|beauty|nail|makeup|barber/.test(name)) return "For example: Bridal hair and makeup for two people on Saturday morning.";
+  return "For example: What needs doing, roughly how big the job is, and anything about access or timing.";
+}
+
 function nextSaturday() {
   const d = new Date();
   const add = (6 - d.getDay() + 7) % 7;
@@ -278,16 +292,16 @@ export default function Request() {
     }
   }
 
-  async function confirmLocation() {
+  async function confirmLocation(): Promise<boolean> {
     if (
       !location.addressLine1.trim() ||
       !location.suburb.trim() ||
       !location.state.trim()
     ) {
       setError("Add the street address, suburb and state first.");
-      return;
+      return false;
     }
-    if (locating) return;
+    if (locating) return false;
     setLocating(true);
     setError("");
     try {
@@ -320,8 +334,10 @@ export default function Request() {
         next={...next,formattedAddress:next.formattedAddress||[next.addressLine1,next.suburb,next.city,next.state,next.postalCode].filter(Boolean).join(", "),confirmed:true};
       }
       setLocation(next);
+      return true;
     } catch(e) {
       setError(userMessage(e,"The service address could not be confirmed."));
+      return false;
     } finally {
       setLocating(false);
     }
@@ -432,7 +448,13 @@ export default function Request() {
     }
     return true;
   }
-  function next() {
+  async function next() {
+    // A typed address is confirmed (and geocoded) on Continue rather than through a separate button.
+    if (step === 2 && effectiveMode !== "REMOTE" && !location.confirmed) {
+      if (!(await confirmLocation())) return;
+      setStep(3);
+      return;
+    }
     if (validate(step)) setStep((v) => Math.min(3, v + 1));
   }
   async function submit() {
@@ -604,7 +626,10 @@ export default function Request() {
       ? Boolean(serviceId || selectedDefinition) &&
         description.trim().length >= 5
       : step === 2
-        ? effectiveMode === "REMOTE" || location.confirmed
+        ? effectiveMode === "REMOTE" ||
+          location.confirmed ||
+          (!locating &&
+            Boolean(location.addressLine1.trim() && location.suburb.trim() && location.state.trim()))
         : true);
   return (
     <SafeAreaView style={s.safe}>
@@ -715,7 +740,7 @@ export default function Request() {
                   accessibilityLabel="Job details"
                       value={description}
                       onChangeText={setDescription}
-                      placeholder="For example: Interior and exterior detail for a sedan. The seats need deep cleaning."
+                      placeholder={detailsExample(selectedDefinition?.name)}
                       placeholderTextColor={colors.muted}
                       multiline
                       maxLength={5000}
@@ -809,7 +834,7 @@ export default function Request() {
                               style={s.outlineSmall}
                             >
                               <Text style={s.outlineText}>
-                                CONFIRM THIS ADDRESS
+                                Confirm this address
                               </Text>
                             </Pressable>
                           ) : null}
@@ -1076,7 +1101,7 @@ export default function Request() {
                       color={colors.text}
                     />
                     <Text style={s.outlineText}>
-                      ADD PHOTOS {photos.length ? `(${photos.length}/10)` : ""}
+                      Add photos {photos.length ? `(${photos.length}/10)` : ""}
                     </Text>
                   </Pressable>
                   {photos.length ? (
@@ -1119,7 +1144,7 @@ export default function Request() {
                   colors={colors}
                 />
                 <Review
-                  label="WHERE"
+                  label="Where"
                   value={
                     effectiveMode === "REMOTE"
                       ? "Remote / online"
@@ -1129,7 +1154,7 @@ export default function Request() {
                   colors={colors}
                 />
                 <Review
-                  label="WHEN"
+                  label="When"
                   value={
                     live
                       ? arrivalWindow.replaceAll("_", " ").toLowerCase()
@@ -1148,7 +1173,7 @@ export default function Request() {
                   colors={colors}
                 />
                 <Review
-                  label="BUDGET"
+                  label="Budget"
                   value={
                     budgetChoice === "NONE"
                       ? "Not specified"
@@ -1168,7 +1193,7 @@ export default function Request() {
                 />
                 {photos.length ? (
                   <Review
-                    label="PHOTOS"
+                    label="Photos"
                     value={`${photos.length} attached`}
                     onPress={() =>
                       scrollRef.current?.scrollTo({ y: photosY.current, animated: !reduced })
@@ -1195,7 +1220,7 @@ export default function Request() {
               accessibilityRole="button"
               accessibilityState={{ disabled: !canContinue }}
               disabled={!canContinue}
-              onPress={next}
+              onPress={() => void next()}
               style={({ pressed }) => [
                 s.primary,
                 {
@@ -1312,8 +1337,8 @@ function Review({
           {value}
         </Text>
       </View>
-      <Text style={{ fontSize: 12, fontWeight: "900", color:colors.accent }}>
-        EDIT
+      <Text style={{ fontSize: 13, fontWeight: "700", color:colors.accent }}>
+        Edit
       </Text>
     </Pressable>
   );

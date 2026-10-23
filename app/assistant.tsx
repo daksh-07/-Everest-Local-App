@@ -211,7 +211,7 @@ export default function Assistant() {
       >
         <View style={s.page}>
           <View style={s.topBar}>
-            <Pressable onPress={() => router.back()} style={s.iconButton} accessibilityLabel="Go back">
+            <Pressable accessibilityRole="button" onPress={() => router.back()} style={s.iconButton} accessibilityLabel="Go back">
               <Ionicons name="chevron-back" size={22} color={colors.text} />
             </Pressable>
 
@@ -228,7 +228,7 @@ export default function Assistant() {
               </View>
             </View>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={resetChat}
               disabled={busy}
               style={[s.iconButton, busy && s.disabled]}
@@ -284,7 +284,7 @@ export default function Assistant() {
 
                 <View style={s.starterGrid}>
                   {starters.map((item) => (
-                    <Pressable
+                    <Pressable accessibilityRole="button"
                       key={item.label}
                       disabled={busy}
                       onPress={() => void ask(item.label)}
@@ -316,7 +316,7 @@ export default function Assistant() {
                       {!!message.actions?.length && (
                         <View style={s.actionList}>
                           {message.actions.map((item) => (
-                            <Pressable
+                            <Pressable accessibilityRole="button"
                               key={item.kind + item.title + item.id}
                               onPress={() => router.push(item.href as never)}
                               style={({ pressed }) => [s.actionButton, pressed && s.pressed]}
@@ -351,7 +351,7 @@ export default function Assistant() {
                     <View style={s.errorBody}>
                       <Text style={s.errorTitle}>Couldn’t reach Everest AI</Text>
                       <Text style={s.errorText}>{error}</Text>
-                      <Pressable onPress={() => router.push('/search')}>
+                      <Pressable accessibilityRole="button" onPress={() => router.push('/search')}>
                         <Text style={s.errorLink}>Explore Everest instead</Text>
                       </Pressable>
                     </View>
@@ -379,7 +379,7 @@ export default function Assistant() {
                 style={s.input}
                 accessibilityLabel="Ask Everest"
               />
-              <Pressable
+              <Pressable accessibilityRole="button"
                 disabled={busy || !input.trim()}
                 onPress={() => void ask()}
                 style={({ pressed }) => [

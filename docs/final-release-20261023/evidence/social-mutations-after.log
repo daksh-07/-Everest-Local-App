@@ -1,0 +1,22 @@
+✔ reports require a confirmed report identifier (141.762866ms)
+✔ a hidden post requires exactly one returned row before closing the report (21.244426ms)
+✔ report closure validates the RPC boolean and describes partial success (6.400727ms)
+✔ confirmed moderation changes close the selected report (5.909073ms)
+✔ archivePost rejects zero-row writes (50.610066ms)
+✔ archivePost confirms a returned post (56.623425ms)
+✔ restorePost rejects zero-row writes (23.295645ms)
+✔ restorePost confirms a returned post (22.309976ms)
+✔ deletePost rejects zero-row writes (68.349393ms)
+✔ deletePost confirms a returned post (27.908315ms)
+✔ updatePostCaption rejects zero-row writes (65.541997ms)
+✔ updatePostCaption confirms a returned post (41.038324ms)
+✔ setPostCommentsEnabled rejects zero-row writes (49.323558ms)
+✔ setPostCommentsEnabled confirms a returned post (33.417041ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 953.584798

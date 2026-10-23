@@ -21,13 +21,14 @@ const business={id:biz,name:'Phase Five Garden Care',status:'ACTIVE',verificatio
 const service={id:'s1',business_id:biz,name:'Garden maintenance',base_price:90,duration_minutes:60,delivery_mode:'LOCAL',active:true,service_booking_settings:{instant_booking_enabled:false}};
 const product={id:'p1',business_id:biz,business_name:business.name,name:'Local garden kit',price:20,sale_price:null,status:'ACTIVE',product_images:[],primary_image_path:null};
 const result={kind:'SERVICE',id:'s1',title:'Garden maintenance',subtitle:'Local service',score:60,metadata:{business_id:biz}};
-const report={engine,baseline,scenarios:[],layouts:[],errors:[]};
+const report={engine,baseline,scenarios:[],layouts:[],errors:[],errorDetails:[],failedRequests:[]};
 async function open(path,state={},authenticated=false){
  const context=await browser.newContext({viewport:{width:state.width||390,height:844},reducedMotion:state.motion||'reduce',isMobile:Boolean(state.touch),hasTouch:Boolean(state.touch)});
  await context.addInitScript(({session,authenticated,theme})=>{if(!localStorage.getItem('everest-local-theme'))localStorage.setItem('everest-local-theme',theme);if(authenticated)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session))},{session,authenticated,theme:state.theme||'LIGHT'});
  console.log('Fixture',path,state.fail??'healthy');
  const page=await context.newPage();await trackFixtureReads(page);if(state.clock)await page.clock.install();page.setDefaultTimeout(15000);const calls=[];
- page.on('pageerror',error=>report.errors.push(error.message));
+ page.on('pageerror',error=>{report.errors.push(error.message);report.errorDetails.push({path,url:page.url(),message:error.message,stack:error.stack});console.error('PAGE_ERROR',path,error.stack)});
+ page.on('requestfailed',request=>report.failedRequests.push({path,url:new URL(request.url()).pathname,error:request.failure()?.errorText}));
  const sockets=[];
  await page.routeWebSocket('**/realtime/**',ws=>{
   if(state.noRealtime){ws.close();return;}
@@ -295,7 +296,7 @@ try{
    await page.getByText(path.includes('everest-live')?'Your responses are ready':path.includes('business-jobs')?'Open job':path.includes('business-calendar')?'Scheduled garden visit':path.includes('business-inbox')?'No customer conversations yet':path.includes('business-crm')?'Garden lead':path.includes('business-my-work')?'You’re clear.':'Save availability',{exact:true}).first().waitFor();
    await page.waitForLoadState('networkidle');
    await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);
-   for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
+   for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){
     await page.setViewportSize({width,height:width===320?568:844});
     await page.waitForTimeout(220);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,path+' overflow '+width);
@@ -317,7 +318,7 @@ try{
    const {page,context}=await open(path,state,true);await page.waitForLoadState('networkidle');
    for(const theme of ['LIGHT','DARK']){
     await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);
-    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){
      await page.setViewportSize({width,height:844});await page.waitForTimeout(150);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,path+' '+mode+' overflow');
      report.layouts.push({path,theme,motion:'reduce',width,state:mode});

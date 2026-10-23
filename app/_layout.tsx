@@ -19,22 +19,23 @@ import {clearPushBadge,getInitialPushHref,registerBusinessPushNotifications,subs
 
 const protectedRoutes = new Set([
   '/account','/activity','/memberships','/assistant','/request','/everest-live','/requests','/quotes','/bookings','/booking','/orders','/cart','/messages','/reviews','/notifications','/settings','/edit-profile','/appearance','/notification-settings','/help','/create','/create-post','/create-story','/create-clip','/sound','/archive','/highlights','/business-profile-edit',
+  '/saved','/saved-searches','/connections','/social-privacy','/customer-calendar','/promote-post','/share-result','/external-businesses','/external-quotes',
 ]);
 const businessApplicationRoutes = new Set(['/business','/business-onboarding','/business-dashboard','/business-verification','/business-today','/business-control','/business-profile-edit','/business-upgrade']);
-const businessRestrictedRoutes = new Set(['/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities','/business-leads','/business-jobs','/business-job','/business-my-work','/business-operations','/business-inbox','/business-crm','/business-crm-booking','/business-crm-quote','/business-customer','/business-customers','/business-deal','/business-calendar','/business-availability','/business-integrations','/business-calendar-integrations','/business-automations','/business-dm-automation','/business-growth','/business-growth-p1','/business-payouts']);
+const businessRestrictedRoutes = new Set(['/product-editor','/business-orders','/business-bookings','/products','/services','/service-areas','/opportunities','/business-leads','/business-jobs','/business-job','/business-my-work','/business-operations','/business-inbox','/business-crm','/business-crm-booking','/business-crm-quote','/business-customer','/business-customers','/business-deal','/business-calendar','/business-availability','/business-integrations','/business-calendar-integrations','/business-automations','/business-dm-automation','/business-growth','/business-growth-p1','/business-payouts']);
 const adminRoutes = new Set(['/admin','/admin-operations','/driver-verification']);
 const deliveryRoutes = new Set(['/delivery','/driver-dashboard']);
 const driverApplicationRoutes = new Set(['/driver-onboarding']);
 
 function StartupError({ onRetry }: { onRetry: () => void }) {
-  const {colors}=useAppTheme();return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>Everest Local</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>We could not load your account access right now. Please retry.</Text><Pressable onPress={onRetry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>Retry</Text></Pressable></View>;
+  const {colors}=useAppTheme();return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>Everest Local</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>We could not load your account access right now. Please retry.</Text><Pressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>Retry</Text></Pressable></View>;
 }
 function sanitizeDebug(value: string) { return value.replace(/https?:\/\/[^\s)]+/gi,'[url]').replace(/(anon[_-]?key|service[_-]?role|secret|password|token)=?[^\s&]+/gi,'$1=[redacted]'); }
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   const dark=useColorScheme()==='dark';const colors=dark?{canvas:darkPalette.canvas,text:darkPalette.text,muted:darkPalette.muted}:{canvas:lightPalette.canvas,text:lightPalette.text,muted:lightPalette.textSecondary};
   const pathname=usePathname();const message=sanitizeDebug(error?.message||String(error)||'Unknown runtime error.');const stack=sanitizeDebug(error?.stack||'');
   if(typeof console!=='undefined') console.error('[Everest Local runtime error]',{pathname,name:error?.name,message,stack});
-  return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>Everest Local</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>The app hit an unexpected problem. Retry to continue.</Text><Pressable onPress={retry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>Retry</Text></Pressable></View>;
+  return <View style={[styles.errorScreen,{backgroundColor:colors.canvas}]}><Text style={[styles.eyebrow,{color:colors.muted}]}>Everest Local</Text><Text style={[styles.errorTitle,{color:colors.text}]}>Something went wrong loading this page.</Text><Text style={[styles.errorCopy,{color:colors.muted}]}>The app hit an unexpected problem. Retry to continue.</Text><Pressable accessibilityRole="button" onPress={retry} style={styles.retryButton}><Text style={[styles.retry,{color:colors.text}]}>Retry</Text></Pressable></View>;
 }
 function ThemedRootLayout() {
   const pathname=usePathname();const nav=useRouter();

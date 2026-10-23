@@ -1,0 +1,36 @@
+[
+  {
+    "engine": "chromium",
+    "suite": "phase5b",
+    "errors": [
+      "A network error occurred."
+    ],
+    "disposition": "FAILED initial run; unmodified assertions passed against the immutable export; see final browser reports"
+  },
+  {
+    "engine": "webkit",
+    "suite": "phase5",
+    "errors": [
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/businesses?select=id%2Cname%2Cdescription%2Clogo_url%2Ccover_url%2Cverification_status%2Csuburb%2Ccity%2Cstate%2Copening_hours%2Cphone%2Cemail%2Cwebsite_url&id=eq.33333333-3333-4333-8333-333333333333 due to access control checks.",
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/services?select=id%2Cname%2Cdescription%2Cbase_price%2Cduration_minutes%2Cdelivery_mode%2Cservice_booking_settings%28instant_booking_enabled%29&business_id=eq.33333333-3333-4333-8333-333333333333&active=eq.true&order=name.asc due to access control checks.",
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/products?select=id%2Cname%2Cdescription%2Cprice%2Csale_price%2Cdelivery_eligible%2Cpickup_available%2Cstatus%2Cproduct_images%28storage_path%2Curl%2Cis_primary%2Csort_order%29&business_id=eq.33333333-3333-4333-8333-333333333333&status=in.%28ACTIVE%2COUT_OF_STOCK%29&order=name.asc&limit=8 due to access control checks.",
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/reviews?select=rating&business_id=eq.33333333-3333-4333-8333-333333333333&limit=200 due to access control checks.",
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/rpc/is_following due to access control checks.",
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/rpc/get_follow_counts due to access control checks.",
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/posts?select=id%2Cauthor_id%2Cbusiness_id%2Ccaption%2Cpost_type%2Cvisibility%2Cservice_id%2Cproduct_id%2Clocation_label%2Cstatus%2Ccomments_enabled%2Ccreated_at%2Cupdated_at%2Ccontent_format%2Cmusic_track_id%2Cmusic_start_ms%2Cmusic_volume%2Coriginal_volume%2Ccover_storage_path%2Cphoto_duration_ms&status=eq.PUBLISHED&visibility=eq.PUBLIC&content_format=eq.POST&business_id=eq.33333333-3333-4333-8333-333333333333&order=created_at.desc&offset=0&limit=10 due to access control checks.",
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/story_highlights?select=id%2Cowner_id%2Cbusiness_id%2Ctitle%2Ccover_story_id%2Csort_order%2Ccreated_at&order=sort_order.asc%2Ccreated_at.asc&business_id=eq.33333333-3333-4333-8333-333333333333 due to access control checks.",
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/business_membership_plans?select=*&business_id=eq.33333333-3333-4333-8333-333333333333&active=eq.true&visibility=eq.PUBLIC&order=created_at.desc due to access control checks.",
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/business_packages?select=*&business_id=eq.33333333-3333-4333-8333-333333333333&active=eq.true&visibility=eq.PUBLIC&order=created_at.desc due to access control checks."
+    ],
+    "disposition": "FAILED initial run; unmodified assertions passed against the immutable export; see final browser reports"
+  },
+  {
+    "engine": "webkit",
+    "suite": "phase5b",
+    "errors": [
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/rpc/get_my_workspace_context due to access control checks.",
+      "/bmwbljefnamvjnmuvkvv.supabase.co/rest/v1/rpc/get_my_access_context due to access control checks."
+    ],
+    "disposition": "FAILED initial run; unmodified assertions passed against the immutable export; see final browser reports"
+  }
+]

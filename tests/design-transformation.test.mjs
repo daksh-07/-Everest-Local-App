@@ -73,7 +73,8 @@ test('shared section header replaces ad-hoc uppercase section labels',()=>{
 test('business opportunity screens act only for the active workspace business',()=>{
  const opp=read('app/opportunities.tsx');const search=read('app/search.tsx');
  // RLS admits admins and members of other businesses; send_quote picks the oldest authorised business.
- assert.match(opp,/\.eq\('business_id',businessId\)\.eq\('status','OPEN'\)/);
+ // list_my_business_opportunities filters o.business_id=p_business_id and requires membership of it.
+ assert.match(opp,/rpc\('list_my_business_opportunities',\{p_business_id:businessId,p_status:'OPEN'\}\)/);
  assert.match(opp,/rpc\('send_quote_for_business',\{p_business_id:businessId,/);
  assert.doesNotMatch(opp,/rpc\('send_quote',/);
  assert.doesNotMatch(opp,/from\('opportunities'\)\.select\([^)]*\)\.eq\('status','OPEN'\)/,'no unscoped opportunity list');

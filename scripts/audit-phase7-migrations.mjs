@@ -2,11 +2,11 @@
 import fs from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-const root='docs/phase7-evidence';
+const root=process.argv[2]||'docs/phase7-evidence';
 const remote=JSON.parse(await fs.readFile(root+'/remote-migrations.json','utf8'));
 const files=execFileSync('git',['ls-files','supabase/migrations/*.sql'],{encoding:'utf8'}).trim().split('\n');
 const byVersion=new Map(remote.map(row=>[row.version,row]));
-const pending=new Set(['20261018032359_phase5_public_discovery','20261019034703_phase6_live_matching_correctness','20261019035131_phase6_authorized_comment_moderation','20261019035613_phase6_live_request_quote_lifecycle','20261019081535_phase7_quote_acceptance_lock_order']);
+const pending=new Set(['20261018032359_phase5_public_discovery','20261019034703_phase6_live_matching_correctness','20261019035131_phase6_authorized_comment_moderation','20261019035613_phase6_live_request_quote_lifecycle','20261019081535_phase7_quote_acceptance_lock_order','20261022120000_restore_public_guest_reads','20261022121000_restore_admin_driver_review_access','20261022122000_business_conversation_customer_names','20261022123000_admin_read_stripe_event_metadata']);
 const local=[];
 for(const file of files){
  const stem=file.split('/').at(-1).slice(0,-4),split=stem.indexOf('_'),version=stem.slice(0,split),name=stem.slice(split+1);

@@ -190,8 +190,9 @@ async function setOwnPostStatus(postId:string,status:'PUBLISHED'|'HIDDEN'|'REMOV
   requireSupabaseConfig();
   const {data:{user}}=await supabase.auth.getUser();
   if(!user)throw new Error('Sign in to manage your posts.');
-  const {error}=await supabase.from('posts').update({status,updated_at:new Date().toISOString()}).eq('id',postId).eq('author_id',user.id);
+  const {data,error}=await supabase.from('posts').update({status,updated_at:new Date().toISOString()}).eq('id',postId).eq('author_id',user.id).select('id').single();
   if(error)throw new Error(error.message);
+  if(data?.id!==postId)throw new Error('This post could not be updated. Refresh and try again.');
 }
 export async function archivePost(postId:string):Promise<void>{return setOwnPostStatus(postId,'HIDDEN')}
 export async function restorePost(postId:string):Promise<void>{return setOwnPostStatus(postId,'PUBLISHED')}
@@ -199,8 +200,9 @@ export async function deletePost(postId:string):Promise<void>{return setOwnPostS
 
 export async function updatePostCaption(postId:string,caption:string):Promise<void>{
   requireSupabaseConfig();
-  const {error}=await supabase.from('posts').update({caption:caption.trim()||null,updated_at:new Date().toISOString()}).eq('id',postId);
+  const {data,error}=await supabase.from('posts').update({caption:caption.trim()||null,updated_at:new Date().toISOString()}).eq('id',postId).select('id').single();
   if(error)throw new Error(error.message);
+  if(data?.id!==postId)throw new Error('This post could not be updated. Refresh and try again.');
 }
 
 
@@ -332,8 +334,9 @@ export async function editPostComment(comment:PostComment,body:string):Promise<P
 
 export async function setPostCommentsEnabled(postId:string,enabled:boolean):Promise<void>{
   requireSupabaseConfig();
-  const {error}=await supabase.from('posts').update({comments_enabled:enabled,updated_at:new Date().toISOString()}).eq('id',postId);
+  const {data,error}=await supabase.from('posts').update({comments_enabled:enabled,updated_at:new Date().toISOString()}).eq('id',postId).select('id').single();
   if(error)throw new Error(error.message);
+  if(data?.id!==postId)throw new Error('Comment settings could not be saved. Refresh and try again.');
 }
 
 
