@@ -1,0 +1,12 @@
+✔ test aliases can be prepared, removed and cleaned idempotently without migration copies (195.271008ms)
+✔ preparation refuses to overwrite a real migration (73.564789ms)
+✔ cleanup refuses to overwrite a real migration (49.941535ms)
+✔ cleanup refuses an unknown symlink target (37.787951ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 485.091932
