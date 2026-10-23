@@ -1,0 +1,25 @@
+(node:67902) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/everest-phase6/lib/resilience.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/everest-phase6/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ previously committed booking is read before any mutation (1.482533ms)
+✔ successful acceptance returns the confirmed booking with one write (0.458524ms)
+✔ failed preflight never submits a mutation (0.560589ms)
+✔ lost response recovers the committed booking without replay (0.230769ms)
+✔ a different winning quote recovers the same request booking (0.25807ms)
+✔ missing mutation confirmation triggers authoritative recovery (0.348257ms)
+✔ uncertain response with empty verification does not replay (0.379554ms)
+✔ uncertain response with failed verification does not replay (0.192582ms)
+✔ hung mutation is bounded and can recover its committed booking (252.711559ms)
+✔ hung reconciliation ends with check-bookings feedback, no automatic replay (250.565352ms)
+✔ late mutation resolution after uncertainty cannot navigate or submit again (251.577561ms)
+✔ definite database rejection retains safe feedback after read reconciliation (0.551224ms)
+✔ another committed winner is recovered even after a definite rejection (0.180753ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 877.351598

@@ -1,0 +1,168 @@
+{
+  "base": "95b8d489c98109717bcb8d6ef53d54674c4b5ab7",
+  "unit": {
+    "passed": 474,
+    "failed": 0
+  },
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 11
+  },
+  "export": "passed (clean Expo cache)",
+  "staticAudit": {
+    "sourceConfigFiles": 767,
+    "routes": 96
+  },
+  "migrationAudit": {
+    "checked": 239,
+    "newMigrations": 4
+  },
+  "postgres17": {
+    "liveMatching": 33,
+    "liveQuoteStateContracts": 5,
+    "discoveryPermissions": 28,
+    "commentRls": 11,
+    "transactionContracts": 20,
+    "failed": 0,
+    "knownFindings": [
+      "P1 customer quote-decision deadlock; one booking invariant holds"
+    ]
+  },
+  "pglite": {
+    "liveMatching": 33,
+    "discoveryPermissions": 28,
+    "failed": 0
+  },
+  "browsers": {
+    "chromium": {
+      "discovery": {
+        "scenarios": 8,
+        "accessibilityScans": 8,
+        "violations": 0,
+        "pageErrors": 0,
+        "layouts": 224,
+        "states": {
+          "loaded": 112,
+          "empty": 56,
+          "error": 56
+        }
+      },
+      "operations": {
+        "scenarios": 26,
+        "accessibilityScans": 28,
+        "violations": 0,
+        "pageErrors": 0,
+        "layouts": 392,
+        "states": {
+          "loaded": 196,
+          "empty": 98,
+          "error": 98
+        }
+      },
+      "comments": {
+        "scenarios": 11,
+        "accessibilityScans": 2,
+        "violations": 0,
+        "pageErrors": 0,
+        "layouts": 98,
+        "states": {
+          "loaded": 28,
+          "empty": 14,
+          "error": 14,
+          "disabled": 14,
+          "guest": 14,
+          "likes-error": 14
+        }
+      }
+    },
+    "webkit": {
+      "discovery": {
+        "scenarios": 8,
+        "accessibilityScans": 8,
+        "violations": 0,
+        "pageErrors": 0,
+        "layouts": 224,
+        "states": {
+          "loaded": 112,
+          "empty": 56,
+          "error": 56
+        }
+      },
+      "operations": {
+        "scenarios": 26,
+        "accessibilityScans": 28,
+        "violations": 0,
+        "pageErrors": 0,
+        "layouts": 392,
+        "states": {
+          "loaded": 196,
+          "empty": 98,
+          "error": 98
+        }
+      },
+      "comments": {
+        "scenarios": 11,
+        "accessibilityScans": 2,
+        "violations": 0,
+        "pageErrors": 0,
+        "layouts": 98,
+        "states": {
+          "loaded": 28,
+          "empty": 14,
+          "error": 14,
+          "disabled": 14,
+          "guest": 14,
+          "likes-error": 14
+        }
+      },
+      "messaging": {
+        "cases": 132,
+        "scope": "Web layout with simulated visual viewport occlusion; no native/system keyboard"
+      },
+      "bookings": {
+        "cases": 12,
+        "scope": "loading/error/retry/empty; existing booking filters"
+      }
+    }
+  },
+  "staging": "blocked: no nonproduction project/account setup",
+  "physicalDevices": "not available; not verified",
+  "production": "read-only catalog, migration metadata, public API probes and deployment SHA only",
+  "deployment": "not performed",
+  "releaseRecommendation": "NO-GO",
+  "followup": {
+    "scope": "Live action-feedback regression after final Chromium CI findings",
+    "unit": {
+      "passed": 474,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "lint": {
+      "errors": 0,
+      "existingWarnings": 11
+    },
+    "export": "passed",
+    "commentsChromium156": {
+      "scenarioGroups": 11,
+      "layouts": 98,
+      "pageErrors": 0
+    },
+    "liveFeedbackBefore": {
+      "failed": 1,
+      "scope": "held status read erases cancellation error"
+    },
+    "liveFeedbackAfter": {
+      "chromium156": {
+        "scenarioGroups": 26,
+        "pageErrors": 0,
+        "scope": "core operational scenarios, including held-response cancellation feedback regression"
+      },
+      "webkit": {
+        "scenarioGroups": 26,
+        "pageErrors": 0,
+        "scope": "core operational scenarios, including held-response cancellation feedback regression"
+      }
+    }
+  }
+}

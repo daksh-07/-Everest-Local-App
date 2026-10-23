@@ -3,7 +3,11 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'scripts/lib/browser-fixture.mjs'
       - 'app/everest-live.tsx'
+      - 'app/quotes.tsx'
+      - 'lib/marketplace.ts'
+      - 'lib/quote-acceptance.ts'
       - 'app/business-*.tsx'
       - 'components/LiveSearchMap*'
       - 'components/OperationalFeedback.tsx'
@@ -61,6 +65,7 @@ jobs:
           AXE_MODULE: /tmp/everest-browser-tools/node_modules/@axe-core/playwright/dist/index.mjs
           EVEREST_PREVIEW_URL: http://127.0.0.1:4173
           EVEREST_QA_BROWSER: ${{ matrix.browser }}
+          EVEREST_QA_TABLET: '1'
           EVEREST_QA_ARTIFACTS: /tmp/everest-operations-qa
         run: |
           if [ "$EVEREST_QA_BROWSER" = chromium ]; then

@@ -1,0 +1,33 @@
+{
+  "application_code_checkpoint": "0df9d2f",
+  "node": "24.19.0",
+  "tools": {
+    "playwright": "1.64.1",
+    "axe": "4.14.0",
+    "pglite": "0.5.10"
+  },
+  "unit": {
+    "command": "node --experimental-strip-types --test tests/*.test.mjs",
+    "passed": 458,
+    "failed": 0
+  },
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existing_warnings": 12
+  },
+  "build_web": "passed",
+  "static_audit": {
+    "passed": true,
+    "source_config_files": 702,
+    "router_routes": 96
+  },
+  "migration_audit": {
+    "passed": true,
+    "migrations": 236
+  },
+  "discovery_sql": "Exact migration executed with disposable PostgreSQL role/RLS/grant fixtures; passed",
+  "home_regression": "42 appearance/width combinations, 8 destinations, gestures and scene retention passed",
+  "search_regression": "42 appearance/width combinations, stale cancellation, account guidance and error/retry passed",
+  "deployment": "Not deployed; review branch deployment disabled in vercel.json"
+}

@@ -1,0 +1,33 @@
+Fixture /business-calendar [ 'business_availability' ]
+Fixture /business-jobs healthy
+Fixture /business-inbox [ 'conversations' ]
+Fixture /business-my-work [ 'get_my_assigned_jobs' ]
+Fixture /business-crm [ 'conversations' ]
+Fixture /business-availability [ 'business_availability' ]
+Fixture /everest-live?requestId=live1 [ 'get_everest_live_state' ]
+Fixture /business-jobs healthy
+Fixture /business-jobs healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 [ 'accept_quote' ]
+Fixture /business-jobs healthy
+Fixture /business-jobs healthy
+Fixture /everest-live?requestId=live1 healthy
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 15000ms exceeded.
+Call log:
+[2m  - waiting for getByText('Cancellation was not confirmed. Retry to check your request.', { exact: true }) to be visible[22m
+
+    at /workspace/everest-phase6/scripts/verify-phase5b.mjs:212:101 {
+  log: [
+    "  - waiting for getByText('Cancellation was not confirmed. Retry to check your request.', { exact: true }) to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.19.0

@@ -1,0 +1,1 @@
+PASS startup fetching, retained scenes, selected tabs, vertical/horizontal gestures, reachability of all 8 former menu destinations, reduced motion and 42 Home appearance/width combinations. chromium emulation only.

@@ -1,3 +1,4 @@
+import {isAccessFailure} from '@/lib/section-state';
 import {userMessage} from '@/lib/errors';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, Alert, Image, Modal, PanResponder, Pressable, ScrollView, View } from 'react-native';
@@ -151,16 +152,23 @@ export default function Search(){
   const [photoOnly,setPhotoOnly]=useState(false);
   const [sortMode,setSortMode]=useState<SortMode>('RELEVANCE');
   const version=useRef(0);
+  const [viewer,setViewer]=useState('guest');
+  const requestKey=JSON.stringify([q.trim(),tab,viewer]);
+  const lastRequestKey=useRef('');
+  const [loadedKey,setLoadedKey]=useState('');
+  const hasResults=loadedKey===requestKey&&(tab==='JOB'?jobs.length>0:items.length>0);
 
   useEffect(()=>{void getSearchHistory().then(setHistory)},[]);
-  useEffect(()=>{let active=true;void supabase.auth.getSession().then(({data})=>{if(active)setSignedIn(Boolean(data.session))});return()=>{active=false}},[]);
+  useEffect(()=>{let active=true;const apply=(session:{user:{id:string}}|null)=>{if(active){setSignedIn(Boolean(session));setViewer(session?.user.id??'guest')}};void supabase.auth.getSession().then(({data})=>apply(data.session));const {data}=supabase.auth.onAuthStateChange((_event,session)=>apply(session));return()=>{active=false;data.subscription.unsubscribe()}},[]);
 
   useEffect(()=>{
     // Invalidate immediately, including the debounce window. An older response
     // must never be displayed underneath a newer query or selected tab.
     const current=++version.current;
     const controller=new AbortController();
-    setError('');setRequiresSignIn(false);setItems([]);setJobs([]);
+    const sameRequest=lastRequestKey.current===requestKey;lastRequestKey.current=requestKey;
+    setError('');setRequiresSignIn(false);
+    if(!sameRequest){setItems([]);setJobs([]);setLoadedKey('')}
     setLoading(Boolean(q.trim()));
     const timer=setTimeout(()=>{
       const text=q.trim();
@@ -168,12 +176,12 @@ export default function Search(){
       setLoading(true);
       if(tab==='JOB')void loadJobs(text,current);
       else void universalSearch(text,tab as UniversalKind,30,0,controller.signal)
-        .then(x=>{if(version.current===current)setItems(x)})
-        .catch(e=>{if(version.current!==current)return;const needsAccount=!signedIn&&e?.code==='42501';setRequiresSignIn(needsAccount);setError(needsAccount?'Sign in to search Everest':'Search could not be loaded. Check your connection and try again.')})
+        .then(x=>{if(version.current===current){setItems(x);setLoadedKey(requestKey)}})
+        .catch(e=>{if(version.current!==current)return;const denied=isAccessFailure(e);const needsAccount=!signedIn&&denied;if(denied){setItems([]);setJobs([]);setLoadedKey('')}setRequiresSignIn(needsAccount);setError(needsAccount?'Sign in to search Everest':'Search could not be loaded. Check your connection and try again.')})
         .finally(()=>{if(version.current===current)setLoading(false)});
     },350);
     return()=>{clearTimeout(timer);version.current=current+1;controller.abort()};
-  },[q,tab,retry,signedIn]);
+  },[q,tab,retry,signedIn,requestKey]);
 
   async function rememberSearch(text=q.trim(),kind=tab){
     if(!text)return;
@@ -214,7 +222,7 @@ export default function Search(){
           const raw=Array.isArray(item.service_requests)?item.service_requests[0]:item.service_requests;
           return raw?{...raw,status:item.status}:null;
         }).filter((item):item is JobResult=>item!==null);
-        if(version.current===current)setJobs(mapped);
+        if(version.current===current){setJobs(mapped);setLoadedKey(requestKey)}
       }else{
         let request=supabase.from('service_requests')
           .select('id,description,suburb,city,state,status,budget,preferred_date')
@@ -224,10 +232,13 @@ export default function Search(){
         if(pattern)request=request.ilike('description',pattern);
         const {data,error:requestError}=await request;
         if(requestError)throw requestError;
-        if(version.current===current)setJobs((data??[]) as JobResult[]);
+        if(version.current===current){setJobs((data??[]) as JobResult[]);setLoadedKey(requestKey)}
       }
     }catch(e){
-      if(version.current===current)setError(userMessage(e,'Jobs could not be loaded.'));
+      if(version.current===current){
+        if(isAccessFailure(e)){setJobs([]);setLoadedKey('')}
+        setError(userMessage(e,'Jobs could not be loaded.'));
+      }
     }finally{
       if(version.current===current)setLoading(false);
     }
@@ -310,7 +321,7 @@ export default function Search(){
   }
 
   const filteredItems=useMemo(()=>{
-    let next=[...items];
+    let next=loadedKey===requestKey?[...items]:[];
     if(photoOnly){
       next=next.filter(item=>typeof item.metadata.avatar_url==='string'||typeof item.metadata.logo_url==='string');
     }
@@ -320,7 +331,7 @@ export default function Search(){
       next.sort((a,b)=>Number(b.score??0)-Number(a.score??0));
     }
     return next;
-  },[items,photoOnly,sortMode]);
+  },[items,photoOnly,sortMode,loadedKey,requestKey]);
 
   const icon=(k:UniversalResult['kind'])=>k==='PERSON'?'person-outline':k==='BUSINESS'?'business-outline':k==='SERVICE'?'construct-outline':k==='PRODUCT'?'cube-outline':k==='VIDEO'?'videocam-outline':'document-text-outline';
 
@@ -359,7 +370,6 @@ export default function Search(){
             placeholderTextColor={c.muted}
             style={[
               {flex:1,minWidth:0,fontSize:16,color:c.text,minHeight:48},
-              {outlineStyle:'none'} as never,
             ]}
             returnKeyType="search"
           />
@@ -370,7 +380,7 @@ export default function Search(){
           ):null}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7,paddingVertical:14}}>
+        <ScrollView accessibilityRole="tablist" accessibilityLabel="Search categories" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7,paddingVertical:14}}>
           {tabs.map(x=>(
             <Pressable
               key={x}
@@ -417,6 +427,10 @@ export default function Search(){
           </Text>
         ):null}
 
+        {hasResults?<View style={{marginVertical:8}}>
+          {loading?<Text accessibilityLiveRegion="polite" style={{color:c.textSecondary}}>Updating results…</Text>:null}
+          {error?<ErrorBanner message="Results could not be refreshed. Previously loaded matches are shown." onRetry={()=>setRetry(value=>value+1)}/>:<Pressable disabled={loading} accessibilityRole="button" accessibilityLabel="Refresh results" onPress={()=>setRetry(value=>value+1)} style={{minHeight:44,justifyContent:'center'}}><Text style={{color:c.accent,fontSize:14}}>Refresh results</Text></Pressable>}
+        </View>:null}
         {!q.trim()?(
           <View>
             <Text variant="section" style={{color:c.text,marginTop:10}}>Find a local service</Text>
@@ -451,12 +465,12 @@ export default function Search(){
               null
             )}
           </View>
-        ):loading?(
+        ):loading&&!hasResults?(
           <ActivityIndicator style={{marginTop:40}} color={c.text}/>
-        ):error?(
+        ):error&&!hasResults?(
           requiresSignIn?<View style={{paddingVertical:30}}><Text accessibilityRole="header" style={{fontSize:20,fontWeight:'800',color:c.text}}>Sign in to search Everest</Text><Text style={{fontSize:16,lineHeight:24,color:c.textSecondary,marginTop:8}}>Search is currently available to signed-in members. Your query stays here when you return.</Text><Pressable accessibilityRole="button" accessibilityLabel="Sign in to search" onPress={()=>{router.setParams({q:q.trim(),tab});void rememberSearch();router.push('/auth')}} style={{minHeight:48,marginTop:18,borderRadius:12,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:16,fontWeight:'700',color:c.onBrand}}>Sign in</Text></Pressable></View>:<ErrorBanner message={error} onRetry={()=>setRetry(value=>value+1)}/>
         ):tab==='JOB'?(
-          jobs.length?jobs.map(job=>(
+          hasResults?jobs.map(job=>(
             <Pressable
               key={job.id}
               onPress={()=>{void rememberSearch();router.push('/requests')}}

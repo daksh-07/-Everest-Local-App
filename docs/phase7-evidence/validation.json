@@ -1,0 +1,52 @@
+{
+  "baseProduction": "95b8d489c98109717bcb8d6ef53d54674c4b5ab7",
+  "unit": {
+    "pass": 487,
+    "fail": 0
+  },
+  "transactionBefore": {
+    "pass": 12,
+    "fail": 1,
+    "error": "40P01"
+  },
+  "transactionAfter": {
+    "pass": 35,
+    "fail": 0,
+    "controlledRaces": 50,
+    "deadlocks": 0
+  },
+  "recoveryUnit": {
+    "pass": 13,
+    "fail": 0
+  },
+  "typecheck": "pass",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 11
+  },
+  "export": "pass",
+  "staticAudit": {
+    "files": 780,
+    "routes": 96
+  },
+  "migrationAudit": 240,
+  "localBrowserCore": {
+    "chromium156": {
+      "scenarioGroups": 33,
+      "pageErrors": 0,
+      "transport": "fixtures"
+    },
+    "webkit": {
+      "scenarioGroups": 33,
+      "pageErrors": 0,
+      "transport": "fixtures"
+    }
+  },
+  "fullRegression": "final PR CI is authoritative; Phase 6 full visual evidence reused where unchanged",
+  "staging": "BLOCKED: no isolated connected project or real account setup",
+  "physicalDevices": "UNAVAILABLE: not verified",
+  "productionMutations": 0,
+  "productionDeployment": "not performed",
+  "releaseDecision": "NO-GO",
+  "feedbackBefore": "Held background quote read delayed acceptance feedback; deterministic browser assertion failed"
+}

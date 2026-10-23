@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Linking, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {ContentSkeleton} from '@/components/ui/ContentSkeleton';
@@ -17,6 +17,9 @@ import {HeaderIconButton,ScreenHeader} from '@/components/ui';
 import {formatDay,formatMoney,formatStatus} from '@/lib/format';
 import {useReducedMotion} from '@/lib/motion';
 import {userMessage} from '@/lib/errors';
+import {useSection} from '@/lib/use-section';
+import {readResult} from '@/lib/section-state';
+import {SectionStatus} from '@/components/SectionStatus';
 import {initialsOf} from '@/lib/initials';
 
 type Business = { id:string; name:string; description:string|null; logo_url:string|null; cover_url:string|null; verification_status:string; suburb:string|null; city:string|null; state:string|null; opening_hours:Record<string,unknown>|null; phone:string|null; email:string|null; website_url:string|null };
@@ -26,12 +29,6 @@ type Product = { id:string; name:string; description:string|null; price:number; 
 export default function BusinessProfile() {
   const {colors}=useAppTheme();const s=useMemo(()=>createStyles(colors),[colors]);
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const [business,setBusiness]=useState<Business|null>(null);
-  const [services,setServices]=useState<Service[]>([]);
-  const [products,setProducts]=useState<Product[]>([]);
-  const [rating,setRating]=useState<number|null>(null);
-  const [reviewCount,setReviewCount]=useState(0);
-  const [loading,setLoading]=useState(true);
   const [refreshing,setRefreshing]=useState(false);
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState(false);
@@ -47,58 +44,44 @@ export default function BusinessProfile() {
   const [serviceSheet,setServiceSheet]=useState<Service|null>(null);
   const [error,setError]=useState('');
   const [warning,setWarning]=useState('');
-  const loadRef=useRef(false);
   const scrollRef=useRef<ScrollView|null>(null);const servicesY=useRef(0);const reducedMotion=useReducedMotion();
-  const businessRef=useRef<Business|null>(null);
 
-  const load = useCallback(async (refresh=false) => {
-    if (loadRef.current) return;
-    if (typeof id !== 'string' || !id) { setError('Business not found.'); setLoading(false); return; }
-    loadRef.current=true;
-    if(refresh)setRefreshing(true);else if(!businessRef.current)setLoading(true);
-    setError('');setWarning('');
-    try {
-      const [businessResult, serviceResult, productResult, reviewResult] = await Promise.all([
-        supabase.from('businesses').select('id,name,description,logo_url,cover_url,verification_status,suburb,city,state,opening_hours,phone,email,website_url').eq('id',id).single(),
-        supabase.from('services').select('id,name,description,base_price,duration_minutes,delivery_mode,service_booking_settings(instant_booking_enabled)').eq('business_id',id).eq('active',true).order('name'),
-        supabase.from('products').select('id,name,description,price,sale_price,delivery_eligible,pickup_available,status,product_images(storage_path,url,is_primary,sort_order)').eq('business_id',id).in('status',['ACTIVE','OUT_OF_STOCK']).order('name').limit(8),
-        supabase.from('reviews').select('rating').eq('business_id',id).limit(200),
-      ]);
-      if (businessResult.error) throw businessResult.error;
-      if (serviceResult.error) throw serviceResult.error;
-      if (productResult.error) throw productResult.error;
-      if (reviewResult.error) throw reviewResult.error;
-      const reviews=(reviewResult.data??[]) as Array<{rating:number}>;
-      const nextBusiness=businessResult.data as Business;
-      businessRef.current=nextBusiness;setBusiness(nextBusiness);
-      setServices((serviceResult.data??[]) as Service[]);
-      const hydratedProducts=await Promise.all(((productResult.data??[]) as Product[]).map(async product=>{const images=[...(product.product_images??[])].sort((a,b)=>Number(b.is_primary)-Number(a.is_primary)||a.sort_order-b.sort_order);return {...product,product_images:images,image_url:await signedProductMedia(images[0]?.storage_path||images[0]?.url||null,1800)}}));setProducts(hydratedProducts);
-      setReviewCount(reviews.length);
-      setRating(reviews.length ? reviews.reduce((sum,item)=>sum+Number(item.rating),0)/reviews.length : null);
-
-      const socialResults=await Promise.allSettled([
-        isBusinessSaved(id),
-        isFollowing({ businessId: id }),
-        getFollowCounts({ businessId: id }),
-        listPublicPosts({ businessId: id, limit: 10 }),
-        listHighlights({businessId:id}),
-      ]);
-      if(socialResults[0].status==='fulfilled')setSaved(socialResults[0].value);
-      if(socialResults[1].status==='fulfilled')setFollowing(socialResults[1].value);
-      if(socialResults[2].status==='fulfilled')setFollowers(socialResults[2].value.follower_count);
-      if(socialResults[3].status==='fulfilled')setPosts(socialResults[3].value);
-      if(socialResults[4].status==='fulfilled')setHighlights(socialResults[4].value);
-      if(socialResults.some(result=>result.status==='rejected'))setWarning('Some community details could not be refreshed. The business information shown is still available.');
-      const growthResults=await Promise.allSettled([listPublicMembershipPlans(id),listPublicPackages(id)]);
-      if(growthResults[0].status==='fulfilled')setMembershipPlans(growthResults[0].value);else setMembershipPlans([]);
-      if(growthResults[1].status==='fulfilled')setPackages(growthResults[1].value);else setPackages([]);
-    } catch {
-      if(businessRef.current)setWarning('This business could not be refreshed. The last loaded information is still shown.');
-      else setError('We could not load this business right now. Please try again.');
-    } finally { loadRef.current=false;setLoading(false);setRefreshing(false); }
-  }, [id]);
-
-  useEffect(()=>{void load()},[load]);
+  const key=typeof id==='string'&&id?id:null;
+  const identity=useSection<Business>(key,()=>readResult(supabase.from('businesses').select('id,name,description,logo_url,cover_url,verification_status,suburb,city,state,opening_hours,phone,email,website_url').eq('id',id!).single()));
+  const serviceSection=useSection<Service[]>(key,()=>readResult(supabase.from('services').select('id,name,description,base_price,duration_minutes,delivery_mode,service_booking_settings(instant_booking_enabled)').eq('business_id',id!).eq('active',true).order('name')));
+  const productSection=useSection<Product[]>(key,async()=>{
+   const rows=await readResult(supabase.from('products').select('id,name,description,price,sale_price,delivery_eligible,pickup_available,status,product_images(storage_path,url,is_primary,sort_order)').eq('business_id',id!).in('status',['ACTIVE','OUT_OF_STOCK']).order('name').limit(8));
+   return Promise.all((rows as Product[]).map(async product=>{
+    const images=[...(product.product_images??[])].sort((a,b)=>Number(b.is_primary)-Number(a.is_primary)||a.sort_order-b.sort_order);
+    return {...product,product_images:images,image_url:await signedProductMedia(images[0]?.storage_path||images[0]?.url||null,1800).catch(()=>null)};
+   }));
+  });
+  const reviewSection=useSection<Array<{rating:number}>>(key,()=>readResult(supabase.from('reviews').select('rating').eq('business_id',id!).limit(200)));
+  const business=identity.data,services=serviceSection.data??[],products=productSection.data??[],reviews=reviewSection.data;
+  const reviewCount=reviews?.length??0,rating=reviews?.length?reviews.reduce((sum,item)=>sum+Number(item.rating),0)/reviews.length:null;
+  const loading=identity.loading;
+  const load=identity.retry;
+  async function refresh(){setRefreshing(true);try{await Promise.all([identity.retry(),serviceSection.retry(),productSection.retry(),reviewSection.retry()])}finally{setRefreshing(false)}}
+  useEffect(()=>{let active=true;
+   setSaved(false);setFollowing(false);setFollowers(0);setPosts([]);setHighlights([]);setMembershipPlans([]);setPackages([]);setServiceSheet(null);setWarning('');setError('');setMessage('');
+   if(!key)return;
+   void Promise.allSettled([isBusinessSaved(key),isFollowing({businessId:key}),getFollowCounts({businessId:key}),listPublicPosts({businessId:key,limit:10}),listHighlights({businessId:key})]).then(results=>{
+    if(!active)return;
+    const [saved,following,counts,posts,highlights]=results;
+    if(saved.status==='fulfilled')setSaved(saved.value);
+    if(following.status==='fulfilled')setFollowing(following.value);
+    if(counts.status==='fulfilled')setFollowers(counts.value.follower_count);
+    if(posts.status==='fulfilled')setPosts(posts.value);
+    if(highlights.status==='fulfilled')setHighlights(highlights.value);
+    if(results.some(result=>result.status==='rejected'))setWarning('Some community details could not be loaded. Business information is still available.');
+   });
+   void Promise.allSettled([listPublicMembershipPlans(key),listPublicPackages(key)]).then(([plans,packages])=>{
+    if(!active)return;
+    if(plans.status==='fulfilled')setMembershipPlans(plans.value);
+    if(packages.status==='fulfilled')setPackages(packages.value);
+   });
+   return()=>{active=false};
+  },[key]);
 
   async function toggleFollow(){if(!business||followBusy||saving)return;setFollowBusy(true);setError('');setMessage('');try{if(following){await unfollowBusiness(business.id);setFollowing(false);setFollowers(value=>Math.max(0,value-1));setMessage('Business unfollowed.');}else{await followBusiness(business.id);setFollowing(true);setFollowers(value=>value+1);setMessage('You are now following this business.');}}catch{setError('Could not update follow status right now. Please try again.')}finally{setFollowBusy(false)}}
 
@@ -109,9 +92,9 @@ export default function BusinessProfile() {
   async function saveBusiness(){if(!business||saving||followBusy)return;setSaving(true);setError('');setMessage('');const next=!saved;try{await toggleSavedBusiness(business.id,next);setSaved(next);setMessage(next?'Saved for later.':'Removed from saved.')}catch{setError('Could not update saved status right now. Please try again.')}finally{setSaving(false)}}
 
   if (loading&&!business) return <SafeAreaView style={s.safe}><View style={s.page}><ContentSkeleton label="Loading business profile…" profile/></View></SafeAreaView>;
-  if (!business) return <SafeAreaView style={s.safe}><View style={s.empty}><Text variant="section" style={s.emptyTitle}>{error || 'Business not found.'}</Text><Pressable onPress={()=>void load()} style={s.button}><Text style={s.buttonText}>Try again</Text></Pressable></View></SafeAreaView>;
+  if (!business) return <SafeAreaView style={s.safe}><View style={s.empty}><Text variant="section" style={s.emptyTitle}>{error || (identity.error?'We could not load this business right now. Please try again.':'Business not found.')}</Text><Pressable accessibilityRole="button" onPress={()=>void load()} style={s.button}><Text style={s.buttonText}>Try again</Text></Pressable></View></SafeAreaView>;
 
-  return <SafeAreaView style={s.safe}><ScrollView ref={scrollRef} refreshControl={<RefreshControl refreshing={refreshing} enabled={!saving&&!followBusy} tintColor={colors.text} onRefresh={()=>void load(true)}/>} contentContainerStyle={s.page}>
+  return <SafeAreaView style={s.safe}><ScrollView ref={scrollRef} refreshControl={<RefreshControl refreshing={refreshing} enabled={!saving&&!followBusy} tintColor={colors.text} onRefresh={()=>void refresh()}/>} contentContainerStyle={s.page}>
     <View style={s.cover} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"/>
     <ScreenHeader title="" fallback="/" actions={<HeaderIconButton icon={saved?'bookmark':'bookmark-outline'} label={saved?'Remove business from saved':'Save business'} onPress={()=>{if(!saving&&!followBusy)void saveBusiness()}}/>}/>
     <View style={s.hero}>
@@ -119,10 +102,12 @@ export default function BusinessProfile() {
       <Text accessibilityRole="header" variant="title" style={s.title}>{business.name}</Text>
       <View style={s.trustRow}>
         {business.verification_status==='VERIFIED'?<View style={s.verifiedPill} accessibilityLabel="Verified business"><Ionicons name="checkmark-circle" size={15} color={colors.accent}/><Text style={s.verified}>Verified</Text></View>:null}
-        {rating!==null?<View style={s.ratingPill} accessibilityLabel={`Rated ${rating.toFixed(1)} out of 5 from ${reviewCount} review${reviewCount===1?'':'s'}`}><Ionicons name="star" size={14} color={colors.rating}/><Text tabular style={s.rating}>{rating.toFixed(1)}</Text><Text style={s.ratingCount}>({reviewCount})</Text></View>:<Text style={s.ratingCount}>No reviews yet</Text>}
+        {rating!==null?<View style={s.ratingPill} accessibilityLabel={`Rated ${rating.toFixed(1)} out of 5 from ${reviewCount} review${reviewCount===1?'':'s'}`}><Ionicons name="star" size={14} color={colors.rating}/><Text tabular style={s.rating}>{rating.toFixed(1)}</Text><Text style={s.ratingCount}>({reviewCount})</Text></View>:<Text style={s.ratingCount}>{reviewSection.error?'Reviews unavailable':reviewSection.loading?'Loading reviews…':'No reviews yet'}</Text>}
       </View>
       <View style={s.locationRow}><Ionicons name="location-outline" size={15} color={colors.textSecondary}/><Text style={s.location}>{[business.suburb,business.city,business.state].filter(Boolean).join(', ') || 'Local business'}</Text></View>
     </View>
+    <SectionStatus label="Business information" section={identity}/>
+    <SectionStatus label="Reviews" section={reviewSection}/>
     <View style={s.actionRow}>
       <Pressable accessibilityRole="button" accessibilityLabel={services.length===1?`Request a quote for ${services[0].name}`:'Request a quote'} style={({pressed})=>[s.actionPrimary,pressed&&{opacity:.85}]} onPress={()=>{if(services.length===1)setServiceSheet(services[0]);else if(services.length>1)scrollRef.current?.scrollTo({y:Math.max(0,servicesY.current-12),animated:!reducedMotion});else router.push('/request')}}><Text style={s.actionPrimaryText}>Request a quote</Text></Pressable>
       <Pressable disabled={followBusy||saving} onPress={()=>void toggleFollow()} style={({pressed})=>[s.followButton,following&&s.followingButton,pressed&&{opacity:.8}]} accessibilityRole="button" accessibilityState={{selected:following}} accessibilityLabel={following?'Unfollow business':'Follow business'}><Ionicons name={following?'checkmark':'add'} size={18} color={following?colors.onPrimaryContainer:colors.text}/><Text style={[s.followText,following&&{color:colors.onPrimaryContainer}]}>{following?'Following':'Follow'}</Text></Pressable>
@@ -133,13 +118,15 @@ export default function BusinessProfile() {
     {business.website_url?<Pressable accessibilityRole="link" onPress={()=>void Linking.openURL(business.website_url!)} style={s.website}><Ionicons name="globe-outline" size={16} color={colors.accent}/><Text numberOfLines={1} style={s.websiteText}>{websiteLabel(business.website_url)}</Text><Ionicons name="open-outline" size={14} color={colors.muted}/></Pressable>:null}
     {highlights.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.highlightRail}>{highlights.map(item=><Pressable key={item.id} onPress={()=>router.push(('/highlight?id='+item.id) as never)} style={s.highlightItem}><View style={s.highlightCover}>{item.coverUrl?<Image source={{uri:item.coverUrl}} style={s.highlightImage}/>:<Ionicons name="sparkles-outline" size={21} color={colors.accent}/>}</View><Text numberOfLines={2} style={s.highlightName}>{item.title}</Text></Pressable>)}</ScrollView>:null}
     <Text onLayout={e=>{servicesY.current=e.nativeEvent.layout.y}} accessibilityRole="header" variant="section" style={s.heading}>Services</Text>
+    <SectionStatus label="Services" section={serviceSection}/>
     {services.length?<View style={s.serviceList}>{services.map((item,index)=>{const instant=isInstant(item);return <Pressable accessibilityRole="button" accessibilityLabel={`${item.name}. ${serviceFacts(item)}. ${instant?'Instant booking available.':''} View details`} onPress={()=>setServiceSheet(item)} key={item.id} style={({pressed})=>[s.serviceRow,index>0&&s.serviceDivider,pressed&&{backgroundColor:colors.soft}]}>
       <View style={{flex:1,minWidth:0}}><Text style={s.cardTitle}>{item.name}</Text>{item.description?<Text numberOfLines={2} style={s.meta}>{item.description}</Text>:null}<Text tabular style={s.serviceFacts}>{serviceFacts(item)}</Text>{instant?<View style={s.instantTag}><Ionicons name="flash" size={12} color={colors.onSecondaryContainer}/><Text style={s.instantTagText}>Instant booking</Text></View>:null}</View>
       <Ionicons name="chevron-forward" size={18} color={colors.textSecondary}/>
-    </Pressable>})}</View>:<View style={s.emptyInline}><Text style={s.meta}>This business hasn’t listed services yet. You can still describe what you need.</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/request')} style={s.inlineAction}><Text style={s.inlineActionText}>Request a quote</Text></Pressable></View>}
+    </Pressable>})}</View>:serviceSection.loading||serviceSection.error?null:<View style={s.emptyInline}><Text style={s.meta}>This business hasn’t listed services yet. You can still describe what you need.</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/request')} style={s.inlineAction}><Text style={s.inlineActionText}>Request a quote</Text></Pressable></View>}
     {(membershipPlans.length||packages.length)?<><Text variant="section" style={s.heading}>Memberships & packages</Text><Text style={s.growthIntro}>Save with recurring plans or prepaid service credits from {business.name}. Recurring billing never starts until you approve it in Stripe Checkout.</Text>
     {membershipPlans.map(plan=><View key={plan.id} style={s.card}><View style={s.cardHeader}><View style={{flex:1}}><Text style={s.cardTitle}>{plan.name}</Text><Text style={s.meta}>{plan.description||'Recurring customer membership'}</Text></View><Text tabular style={s.planPrice}>{formatMoney(plan.price)}</Text></View><Text tabular style={s.price}>{'Every '+intervalLabel(plan.billing_interval_unit,plan.billing_interval_count)+(plan.included_credits?' · '+plan.included_credits+' service credit'+(plan.included_credits===1?'':'s')+' / period':'')}</Text><Pressable disabled={!!growthBusy} onPress={()=>void joinMembership(plan.id)} style={s.growthCta}><Text style={s.growthCtaText}>{growthBusy==='membership:'+plan.id?'Opening…':'Join & review billing'}</Text></Pressable></View>)}
     {packages.map(item=><View key={item.id} style={s.card}><View style={s.cardHeader}><View style={{flex:1}}><Text style={s.cardTitle}>{item.name}</Text><Text style={s.meta}>{item.description||'Prepaid service package'}</Text></View><Text tabular style={s.planPrice}>{formatMoney(item.price)}</Text></View><Text tabular style={s.price}>{item.credit_count+' service credit'+(item.credit_count===1?'':'s')+(item.expires_after_days?' · valid '+item.expires_after_days+' days':'')}</Text><Pressable disabled={!!growthBusy} onPress={()=>void purchasePackage(item.id)} style={s.growthCta}><Text style={s.growthCtaText}>{growthBusy==='package:'+item.id?'Opening…':'Buy package'}</Text></Pressable></View>)}</>:null}
+    <SectionStatus label="Products" section={productSection}/>
     {products.length?<><View style={s.headingRow}><Text variant="section" style={s.headingCompact}>Products</Text>{products.length?<Pressable onPress={()=>router.push(('/shop?business='+business.id+'&businessName='+encodeURIComponent(business.name)) as never)}><Text style={s.viewAll}>See all</Text></Pressable>:null}</View>
     {products.length?<View style={s.productGrid}>{products.map(item=><Pressable accessibilityRole="button" accessibilityLabel={`View ${item.name}`} onPress={()=>router.push(`/product?id=${item.id}`)} key={item.id} style={s.productCard}>{item.image_url?<Image source={{uri:item.image_url}} style={s.productImage}/>:<View style={[s.productImage,s.productImageFallback]}><Ionicons name="image-outline" size={24} color={colors.muted}/></View>}<View style={s.productBody}><Text numberOfLines={2} style={s.cardTitle}>{item.name}</Text><Text tabular style={s.price}>{formatMoney(item.sale_price??item.price)}</Text><Text numberOfLines={2} style={s.meta}>{item.status==='OUT_OF_STOCK'?'Out of stock':[item.pickup_available?'Pickup':null,item.delivery_eligible?'Delivery':null].filter(Boolean).join(' · ')}</Text></View></Pressable>)}</View>:null}</>:null}
     {posts.length?<Text variant="section" style={s.heading}>Posts</Text>:null}

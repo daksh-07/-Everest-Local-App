@@ -1,0 +1,1436 @@
+[
+  {
+    "version": "001",
+    "name": "marketplace",
+    "source_md5": "4a4715e5754aff005bb14c8dc35fe46d",
+    "statement_count": 152
+  },
+  {
+    "version": "002",
+    "name": "secure_marketplace_rpc",
+    "source_md5": "12a9bebd2dc7f6b5d50db1388e070503",
+    "statement_count": 15
+  },
+  {
+    "version": "003",
+    "name": "checkout_transaction",
+    "source_md5": "b713cdf1a32487363b58973df633cf90",
+    "statement_count": 4
+  },
+  {
+    "version": "004",
+    "name": "checkout_failure",
+    "source_md5": "3a5e32ad8cc5caf481d2f01d653ccde9",
+    "statement_count": 2
+  },
+  {
+    "version": "005",
+    "name": "inventory_and_notifications",
+    "source_md5": "9cf688f5e68a0ddb961659163b554c34",
+    "statement_count": 5
+  },
+  {
+    "version": "006",
+    "name": "business_verification",
+    "source_md5": "93b37f2400f66ef2f08db31ce3e5a493",
+    "statement_count": 6
+  },
+  {
+    "version": "007",
+    "name": "secure_reviews",
+    "source_md5": "f9cbab7000ef61142e5afa299b2a1e21",
+    "statement_count": 3
+  },
+  {
+    "version": "008",
+    "name": "delivery_workflow",
+    "source_md5": "8ea91e1048d5663c592f9844b71cb827",
+    "statement_count": 4
+  },
+  {
+    "version": "009",
+    "name": "security_hardening",
+    "source_md5": "52a99b83bc73663bf7d73e69e9086f6c",
+    "statement_count": 13
+  },
+  {
+    "version": "010",
+    "name": "payment_and_delivery_hardening",
+    "source_md5": "a6ab6b5a23b798ce2a95974a1d3aceca",
+    "statement_count": 12
+  },
+  {
+    "version": "011",
+    "name": "business_catalog",
+    "source_md5": "30588f14610ce25bed43bf33ec3678a3",
+    "statement_count": 10
+  },
+  {
+    "version": "012",
+    "name": "service_management",
+    "source_md5": "467a97940a077865068835fa0fb5b65a",
+    "statement_count": 2
+  },
+  {
+    "version": "013",
+    "name": "integrity_constraints",
+    "source_md5": "25d7f9c6b62b598db7dc35793bb39f9f",
+    "statement_count": 9
+  },
+  {
+    "version": "014",
+    "name": "marketplace_notifications",
+    "source_md5": "9823d97d24177bd69a7f482f6a1a2504",
+    "statement_count": 9
+  },
+  {
+    "version": "015",
+    "name": "production_integrity_hardening",
+    "source_md5": "82604b5cb706ed22a6f9eac42e46b821",
+    "statement_count": 16
+  },
+  {
+    "version": "016",
+    "name": "stripe_atomic_processing",
+    "source_md5": "b33cd74b08ee5bd525f057383b98f622",
+    "statement_count": 9
+  },
+  {
+    "version": "017",
+    "name": "checkout_idempotency",
+    "source_md5": "da0f0b2ed7d4ac6bb13135c54c3401fd",
+    "statement_count": 3
+  },
+  {
+    "version": "018",
+    "name": "security_integrity_followup",
+    "source_md5": "5f65d43dd13b2efecd3a3079104b8f1a",
+    "statement_count": 10
+  },
+  {
+    "version": "019",
+    "name": "messaging_workflow",
+    "source_md5": "254e26adbc3fd0497b812b5500522cf1",
+    "statement_count": 6
+  },
+  {
+    "version": "020",
+    "name": "checkout_concurrency",
+    "source_md5": "7836b839f4b76f0c09b39ad95f3d48ab",
+    "statement_count": 10
+  },
+  {
+    "version": "021",
+    "name": "product_management",
+    "source_md5": "d254542d54dc0c49ab734cada20975a1",
+    "statement_count": 3
+  },
+  {
+    "version": "022",
+    "name": "service_payment_checkout",
+    "source_md5": "49aaba777dbfffc1cd1a8ffd4cd53919",
+    "statement_count": 16
+  },
+  {
+    "version": "023",
+    "name": "messaging_security_hardening",
+    "source_md5": "b9b8a35251d96049f48f235a515f57be",
+    "statement_count": 7
+  },
+  {
+    "version": "024",
+    "name": "checkout_cart_cleanup_scope",
+    "source_md5": "f8f3351c05115b8b14885dc32ca38814",
+    "statement_count": 3
+  },
+  {
+    "version": "025",
+    "name": "checkout_item_snapshot",
+    "source_md5": "cd23bbb4c98b96f94cfd9bdcdaddc3c7",
+    "statement_count": 7
+  },
+  {
+    "version": "026",
+    "name": "delivery_operations",
+    "source_md5": "8edd09a10637939c9aba343afbf497f3",
+    "statement_count": 8
+  },
+  {
+    "version": "027",
+    "name": "product_delivery_checkout",
+    "source_md5": "f7dbb4f12f572bcc7aa1ca5b67d7af46",
+    "statement_count": 2
+  },
+  {
+    "version": "028",
+    "name": "service_payment_idempotency_scope",
+    "source_md5": "51121ac20fcd115146aee11d589e8b5c",
+    "statement_count": 3
+  },
+  {
+    "version": "029",
+    "name": "delivery_payment_integrity",
+    "source_md5": "3fa5b43b4ce5b21ba816c2835b1ab01b",
+    "statement_count": 3
+  },
+  {
+    "version": "030",
+    "name": "delivery_notifications",
+    "source_md5": "16a1bf0707bd1dc6e17fedccee6d8e68",
+    "statement_count": 3
+  },
+  {
+    "version": "031",
+    "name": "cart_creation_concurrency",
+    "source_md5": "1f0dd69d4e263df6a6bfb53768cbc59c",
+    "statement_count": 3
+  },
+  {
+    "version": "032",
+    "name": "cart_authority_hardening",
+    "source_md5": "3b506f3ad8a7494bb6eae120e356ff23",
+    "statement_count": 1
+  },
+  {
+    "version": "033",
+    "name": "rpc_execute_hardening",
+    "source_md5": "2b66e23c57a1bf79956f2fd687683df3",
+    "statement_count": 31
+  },
+  {
+    "version": "034",
+    "name": "rpc_public_execute_hardening",
+    "source_md5": "57ec826262a677e914498f34168d9437",
+    "statement_count": 31
+  },
+  {
+    "version": "20260917155708",
+    "name": "rpc_public_execute_hardening",
+    "source_md5": "e1be372f4dc320dd9da89eb8d1d3f830",
+    "statement_count": 1
+  },
+  {
+    "version": "20260917162943",
+    "name": "authoritative_write_paths",
+    "source_md5": "1fc6ba50e37a9bca5b775bf4a1264217",
+    "statement_count": 1
+  },
+  {
+    "version": "20260917163336",
+    "name": "quote_service_integrity",
+    "source_md5": "be64ae122cf335fcdb126145e166f018",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919061923",
+    "name": "restore_data_api_grants",
+    "source_md5": "2496b5dc3dfeb2a73242cabad02e1f9e",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919061947",
+    "name": "restore_service_payment_read_grant",
+    "source_md5": "573e34825d37f0fcd9689e2fbf490a4c",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919062121",
+    "name": "restore_rls_helper_execute_grants",
+    "source_md5": "98585c041647d43c013a441cd74ab703",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919062141",
+    "name": "restore_public_rls_helper_execute_grants",
+    "source_md5": "5c0adc7db321658006bb6f32f187a02c",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919063855",
+    "name": "037_delivery_driver_access",
+    "source_md5": "c4dc6173a7c62439c54d915fcdfb70f1",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919081826",
+    "name": "038_business_driver_auth",
+    "source_md5": "47f393b9e81cbae1fbff7b9316518423",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919082247",
+    "name": "039_auth_rpc_execute_hardening",
+    "source_md5": "cf93d0d933d711ed3fce48d2d48e7691",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919084825",
+    "name": "grant_driver_application_data_api_access",
+    "source_md5": "dcf686ab769c591297da3ffb2d93c8b0",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919085906",
+    "name": "driver_verification_system",
+    "source_md5": "71f69e8d966106abecd9538f8c1cf873",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919090102",
+    "name": "driver_verification_details",
+    "source_md5": "4d0f815161156af000ce29694975c6ad",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919090516",
+    "name": "driver_verification_maintenance",
+    "source_md5": "92ab751366ebd6cb567d14098b46cc14",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919090534",
+    "name": "revoke_legacy_driver_application_rpc",
+    "source_md5": "c8690aa77ab3a55c1502d44d364f73cd",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919090631",
+    "name": "driver_data_api_privileges",
+    "source_md5": "2e2e5769db4dbbb6254e213633fce228",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919090651",
+    "name": "driver_vehicle_admin_verification",
+    "source_md5": "7fb69fe214c6c26f24bd20c364b70463",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919090806",
+    "name": "fix_access_context_volatility",
+    "source_md5": "3445d358ba88615775c9f5ddc2dcdc6a",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919090952",
+    "name": "scope_driver_operational_check",
+    "source_md5": "3f14bc12ef62c546b483e2ce82a08f65",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919091028",
+    "name": "lock_verified_driver_documents",
+    "source_md5": "4b8fda34ddbfb812758b2f0561819b2b",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919091331",
+    "name": "driver_delivery_acceptance",
+    "source_md5": "e72dff6cbe8153de40658c36b106aff1",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919091518",
+    "name": "driver_credential_admin_review",
+    "source_md5": "0f99575026f53833ba62751330f411d1",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919101512",
+    "name": "051_business_members_owner_grant_hardening",
+    "source_md5": "7112163263f43c849b8048619128ae73",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919121203",
+    "name": "052_driver_compliance_and_legacy_cleanup",
+    "source_md5": "4950708e0792403a3d6fe6760c5dd2e1",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919121348",
+    "name": "053_driver_verification_metadata",
+    "source_md5": "879743f5c9eb0ea3e87b2eafccd88eb4",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919121448",
+    "name": "054_driver_application_draft",
+    "source_md5": "f4bee16edec7a5c82f73edf6b4825fa8",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919121530",
+    "name": "055_driver_document_subtype",
+    "source_md5": "74719f284bfd12a3210522b642c78c47",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919121933",
+    "name": "056_driver_compliance_maintenance",
+    "source_md5": "e087f7f9c453829ff25243083f0b0334",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919122053",
+    "name": "057_driver_document_versioning",
+    "source_md5": "ee32c0feb34982a9379a61984c830708",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919122142",
+    "name": "058_driver_identity_review_sync",
+    "source_md5": "f9b6c21253651811492cb35e4c8abf27",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919122400",
+    "name": "059_driver_submission_state_guards",
+    "source_md5": "1cd2c36bf6aff3340d6ebce0e45ff1aa",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919122439",
+    "name": "060_driver_authoritative_writes",
+    "source_md5": "fe85d1e0174e591de132b4998d8c672d",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919122605",
+    "name": "061_driver_operational_status_gate",
+    "source_md5": "db44dd0695371cc3ff4e49bccb19b348",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919122739",
+    "name": "062_driver_operational_app_status_assertion",
+    "source_md5": "2e0691bb568f65f6c65d5813a89d4ec0",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919135642",
+    "name": "prevent_multiple_quote_acceptance",
+    "source_md5": "c48f4d417ef8bf035456f346a838c3ff",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919151603",
+    "name": "remove_duplicate_indexes",
+    "source_md5": "f5a4634b6d165eb904518b33af68fa81",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919162357",
+    "name": "optimize_rls_auth_initplans",
+    "source_md5": "888d3e11204380684a641a00cfa9bf36",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919175035",
+    "name": "index_unindexed_foreign_keys",
+    "source_md5": "a91c69c0fec5898dc7240db4c4db919d",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919185355",
+    "name": "restrict_direct_review_writes",
+    "source_md5": "17b55702e89add8c1144b0f01ef53f19",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919191556",
+    "name": "revoke_anon_rls_helper_execute",
+    "source_md5": "39ce0c6cc9ae7a73c8d69cbb7628dc67",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919200938",
+    "name": "20260920060813_index_driver_compliance_requirement_fk",
+    "source_md5": "14aa3d25fdd272562a94316f8127a17e",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919214846",
+    "name": "consolidate_overlapping_rls_policies",
+    "source_md5": "b3ef921f84c8c5a513802fb06c752d09",
+    "statement_count": 1
+  },
+  {
+    "version": "20260919223924",
+    "name": "revoke_authenticated_internal_rpc_execute",
+    "source_md5": "a3ed540e7a61eeaaff18a8fd438c7ef7",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920002739",
+    "name": "restrict_internal_driver_rpc_execution",
+    "source_md5": "a0f469bf86d337c115a6e6ef2b064239",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920095043",
+    "name": "20260920194900_social_discovery_foundation",
+    "source_md5": "75b32ba6b708f94838cd448d133e58f2",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920095116",
+    "name": "20260920195800_social_profile_visibility_hardening",
+    "source_md5": "4f928a501aabe61c8d0bcaed6daea1d5",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920095600",
+    "name": "20260920110000_service_taxonomy_delivery_modes",
+    "source_md5": "29ce47e88fab4ad0421aae0ab9e81322",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920095838",
+    "name": "20260920111000_harden_service_rpc_execute",
+    "source_md5": "a15ca92a9be61d26d320880c723d9f37",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920095919",
+    "name": "20260920112000_atomic_business_service_setup",
+    "source_md5": "44d569abafea35907a3fa7d0b88b5483",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920104541",
+    "name": "consolidate_social_policy_overlap",
+    "source_md5": "4d63333b027d7ee357dfd5d5141c8525",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920111150",
+    "name": "business_abn_verification_flow",
+    "source_md5": "3f161e2644c10ec802fdcd153e663393",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920112705",
+    "name": "business_verification_search_path_hardening",
+    "source_md5": "cfd02563f0e76e1ba60bcaa19996d8c4",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920122000",
+    "name": "admin_rpc_execute_hardening",
+    "source_md5": "f864a6532f2c677be20b37cf46af7456",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920123411",
+    "name": "abr_government_verification",
+    "source_md5": "54fe7143b07d7554527accd6c9117778",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920123530",
+    "name": "restrict_legacy_business_verification_submission",
+    "source_md5": "75d138178a2ee1353f3a78827c181107",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920123615",
+    "name": "allow_abr_recheck_of_legacy_pending_verification",
+    "source_md5": "ed67999aaa86ef60c755e601bf5ac77c",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920125431",
+    "name": "20260920240000_secure_single_account_admin_mfa",
+    "source_md5": "c59c3a2276757bf20e3182564101b182",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920125633",
+    "name": "20260920241000_require_password_plus_mfa_for_admin",
+    "source_md5": "dd91c110c41f79ed5100a25fd6a22c2c",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920125901",
+    "name": "20260920242000_revoke_admin_role_trigger_execute",
+    "source_md5": "6924821866568ab4f64b96bff8a97eda",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920130858",
+    "name": "20260920243000_lock_initial_admin_identity",
+    "source_md5": "e62e0e2e34866884e03d219514431eae",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920130945",
+    "name": "20260920244000_make_admin_auth_state_invoker",
+    "source_md5": "ac213b463ead012cb0f2133a73b2509e",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920142109",
+    "name": "mark_all_notifications_read",
+    "source_md5": "0cfbd30de2309810c0295e82052b7ac1",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920151631",
+    "name": "quote_mutation_authority_hardening",
+    "source_md5": "a364fee945faa1a86fea5b1284a75b03",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920184333",
+    "name": "harden_cart_checkout_binding",
+    "source_md5": "31e1afac1764997a8e4ed63708acf90a",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920214920",
+    "name": "cart_quantity_integrity",
+    "source_md5": "b0a6e2b9bd6a0aaa61ae052a250cfeb7",
+    "statement_count": 1
+  },
+  {
+    "version": "20260920233247",
+    "name": "delivery_request_state_integrity",
+    "source_md5": "60835da7215e1b85fb0dfe5245db65cd",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921004137",
+    "name": "inventory_reservation_integrity",
+    "source_md5": "579ff3b02c5f8b8d153394cd811e2bf7",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921010133",
+    "name": "product_order_line_financial_integrity",
+    "source_md5": "0bd13b399252a671d802722c97742f90",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921041318",
+    "name": "secure_all_definer_search_paths",
+    "source_md5": "b7583f36cfa3f9657bd70d4374fd8949",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921071633",
+    "name": "20260920133001_abr_registry_columns",
+    "source_md5": "c2bc938b7e2912f579b28ea2011e4916",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921071642",
+    "name": "20260920133002_abr_registry_admin_policy",
+    "source_md5": "473d6ccd4083e322aeffbec4a40f6edd",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921071653",
+    "name": "20260920133003_abr_registry_record_rpc",
+    "source_md5": "0938e306a65f2ac1c90045c7c096196c",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921071819",
+    "name": "20260920133004_restrict_abr_registry_rpc_execute",
+    "source_md5": "4a6ae559b61b9ebdaccc57c82348b96b",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921073731",
+    "name": "20260921073000_automated_business_abn_verification",
+    "source_md5": "6c443e7ae826a58088068068c9af4405",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921073918",
+    "name": "20260921073100_business_verification_case_types",
+    "source_md5": "b3152923ffb0606074157b7bebc110b9",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921074133",
+    "name": "20260921073200_fix_automated_abn_status_transition",
+    "source_md5": "a6b592403dd13092b03d003c2ec194f6",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921074343",
+    "name": "20260921073300_add_abn_revalidation_strategy",
+    "source_md5": "0988b3ab868ea3a38d52df420680f758",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921074449",
+    "name": "20260921073400_fix_abn_retry_timestamp",
+    "source_md5": "da260173b312741a99b07c747f921ed1",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921074718",
+    "name": "20260921073500_harden_verification_review_rpc_execute",
+    "source_md5": "815aad67b1ddb787c387734d1de3f9cc",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921074815",
+    "name": "20260921073600_remove_legacy_abn_begin_overload",
+    "source_md5": "681414474fb5681a48f204aa2d745576",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921082558",
+    "name": "driver_licence_authoritative_boundary",
+    "source_md5": "fc4c47c5ae2a63cf54b7028eb42a3336",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921082642",
+    "name": "restore_driver_credential_admin_execute",
+    "source_md5": "9a473dba84901b6f995c63333139c2ab",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921110407",
+    "name": "20260921090300_consolidate_business_verification_rls_and_fk_indexes",
+    "source_md5": "b47e8568ee6957fdeec3f72f909b0793",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921111841",
+    "name": "driver_availability",
+    "source_md5": "1c92b464f5b100e1a2a62d25a1e29ee3",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921112014",
+    "name": "driver_dispatch_availability_guard",
+    "source_md5": "a32e604855613e8694a0ce2b6ff5be4d",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921125010",
+    "name": "20260921230000_optimize_driver_availability_rls",
+    "source_md5": "e98a8f9b30dacc0247adb08ab1fe1cd1",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921132552",
+    "name": "20260921233000_service_aware_dispatch_engine",
+    "source_md5": "726a08fa7a76470a979626f2ae708b10",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921132704",
+    "name": "20260921233100_service_dispatch_authority",
+    "source_md5": "73ee2240e3ae301aa2f20e8c7f38562d",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921132847",
+    "name": "20260921233200_service_dispatch_fk_indexes",
+    "source_md5": "cbfa9abfd0e6e2976aa8831c3b00105a",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921132916",
+    "name": "20260921233300_service_dispatch_rls_linter_hardening",
+    "source_md5": "cbd3da91c0f64b3c159b987f2fcabe63",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921132957",
+    "name": "20260921233400_service_dispatch_evaluation_audit",
+    "source_md5": "96f2b822b4795e7f64e32029d4b61d22",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921133059",
+    "name": "20260921235900_dispatch_relationship_prerequisites",
+    "source_md5": "c2b55914ee9ad0b0b660606c2ce58085",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921133145",
+    "name": "20260921240000_dispatch_lifecycle_authority_correction",
+    "source_md5": "803b0108254d6ffad31addc0725e911d",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921133400",
+    "name": "20260921241000_dispatch_state_audit_and_acceptance_guards",
+    "source_md5": "c8108569ba20e11e6b088c7bc3a2a6a5",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921133428",
+    "name": "20260921241100_fix_dispatch_offer_response_guard",
+    "source_md5": "6504e4728cce5772337761e690a7efff",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921140046",
+    "name": "revoke_anon_dispatch_security_definer_execute",
+    "source_md5": "c5244914ba7a89c6148057867d6dc464",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921140113",
+    "name": "revoke_public_dispatch_security_definer_execute",
+    "source_md5": "e44131c5c4480936aa1296e33f3e574b",
+    "statement_count": 1
+  },
+  {
+    "version": "20260921164516",
+    "name": "index_dispatch_assignment_composite_foreign_keys",
+    "source_md5": "1a6381b57de1936cc19de9e028ea0176",
+    "statement_count": 1
+  },
+  {
+    "version": "20260922004353",
+    "name": "20260922005000_revoke_authenticated_trigger_guard_execution",
+    "source_md5": "2035d57a7c54d231053172e52bdd46d5",
+    "statement_count": 1
+  },
+  {
+    "version": "20260922133215",
+    "name": "profile_media",
+    "source_md5": "40dda4a315b43f365c1069f4d293db24",
+    "statement_count": 1
+  },
+  {
+    "version": "20260922151420",
+    "name": "settings_preferences_support",
+    "source_md5": "7df001210edcfa244ebd47acb8a51e32",
+    "statement_count": 1
+  },
+  {
+    "version": "20260923155744",
+    "name": "20260923045959_external_crypto_compat",
+    "source_md5": "4b6a0365576be89ca73b6a073c393839",
+    "statement_count": 1
+  },
+  {
+    "version": "20260923155748",
+    "name": "20260923050000_external_business_identity_enquiries",
+    "source_md5": "2b5ebe5f54e7ba1b318bf019e236a1ec",
+    "statement_count": 1
+  },
+  {
+    "version": "20260923155754",
+    "name": "20260923090000_external_messaging_safety",
+    "source_md5": "9de9d19fea29b360f17ebfdfb3a31daa",
+    "statement_count": 1
+  },
+  {
+    "version": "20260923155759",
+    "name": "20260923093000_external_gateway_self_service_opt_out",
+    "source_md5": "58b9ae33f8b140dd528344e75b94273b",
+    "statement_count": 1
+  },
+  {
+    "version": "20260923155804",
+    "name": "20260923110000_external_gateway_lock_order",
+    "source_md5": "3e85e0f54ea82a8aacffbb0c29f8f2cd",
+    "statement_count": 1
+  },
+  {
+    "version": "20260924071010",
+    "name": "secure_cart_mutations",
+    "source_md5": "5e9851a8868e142a53712640e80c073d",
+    "statement_count": 1
+  },
+  {
+    "version": "20260924071140",
+    "name": "lock_down_cart_table_grants",
+    "source_md5": "4cce90fe07c28dd3b23e00d45bea216a",
+    "statement_count": 1
+  },
+  {
+    "version": "20260924135741",
+    "name": "revoke_client_table_ddl_privileges",
+    "source_md5": "ce94a36e12b9709ddd902de5b39e2a58",
+    "statement_count": 1
+  },
+  {
+    "version": "20260924135824",
+    "name": "lock_future_postgres_table_maintain_privilege",
+    "source_md5": "3a4270698f994256cc707fa80a5ed7b9",
+    "statement_count": 1
+  },
+  {
+    "version": "20260924154938",
+    "name": "harden_service_request_matching_terminal_states",
+    "source_md5": "6a178f3cf6bff433db88d7126fef05aa",
+    "statement_count": 1
+  },
+  {
+    "version": "20260924160851",
+    "name": "harden_quote_submission_request_lifecycle",
+    "source_md5": "7a9059d6668fb574a57f4f915edaf702",
+    "statement_count": 1
+  },
+  {
+    "version": "20260924172852",
+    "name": "enforce_one_pending_service_payment_per_booking",
+    "source_md5": "cea2592dc375291ba97fb35895e2284f",
+    "statement_count": 1
+  },
+  {
+    "version": "20260924220801",
+    "name": "universal_search_connections_messaging",
+    "source_md5": "7646a3bf15dcec18cc155f3c7bb28e47",
+    "statement_count": 1
+  },
+  {
+    "version": "20260924224142",
+    "name": "message_request_deletion_followers_fix",
+    "source_md5": "d98e9f360381208d5053c59b1cd69ae2",
+    "statement_count": 1
+  },
+  {
+    "version": "20260924230056",
+    "name": "production_messaging_overhaul",
+    "source_md5": "77e340b5033a85c9f8f476068f75bffb",
+    "statement_count": 1
+  },
+  {
+    "version": "20260924234201",
+    "name": "final_messaging_delete_everyone_repair",
+    "source_md5": "30d97e16007f3638ddb90f6f768dda40",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925002154",
+    "name": "messaging_conversation_hide",
+    "source_md5": "1bc8f328167b9e74f5119d06230496a6",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925035112",
+    "name": "dual_role_workspace_preferences",
+    "source_md5": "d922f91c7dc777be20c471aca5784b62",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925042243",
+    "name": "product_marketplace_commerce",
+    "source_md5": "390cda4685d508265031dfdf4a458df9",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925053936",
+    "name": "request_posts_matching_ux",
+    "source_md5": "de4abefaad275f3d19500334e4d8ba98",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925061050",
+    "name": "fix_dispatch_lifecycle_trigger_record_fields",
+    "source_md5": "83fc86b3b09cde87e7deff15af9e99ab",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925073234",
+    "name": "global_local_crm_p0",
+    "source_md5": "13a1a53b9ca56c05c5d2bbb0e12249e4",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925154409",
+    "name": "grant_external_discovery_service_role_reads",
+    "source_md5": "a27dbdd1ac85c9ca0e8437065d3b8909",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925161341",
+    "name": "customer_calendar_integrations",
+    "source_md5": "bdbba25389b5b5367d7f9c1c46c0ae18",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925164503",
+    "name": "professional_crm_v2",
+    "source_md5": "3a6a5382164d58cf45446cc105961282",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925164541",
+    "name": "enable_btree_gist_for_crm_calendar",
+    "source_md5": "66687ac68f5010642705369da0eaa3cb",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925164552",
+    "name": "crm_integrations_automation_foundation",
+    "source_md5": "b266cff0b1769e318d7c4a6d62cfe05a",
+    "statement_count": 1
+  },
+  {
+    "version": "20260925165254",
+    "name": "fix_product_media_storage_policies",
+    "source_md5": "2b546199bb10bac449162cec8470af97",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926033121",
+    "name": "business_pro_subscriptions",
+    "source_md5": "f695cfb89876f123bd907073eaf2b897",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926082505",
+    "name": "subscription_webhook_event_ordering",
+    "source_md5": "318e8ee04f693a5748649c21e6309523",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926082511",
+    "name": "crm_contact_import",
+    "source_md5": "80e2b9f15663f88b469b04c0500027e3",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926082702",
+    "name": "retention_p0_saved_searches_instant_booking",
+    "source_md5": "c48d1503dd5c56dbb0a5f6483e884a3e",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926082711",
+    "name": "business_growth_engine_p0",
+    "source_md5": "089f1fc7260540858b1a549571729c6b",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926082721",
+    "name": "instant_opportunity_alerts",
+    "source_md5": "f5a2e9f3b382dbcea328471b1e22fe73",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926082924",
+    "name": "restrict_retention_trigger_execution",
+    "source_md5": "4db882d1fee63ab1341600e1d73c39f0",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926084018",
+    "name": "business_growth_engine_p1",
+    "source_md5": "11225e4fd827059159c056646c5828ed",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926084743",
+    "name": "growth_execution_p2",
+    "source_md5": "8cd49eff4d2d20efec50e25139c05d83",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926104416",
+    "name": "apple_iap_entitlements",
+    "source_md5": "69d6cd8686904912c9e11347172786c0",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926112442",
+    "name": "everest_live_marketplace",
+    "source_md5": "ea4949bab8e651a01c376af62565935c",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926114231",
+    "name": "contextual_business_dm_automation",
+    "source_md5": "b5892c504423d63df3cf824b8f6f2b20",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926114328",
+    "name": "harden_business_dm_automation",
+    "source_md5": "49365849ed60cf743965c9dcb3883a96",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926114431",
+    "name": "social_engagement_feed",
+    "source_md5": "76b1567efc57d54d3779074ec4b9f61d",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926114854",
+    "name": "social_reaction_policy_tuning",
+    "source_md5": "bafe50ca6d051837f0a30fd0e9307b8c",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926115833",
+    "name": "fix_everest_live_provider_tables",
+    "source_md5": "940cb7d9d5be0e6836fbc940958fd298",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926121806",
+    "name": "structured_service_niche_matching",
+    "source_md5": "d1c9f4113124c59e7e04724af5dce91a",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926123438",
+    "name": "social_comment_reactions_notifications",
+    "source_md5": "5f079ddf927074df8d6c19cae6fd0f8f",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926124858",
+    "name": "marketplace_fee_engine",
+    "source_md5": "7705f4786dc93b73989fa8c056d700b0",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926125206",
+    "name": "marketplace_payout_release_states",
+    "source_md5": "6dee5e2c5555995ffcd22b5705b53d71",
+    "statement_count": 1
+  },
+  {
+    "version": "20260926131657",
+    "name": "service_payment_leakage_controls",
+    "source_md5": "ac8cfe5393249bfa35242efda06bb316",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927002759",
+    "name": "grant_product_images_authenticated_write",
+    "source_md5": "d126627e007cd7ae379c6283f0ba97db",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927011535",
+    "name": "social_growth_promotions_collaboration",
+    "source_md5": "cf1ae00de3701e65f3d5b9f8f184ce5f",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927012456",
+    "name": "post_promotion_audience_estimates",
+    "source_md5": "45f50d34d2e204dc4986763720c4b502",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927021512",
+    "name": "social_media_expansion_foundation",
+    "source_md5": "0d2bc2c5f2a50c2cd0c768376896b33b",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927023255",
+    "name": "separate_posts_from_clips_discovery",
+    "source_md5": "fb535970e8cc2c5124e56ee7974d59d4",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927025750",
+    "name": "precise_service_location_live_map",
+    "source_md5": "f42054a87f34dd2f8df12a346cfbc747",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927032245",
+    "name": "marketplace_stability_hardening",
+    "source_md5": "59b764cba488fb03a36a507f2dee2336",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927033153",
+    "name": "social_rls_advisor_hardening",
+    "source_md5": "afd10b0d35b4f45185b9d4829dbd545f",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927041710",
+    "name": "social_rls_advisor_hardening",
+    "source_md5": "afd10b0d35b4f45185b9d4829dbd545f",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927042709",
+    "name": "clip_editor_v2",
+    "source_md5": "0f398393ea9bbb70c21a43604019c486",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927044323",
+    "name": "everest_studio_sound_system",
+    "source_md5": "6b5636393ac0d66b0fb88935b85acf19",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927045328",
+    "name": "reusable_public_sounds",
+    "source_md5": "03da71b68ca671083d5c3d9269371330",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927062736",
+    "name": "storage_policy_music_tracks_read_privilege_fix",
+    "source_md5": "cb9329ef0e03253c2322c6e6c8bf5187",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927081523",
+    "name": "stripe_connect_marketplace_payouts",
+    "source_md5": "dfc195ba3987fda007bc39d63846244a",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927090456",
+    "name": "stripe_connect_service_role_privileges",
+    "source_md5": "995f8bd6d4b20354d809d37723523d18",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927095959",
+    "name": "stripe_webhook_vault_secrets",
+    "source_md5": "b7958610d8476cb9f72b493db4220ae9",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927121749",
+    "name": "business_ops_01_structure",
+    "source_md5": "014ce2c6c3292be1b23c004dd5c485dd",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927121756",
+    "name": "business_ops_02_permissions",
+    "source_md5": "5cf6635c7ad6295ef16864557fb7754f",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927121803",
+    "name": "business_ops_03_members",
+    "source_md5": "6b366d9e463e6d1acaf9bfe83a9de472",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927121813",
+    "name": "business_ops_04_assignment",
+    "source_md5": "624f7c19b4064cfdaffdcd522fc16672",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927121828",
+    "name": "business_ops_04_dashboard",
+    "source_md5": "2dd67b5b9a7fcba5aed7a36f1bb37e5b",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927121836",
+    "name": "business_ops_05_rls",
+    "source_md5": "cc911d6a47cc22fbbea18f87ffe8f122",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927121844",
+    "name": "business_ops_06_job_lifecycle",
+    "source_md5": "58af9c6e40cdd9d42ab0dcc19720ca67",
+    "statement_count": 1
+  },
+  {
+    "version": "20260927121851",
+    "name": "business_ops_06_messaging_live",
+    "source_md5": "5441e1b946e71e12c555197910f63bb4",
+    "statement_count": 1
+  },
+  {
+    "version": "20260928123830",
+    "name": "business_push_notifications",
+    "source_md5": "f6e794fd8146a7a6ba175b56f2360073",
+    "statement_count": 1
+  },
+  {
+    "version": "20260928165049",
+    "name": "lock_down_social_actor_helpers",
+    "source_md5": "f915299c01225586e603aaed4959e041",
+    "statement_count": 1
+  },
+  {
+    "version": "20260928170252",
+    "name": "secure_post_reporting",
+    "source_md5": "8d10433f445f4292306b716465a0d1d9",
+    "statement_count": 1
+  },
+  {
+    "version": "20260928172000",
+    "name": "active_business_membership_and_live_hardening",
+    "source_md5": "a4f54e9c097f70b39f21f96ce3518b22",
+    "statement_count": 1
+  },
+  {
+    "version": "20260929133200",
+    "name": "flat_marketplace_fee_policy_v2",
+    "source_md5": "1ffd882152e7241b9f19b764563e4133",
+    "statement_count": 12
+  },
+  {
+    "version": "20260929134000",
+    "name": "preserve_split_service_fee_v2",
+    "source_md5": "c45d68f8144d24ef95d22a4695149df6",
+    "statement_count": 1
+  },
+  {
+    "version": "20260929134500",
+    "name": "restore_marketplace_booking_payment_guards",
+    "source_md5": "f97d94ed20db7ca42627c8245e8b66f9",
+    "statement_count": 1
+  },
+  {
+    "version": "20260929135000",
+    "name": "harden_paid_booking_cancellation_race",
+    "source_md5": "d0dfd3674f396db0c3e7183eb2bb3aba",
+    "statement_count": 1
+  },
+  {
+    "version": "20260929135500",
+    "name": "lock_order_reservation_release_after_checkout",
+    "source_md5": "d26d245822dce198195f83e01f333beb",
+    "statement_count": 1
+  },
+  {
+    "version": "20260929140000",
+    "name": "harden_marketplace_quote_payment_readiness",
+    "source_md5": "2e627513fdfa84a6d33cb496c90f73cb",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930084000",
+    "name": "restore_paid_order_and_job_integrity",
+    "source_md5": "a32c434df6a14eecd9db7ec4d5eb07df",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930085500",
+    "name": "harden_cart_and_inventory_reactivation",
+    "source_md5": "63f1c872ad5acf18d48a6a7a2f2a0111",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930090500",
+    "name": "harden_instant_booking_payment_authority",
+    "source_md5": "00d189d01f68b79d8e60dd11f9199360",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930091500",
+    "name": "enforce_order_creation_payment_readiness",
+    "source_md5": "6004085861d866176ad6215e91c9907c",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930162000",
+    "name": "service_checkout_retry_hardening",
+    "source_md5": "0bc42c1234421b06166f7e36370ce551",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930163041",
+    "name": "optimize_rls_auth_initplans",
+    "source_md5": "65579977c6eb3711ede3db0f5d8ba2c1",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930163500",
+    "name": "account_deletion_retention_hardening",
+    "source_md5": "3c8dc8eb64fed43c1f2848f5cc535e6f",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930164612",
+    "name": "lock_dispatch_candidate_helper_to_server",
+    "source_md5": "ecdffe46ad2c5b4cbc7d95fb3ab375b2",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930165000",
+    "name": "media_storage_permission_hardening",
+    "source_md5": "02cc423ff92876459c7a9b941fc74a17",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930171000",
+    "name": "cross_dispatch_assignment_exclusivity",
+    "source_md5": "a0e260e933dc2bf74ef12c74d807be7b",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930173000",
+    "name": "business_role_permission_boundary",
+    "source_md5": "0dadb867342b0178cf184746a1f4ebba",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930174500",
+    "name": "crm_growth_role_permission_boundary",
+    "source_md5": "3ae4541208359dfd770141b03c98099f",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930180000",
+    "name": "social_crm_credit_role_hardening",
+    "source_md5": "216f4d8931a3da6d72b04a2e12bf3af9",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930181500",
+    "name": "service_role_user_permission_helper",
+    "source_md5": "01ead4da0c7c40fb67d75a92ae49c5bb",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930183000",
+    "name": "post_promotion_role_hardening",
+    "source_md5": "ad6b63baefa4a772a53b9b1064a51efe",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930184500",
+    "name": "public_profile_column_privacy",
+    "source_md5": "7c6690273cbd41e4d4ccc81ed43099ac",
+    "statement_count": 1
+  },
+  {
+    "version": "20260930190000",
+    "name": "connect_membership_package_billing",
+    "source_md5": "bcb2e62942e0cbbba888ff8cc2d599d9",
+    "statement_count": 1
+  },
+  {
+    "version": "20261002125208",
+    "name": "business_listing_payout_override",
+    "source_md5": "999f2ee02a62d29e21d902b085444b1a",
+    "statement_count": 1
+  },
+  {
+    "version": "20261003043651",
+    "name": "lc_events_client_intake_storage",
+    "source_md5": "097005123c6c3bce137f3ec6c0a3fa9a",
+    "statement_count": 1
+  },
+  {
+    "version": "20261003043838",
+    "name": "lc_events_delivery_settings",
+    "source_md5": "813bb9de26d8f7030bd0ed3d92df1e38",
+    "statement_count": 1
+  },
+  {
+    "version": "20261003050944",
+    "name": "fix_lc_edge_service_role_table_privileges",
+    "source_md5": "64b7972d56ef99e32be3b1524b83b2bd",
+    "statement_count": 1
+  }
+]

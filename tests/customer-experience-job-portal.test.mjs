@@ -40,7 +40,7 @@ test('business portal exposes operational progress without bypassing booking aut
 
 test('home has one clear matching action and local trust cues',()=>{
  assert.match(home,/Request quotes/);
- assert.match(home,/Book local services, request quotes and shop from nearby businesses\./);
+ assert.match(home,/Find a service, compare quotes or shop local\./);
  assert.doesNotMatch(home,/<Trust /);
  assert.match(home,/Continue where you left off/);
  assert.doesNotMatch(home,/CONTINUE WHERE YOU LEFT OFF/);

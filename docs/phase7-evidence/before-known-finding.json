@@ -1,0 +1,105 @@
+{
+  "scope": "PostgreSQL 17.6 loopback; independent transactions, synthetic request/confirmed-booking fixtures and controlled authorization/readiness helpers. Not full schema, staging, Stripe or realtime.",
+  "tests": [
+    {
+      "name": "two providers concurrently accept: exactly one committed assignment",
+      "pass": true
+    },
+    {
+      "name": "repeat acceptance after lost response cannot create duplicate assignment",
+      "pass": true
+    },
+    {
+      "name": "stale offer cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "offline provider cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "stale location cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "cancelled request cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "missing capability cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "outside provider radius cannot create an assignment",
+      "pass": true
+    },
+    {
+      "name": "another account cannot accept a provider offer",
+      "pass": true
+    },
+    {
+      "name": "completion progresses through allowed states and is authorized",
+      "pass": true
+    },
+    {
+      "name": "customer cancellation expires offers and is not repeat-success",
+      "pass": true
+    },
+    {
+      "name": "provider cannot cancel customer request",
+      "pass": true
+    },
+    {
+      "name": "two customer quote decisions preserve one booking even under contention",
+      "pass": true
+    },
+    {
+      "name": "expired quote rejects without booking",
+      "pass": true
+    },
+    {
+      "name": "cancelled request rejects quote acceptance",
+      "pass": true
+    },
+    {
+      "name": "provider cannot accept a customer quote",
+      "pass": true
+    },
+    {
+      "name": "accept_quote matches read-only production function fingerprint",
+      "pass": true
+    },
+    {
+      "name": "update_booking_status matches read-only production function fingerprint",
+      "pass": true
+    },
+    {
+      "name": "provider acceptance matches production SQL body tokens despite formatting",
+      "pass": true
+    },
+    {
+      "name": "exact function source provenance",
+      "pass": true,
+      "sources": {
+        "respond_service_dispatch_offer": "20260921133428_20260921241100_fix_dispatch_offer_response_guard.sql",
+        "accept_quote": "20260929140000_harden_marketplace_quote_payment_readiness.sql",
+        "cancel_everest_live": "20260926112442_everest_live_marketplace.sql",
+        "update_booking_status": "20260929135000_harden_paid_booking_cancellation_race.sql"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "priority": "P1",
+      "issue": "Concurrent quote decisions can deadlock because each quote is locked before their shared request. PostgreSQL aborts one transaction; one booking survives.",
+      "errors": [
+        {
+          "code": "40P01",
+          "message": "deadlock detected"
+        }
+      ]
+    }
+  ],
+  "passed": 20,
+  "failed": 0
+}

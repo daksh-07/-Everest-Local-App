@@ -320,8 +320,8 @@ export async function getPostCommentCount(postId:string){
  if(error)throw new Error(error.message);if(count==null)throw new Error('Comment count unavailable.');return count;
 }
 export async function hidePostComment(commentId:string):Promise<void>{
- requireSupabaseConfig();const {error,count}=await supabase.from('post_comments').update({status:'HIDDEN',updated_at:new Date().toISOString()},{count:'exact'}).eq('id',commentId).eq('status','VISIBLE');
- if(error)throw new Error(error.message);if(count!==1)throw new Error('This comment is no longer available. Refresh the conversation.');
+ requireSupabaseConfig();const {error,data}=await supabase.rpc('hide_post_comment',{p_comment_id:commentId});
+ if(error)throw new Error(error.message);if(data!==true)throw new Error('This comment is no longer available. Refresh the conversation.');
 }
 export async function editPostComment(comment:PostComment,body:string):Promise<PostComment>{
  requireSupabaseConfig();const {data:{user},error:authError}=await supabase.auth.getUser();if(authError||!user)throw new Error('Sign in to edit your comment.');

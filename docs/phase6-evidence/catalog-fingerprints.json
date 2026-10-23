@@ -1,0 +1,16 @@
+{
+  "source": "Read-only production pg_get_functiondef, 2026-10-19",
+  "respond_service_dispatch_offer": {
+    "definitionMd5": "4d41ec61ba2f867bca9fc37eb494f099",
+    "repositoryDefinitionMd5": "eefc39914ed4fa1f0a6f82fea2ea1a34",
+    "bodyTokenSha256": "a6f07ca9fec1d5000fb821905a11cf80db5ea2e4ff1cf81ecfc484afe7824ec8",
+    "bodyTokens": 1276,
+    "note": "Definition differs in whitespace only; all 1276 body tokens match exactly."
+  },
+  "accept_quote": {
+    "definitionMd5": "6c382d3ba10baee61594ad34bb72060b"
+  },
+  "update_booking_status": {
+    "definitionMd5": "56205fe1754f88e377540864ffbf18e4"
+  }
+}

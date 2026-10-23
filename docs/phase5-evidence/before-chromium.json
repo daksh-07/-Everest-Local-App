@@ -1,0 +1,14 @@
+{
+  "engine": "chromium",
+  "baseline": true,
+  "scenarios": [
+    "Home Shop failure is displayed as empty browse prompt",
+    "Profile services failure hides business identity",
+    "Profile products failure hides business identity",
+    "Profile reviews failure hides business identity",
+    "Today CRM failure zeros metrics and shows caught-up state",
+    "Search clears matching results while reissuing the same trimmed query"
+  ],
+  "layouts": [],
+  "errors": []
+}
