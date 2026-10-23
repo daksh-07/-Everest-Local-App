@@ -6,12 +6,14 @@ import {disposablePostgres} from './lib/phase6-postgres.mjs';
 import {latestFunction} from './lib/phase6-sql-source.mjs';
 const {db}=await disposablePostgres();
 const results=[];
+let migrationTransaction=false;
 const uid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const owner=uid(1),viewer=uid(2),admin=uid(3),business=uid(4),post=uid(5);
 async function check(name,fn){try{await fn();results.push({name,pass:true})}catch(e){results.push({name,pass:false,error:e.message});throw e}}
 async function as(role,id,sql){
+ if(migrationTransaction)await db.exec('savepoint role_probe');
  await db.exec(`set role ${role};select set_config('request.jwt.claim.sub','${id??''}',false);`);
- try{return (await db.query(sql)).rows}finally{await db.exec('reset role')}
+ try{return (await db.query(sql)).rows}catch(error){if(migrationTransaction)await db.exec('rollback to savepoint role_probe');throw error}finally{await db.exec('reset role');if(migrationTransaction)await db.exec('release savepoint role_probe')}
 }
 try{
  await db.exec(`
@@ -24,7 +26,7 @@ try{
  create table businesses(id uuid primary key,status text,verification_status text);
  create table business_members(business_id uuid,user_id uuid,status text);
  create table products(id uuid primary key,business_id uuid,status text);
- create table inventory(product_id uuid primary key,quantity integer,reserved_quantity integer);
+ create table inventory(product_id uuid primary key,stock_quantity integer,reserved_quantity integer);
  create table posts(id uuid primary key,author_id uuid,business_id uuid,status text,visibility text);
  create table user_blocks(blocker_id uuid,blocked_id uuid);
  create table follows(follower_id uuid,followed_user_id uuid,business_id uuid);
@@ -78,12 +80,13 @@ try{
  insert into stripe_events values('evt_fixture','fixture','PROCESSED',now(),now());
  `);
  await check('guest stock read reproduces missing privileges before repair',()=>assert.rejects(as('anon',null,'select * from inventory'),/permission denied/));
+ await db.exec('begin');migrationTransaction=true;
  for(const suffix of ['restore_public_guest_reads','restore_admin_driver_review_access','business_conversation_customer_names','admin_read_stripe_event_metadata']){
   const file=(await fs.readdir('supabase/migrations')).find(n=>n.endsWith('_'+suffix+'.sql'));
   await db.exec(await fs.readFile('supabase/migrations/'+file,'utf8'));
  }
  await check('guest reads stock only for public verified listings',async()=>assert.deepEqual((await as('anon',null,'select product_id from inventory')).map(x=>x.product_id),[uid(7)]));
- await check('guest cannot write stock',()=>assert.rejects(as('anon',null,'update inventory set quantity=99'),/permission denied/));
+ await check('guest cannot write stock',()=>assert.rejects(as('anon',null,'update inventory set stock_quantity=99'),/permission denied/));
  await check('guest cannot inspect follows or connections',async()=>{assert.deepEqual(await as('anon',null,'select * from follows'),[]);assert.deepEqual(await as('anon',null,'select * from user_connections'),[])});
  await check('guest reads published public posts only',async()=>assert.deepEqual((await as('anon',null,'select id from posts')).map(x=>x.id),[post]));
  await check('blocker cannot see blocked author',async()=>{await db.exec(`insert into user_blocks values('${viewer}','${owner}')`);assert.deepEqual(await as('authenticated',viewer,'select id from posts'),[])});
@@ -100,6 +103,12 @@ try{
  for(const [name,args] of [['admin_set_driver_application',`'${uid(14)}','APPROVED',null`],['admin_set_driver_document_status',`'${uid(14)}','VERIFIED',null`],['admin_set_driver_vehicle_verification',`'${uid(14)}','CURRENT',current_date,null,null,current_date,'MANUAL_ADMIN_CHECK',null,null`]]){
   await check(name+' denies non-admin before touching data',()=>assert.rejects(as('authenticated',viewer,`select ${name}(${args})`),/Admin authorization required/));
  }
+ await db.exec('rollback');migrationTransaction=false;
+ await check('rolling back restores prior guest stock denial',()=>assert.rejects(as('anon',null,'select * from inventory'),/permission denied/));
+ await check('rolling back removes new identity API and restores driver ACL',async()=>{
+  const row=(await db.query("select to_regprocedure('public.get_business_conversation_people(uuid[])') as identity_api,has_function_privilege('authenticated','admin_set_driver_application(uuid,text,text)','execute') as driver_allowed")).rows[0];
+  assert.equal(row.identity_api,null);assert.equal(row.driver_allowed,false);
+ });
 }finally{
  const output=process.env.EVEREST_QA_ARTIFACTS||'/tmp/everest-release-sql';await fs.mkdir(output,{recursive:true});
  await fs.writeFile(output+'/integration.json',JSON.stringify({scope:'Focused schema fixtures; complete staging acceptance remains BLOCKED',results,passed:results.filter(x=>x.pass).length,failed:results.filter(x=>!x.pass).length},null,2)+'\n');

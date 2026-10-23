@@ -84,7 +84,9 @@ jobs:
           workspace="$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)"
           test -n "$workspace"
           xcodebuild -list -json -workspace "$workspace" > /tmp/everest-xcode-targets.json
-          scheme="$(node -e "const p=require('/tmp/everest-xcode-targets.json');const schemes=p.workspace.schemes;const app=schemes.find(s=>!s.startsWith('Pods-'));if(!app)process.exit(1);process.stdout.write(app)")"
+          scheme="${workspace##*/}"
+          scheme="${scheme%.xcworkspace}"
+          node -e "const p=require('/tmp/everest-xcode-targets.json');if(!p.workspace.schemes.includes(process.argv[1]))process.exit(1)" "$scheme"
           xcodebuild -workspace "$workspace" -scheme "$scheme" -configuration Release \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath /tmp/everest-ios-build CODE_SIGNING_ALLOWED=NO build

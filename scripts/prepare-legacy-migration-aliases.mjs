@@ -1,4 +1,4 @@
-import {mkdir,rm,symlink} from 'node:fs/promises';
+import {mkdir,lstat,readlink,rm,symlink} from 'node:fs/promises';
 import {resolve} from 'node:path';
 
 const root=process.cwd();
@@ -358,10 +358,6 @@ const aliases=[
   ],
   [
     "20260927133000_social_rls_advisor_hardening.sql",
-    "20260927033153_social_rls_advisor_hardening.sql"
-  ],
-  [
-    "20260927133000_social_rls_advisor_hardening.sql",
     "20260927041710_social_rls_advisor_hardening.sql"
   ],
   [
@@ -390,10 +386,16 @@ const aliases=[
   ]
 ];
 
+const clean=process.argv.includes('--clean');
+if(process.argv.slice(2).some(arg=>arg!=='--clean'))throw new Error('Only --clean is supported.');
 await mkdir(migrationDir,{recursive:true});
 for(const [legacy,target] of aliases){
  const link=resolve(migrationDir,legacy);
- await rm(link,{force:true});
- await symlink(target,link,'file');
+ const existing=await lstat(link).catch(error=>{if(error.code==='ENOENT')return null;throw error});
+ if(existing){
+  if(!existing.isSymbolicLink()||await readlink(link)!==target)throw new Error('Refusing to replace an unrecognized migration: '+legacy);
+  await rm(link);
+ }
+ if(!clean)await symlink(target,link,'file');
 }
-console.log(`Prepared ${aliases.length} legacy migration aliases for local validation.`);
+console.log(`${clean?'Removed':'Prepared'} ${aliases.length} known test-only migration aliases. ${clean?'Only canonical migrations remain; inspect the exact release selection before any CLI operation.':'Never include these aliases in database deployment; run this script with --clean first.'}`);
