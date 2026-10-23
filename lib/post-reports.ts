@@ -27,6 +27,7 @@ export async function reportPost(postId: string, reason: PostReportReason, detai
   requireSupabaseConfig();
   const { data, error } = await supabase.rpc('report_post', { p_post_id: postId, p_reason: reason, p_details: details?.trim() || null });
   if (error) throw new Error(error.message.includes('own post') ? 'You can’t report your own post.' : error.message.includes('limit') ? 'You’ve sent a lot of reports today. Try again later.' : 'Your report could not be sent. Try again.');
+  if (typeof data !== 'string' || !data) throw new Error('Your report could not be confirmed. Try again.');
   return data as string;
 }
 
@@ -41,13 +42,13 @@ export async function adminListPostReports(status: 'OPEN' | 'REVIEWED' | 'CLOSED
 export async function adminResolvePostReport(report: PostReport, action: 'HIDE_POST' | 'DISMISS', resolution?: string) {
   requireSupabaseConfig();
   if (action === 'HIDE_POST') {
-    const { error } = await supabase.from('posts').update({ status: 'HIDDEN' }).eq('id', report.post_id);
-    if (error) throw new Error('The post could not be hidden.');
+    const { data, error } = await supabase.from('posts').update({ status: 'HIDDEN' }).eq('id', report.post_id).select('id').single();
+    if (error || data?.id !== report.post_id) throw new Error('The post could not be hidden.');
   }
-  const { error } = await supabase.rpc('admin_review_post_report', {
+  const { data, error } = await supabase.rpc('admin_review_post_report', {
     p_report_id: report.id,
     p_status: action === 'HIDE_POST' ? 'CLOSED' : 'REVIEWED',
     p_resolution: resolution?.trim() || (action === 'HIDE_POST' ? 'Post hidden by admin' : 'No violation found'),
   });
-  if (error) throw new Error('The report could not be updated.');
+  if (error || data !== true) throw new Error(action === 'HIDE_POST' ? 'The post is hidden, but the report could not be closed. Refresh and try again.' : 'The report could not be updated.');
 }

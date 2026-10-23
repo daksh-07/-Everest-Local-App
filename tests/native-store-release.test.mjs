@@ -82,3 +82,13 @@ test('CI prebuilds both platforms and compiles a release Android bundle',()=>{
  assert.match(workflow,/bundleRelease/);
  assert.match(workflow,/app-release\.aab/);
 });
+
+test('iOS gate requires the current store toolchain and an actual simulator compile',()=>{
+ assert.match(workflow,/xcodebuild -version/);
+ assert.match(workflow,/xcrun --sdk iphoneos --show-sdk-version/);
+ assert.match(workflow,/test "\$\{xcode_major\}" -ge 26/);
+ assert.match(workflow,/test "\$\{ios_sdk_major\}" -ge 26/);
+ assert.match(workflow,/pod-install ios/);
+ assert.match(workflow,/-sdk iphonesimulator/);
+ assert.match(workflow,/CODE_SIGNING_ALLOWED=NO build/);
+});

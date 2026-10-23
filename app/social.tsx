@@ -2,13 +2,14 @@ import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, Share, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {PostCommentsSheet} from '@/components/PostCommentsSheet';
+import {ConfirmSheet} from '@/components/ui/ConfirmSheet';
 import {ReportPostSheet} from '@/components/ReportPostSheet';
 import {PagerAwareScrollView as ScrollView} from '@/components/PagerAwareScrollView';
 import {Ionicons} from '@/components/ui/Icon';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useGlobalSearchParams} from 'expo-router';
 import {
-  getAccessiblePost,getPostEngagement,listPublicPosts,recordPostView,setPostCommentsEnabled,
+  archivePost,deletePost,getAccessiblePost,getPostEngagement,listPublicPosts,recordPostView,setPostCommentsEnabled,
   togglePostLike,toggleSavedPost,type PostEngagement,type SocialPost
 } from '@/lib/social';
 import {signedPostMediaResilient} from '@/lib/request-post-media';
@@ -43,7 +44,7 @@ type FeedPost=SocialPost&{
 const emptyEngagement:PostEngagement={likeCount:0,commentCount:0,likedByMe:false,savedByMe:false};
 const FEED_CACHE_MS=5*60_000;
 // Posts the viewer reported this session stay out of their feed even if a refresh returns them.
-const reportedPostIds=new Set<string>();
+const reportsByViewer=new Map<string,Set<string>>();
 let feedCache:{posts:FeedPost[];locality:string;userId:string|null;at:number}|null=null;
 let exploreSnapshot:{posts:FeedPost[];clips:FeedPost[];stories:StoryCard[];locality:string;userId:string|null;at:number}|null=null;
 let exploreLoad:Promise<void>|null=null;
@@ -65,6 +66,8 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  useEffect(()=>{setImmersiveMedia(active&&mode==='CLIPS');return()=>setImmersiveMedia(false)},[active,mode]);const [activeClipId,setActiveClipId]=useState<string|null>(null);const [loading,setLoading]=useState(()=>!cachedFeed);const [refreshing,setRefreshing]=useState(false);
  useEffect(()=>{if(!pager)fallbackProgress.value=mode==='CLIPS'?2:1},[fallbackProgress,mode,pager]);
  const [error,setError]=useState('');const [locality,setLocality]=useState(()=>cachedFeed?.locality??'Near you');const [userId,setUserId]=useState<string|null>(()=>cachedFeed?.userId??null);
+ const reportedPostIds=useMemo(()=>{const key=userId??'guest';let ids=reportsByViewer.get(key);if(!ids){ids=new Set<string>();reportsByViewer.set(key,ids)}return ids},[userId]);
+ const [ownerAction,setOwnerAction]=useState<{post:FeedPost;kind:'ARCHIVE'|'DELETE'}|null>(null);const ownerActionLock=useRef(false);const [ownerBusy,setOwnerBusy]=useState(false);
  const [commentPost,setCommentPost]=useState<FeedPost|null>(null);
  const commentSettingsLock=useRef(false);const [commentSettingsBusy,setCommentSettingsBusy]=useState(false);
  const [menuPost,setMenuPost]=useState<string|null>(null);const [reportingPost,setReportingPost]=useState<string|null>(null);const lastDeepLinkedPost=useRef<string|null>(null);
@@ -203,7 +206,14 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
   try{await toggleSavedPost(post.id,before)}catch{updateEngagement(post.id,e=>({...e,savedByMe:before}));}
  }
  async function share(post:FeedPost){
-  await Share.share({message:[post.caption||'See this post on Everest Local',post.location_label?('📍 '+post.location_label):''].filter(Boolean).join('\n')});
+  try{await Share.share({message:[post.caption||'See this post on Everest Local',post.location_label?('📍 '+post.location_label):''].filter(Boolean).join('\n')});}catch{setError('The post could not be shared. Try again.');}
+ }
+ async function confirmOwnerAction(){
+  if(!ownerAction||ownerActionLock.current)return;
+  ownerActionLock.current=true;setOwnerBusy(true);setError('');
+  try{await (ownerAction.kind==='ARCHIVE'?archivePost:deletePost)(ownerAction.post.id);const id=ownerAction.post.id;setPosts(rows=>rows.filter(row=>row.id!==id));setClips(rows=>rows.filter(row=>row.id!==id));setOwnerAction(null);setMenuPost(null);}
+  catch(e){setOwnerAction(null);setError(userMessage(e,'The post could not be updated. Refresh and try again.'));}
+  finally{ownerActionLock.current=false;setOwnerBusy(false);}
  }
  function openComments(post:FeedPost){setCommentPost(post);}
  async function toggleComments(post:FeedPost){
@@ -289,6 +299,10 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
     </View>
     {menuPost===item.id?<View style={s.menu}>
       {item.author_id===userId?<Pressable accessibilityRole="button" disabled={commentSettingsBusy} onPress={()=>void toggleComments(item)} style={[s.menuItem,{minHeight:44}]}><Ionicons name={item.comments_enabled?'chatbubble-outline':'chatbubble-ellipses-outline'} size={17} color={colors.text}/><Text style={s.menuText}>{commentSettingsBusy?'Updating comments…':item.comments_enabled?'Turn comments off':'Turn comments on'}</Text></Pressable>:null}
+      {item.author_id===userId?<>
+       <Pressable accessibilityRole="button" onPress={()=>{setMenuPost(null);setOwnerAction({post:item,kind:'ARCHIVE'})}} style={s.menuItem}><Ionicons name="archive-outline" size={17} color={colors.text}/><Text style={s.menuText}>Archive post</Text></Pressable>
+       <Pressable accessibilityRole="button" onPress={()=>{setMenuPost(null);setOwnerAction({post:item,kind:'DELETE'})}} style={s.menuItem}><Ionicons name="trash-outline" size={17} color={colors.danger}/><Text style={[s.menuText,{color:colors.danger}]}>Delete post</Text></Pressable>
+      </>:null}
       <Pressable accessibilityRole="button" onPress={()=>void share(item)} style={s.menuItem}><Ionicons name="share-outline" size={17} color={colors.text}/><Text style={s.menuText}>Share post</Text></Pressable>
       {item.author_id!==userId?<Pressable accessibilityRole="button" onPress={()=>{setMenuPost(null);if(!userId){router.push('/auth');return;}setReportingPost(item.id)}} style={s.menuItem}><Ionicons name="flag-outline" size={17} color={colors.danger}/><Text style={[s.menuText,{color:colors.danger}]}>Report post</Text></Pressable>:null}
     </View>:null}
@@ -317,6 +331,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
    </View>}
   />
   <CustomerTabBar active="/social"/>
+  <ConfirmSheet visible={Boolean(ownerAction)} title={ownerAction?.kind==='ARCHIVE'?'Archive this post?':'Delete this post?'} subtitle={ownerAction?.kind==='ARCHIVE'?'It will be hidden from public feeds. You can restore it from Account → Archive.':'This removes the post from Everest Local. Retained moderation and marketplace records are unaffected.'} busy={ownerBusy} confirmLabel={ownerAction?.kind==='ARCHIVE'?'Archive post':'Delete post'} onCancel={()=>{if(!ownerBusy)setOwnerAction(null)}} onConfirm={()=>void confirmOwnerAction()}/>
   <ReportPostSheet postId={reportingPost} kind={mode==='CLIPS'?'clip':'post'} onClose={()=>setReportingPost(null)} onReported={id=>{reportedPostIds.add(id);setPosts(current=>current.filter(post=>post.id!==id));setClips(current=>current.filter(clip=>clip.id!==id));}}/>
   {commentPost?<PostCommentsSheet key={`${commentPost.id}:${userId??'guest'}`} post={commentPost} linkedCommentId={typeof params.commentId==='string'?params.commentId:undefined} onClose={()=>setCommentPost(null)} onCountChange={(delta,total)=>{updateEngagement(commentPost.id,engagement=>({...engagement,commentCount:total??Math.max(0,engagement.commentCount+delta)}));setCommentPost(previous=>previous?{...previous,engagement:{...previous.engagement,commentCount:total??Math.max(0,previous.engagement.commentCount+delta)}}:previous);}}/>:null}
  </SafeAreaView>

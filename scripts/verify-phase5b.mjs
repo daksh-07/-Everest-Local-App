@@ -295,7 +295,7 @@ try{
    await page.getByText(path.includes('everest-live')?'Your responses are ready':path.includes('business-jobs')?'Open job':path.includes('business-calendar')?'Scheduled garden visit':path.includes('business-inbox')?'No customer conversations yet':path.includes('business-crm')?'Garden lead':path.includes('business-my-work')?'You’re clear.':'Save availability',{exact:true}).first().waitFor();
    await page.waitForLoadState('networkidle');
    await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);
-   for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
+   for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){
     await page.setViewportSize({width,height:width===320?568:844});
     await page.waitForTimeout(220);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,path+' overflow '+width);
@@ -317,7 +317,7 @@ try{
    const {page,context}=await open(path,state,true);await page.waitForLoadState('networkidle');
    for(const theme of ['LIGHT','DARK']){
     await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);
-    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){
      await page.setViewportSize({width,height:844});await page.waitForTimeout(150);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,path+' '+mode+' overflow');
      report.layouts.push({path,theme,motion:'reduce',width,state:mode});

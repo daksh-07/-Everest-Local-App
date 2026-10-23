@@ -32,11 +32,11 @@ export function ReportPostSheet({postId,kind='post',onClose,onReported}:{postId:
      {done?<View style={styles.done}>
       <View style={[styles.doneIcon,{backgroundColor:c.soft}]}><Ionicons name="checkmark" size={26} color={c.success??c.accent}/></View>
       <Text accessibilityRole="header" style={[styles.title,{color:c.text,textAlign:'center'}]}>Thanks for letting us know</Text>
-      <Text style={[styles.subtitle,{color:c.textSecondary,textAlign:'center'}]}>Our team reviews every report. You won’t see this {kind} in your feed anymore. The author isn’t told who reported it.</Text>
+      <Text style={[styles.subtitle,{color:c.textSecondary,textAlign:'center'}]}>Your report has been sent for review. This {kind} is hidden from your feed for this session. The author isn’t told who reported it.</Text>
       <Pressable accessibilityRole="button" onPress={onClose} style={({pressed})=>[styles.primary,{backgroundColor:c.brand},pressed&&{opacity:.85}]}><Text style={[styles.primaryText,{color:c.onBrand}]}>Done</Text></Pressable>
      </View>:<>
       <Text accessibilityRole="header" style={[styles.title,{color:c.text}]}>Report this {kind}</Text>
-      <Text style={[styles.subtitle,{color:c.textSecondary}]}>Why are you reporting it? Your report is anonymous.</Text>
+      <Text style={[styles.subtitle,{color:c.textSecondary}]}>Why are you reporting it? Only moderators can see who sent the report.</Text>
       <ScrollView style={{maxHeight:360}} keyboardShouldPersistTaps="handled">
        <View accessibilityRole="radiogroup" style={[styles.list,{borderColor:c.border,backgroundColor:c.surface}]}>
         {POST_REPORT_REASONS.map((item,index)=>{const selected=reason===item.value;return <Pressable key={item.value} accessibilityRole="radio" accessibilityState={{checked:selected}} onPress={()=>setReason(item.value)} style={({pressed})=>[styles.reason,index>0&&{borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:c.border},pressed&&{backgroundColor:c.soft}]}>

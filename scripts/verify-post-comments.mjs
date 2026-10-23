@@ -114,7 +114,7 @@ try{
   const {default:AxeBuilder}=await import(process.env.AXE_MODULE||'@axe-core/playwright');
   for(const theme of ['LIGHT','DARK'])for(const motion of ['reduce','no-preference']){
    const f=await open({theme,motion});await f.comments();await f.page.getByText('Can I book a gardener for Saturday?',{exact:true}).waitFor();await f.page.waitForLoadState('networkidle');
-   for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
+   for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){
     await f.page.setViewportSize({width,height:844});await f.page.evaluate(()=>window.__commentsViewport(844));await f.page.waitForTimeout(180);const dialog=f.page.getByRole('dialog',{name:'Post comments',exact:true});const bounds=await dialog.boundingBox();assert.ok(bounds.x>=-1&&bounds.x+bounds.width<=width+1);assert.equal(await f.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);report.layouts.push({width,theme,motion});
     if(width===390&&motion==='reduce'){await shot(f.page,'comments-'+theme.toLowerCase());const audit=await new AxeBuilder({page:f.page}).include('[role="dialog"][aria-label="Post comments"]').withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();report.accessibility.push({theme,width,violations:audit.violations});assert.deepEqual(audit.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.html)})),[]);}
     await f.page.getByRole('textbox',{name:'Add a comment',exact:true}).focus();await f.page.evaluate(()=>window.__commentsViewport(430,24));await f.page.waitForTimeout(180);const send=await f.page.getByRole('button',{name:'Post comment',exact:true}).boundingBox();assert.ok(send.y+send.height<=455,'composer stays above the simulated keyboard');await f.page.evaluate(()=>window.__commentsViewport(844));
@@ -127,7 +127,7 @@ try{
    await f.comments();if(mode==='error')await f.page.getByRole('button',{name:'Retry comments',exact:true}).waitFor();else if(mode==='empty')await f.page.getByText('No comments yet',{exact:true}).waitFor();else await f.page.getByText('Can I book a gardener for Saturday?',{exact:true}).waitFor();
    for(const theme of ['LIGHT','DARK']){
     if(theme==='DARK'){await f.page.getByRole('button',{name:'Close comments',exact:true}).click();await f.page.evaluate(()=>localStorage.setItem('everest-local-theme','DARK'));await settleFixtureReads(f.page);await f.page.reload();await f.page.getByRole('button',{name:'Comments',exact:true}).first().waitFor();await f.comments();await f.page.waitForLoadState('networkidle');}
-    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){
      await f.page.setViewportSize({width,height:844});await f.page.waitForTimeout(120);const bounds=await f.page.getByRole('dialog',{name:'Post comments',exact:true}).boundingBox();assert.ok(bounds.x>=-1&&bounds.x+bounds.width<=width+1&&bounds.y+bounds.height<=845);report.layouts.push({mode,theme,width,motion:'reduce'});
     }
    }

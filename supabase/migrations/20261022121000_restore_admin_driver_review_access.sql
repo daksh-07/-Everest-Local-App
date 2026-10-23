@@ -15,7 +15,8 @@
 -- Every function below raises 'Admin authorization required' (or 'Not authorized')
 -- before touching data unless the server-side checks pass.
 grant execute on function public.admin_set_driver_application(uuid, text, text) to authenticated;
-grant execute on function public.admin_set_driver_verification(uuid, text, text, text, text, text, text, text, text) to authenticated;
+-- Keep the unused legacy all-in-one verifier service-only. The current UI uses
+-- the credential/vehicle APIs, whose expiry and compliance checks are stricter.
 grant execute on function public.admin_set_driver_document_status(uuid, text, text) to authenticated;
 grant execute on function public.admin_set_driver_vehicle_verification(uuid, text, date, text, text, date, text, text, text) to authenticated;
 grant execute on function public.evaluate_driver_compliance(uuid) to authenticated;

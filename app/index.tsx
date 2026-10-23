@@ -1,3 +1,4 @@
+import {CustomerLocationSelector} from '@/components/CustomerLocationSelector';
 import {MotionPressable as Pressable} from '@/components/ui/MotionPressable';
 import {useEffect,useMemo,useRef,useState} from 'react';
 // Production deployment retry 2026-09-26
@@ -53,6 +54,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Set location');
  const [unread,setUnread]=useState(0);const [postMedia,setPostMedia]=useState<Record<string,string[]>>({});
  const [mediaWarning,setMediaWarning]=useState('');const [loadError,setLoadError]=useState('');const [weather,setWeather]=useState<CurrentWeather|null>(null);const [weatherLoading,setWeatherLoading]=useState(false);
+ const [locationSelector,setLocationSelector]=useState(false);
  const [context,setContext]=useState<ContextCard|null>(null);const [refreshing,setRefreshing]=useState(false);const [locating,setLocating]=useState(false);const [navHidden,setNavHidden]=useState(false);
  useEffect(()=>{if(!visible)return;let mounted=true;void supabase.auth.getSession().then(async({data})=>{if(!data.session)return null;const {getWorkspaceContext}=await import('@/lib/workspace');return getWorkspaceContext()}).then(workspace=>{if(mounted&&workspace?.mode==='BUSINESS'&&workspace.active_business_id)router.replace('/business-today')}).catch(()=>undefined);return()=>{mounted=false}},[visible]);
  const enter=useRef(new Animated.Value(reduced?1:0)).current;const lastScrollY=useRef(0);const weatherCoordinates=useRef<{latitude:number;longitude:number}|null>(null);
@@ -165,7 +167,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
   <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void refreshHome()} tintColor={c.accent} colors={[c.accent]}/>} scrollEventThrottle={16} onScroll={e=>{const y=Math.max(0,e.nativeEvent.contentOffset.y);const delta=y-lastScrollY.current;if(y<24)setNavHidden(false);else if(delta>8)setNavHidden(true);else if(delta<-6)setNavHidden(false);lastScrollY.current=y}} contentContainerStyle={[s.page,{paddingHorizontal:desktop?28:t.spacing.screen}]}>
    <Animated.View style={appear}>
     <View style={s.topbar}>
-     <Pressable onPress={()=>void refreshLocality(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityRole="button" accessibilityLabel={hasPlace?`Location: ${suburb}${weather?`. ${weather.label}, ${Math.round(weather.temperatureC)} degrees`:''}. Update location`:'Set your location'}>
+     <Pressable onPress={()=>setLocationSelector(true)} style={({pressed})=>[s.placeRow,pressed&&s.press]} accessibilityRole="button" accessibilityLabel={hasPlace?`Location: ${suburb}${weather?`. ${weather.label}, ${Math.round(weather.temperatureC)} degrees`:''}. Update location`:'Set your location'}>
       <Ionicons name={locating?'locate':'location'} size={16} color={c.accent}/>
       <Text numberOfLines={1} style={s.place}>{locating?'Finding you…':hasPlace?suburb:'Set your location'}</Text>
       <Ionicons name="chevron-down" size={14} color={c.textSecondary}/>
@@ -212,6 +214,11 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
     <View style={s.communityRow}><View style={{flex:1}}><Text style={s.communityTitle}>Your neighbourhood, shared</Text><Text style={s.communityCopy}>Post a local update, question or recommendation.</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Create a local post" onPress={()=>go('/create')} style={({pressed})=>[s.communityAction,pressed&&s.press]}><Ionicons name="add" size={19} color={c.text}/><Text style={s.communityActionText}>Post</Text></Pressable></View>
    </Animated.View><View style={{height:118}}/>
   </ScrollView><CustomerTabBar active="/" hidden={navHidden}/>
+ <CustomerLocationSelector visible={locationSelector} currentLabel={suburb} onClose={()=>setLocationSelector(false)} onSelect={async location=>{
+  setLoadError('');setSuburb(location.suburb||location.city);setLocality(location);setLocationSelector(false);void loadWeather(location);
+  const {data,error}=await supabase.auth.getSession();if(error){setLoadError('Location updated for browsing. Your saved location could not be checked.');return}
+  if(data.session)try{await saveLocalityToProfile(location)}catch{setLoadError('Location updated for browsing. Your saved location could not be updated.');}
+ }}/>
  </SafeAreaView></View>;
 }
 
