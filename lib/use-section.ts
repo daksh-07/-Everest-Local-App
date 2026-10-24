@@ -1,4 +1,5 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
+import {withTimeout} from './resilience';
 import {sectionFailure,sectionStart,type SectionState} from './section-state';
 
 /** Key-scoped reads settle independently and ignore superseded responses. */
@@ -12,7 +13,7 @@ export function useSection<T>(key:string|null,loader:()=>PromiseLike<T>){
   const current=++version.current;
   setState(previous=>sectionStart(previous,key));
   try{
-   const data=await loadRef.current();
+   const data=await withTimeout(Promise.resolve(loadRef.current()),15_000,'Loading content');
    if(version.current===current)setState({key,data,loading:false,error:false});
   }catch(error){
    if(version.current===current)setState(previous=>sectionFailure(previous,error));
