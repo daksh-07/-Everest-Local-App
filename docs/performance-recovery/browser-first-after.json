@@ -1,0 +1,156 @@
+{
+  "baseline": false,
+  "browser": "154.0.8037.57",
+  "viewport": "390x844 desktop Chromium",
+  "build": "Expo production web export",
+  "runs": [
+    {
+      "authenticated": false,
+      "cold_ms": 817,
+      "transitions": [
+        {
+          "name": "Explore",
+          "ms": 199
+        },
+        {
+          "name": "Home",
+          "ms": 234
+        },
+        {
+          "name": "Explore",
+          "ms": 114
+        },
+        {
+          "name": "Home",
+          "ms": 189
+        },
+        {
+          "name": "Explore",
+          "ms": 150
+        },
+        {
+          "name": "Home",
+          "ms": 214
+        }
+      ],
+      "held_read_recovery": true,
+      "errors": [],
+      "calls": {
+        "businesses": 4,
+        "list_discovery_feed": 4,
+        "shop_products": 2,
+        "stories": 2,
+        "list_discovery_clips": 2,
+        "list_everest_music": 2
+      },
+      "long_tasks_ms": [
+        53,
+        60,
+        52,
+        80,
+        56,
+        129,
+        121
+      ]
+    },
+    {
+      "authenticated": true,
+      "cold_ms": 2079,
+      "transitions": [
+        {
+          "name": "Explore",
+          "ms": 896
+        },
+        {
+          "name": "Activity",
+          "ms": 507
+        },
+        {
+          "name": "Messages",
+          "ms": 330
+        },
+        {
+          "name": "Account",
+          "ms": 577
+        },
+        {
+          "name": "Home",
+          "ms": 387
+        },
+        {
+          "name": "Explore",
+          "ms": 285
+        },
+        {
+          "name": "Activity",
+          "ms": 262
+        },
+        {
+          "name": "Messages",
+          "ms": 250
+        },
+        {
+          "name": "Account",
+          "ms": 315
+        },
+        {
+          "name": "Home",
+          "ms": 214
+        },
+        {
+          "name": "Explore",
+          "ms": 190
+        },
+        {
+          "name": "Activity",
+          "ms": 401
+        },
+        {
+          "name": "Messages",
+          "ms": 268
+        },
+        {
+          "name": "Account",
+          "ms": 204
+        },
+        {
+          "name": "Home",
+          "ms": 154
+        }
+      ],
+      "held_read_recovery": true,
+      "errors": [],
+      "calls": {
+        "user": 18,
+        "get_my_workspace_context": 27,
+        "profiles": 5,
+        "notifications": 4,
+        "bookings": 7,
+        "service_requests": 26,
+        "businesses": 7,
+        "list_discovery_feed": 6,
+        "shop_products": 4,
+        "get_my_access_context": 3,
+        "stories": 2,
+        "list_discovery_clips": 2,
+        "list_everest_music": 2,
+        "quotes": 3,
+        "orders": 3,
+        "business_members": 6,
+        "conversations": 3,
+        "list_personal_conversations_v2": 6,
+        "get_public_user_profile": 1,
+        "get_follow_counts": 1,
+        "list_my_post_collaboration_invites": 1,
+        "posts": 1
+      },
+      "long_tasks_ms": [
+        182,
+        116,
+        91,
+        51,
+        58
+      ]
+    }
+  ]
+}
