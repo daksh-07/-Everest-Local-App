@@ -56,7 +56,9 @@ export function GlobalSwipeNavigator({children}:{children:ReactNode}){
   if(target===selectedRef.current){progress.value=reduceMotion?target:withSpring(target,spring);return}
   cancelAnimation(progress);
   if(reduceMotion){progress.value=target;settled.value=target;commit(target);return}
-  progress.value=withSpring(target,spring,finished=>{if(finished){settled.value=target;runOnJS(commit)(target)}});
+  // A tap commits immediately; animation must never gate route state or input.
+  settled.value=target;commit(target);
+  progress.value=withTiming(target,{duration:180});
   void haptic.selection();
  },[commit,mountSceneWindow,progress,reduceMotion,settled]);
  useEffect(()=>{

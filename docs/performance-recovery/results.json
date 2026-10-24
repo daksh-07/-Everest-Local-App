@@ -1,0 +1,50 @@
+{
+  "source_commit": "476e000a2c52dd4e90569b01780650a6f82ac2ed",
+  "production_baseline": "651814d1c7a29115518e9dc2bab983dd01ffdf82",
+  "unit_tests": {
+    "passed": 509,
+    "failed": 0
+  },
+  "typescript": "passed",
+  "lint": {
+    "errors": 0,
+    "existing_warnings": 11
+  },
+  "exports": {
+    "web": "passed",
+    "ios_bundle": "passed",
+    "android_bundle": "passed",
+    "native_runtime": "not available"
+  },
+  "static_audit": {
+    "passed": true,
+    "files": 837,
+    "routes": 97
+  },
+  "migration_audit": {
+    "passed": true,
+    "canonical_migrations": 244,
+    "database_changes": false
+  },
+  "focused_chromium": "passed locally and in GitHub CI",
+  "operations_browser": "failed: Reconnect target detached during automatic recovery; see operations-failure.log",
+  "discovery_browser": {
+    "status": "passed",
+    "scenarios": 9,
+    "layouts": 96,
+    "empty_layouts": 48,
+    "error_layouts": 48,
+    "accessibility_scans": 8,
+    "page_errors": 0
+  },
+  "webkit": "blocked: missing system libraries; no sudo",
+  "real_authenticated_staging": "unavailable",
+  "production_guest": "confirmed HTTP 401 / SQL 42501 on discovery reads; missing rollout migration and RLS helper privileges",
+  "ci": {
+    "url": "https://github.com/daksh-07/-Everest-Local-App/actions/runs/40054352950",
+    "conclusion": "success",
+    "artifact_download": "blocked HTTP 403 from artifact storage; results link remains available in GitHub"
+  },
+  "release": "NO-GO: backend staging/rollout and real authenticated/device incident verification remain open",
+  "deployment": "none performed"
+}

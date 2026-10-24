@@ -1,0 +1,5 @@
+
+> everest-local-app@1.0.0 audit
+> node scripts/static-audit.mjs
+
+Static audit passed: 837 source/config files inspected and 97 Expo Router routes validated.
