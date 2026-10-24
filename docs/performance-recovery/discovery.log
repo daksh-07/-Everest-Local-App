@@ -1,0 +1,28 @@
+Fixture / healthy
+Fixture / [ 'shop_products' ]
+Fixture /business-profile?id=33333333-3333-4333-8333-333333333333 [ 'services' ]
+Fixture /business-profile?id=33333333-3333-4333-8333-333333333333 [ 'products' ]
+Fixture /business-profile?id=33333333-3333-4333-8333-333333333333 [ 'reviews' ]
+Fixture /business-today [ 'crm_opportunities' ]
+Fixture /search?q=garden&tab=SERVICE healthy
+Fixture / [ 'businesses' ]
+Fixture / [ 'list_discovery_feed' ]
+Fixture /business-profile?id=33333333-3333-4333-8333-333333333333 healthy
+Fixture /business-today healthy
+Fixture /business-today [ 'bookings' ]
+Fixture /business-today [ 'crm_pipeline_stages' ]
+Fixture /business-today [ 'crm_tasks' ]
+Fixture /business-today [ 'crm_quotes' ]
+Fixture /business-today [ 'crm_bookings' ]
+Fixture /business-today [ 'quotes' ]
+Fixture /business-today [ 'bookings' ]
+Fixture /business-today [ 'orders' ]
+Fixture /business-today [ 'conversations' ]
+Fixture /business-today [ 'marketplace_payout_ledger' ]
+Fixture /business-today [ 'businesses' ]
+Fixture /search?q=garden&tab=SERVICE healthy
+Fixture / healthy
+Fixture /search?q=garden&tab=SERVICE healthy
+Fixture /business-profile?id=33333333-3333-4333-8333-333333333333 healthy
+Fixture /business-today healthy
+PASS {"engine":"chromium","baseline":false,"scenarios":9,"layouts":96,"accessibilityScans":8,"emptyLayouts":48,"errorLayouts":48,"errors":[]}
