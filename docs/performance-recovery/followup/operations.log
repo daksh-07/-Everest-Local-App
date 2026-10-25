@@ -1,0 +1,146 @@
+Fixture /business-calendar [ 'business_availability' ]
+Fixture /business-jobs healthy
+Fixture /business-inbox [ 'conversations' ]
+Fixture /business-my-work [ 'get_my_assigned_jobs' ]
+Fixture /business-crm [ 'conversations' ]
+Fixture /business-availability [ 'business_availability' ]
+Fixture /everest-live?requestId=live1 [ 'get_everest_live_state' ]
+Fixture /business-jobs healthy
+Fixture /business-jobs healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 [ 'accept_quote' ]
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /quotes?requestId=live1 healthy
+Fixture /quotes?requestId=live1 healthy
+Fixture /quotes?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 [ 'bookings' ]
+Fixture /business-jobs healthy
+Fixture /business-jobs healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /business-calendar [ 'crm_tasks' ]
+Fixture /business-my-work healthy
+Fixture /business-calendar healthy
+Fixture /business-calendar healthy
+Fixture /business-calendar healthy
+Fixture /business-calendar healthy
+Fixture /business-crm healthy
+Fixture /business-inbox healthy
+Fixture /business-availability healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /business-jobs healthy
+Fixture /business-jobs healthy
+Fixture /business-jobs healthy
+Fixture /business-jobs healthy
+Fixture /business-calendar healthy
+Fixture /business-calendar healthy
+Fixture /business-calendar healthy
+Fixture /business-calendar healthy
+Fixture /business-inbox healthy
+Fixture /business-inbox healthy
+Fixture /business-inbox healthy
+Fixture /business-inbox healthy
+Fixture /business-crm healthy
+Fixture /business-crm healthy
+Fixture /business-crm healthy
+Fixture /business-crm healthy
+Fixture /business-my-work healthy
+Fixture /business-my-work healthy
+Fixture /business-my-work healthy
+Fixture /business-my-work healthy
+Fixture /business-availability healthy
+Fixture /business-availability healthy
+Fixture /business-availability healthy
+Fixture /business-availability healthy
+Fixture /everest-live?requestId=live1 healthy
+Fixture /business-jobs healthy
+Fixture /business-calendar healthy
+Fixture /business-inbox healthy
+Fixture /business-crm healthy
+Fixture /business-my-work healthy
+Fixture /business-availability healthy
+Fixture /everest-live?requestId=live1 [
+  'get_everest_live_state',
+  'bookings',
+  'crm_pipelines',
+  'crm_tasks',
+  'crm_bookings',
+  'crm_calendar_blocks',
+  'conversations',
+  'get_my_assigned_jobs',
+  'business_availability'
+]
+Fixture /business-jobs [
+  'get_everest_live_state',
+  'bookings',
+  'crm_pipelines',
+  'crm_tasks',
+  'crm_bookings',
+  'crm_calendar_blocks',
+  'conversations',
+  'get_my_assigned_jobs',
+  'business_availability'
+]
+Fixture /business-calendar [
+  'get_everest_live_state',
+  'bookings',
+  'crm_pipelines',
+  'crm_tasks',
+  'crm_bookings',
+  'crm_calendar_blocks',
+  'conversations',
+  'get_my_assigned_jobs',
+  'business_availability'
+]
+Fixture /business-inbox [
+  'get_everest_live_state',
+  'bookings',
+  'crm_pipelines',
+  'crm_tasks',
+  'crm_bookings',
+  'crm_calendar_blocks',
+  'conversations',
+  'get_my_assigned_jobs',
+  'business_availability'
+]
+Fixture /business-crm [
+  'get_everest_live_state',
+  'bookings',
+  'crm_pipelines',
+  'crm_tasks',
+  'crm_bookings',
+  'crm_calendar_blocks',
+  'conversations',
+  'get_my_assigned_jobs',
+  'business_availability'
+]
+Fixture /business-my-work [
+  'get_everest_live_state',
+  'bookings',
+  'crm_pipelines',
+  'crm_tasks',
+  'crm_bookings',
+  'crm_calendar_blocks',
+  'conversations',
+  'get_my_assigned_jobs',
+  'business_availability'
+]
+Fixture /business-availability [
+  'get_everest_live_state',
+  'bookings',
+  'crm_pipelines',
+  'crm_tasks',
+  'crm_bookings',
+  'crm_calendar_blocks',
+  'conversations',
+  'get_my_assigned_jobs',
+  'business_availability'
+]
+chromium: 33 scenario groups, 336 layouts; 0 page errors

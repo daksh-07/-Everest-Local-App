@@ -1,0 +1,1123 @@
+{
+  "engine": "chromium",
+  "baseline": false,
+  "scenarios": [
+    "Manual location validates input and updates guest browsing without profile writes",
+    "Home Shop failure, healthy businesses retained, local retry succeeds",
+    "Profile services failure isolated with retry",
+    "Profile products failure isolated with retry",
+    "Profile reviews failure isolated with retry",
+    "Profile guest reads are scoped and authenticated community/benefit reads are preserved",
+    "Today CRM failure preserves job, marks sales unknown",
+    "Search retains same-query results through delayed retry/error, clears on new query/tab",
+    "Home businesses/community and Today tasks/quotes/bookings/orders/messages/weekly/setup failures isolate and retry; delayed Profile children do not block identity; delayed Today totals remain unknown until complete",
+    "Search permission loss removes retained results and offers account guidance"
+  ],
+  "layouts": [
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 320,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 375,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 390,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 430,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 1280,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 1440,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 320,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 375,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 390,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 430,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 1280,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 1440,
+      "reducedMotion": true
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 320,
+      "reducedMotion": false
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 375,
+      "reducedMotion": false
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 390,
+      "reducedMotion": false
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 430,
+      "reducedMotion": false
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 1280,
+      "reducedMotion": false
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 1440,
+      "reducedMotion": false
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 320,
+      "reducedMotion": false
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 375,
+      "reducedMotion": false
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 390,
+      "reducedMotion": false
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 430,
+      "reducedMotion": false
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 1280,
+      "reducedMotion": false
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 1440,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 320,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 375,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 390,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 430,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 1280,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 1440,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 320,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 375,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 390,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 430,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 1280,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 1440,
+      "reducedMotion": true
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 320,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 375,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 390,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 430,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 1280,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 1440,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 320,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 375,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 390,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 430,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 1280,
+      "reducedMotion": false
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 1440,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 320,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 375,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 390,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 430,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 1280,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 1440,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 320,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 375,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 390,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 430,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 1280,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 1440,
+      "reducedMotion": true
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 320,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 375,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 390,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 430,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 1280,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 1440,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 320,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 375,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 390,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 430,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 1280,
+      "reducedMotion": false
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 1440,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 320,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 375,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 390,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 430,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 1280,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 1440,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 320,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 375,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 390,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 430,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 1280,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 1440,
+      "reducedMotion": true
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 320,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 375,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 390,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 430,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 1280,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 1440,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 320,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 375,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 390,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 430,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 1280,
+      "reducedMotion": false
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 1440,
+      "reducedMotion": false
+    }
+  ],
+  "errors": [],
+  "errorDetails": [],
+  "failedRequests": [],
+  "accessibility": [
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "violations": []
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "violations": []
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "violations": []
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "violations": []
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "violations": []
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "violations": []
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "violations": []
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "violations": []
+    }
+  ],
+  "emptyLayouts": [
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 320
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 375
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 390
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 430
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 1280
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 1440
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 320
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 375
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 390
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 430
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 1280
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 1440
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 320
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 375
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 390
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 430
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 1280
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 1440
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 320
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 375
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 390
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 430
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 1280
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 1440
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 320
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 375
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 390
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 430
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 1280
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 1440
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 320
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 375
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 390
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 430
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 1280
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 1440
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 320
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 375
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 390
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 430
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 1280
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 1440
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 320
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 375
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 390
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 430
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 1280
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 1440
+    }
+  ],
+  "errorLayouts": [
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 320
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 375
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 390
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 430
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 1280
+    },
+    {
+      "name": "home",
+      "theme": "LIGHT",
+      "width": 1440
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 320
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 375
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 390
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 430
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 1280
+    },
+    {
+      "name": "home",
+      "theme": "DARK",
+      "width": 1440
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 320
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 375
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 390
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 430
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 1280
+    },
+    {
+      "name": "search",
+      "theme": "LIGHT",
+      "width": 1440
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 320
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 375
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 390
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 430
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 1280
+    },
+    {
+      "name": "search",
+      "theme": "DARK",
+      "width": 1440
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 320
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 375
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 390
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 430
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 1280
+    },
+    {
+      "name": "profile",
+      "theme": "LIGHT",
+      "width": 1440
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 320
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 375
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 390
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 430
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 1280
+    },
+    {
+      "name": "profile",
+      "theme": "DARK",
+      "width": 1440
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 320
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 375
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 390
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 430
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 1280
+    },
+    {
+      "name": "today",
+      "theme": "LIGHT",
+      "width": 1440
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 320
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 375
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 390
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 430
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 1280
+    },
+    {
+      "name": "today",
+      "theme": "DARK",
+      "width": 1440
+    }
+  ]
+}

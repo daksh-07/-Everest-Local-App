@@ -1,3 +1,4 @@
+import {withTimeout} from '@/lib/resilience';
 import { FontProvider } from '@/lib/font-provider';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, useColorScheme, View } from 'react-native';
@@ -43,17 +44,17 @@ function ThemedRootLayout() {
   const initialQuickActionHandled=useRef(false);
   const initialPushHandled=useRef(false);
   const [authInitialized,setAuthInitialized]=useState(false);const [supabaseConfigured,setSupabaseConfigured]=useState(false);const [sessionUserId,setSessionUserId]=useState<string|null>(null);const [access,setAccess]=useState<AccessContext|null>(null);const [startupError,setStartupError]=useState('');const [retryNonce,setRetryNonce]=useState(0);
-  useEffect(()=>{let active=true;let unsubscribe:(()=>void)|undefined;let refreshVersion=0;
+  useEffect(()=>{let active=true;let unsubscribe:(()=>void)|undefined;let refreshVersion=0;let knownUserId:string|null=null;let refreshTimer:ReturnType<typeof setTimeout>|undefined;
     async function load(){try{
       const {supabase,supabaseConfigured:configured}=await import('@/lib/supabase');if(!active)return;setSupabaseConfigured(configured);
       if(!configured){setAuthInitialized(true);return;}
-      const refresh=async(userId:string)=>{const version=++refreshVersion;try{const {getMyAccessContext}=await import('@/lib/access');const next=await getMyAccessContext();if(!active||version!==refreshVersion)return;setSessionUserId(userId);setAccess(next);setStartupError('');}catch{if(active&&version===refreshVersion){setAccess(null);setStartupError('ACCESS_LOAD_FAILED')}}finally{if(active&&version===refreshVersion)setAuthInitialized(true)}};
-      const {data:{session}}=await supabase.auth.getSession();if(!active)return;
-      if(session?.user.id)void refresh(session.user.id);else {setSessionUserId(null);setAccess(null);setAuthInitialized(true);}
-      const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,next)=>{if(!active)return;if(!next?.user.id){refreshVersion++;setSessionUserId(null);setAccess(null);setStartupError('');setAuthInitialized(true);return;}setAuthInitialized(false);void refresh(next.user.id)});
+      const refresh=async(userId:string)=>{const version=++refreshVersion;try{const {getMyAccessContext}=await import('@/lib/access');const next=await withTimeout(getMyAccessContext(),12_000,'Account access');if(!active||version!==refreshVersion)return;setSessionUserId(userId);setAccess(next);setStartupError('');}catch{if(active&&version===refreshVersion){setAccess(null);setStartupError('ACCESS_LOAD_FAILED')}}finally{if(active&&version===refreshVersion)setAuthInitialized(true)}};
+      const {data:{session},error}=await withTimeout(supabase.auth.getSession(),10_000,'Session restoration');if(error)throw error;if(!active)return;
+      if(session?.user.id){knownUserId=session.user.id;setSessionUserId(knownUserId);void refresh(knownUserId);}else {setSessionUserId(null);setAccess(null);setAuthInitialized(true);}
+      const {data:{subscription}}=supabase.auth.onAuthStateChange((event,next)=>{if(!active)return;if(!next?.user.id){knownUserId=null;clearTimeout(refreshTimer);refreshVersion++;setSessionUserId(null);setAccess(null);setStartupError('');setAuthInitialized(true);return;}const userId=next.user.id;if(userId===knownUserId){if(event==='TOKEN_REFRESHED'||event==='USER_UPDATED'||event==='MFA_CHALLENGE_VERIFIED'){clearTimeout(refreshTimer);refreshTimer=setTimeout(()=>{if(active)void refresh(userId)},0)}return;}knownUserId=userId;refreshVersion++;setSessionUserId(userId);setAccess(null);setStartupError('');setAuthInitialized(false);clearTimeout(refreshTimer);refreshTimer=setTimeout(()=>{if(active)void refresh(userId)},0)});
       unsubscribe=()=>subscription.unsubscribe();
     }catch(e){if(typeof console!=='undefined')console.error('[Everest Local auth initialization]',e);if(active){setSupabaseConfigured(false);setAuthInitialized(true);setStartupError('AUTH_INIT_FAILED')}}}
-    void load();return()=>{active=false;unsubscribe?.()};},[retryNonce]);
+    void load();return()=>{active=false;clearTimeout(refreshTimer);unsubscribe?.()};},[retryNonce]);
 
   useEffect(()=>{
     if(Platform.OS==='web')return;
@@ -109,7 +110,7 @@ function ThemedRootLayout() {
   },[pathname,authInitialized,supabaseConfigured,sessionUserId,access,startupError,nav]);
 
   const needsProtectedAccess=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
-  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><GlobalSwipeNavigator key={sessionUserId??'guest'}><Stack screenOptions={{headerShown:false,animation:reducedMotion?'none':Platform.OS==='ios'?'default':'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}><Stack.Screen name="create" options={{presentation:'transparentModal',animation:reducedMotion?'none':'fade',contentStyle:{backgroundColor:'transparent'}}}/></Stack></GlobalSwipeNavigator>{needsProtectedAccess&&startupError&&authInitialized&&<View pointerEvents="auto" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}{sessionUserId?<BusinessOpportunityAlert/>:null}{sessionUserId?<EverestLiveMiniPlayer/>:null}<PwaInstallPrompt/></View>;
+  return <View style={{flex:1,backgroundColor:theme.colors.canvas}}><StatusBar style={theme.isDark?'light':'dark'} translucent backgroundColor="transparent"/><GlobalSwipeNavigator key={sessionUserId??'guest'}><Stack screenOptions={{headerShown:false,animation:reducedMotion?'none':Platform.OS==='ios'?'default':'fade',contentStyle:{backgroundColor:theme.colors.canvas}}}><Stack.Screen name="create" options={{presentation:'transparentModal',animation:reducedMotion?'none':'fade',contentStyle:{backgroundColor:'transparent'}}}/></Stack></GlobalSwipeNavigator>{needsProtectedAccess&&startupError&&authInitialized&&(startupError!=='ACCESS_LOAD_FAILED'||!protectedRoutes.has(pathname))&&<View pointerEvents="auto" style={styles.overlay}><StartupError onRetry={()=>setRetryNonce(value=>value+1)}/></View>}{sessionUserId?<BusinessOpportunityAlert/>:null}{sessionUserId?<EverestLiveMiniPlayer/>:null}<PwaInstallPrompt/></View>;
 }
 export default function RootLayout(){return <GestureHandlerRootView style={styles.root}><FontProvider><ThemeProvider><ExperienceProvider><ThemedRootLayout/></ExperienceProvider></ThemeProvider></FontProvider></GestureHandlerRootView>}
 

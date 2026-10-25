@@ -1,0 +1,120 @@
+{
+  "scope": "PostgreSQL 17 loopback; synthetic JWT settings and focused schema, not live Supabase sessions",
+  "note": "Provider/staff are authenticated identities here; discovery grants add no business-role privileges. Membership operational authorization is tested separately.",
+  "tests": [
+    {
+      "name": "baseline anon business read fails missing predicate permission",
+      "pass": true
+    },
+    {
+      "name": "guest search exposes only intended public results",
+      "pass": true
+    },
+    {
+      "name": "guest cannot read private preferences",
+      "pass": true
+    },
+    {
+      "name": "guest cannot use discovery grants to write business or service",
+      "pass": true
+    },
+    {
+      "name": "guest cannot execute identity predicate directly",
+      "pass": true
+    },
+    {
+      "name": "guest booking settings have exact two-column allowlist",
+      "pass": true
+    },
+    {
+      "name": "guest cannot access any people/community search branch",
+      "pass": true
+    },
+    {
+      "name": "guest admin boolean is false and private block predicate stays restricted",
+      "pass": true
+    },
+    {
+      "name": "search pagination clamp and invalid kind are safe",
+      "pass": true
+    },
+    {
+      "name": "customer search exposes only intended public results",
+      "pass": true
+    },
+    {
+      "name": "customer cannot read private preferences",
+      "pass": true
+    },
+    {
+      "name": "customer cannot use discovery grants to write business or service",
+      "pass": true
+    },
+    {
+      "name": "customer cannot execute identity predicate directly",
+      "pass": true
+    },
+    {
+      "name": "provider search exposes only intended public results",
+      "pass": true
+    },
+    {
+      "name": "provider cannot read private preferences",
+      "pass": true
+    },
+    {
+      "name": "provider cannot use discovery grants to write business or service",
+      "pass": true
+    },
+    {
+      "name": "provider cannot execute identity predicate directly",
+      "pass": true
+    },
+    {
+      "name": "staff search exposes only intended public results",
+      "pass": true
+    },
+    {
+      "name": "staff cannot read private preferences",
+      "pass": true
+    },
+    {
+      "name": "staff cannot use discovery grants to write business or service",
+      "pass": true
+    },
+    {
+      "name": "staff cannot execute identity predicate directly",
+      "pass": true
+    },
+    {
+      "name": "administrator search exposes only intended public results",
+      "pass": true
+    },
+    {
+      "name": "administrator cannot read private preferences",
+      "pass": true
+    },
+    {
+      "name": "administrator cannot use discovery grants to write business or service",
+      "pass": true
+    },
+    {
+      "name": "administrator cannot execute identity predicate directly",
+      "pass": true
+    },
+    {
+      "name": "administrator requires password plus MFA",
+      "pass": true
+    },
+    {
+      "name": "blocked person and authored community are excluded",
+      "pass": true
+    },
+    {
+      "name": "public function grants remain restricted to explicit roles",
+      "pass": true
+    }
+  ],
+  "passed": 28,
+  "failed": 0
+}

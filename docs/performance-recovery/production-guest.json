@@ -1,0 +1,77 @@
+{
+  "build": "deployed 651814d (before patch)",
+  "cold_ms": 1181,
+  "tabs": [
+    {
+      "name": "Explore",
+      "ms": 355
+    },
+    {
+      "name": "Home",
+      "ms": 326
+    }
+  ],
+  "requests": [
+    {
+      "path": "/rest/v1/businesses",
+      "status": 401,
+      "ms": 1418
+    },
+    {
+      "path": "/rest/v1/rpc/shop_products",
+      "status": 401,
+      "ms": 1484
+    },
+    {
+      "path": "/rest/v1/rpc/list_discovery_feed",
+      "status": 200,
+      "ms": 1524
+    },
+    {
+      "path": "/rest/v1/post_media",
+      "status": 401,
+      "ms": 771
+    },
+    {
+      "path": "/rest/v1/post_media",
+      "status": 401,
+      "ms": 291
+    },
+    {
+      "path": "/rest/v1/rpc/list_discovery_feed",
+      "status": 200,
+      "ms": 341
+    },
+    {
+      "path": "/rest/v1/post_media",
+      "status": 401,
+      "ms": 325
+    },
+    {
+      "path": "/rest/v1/post_media",
+      "status": 401,
+      "ms": 272
+    },
+    {
+      "path": "/rest/v1/post_reactions",
+      "status": 401,
+      "ms": 799
+    },
+    {
+      "path": "/rest/v1/post_comments",
+      "status": 401,
+      "ms": 803
+    },
+    {
+      "path": "/rest/v1/public_profiles",
+      "status": 200,
+      "ms": 811
+    },
+    {
+      "path": "/rest/v1/verified_work_posts",
+      "status": 401,
+      "ms": 827
+    }
+  ],
+  "errors": []
+}
