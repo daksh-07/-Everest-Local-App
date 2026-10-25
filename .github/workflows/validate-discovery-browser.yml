@@ -2,7 +2,7 @@ name: Validate discovery browser experience
 
 on:
   pull_request:
-    branches: [main, 'codex/experience-foundation-2026-10-12']
+    branches: [main, integration/final-release-20261023, 'codex/experience-foundation-2026-10-12']
     paths:
       - 'scripts/lib/browser-fixture.mjs'
       - 'assets/fonts/**'

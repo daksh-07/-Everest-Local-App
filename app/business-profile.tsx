@@ -36,6 +36,7 @@ export default function BusinessProfile() {
   const [followers,setFollowers]=useState(0);
   const [posts,setPosts]=useState<SocialPost[]>([]);
   const [highlights,setHighlights]=useState<StoryHighlight[]>([]);
+  const [benefitsRequireSignIn,setBenefitsRequireSignIn]=useState(false);
   const [membershipPlans,setMembershipPlans]=useState<MembershipPlan[]>([]);
   const [packages,setPackages]=useState<BusinessPackage[]>([]);
   const [followBusy,setFollowBusy]=useState(false);
@@ -65,21 +66,26 @@ export default function BusinessProfile() {
   useEffect(()=>{let active=true;
    setSaved(false);setFollowing(false);setFollowers(0);setPosts([]);setHighlights([]);setMembershipPlans([]);setPackages([]);setServiceSheet(null);setWarning('');setError('');setMessage('');
    if(!key)return;
-   void Promise.allSettled([isBusinessSaved(key),isFollowing({businessId:key}),getFollowCounts({businessId:key}),listPublicPosts({businessId:key,limit:10}),listHighlights({businessId:key})]).then(results=>{
+   setBenefitsRequireSignIn(false);
+   void supabase.auth.getSession().then(({data:{session}})=>{
+   if(!active)return;
+   const signedIn=Boolean(session);setBenefitsRequireSignIn(!signedIn);
+   void Promise.allSettled([signedIn?isBusinessSaved(key):Promise.resolve(false),signedIn?isFollowing({businessId:key}):Promise.resolve(false),signedIn?getFollowCounts({businessId:key}):Promise.resolve(null),listPublicPosts({businessId:key,limit:10}),listHighlights({businessId:key})]).then(results=>{
     if(!active)return;
     const [saved,following,counts,posts,highlights]=results;
     if(saved.status==='fulfilled')setSaved(saved.value);
     if(following.status==='fulfilled')setFollowing(following.value);
-    if(counts.status==='fulfilled')setFollowers(counts.value.follower_count);
+    if(counts.status==='fulfilled'&&counts.value)setFollowers(counts.value.follower_count);
     if(posts.status==='fulfilled')setPosts(posts.value);
     if(highlights.status==='fulfilled')setHighlights(highlights.value);
     if(results.some(result=>result.status==='rejected'))setWarning('Some community details could not be loaded. Business information is still available.');
    });
-   void Promise.allSettled([listPublicMembershipPlans(key),listPublicPackages(key)]).then(([plans,packages])=>{
+   if(signedIn)void Promise.allSettled([listPublicMembershipPlans(key),listPublicPackages(key)]).then(([plans,packages])=>{
     if(!active)return;
     if(plans.status==='fulfilled')setMembershipPlans(plans.value);
     if(packages.status==='fulfilled')setPackages(packages.value);
    });
+   }).catch(()=>{if(active)setWarning('Your account details could not be restored. Retry this page to try again.');});
    return()=>{active=false};
   },[key]);
 
@@ -123,6 +129,7 @@ export default function BusinessProfile() {
       <View style={{flex:1,minWidth:0}}><Text style={s.cardTitle}>{item.name}</Text>{item.description?<Text numberOfLines={2} style={s.meta}>{item.description}</Text>:null}<Text tabular style={s.serviceFacts}>{serviceFacts(item)}</Text>{instant?<View style={s.instantTag}><Ionicons name="flash" size={12} color={colors.onSecondaryContainer}/><Text style={s.instantTagText}>Instant booking</Text></View>:null}</View>
       <Ionicons name="chevron-forward" size={18} color={colors.textSecondary}/>
     </Pressable>})}</View>:serviceSection.loading||serviceSection.error?null:<View style={s.emptyInline}><Text style={s.meta}>This business hasn’t listed services yet. You can still describe what you need.</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/request')} style={s.inlineAction}><Text style={s.inlineActionText}>Request a quote</Text></Pressable></View>}
+    {benefitsRequireSignIn?<Pressable accessibilityRole="button" accessibilityLabel="Sign in for memberships and packages" onPress={()=>router.push('/auth')} style={s.inlineAction}><Text style={s.meta}>Sign in for memberships and packages</Text></Pressable>:null}
     {(membershipPlans.length||packages.length)?<><Text variant="section" style={s.heading}>Memberships & packages</Text><Text style={s.growthIntro}>Save with recurring plans or prepaid service credits from {business.name}. Recurring billing never starts until you approve it in Stripe Checkout.</Text>
     {membershipPlans.map(plan=><View key={plan.id} style={s.card}><View style={s.cardHeader}><View style={{flex:1}}><Text style={s.cardTitle}>{plan.name}</Text><Text style={s.meta}>{plan.description||'Recurring customer membership'}</Text></View><Text tabular style={s.planPrice}>{formatMoney(plan.price)}</Text></View><Text tabular style={s.price}>{'Every '+intervalLabel(plan.billing_interval_unit,plan.billing_interval_count)+(plan.included_credits?' · '+plan.included_credits+' service credit'+(plan.included_credits===1?'':'s')+' / period':'')}</Text><Pressable accessibilityRole="button" disabled={!!growthBusy} onPress={()=>void joinMembership(plan.id)} style={s.growthCta}><Text style={s.growthCtaText}>{growthBusy==='membership:'+plan.id?'Opening…':'Join & review billing'}</Text></Pressable></View>)}
     {packages.map(item=><View key={item.id} style={s.card}><View style={s.cardHeader}><View style={{flex:1}}><Text style={s.cardTitle}>{item.name}</Text><Text style={s.meta}>{item.description||'Prepaid service package'}</Text></View><Text tabular style={s.planPrice}>{formatMoney(item.price)}</Text></View><Text tabular style={s.price}>{item.credit_count+' service credit'+(item.credit_count===1?'':'s')+(item.expires_after_days?' · valid '+item.expires_after_days+' days':'')}</Text><Pressable accessibilityRole="button" disabled={!!growthBusy} onPress={()=>void purchasePackage(item.id)} style={s.growthCta}><Text style={s.growthCtaText}>{growthBusy==='package:'+item.id?'Opening…':'Buy package'}</Text></Pressable></View>)}</>:null}

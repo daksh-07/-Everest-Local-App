@@ -100,10 +100,17 @@ try{
  }
  // Profile: each core child read can fail without hiding identity or other healthy children.
  for(const failed of ['services','products','reviews']){
-  const state={fail:[failed],denied:failed==='services'};const {page,context}=await open('/business-profile?id='+biz,state);
+  const state={fail:[failed],denied:failed==='services'};const {page,context,calls}=await open('/business-profile?id='+biz,state);
   if(baseline){await page.getByText('We could not load this business right now. Please try again.',{exact:true}).waitFor();assert.equal(await page.getByText(business.name,{exact:true}).count(),0);}
-  else{await page.getByText(business.name,{exact:true}).waitFor();await page.getByRole('button',{name:'Retry '+failed,exact:true}).waitFor();if(failed!=='services')await page.getByText(service.name,{exact:true}).waitFor();await shot(page,'profile-'+failed+'-unavailable');state.fail=[];await page.getByRole('button',{name:'Retry '+failed,exact:true}).click();await page.getByRole('button',{name:'Retry '+failed,exact:true}).waitFor({state:'hidden'});}
+  else{await page.getByText(business.name,{exact:true}).waitFor();await page.getByRole('button',{name:'Sign in for memberships and packages',exact:true}).waitFor();assert.equal(calls.some(name=>['is_following','get_follow_counts','business_membership_plans','business_packages'].includes(name)),false,'Guest profile does not issue authenticated-only reads');await page.getByRole('button',{name:'Retry '+failed,exact:true}).waitFor();if(failed!=='services')await page.getByText(service.name,{exact:true}).waitFor();await shot(page,'profile-'+failed+'-unavailable');state.fail=[];await page.getByRole('button',{name:'Retry '+failed,exact:true}).click();await page.getByRole('button',{name:'Retry '+failed,exact:true}).waitFor({state:'hidden'});}
   report.scenarios.push(`Profile ${failed} failure ${baseline?'hides business identity':'isolated with retry'}`);await shot(page,'profile-'+failed);await closePage(page,context);
+ }
+ if(!baseline){
+  const {page,context,calls}=await open('/business-profile?id='+biz,{},true);
+  await page.getByText(business.name,{exact:true}).waitFor();await settleFixtureReads(page);
+  for(const name of ['is_following','get_follow_counts','business_membership_plans','business_packages'])assert.ok(calls.includes(name),'Signed-in profile retains '+name);
+  assert.equal(await page.getByRole('button',{name:'Sign in for memberships and packages',exact:true}).count(),0);
+  report.scenarios.push('Profile guest reads are scoped and authenticated community/benefit reads are preserved');await closePage(page,context);
  }
  // Today: one CRM dataset fails; healthy current job must be visible.
  {
