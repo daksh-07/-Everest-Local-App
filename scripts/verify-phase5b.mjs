@@ -139,11 +139,13 @@ try{
   const stale=await page.getByText('Open job',{exact:true}).count();assert.equal(stale,baseline?1:0,'late job response is scoped to its requested tab');
   report.scenarios.push({lateJobsTabResponse:stale,baseline});await closePage(page,context);
  }
+ // Closed fixture sockets can change the headline to its reconnecting copy.
+ // Confirm loaded state via the stable notification metric, not online-only copy.
  // Live's 30s fallback poll must not restart its 45s expansion deadline.
  {
   const clockState={clock:true,noRealtime:true};const {page,context,calls}=await open('/everest-live?requestId=live1',clockState,true);
   await page.getByText('Everest Live',{exact:true}).waitFor();await page.clock.runFor(1000);await settleFixtureReads(page);
-  await page.getByText('2 businesses notified',{exact:true}).waitFor();await page.clock.runFor(50);
+  await page.getByText('Notified',{exact:true}).locator('..').getByText('2',{exact:true}).waitFor();await page.clock.runFor(50);
   clockState.viewed=1;await page.clock.fastForward(30000);await page.getByText('1',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
   await page.clock.fastForward(16000);await page.waitForLoadState('networkidle');
   if(!baseline)await page.getByText(/(Search area|Searching within) 7 km/).waitFor();
@@ -162,7 +164,7 @@ try{
  // Opportunity-only updates and an offline read recover without inventing fresh state.
  {
   const state={clock:true};const {page,context,sockets,calls}=await open('/everest-live?requestId=live1',state,true);
-  await page.getByText('2 businesses notified',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
+  await page.getByText('Notified',{exact:true}).locator('..').getByText('2',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
   const emit=table=>{for(const {ws,joins} of sockets)for(const join of joins){const ids=join.changes.filter(c=>c.table===table).map(c=>c.id);if(ids.length){const payload={ids,data:{type:'UPDATE',schema:'public',table,columns:[],record:{id:'offer1',request_id:'live1'},old_record:{},commit_timestamp:new Date().toISOString()}};ws.send(JSON.stringify(join.v2?[join.join_ref,null,join.topic,'postgres_changes',payload]:{topic:join.topic,event:'postgres_changes',payload}));}}};
   const before=calls.filter(c=>c.name==='get_everest_live_state'&&c.method==='POST').length;state.viewed=1;for(let i=0;i<10;i++)emit('opportunities');
   await page.getByText('1 business has viewed your request',{exact:true}).waitFor();
@@ -179,7 +181,7 @@ try{
  // Resubscription refreshes missed events immediately, before the fallback poll.
  {
   const state={clock:true};const {page,context,sockets}=await open('/everest-live?requestId=live1',state,true);
-  await page.getByText('2 businesses notified',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
+  await page.getByText('Notified',{exact:true}).locator('..').getByText('2',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
   state.viewed=1;for(const socket of [...sockets])socket.ws.close({code:1012,reason:'Fixture reconnect'});
   await page.getByText('Reconnecting · showing the last confirmed status',{exact:true}).waitFor();
   await page.clock.fastForward(5000);
@@ -237,7 +239,7 @@ try{
   await page.getByRole('button',{name:'Cancel search',exact:true}).click();
   await page.getByRole('button',{name:'Cancel request',exact:true}).click();
   await page.getByText('Cancellation was not confirmed. Retry to check your request.',{exact:true}).waitFor();
-  assert.equal(typeof state.releaseStatus,'function');state.holdStatus=false;state.releaseStatus();await page.getByText('2 businesses notified',{exact:true}).waitFor();await settleFixtureReads(page);
+  assert.equal(typeof state.releaseStatus,'function');state.holdStatus=false;state.releaseStatus();await page.getByText('Notified',{exact:true}).locator('..').getByText('2',{exact:true}).waitFor();await settleFixtureReads(page);
   await page.getByText('Cancellation was not confirmed. Retry to check your request.',{exact:true}).waitFor();
   assert.ok(page.url().includes('/everest-live'));
   assert.equal(calls.filter(c=>c.name==='cancel_everest_live'&&c.method==='POST').length,1);
