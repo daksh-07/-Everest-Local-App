@@ -1,0 +1,25 @@
+🔍 [expo-iap] Config values: horizonAppId=undefined, isHorizonEnabled=false, isFireOsEnabled=false, isVegaEnabled=false, isOnsideEnabled=false
+📦 [expo-iap] Using OpenIAP from CocoaPods
+! No git repo found in current directory
+› Use git to track file changes before running commands that modify project files.
+Git status is dirty but the command will continue because the terminal is not interactive.
+- Clearing android, ios
+✔ Cleared android, ios code
+- Creating native directories (./ios and ./android)
+✔ Created native directories
+- Updating package.json
+✔ Updated package.json
+- Running prebuild
+📦 expo-iap: Added CocoaPods CDN source to Podfile
+- Running prebuild
+✅ Added com.android.vending.BILLING to AndroidManifest.xml
+- Running prebuild
+🛠️ expo-iap: Added OpenIAP dependency (3.5.0) to build.gradle
+- Running prebuild
+🛠️ expo-iap: Added missingDimensionStrategy for play flavor
+- Running prebuild
+✅ Set horizonEnabled=false in gradle.properties
+- Running prebuild
+✅ Set fireOsEnabled=false in gradle.properties
+- Running prebuild
+✔ Finished prebuild

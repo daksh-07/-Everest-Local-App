@@ -41,6 +41,9 @@ try{
   await page.waitForTimeout(100);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`No document overflow at ${width}`);
   for(const label of ['Request a Quote','Find someone now with Everest Live']){
+   // URL selection now commits before the track finishes animating. Measure
+   // settled controls rather than a frame of the outgoing page transition.
+   await page.waitForFunction(label=>{const el=document.querySelector(`[aria-label="${label}"]`);if(!el)return false;const r=el.getBoundingClientRect();return r.height>=44&&r.x>=0&&r.right<=innerWidth+1},label,{timeout:5000});
    const rect=await page.getByLabel(label,{exact:true}).boundingBox();
    assert.ok(rect&&rect.height>=44&&rect.x>=0&&rect.x+rect.width<=width+1,`${label}: usable at ${width}`);
   }

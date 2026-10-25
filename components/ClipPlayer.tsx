@@ -79,7 +79,7 @@ export function ClipPlayer({
  const tint=normalized.filter==='WARM'?['#ff9b58',.12]:normalized.filter==='COOL'?['#6fa8ff',.12]:normalized.filter==='FADE'?['#f4eadc',.10]:normalized.filter==='GOLD'?['#d8aa60',.16]:normalized.filter==='NIGHT'?['#10243f',.24]:null;
  const textPos:ViewStyle=normalized.text?.position==='TOP'?{top:'15%'}:normalized.text?.position==='BOTTOM'?{bottom:'17%'}:{top:'46%'};
 
- return <Pressable style={s.wrap} onPress={()=>{if(!active)return;if(player.playing)player.pause();else player.play()}}>
+ return <Pressable accessibilityRole="button" style={s.wrap} onPress={()=>{if(!active)return;if(player.playing)player.pause();else player.play()}}>
   <VideoView player={player} style={[s.video,normalized.mirror&&s.mirror]} contentFit={fit} nativeControls={false}/>
   {resolvedBeds.map((bed,index)=><MusicBed key={bed.id??bed.uri+'-'+index} uri={bed.uri} active={active&&isPlaying} muted={muted} startMs={bed.startMs} endMs={bed.endMs} volume={bed.volume} fadeInMs={bed.fadeInMs} fadeOutMs={bed.fadeOutMs} restartToken={restartToken}/>)} 
   {tint?<View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:String(tint[0]),opacity:Number(tint[1])}]}/>:null}
@@ -87,7 +87,7 @@ export function ClipPlayer({
   {normalized.effect==='PULSE'||normalized.effect==='FLASH'?<Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:normalized.effect==='FLASH'?'#fff':'#000',opacity:effectPulse.interpolate({inputRange:[0,1],outputRange:[0,normalized.effect==='FLASH'?.34:.16]})}]}/>:null}
   {normalized.text?<View pointerEvents="none" style={[s.textWrap,textPos]}><Text style={[s.overlayText,normalized.text.style==='CLASSIC'&&s.classicText,normalized.text.style==='NEON'&&s.neonText]}>{normalized.text.value}</Text></View>:null}
   {!isPlaying&&active?<View pointerEvents="none" style={s.playBadge}><Ionicons name="play" size={22} color="#fff"/></View>:null}
-  {showSoundControl?<Pressable accessibilityLabel={muted?'Turn sound on':'Mute'} onPress={e=>{e.stopPropagation();setMuted(v=>!v)}} style={s.sound}><Ionicons name={muted?'volume-mute':'volume-high'} size={18} color="#fff"/></Pressable>:null}
+  {showSoundControl?<Pressable accessibilityRole="button" accessibilityLabel={muted?'Turn sound on':'Mute'} onPress={e=>{e.stopPropagation();setMuted(v=>!v)}} style={s.sound}><Ionicons name={muted?'volume-mute':'volume-high'} size={18} color="#fff"/></Pressable>:null}
  </Pressable>;
 }
 const s=StyleSheet.create({

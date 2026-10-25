@@ -1,0 +1,114 @@
+[
+  {
+    "number": 105,
+    "title": "Phase 4: reliable marketplace transactions and focused mobile UX",
+    "isDraft": false,
+    "headRefName": "phase4/marketplace-completion-20261017",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/105"
+  },
+  {
+    "number": 101,
+    "title": "fix(india): enforce Australia-only Stripe checkout across all payment routes",
+    "isDraft": true,
+    "headRefName": "feat/india-market-phase3-payment-boundary-20261013",
+    "baseRefName": "feat/india-market-phase2",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/101"
+  },
+  {
+    "number": 97,
+    "title": "Harden Everest Local marketplace discovery and transactions",
+    "isDraft": false,
+    "headRefName": "codex/marketplace-audit-2026-10-09",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/97"
+  },
+  {
+    "number": 94,
+    "title": "feat: Everest India phase 2 provider and market infrastructure",
+    "isDraft": true,
+    "headRefName": "feat/india-market-phase2",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/94"
+  },
+  {
+    "number": 93,
+    "title": "feat: start Everest India market experience",
+    "isDraft": true,
+    "headRefName": "feat/india-market-foundation",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/93"
+  },
+  {
+    "number": 80,
+    "title": "Add secure post reporting and App Store toolchain gate",
+    "isDraft": false,
+    "headRefName": "launch-moderation-store-gate",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/80"
+  },
+  {
+    "number": 78,
+    "title": "Harden social actor privacy",
+    "isDraft": false,
+    "headRefName": "launch-security-hardening",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/78"
+  },
+  {
+    "number": 77,
+    "title": "Make Business Mode jobs-first",
+    "isDraft": false,
+    "headRefName": "business-work-first",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/77"
+  },
+  {
+    "number": 73,
+    "title": "Add multi-employee business operations and dispatch",
+    "isDraft": false,
+    "headRefName": "sol-business-operations",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/73"
+  },
+  {
+    "number": 60,
+    "title": "Add owner controls for social posts",
+    "isDraft": false,
+    "headRefName": "feat/post-owner-actions-20260927",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/60"
+  },
+  {
+    "number": 8,
+    "title": "Polish Everest Local Settings interface",
+    "isDraft": false,
+    "headRefName": "fix/premium-settings-ui-20260922",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/8"
+  },
+  {
+    "number": 5,
+    "title": "Private-beta candidate visual QA and UX validation",
+    "isDraft": false,
+    "headRefName": "fix/private-beta-20260922",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/5"
+  },
+  {
+    "number": 4,
+    "title": "feat: add official ABR business verification workflow",
+    "isDraft": false,
+    "headRefName": "feat/abr-business-verification",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/4"
+  },
+  {
+    "number": 2,
+    "title": "feat: add saved businesses and products",
+    "isDraft": false,
+    "headRefName": "feature/saved-marketplace-items",
+    "baseRefName": "main",
+    "url": "https://github.com/daksh-07/-Everest-Local-App/pull/2"
+  }
+]

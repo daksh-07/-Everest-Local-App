@@ -2,12 +2,14 @@ import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, Share, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import {PostCommentsSheet} from '@/components/PostCommentsSheet';
+import {ConfirmSheet} from '@/components/ui/ConfirmSheet';
+import {ReportPostSheet} from '@/components/ReportPostSheet';
 import {PagerAwareScrollView as ScrollView} from '@/components/PagerAwareScrollView';
 import {Ionicons} from '@/components/ui/Icon';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useGlobalSearchParams} from 'expo-router';
 import {
-  getAccessiblePost,getPostEngagement,listPublicPosts,recordPostView,setPostCommentsEnabled,
+  archivePost,deletePost,getAccessiblePost,getPostEngagement,listPublicPosts,recordPostView,setPostCommentsEnabled,
   togglePostLike,toggleSavedPost,type PostEngagement,type SocialPost
 } from '@/lib/social';
 import {signedPostMediaResilient} from '@/lib/request-post-media';
@@ -41,6 +43,8 @@ type FeedPost=SocialPost&{
 
 const emptyEngagement:PostEngagement={likeCount:0,commentCount:0,likedByMe:false,savedByMe:false};
 const FEED_CACHE_MS=5*60_000;
+// Posts the viewer reported this session stay out of their feed even if a refresh returns them.
+const reportsByViewer=new Map<string,Set<string>>();
 let feedCache:{posts:FeedPost[];locality:string;userId:string|null;at:number}|null=null;
 let exploreSnapshot:{posts:FeedPost[];clips:FeedPost[];stories:StoryCard[];locality:string;userId:string|null;at:number}|null=null;
 let exploreLoad:Promise<void>|null=null;
@@ -62,9 +66,11 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  useEffect(()=>{setImmersiveMedia(active&&mode==='CLIPS');return()=>setImmersiveMedia(false)},[active,mode]);const [activeClipId,setActiveClipId]=useState<string|null>(null);const [loading,setLoading]=useState(()=>!cachedFeed);const [refreshing,setRefreshing]=useState(false);
  useEffect(()=>{if(!pager)fallbackProgress.value=mode==='CLIPS'?2:1},[fallbackProgress,mode,pager]);
  const [error,setError]=useState('');const [locality,setLocality]=useState(()=>cachedFeed?.locality??'Near you');const [userId,setUserId]=useState<string|null>(()=>cachedFeed?.userId??null);
+ const reportedPostIds=useMemo(()=>{const key=userId??'guest';let ids=reportsByViewer.get(key);if(!ids){ids=new Set<string>();reportsByViewer.set(key,ids)}return ids},[userId]);
+ const [ownerAction,setOwnerAction]=useState<{post:FeedPost;kind:'ARCHIVE'|'DELETE'}|null>(null);const ownerActionLock=useRef(false);const [ownerBusy,setOwnerBusy]=useState(false);
  const [commentPost,setCommentPost]=useState<FeedPost|null>(null);
  const commentSettingsLock=useRef(false);const [commentSettingsBusy,setCommentSettingsBusy]=useState(false);
- const [menuPost,setMenuPost]=useState<string|null>(null);const lastDeepLinkedPost=useRef<string|null>(null);
+ const [menuPost,setMenuPost]=useState<string|null>(null);const [reportingPost,setReportingPost]=useState<string|null>(null);const lastDeepLinkedPost=useRef<string|null>(null);
  const viewedPosts=useRef(new Set<string>());const listRef=useRef<FlatList<FeedPost>>(null);const scrollOffsets=useRef<Record<'POSTS'|'CLIPS',number>>({POSTS:0,CLIPS:0});
  const activeRef=useRef(active);activeRef.current=active;
  const viewabilityConfig=useRef({itemVisiblePercentThreshold:60,minimumViewTime:900}).current;
@@ -200,7 +206,14 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
   try{await toggleSavedPost(post.id,before)}catch{updateEngagement(post.id,e=>({...e,savedByMe:before}));}
  }
  async function share(post:FeedPost){
-  await Share.share({message:[post.caption||'See this post on Everest Local',post.location_label?('📍 '+post.location_label):''].filter(Boolean).join('\n')});
+  try{await Share.share({message:[post.caption||'See this post on Everest Local',post.location_label?('📍 '+post.location_label):''].filter(Boolean).join('\n')});}catch{setError('The post could not be shared. Try again.');}
+ }
+ async function confirmOwnerAction(){
+  if(!ownerAction||ownerActionLock.current)return;
+  ownerActionLock.current=true;setOwnerBusy(true);setError('');
+  try{await (ownerAction.kind==='ARCHIVE'?archivePost:deletePost)(ownerAction.post.id);const id=ownerAction.post.id;setPosts(rows=>rows.filter(row=>row.id!==id));setClips(rows=>rows.filter(row=>row.id!==id));setOwnerAction(null);setMenuPost(null);}
+  catch(e){setOwnerAction(null);setError(userMessage(e,'The post could not be updated. Refresh and try again.'));}
+  finally{ownerActionLock.current=false;setOwnerBusy(false);}
  }
  function openComments(post:FeedPost){setCommentPost(post);}
  async function toggleComments(post:FeedPost){
@@ -220,7 +233,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
  return <SafeAreaView style={s.safe}>
   <FlatList
    ref={listRef}
-   data={mode==='CLIPS'?clips:posts}
+   data={reportedPostIds.size?(mode==='CLIPS'?clips:posts).filter(item=>!reportedPostIds.has(item.id)):mode==='CLIPS'?clips:posts}
    key={mode}
    keyExtractor={x=>x.id}
    initialNumToRender={mode==='CLIPS'?2:4}
@@ -239,10 +252,10 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
    viewabilityConfig={viewabilityConfig}
    ListHeaderComponent={<View>
     <View style={s.header}><View><Text accessibilityRole="header" style={s.title}>Discover</Text></View>
-     <View style={s.headerActions}><Pressable accessibilityRole="button" accessibilityLabel="Search" onPress={()=>router.push('/search')} style={s.round}><Ionicons name="search" size={21} color={colors.text}/></Pressable><Pressable onPress={()=>router.push('/create')} style={s.postButton}><Ionicons name="add" size={20} color={colors.onBrand}/><Text style={s.postButtonText}>Create</Text></Pressable></View>
+     <View style={s.headerActions}><Pressable accessibilityRole="button" accessibilityLabel="Search" onPress={()=>router.push('/search')} style={s.round}><Ionicons name="search" size={21} color={colors.text}/></Pressable><Pressable accessibilityRole="button" onPress={()=>router.push('/create')} style={s.postButton}><Ionicons name="add" size={20} color={colors.onBrand}/><Text style={s.postButtonText}>Create</Text></Pressable></View>
     </View>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.storyRail}>
-     <Pressable onPress={()=>router.push('/create-story')} style={s.storyTile}><View style={[s.storyRing,s.yourStory]}><Ionicons name="add" size={25} color={colors.accent}/></View><Text numberOfLines={1} style={s.storyName}>Your story</Text></Pressable>
+     <Pressable accessibilityRole="button" onPress={()=>router.push('/create-story')} style={s.storyTile}><View style={[s.storyRing,s.yourStory]}><Ionicons name="add" size={25} color={colors.accent}/></View><Text numberOfLines={1} style={s.storyName}>Your story</Text></Pressable>
      {stories.map(story=><Pressable key={story.id} accessibilityRole="button" accessibilityLabel={`Story from ${story.businessName??story.actorName}`} onPress={()=>router.push(('/story?id='+story.id) as never)} style={s.storyTile}>
       <View style={s.storyRing}>{story.mediaType==='IMAGE'&&story.mediaUrl?<Image source={{uri:story.mediaUrl}} style={s.storyImage}/>:story.avatarUrl?<Image source={{uri:story.avatarUrl}} style={s.storyImage}/>:<View style={s.storyVideoFallback}><Ionicons name={story.mediaType==='VIDEO'?'play':'person'} size={21} color={colors.text}/></View>}</View>
       <Text numberOfLines={1} style={s.storyName}>{story.actorName}</Text>
@@ -253,22 +266,23 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
     {locality&&locality!=='Near you'?<Text style={s.localityNote}>Local posts from {locality} appear first.</Text>:null}
     {error?<Text style={s.error}>{error}</Text>:null}
    </View>}
-   ListEmptyComponent={<View style={s.empty}><Ionicons name={mode==='CLIPS'?'play-circle-outline':'images-outline'} size={34} color={colors.muted}/><Text style={s.emptyTitle}>{mode==='CLIPS'?'Clips are just getting started':'No posts yet'}</Text><Text style={s.emptyCopy}>{mode==='CLIPS'?'Share the first useful local clip.':'New public posts from people and businesses will appear here.'}</Text>{mode==='CLIPS'?<Pressable onPress={()=>router.push('/create-clip')} style={s.emptyCta}><Text style={s.emptyCtaText}>Create clip</Text></Pressable>:null}</View>}
+   ListEmptyComponent={<View style={s.empty}><Ionicons name={mode==='CLIPS'?'play-circle-outline':'images-outline'} size={34} color={colors.muted}/><Text style={s.emptyTitle}>{mode==='CLIPS'?'Clips are just getting started':'No posts yet'}</Text><Text style={s.emptyCopy}>{mode==='CLIPS'?'Share the first useful local clip.':'New public posts from people and businesses will appear here.'}</Text>{mode==='CLIPS'?<Pressable accessibilityRole="button" onPress={()=>router.push('/create-clip')} style={s.emptyCta}><Text style={s.emptyCtaText}>Create clip</Text></Pressable>:null}</View>}
    renderItem={({item})=>mode==='CLIPS'?<View style={s.clipCard}>
     <View style={[s.clipMedia,{height:clipHeight}]}>
      {item.videoUrl?<ClipPlayer uri={item.videoUrl} active={active&&clipSettled&&activeClipId===item.id} edit={item.edit_manifest} audioBeds={audibleTracks(item).map(track=>({id:track.id,uri:track.url!,startMs:track.startMs,endMs:track.endMs,volume:track.volume,fadeInMs:track.fadeInMs,fadeOutMs:track.fadeOutMs}))} musicUri={item.musicUrl??null} musicStartMs={item.music_start_ms??0} musicVolume={item.music_volume??.75} originalVolume={item.original_volume??1}/>:<View style={s.clipMissing}><Ionicons name="videocam-off-outline" size={30} color="#fff"/><Text style={s.clipMissingText}>Video unavailable</Text></View>}
      <View style={s.clipTop}><View style={s.clipLocal}><Ionicons name="location-outline" size={13} color="#fff"/><Text numberOfLines={1} style={s.clipLocalText}>{item.location_label||'Everest Local'}</Text></View>{item.is_promoted?<View style={s.clipPromoted}><Text style={s.clipPromotedText}>Promoted</Text></View>:null}</View>
      <View style={s.clipSide}>
-      <Pressable onPress={()=>void like(item)} style={s.clipAction}><Ionicons name={item.engagement.likedByMe?'heart':'heart-outline'} size={27} color={item.engagement.likedByMe?'#ff8c8c':'#fff'}/><Text style={s.clipActionText}>{item.engagement.likeCount}</Text></Pressable>
-      <Pressable onPress={()=>void openComments(item)} style={s.clipAction}><Ionicons name="chatbubble-outline" size={25} color="#fff"/><Text style={s.clipActionText}>{item.engagement.commentCount}</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={()=>void like(item)} style={s.clipAction}><Ionicons name={item.engagement.likedByMe?'heart':'heart-outline'} size={27} color={item.engagement.likedByMe?'#ff8c8c':'#fff'}/><Text style={s.clipActionText}>{item.engagement.likeCount}</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={()=>void openComments(item)} style={s.clipAction}><Ionicons name="chatbubble-outline" size={25} color="#fff"/><Text style={s.clipActionText}>{item.engagement.commentCount}</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={item.engagement.savedByMe?'Remove from saved':'Save'} onPress={()=>void save(item)} style={s.clipAction}><Ionicons name={item.engagement.savedByMe?'bookmark':'bookmark-outline'} size={25} color="#fff"/></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Share" onPress={()=>void share(item)} style={s.clipAction}><Ionicons name="paper-plane-outline" size={25} color="#fff"/></Pressable>
+      {item.author_id!==userId?<Pressable accessibilityRole="button" accessibilityLabel="Report clip" onPress={()=>{if(!userId){router.push('/auth');return;}setReportingPost(item.id)}} style={s.clipAction}><Ionicons name="flag-outline" size={23} color="#fff"/></Pressable>:null}
      </View>
      <View style={s.clipBottom}>
-      <Pressable onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))} style={s.clipAuthor}><View style={s.clipAvatar}>{(item.businesses?.logo_url||item.profile?.avatar_url)?<Image source={{uri:item.businesses?.logo_url??item.profile?.avatar_url??''}} style={s.clipAvatarImage}/>:<Ionicons name={item.business_id?'business':'person'} size={17} color="#fff"/>}</View><Text numberOfLines={1} style={s.clipName}>{item.businesses?.name??item.profile?.display_name??'Everest member'}</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))} style={s.clipAuthor}><View style={s.clipAvatar}>{(item.businesses?.logo_url||item.profile?.avatar_url)?<Image source={{uri:item.businesses?.logo_url??item.profile?.avatar_url??''}} style={s.clipAvatarImage}/>:<Ionicons name={item.business_id?'business':'person'} size={17} color="#fff"/>}</View><Text numberOfLines={1} style={s.clipName}>{item.businesses?.name??item.profile?.display_name??'Everest member'}</Text></Pressable>
       {item.caption?<Text numberOfLines={3} style={s.clipCaption}>{item.caption}</Text>:null}
-      {audibleTrack(item)?<Pressable onPress={()=>router.push(('/sound?id='+audibleTrack(item)!.audioAssetId) as never)} style={s.clipMusic}><Ionicons name={audibleTrack(item)?.source==='VOICEOVER'?'mic':'musical-note'} size={13} color="#fff"/><Text numberOfLines={1} style={s.clipMusicText}>{audibleTrack(item)?.title}{audibleTrack(item)?.artist?' — '+audibleTrack(item)?.artist:''}</Text><Ionicons name="chevron-forward" size={12} color="#fff"/></Pressable>:item.music?<View style={s.clipMusic}><Ionicons name="musical-note" size={13} color="#fff"/><Text numberOfLines={1} style={s.clipMusicText}>{item.music.title} — {item.music.artist}</Text></View>:null}
-      {(item.service_id||item.product_id)?<View style={s.clipCommerce}>{item.service_id?<Pressable onPress={()=>router.push('/request?serviceId='+item.service_id)} style={s.clipCommerceButton}><Text style={s.clipCommerceText}>View service</Text></Pressable>:null}{item.product_id?<Pressable onPress={()=>router.push('/product?id='+item.product_id)} style={s.clipCommerceButton}><Text style={s.clipCommerceText}>View product</Text></Pressable>:null}</View>:null}
+      {audibleTrack(item)?<Pressable accessibilityRole="button" onPress={()=>router.push(('/sound?id='+audibleTrack(item)!.audioAssetId) as never)} style={s.clipMusic}><Ionicons name={audibleTrack(item)?.source==='VOICEOVER'?'mic':'musical-note'} size={13} color="#fff"/><Text numberOfLines={1} style={s.clipMusicText}>{audibleTrack(item)?.title}{audibleTrack(item)?.artist?' — '+audibleTrack(item)?.artist:''}</Text><Ionicons name="chevron-forward" size={12} color="#fff"/></Pressable>:item.music?<View style={s.clipMusic}><Ionicons name="musical-note" size={13} color="#fff"/><Text numberOfLines={1} style={s.clipMusicText}>{item.music.title} — {item.music.artist}</Text></View>:null}
+      {(item.service_id||item.product_id)?<View style={s.clipCommerce}>{item.service_id?<Pressable accessibilityRole="button" onPress={()=>router.push('/request?serviceId='+item.service_id)} style={s.clipCommerceButton}><Text style={s.clipCommerceText}>View service</Text></Pressable>:null}{item.product_id?<Pressable accessibilityRole="button" onPress={()=>router.push('/product?id='+item.product_id)} style={s.clipCommerceButton}><Text style={s.clipCommerceText}>View product</Text></Pressable>:null}</View>:null}
      </View>
     </View>
    </View>:<View style={s.card}>
@@ -276,7 +290,7 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
      <Pressable accessibilityRole="button" accessibilityLabel={`Open profile: ${item.businesses?.name??item.profile?.display_name??'Everest member'}`} onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))} style={s.avatar}>
       {(item.businesses?.logo_url||item.profile?.avatar_url)?<Image source={{uri:item.businesses?.logo_url??item.profile?.avatar_url??''}} style={s.avatarImage}/>:<Ionicons name={item.business_id?'business-outline':'person-outline'} size={19} color={colors.text}/>}
      </Pressable>
-     <Pressable style={{flex:1}} onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))}>
+     <Pressable accessibilityRole="button" style={{flex:1}} onPress={()=>router.push(item.business_id?('/business-profile?id='+item.business_id):('/public-user?id='+item.author_id))}>
       <View style={s.nameLine}><Text style={s.name}>{item.businesses?.name??item.profile?.display_name??'Everest member'}</Text>{item.is_promoted?<View style={s.promotedBadge}><Ionicons name="rocket" size={11} color={colors.onTertiaryContainer}/><Text style={s.promotedText}>Promoted</Text></View>:null}</View>
       {item.collaborator_labels?.length?<Text numberOfLines={1} style={s.collab}>with {item.collaborator_labels.join(' · ')}</Text>:null}
       <Text style={s.meta}>{[item.location_label,formatAgo(item.created_at)].filter(Boolean).join(' · ')}</Text>
@@ -285,7 +299,12 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
     </View>
     {menuPost===item.id?<View style={s.menu}>
       {item.author_id===userId?<Pressable accessibilityRole="button" disabled={commentSettingsBusy} onPress={()=>void toggleComments(item)} style={[s.menuItem,{minHeight:44}]}><Ionicons name={item.comments_enabled?'chatbubble-outline':'chatbubble-ellipses-outline'} size={17} color={colors.text}/><Text style={s.menuText}>{commentSettingsBusy?'Updating comments…':item.comments_enabled?'Turn comments off':'Turn comments on'}</Text></Pressable>:null}
-      <Pressable onPress={()=>void share(item)} style={s.menuItem}><Ionicons name="share-outline" size={17} color={colors.text}/><Text style={s.menuText}>Share post</Text></Pressable>
+      {item.author_id===userId?<>
+       <Pressable accessibilityRole="button" onPress={()=>{setMenuPost(null);setOwnerAction({post:item,kind:'ARCHIVE'})}} style={s.menuItem}><Ionicons name="archive-outline" size={17} color={colors.text}/><Text style={s.menuText}>Archive post</Text></Pressable>
+       <Pressable accessibilityRole="button" onPress={()=>{setMenuPost(null);setOwnerAction({post:item,kind:'DELETE'})}} style={s.menuItem}><Ionicons name="trash-outline" size={17} color={colors.danger}/><Text style={[s.menuText,{color:colors.danger}]}>Delete post</Text></Pressable>
+      </>:null}
+      <Pressable accessibilityRole="button" onPress={()=>void share(item)} style={s.menuItem}><Ionicons name="share-outline" size={17} color={colors.text}/><Text style={s.menuText}>Share post</Text></Pressable>
+      {item.author_id!==userId?<Pressable accessibilityRole="button" onPress={()=>{setMenuPost(null);if(!userId){router.push('/auth');return;}setReportingPost(item.id)}} style={s.menuItem}><Ionicons name="flag-outline" size={17} color={colors.danger}/><Text style={[s.menuText,{color:colors.danger}]}>Report post</Text></Pressable>:null}
     </View>:null}
     {item.media?.length?<View style={s.mediaWrap}>{item.media.slice(0,1).map((uri,index)=><PostMediaImage key={uri} postId={item.id} uri={uri} index={index} style={[s.media,{width:mediaWidth,height:Math.min(mediaWidth*1.05,650)}]}/>)}
       {item.media.length>1?<View style={s.mediaCount}><Text style={s.mediaCountText}>1/{item.media.length}</Text></View>:null}
@@ -302,16 +321,18 @@ export function SocialScreen({sceneMode,active=true}:{sceneMode?:'POSTS'|'CLIPS'
     </View>
     {item.engagement.likeCount>0?<Text style={s.count}>{item.engagement.likeCount} {item.engagement.likeCount===1?'like':'likes'}</Text>:null}
     {item.caption&&item.media?.length?<Text style={s.caption}><Text style={s.name}>{item.businesses?.name??item.profile?.display_name??'Everest member'} </Text>{item.caption}</Text>:null}
-    {item.engagement.commentCount>0?<Pressable onPress={()=>void openComments(item)}><Text style={s.viewComments}>{item.engagement.commentCount===1?'View 1 comment':`View all ${item.engagement.commentCount} comments`}</Text></Pressable>:null}
+    {item.engagement.commentCount>0?<Pressable accessibilityRole="button" onPress={()=>void openComments(item)}><Text style={s.viewComments}>{item.engagement.commentCount===1?'View 1 comment':`View all ${item.engagement.commentCount} comments`}</Text></Pressable>:null}
     {!item.comments_enabled?<Text style={s.commentsOff}>Comments are turned off</Text>:null}
     {item.verifiedWork?<View style={s.verified}><Ionicons name="checkmark-circle" size={15} color={colors.accent}/><Text style={s.verifiedText}>Verified Everest booking</Text></View>:null}
     {(item.service_id||item.product_id)?<View style={s.commerceRow}>
-      {item.service_id?<Pressable onPress={()=>router.push('/request?serviceId='+item.service_id)} style={s.commerce}><Text style={s.commerceText}>Get quote</Text></Pressable>:null}
-      {item.product_id?<Pressable onPress={()=>router.push('/product?id='+item.product_id)} style={s.commerce}><Text style={s.commerceText}>View product</Text></Pressable>:null}
+      {item.service_id?<Pressable accessibilityRole="button" onPress={()=>router.push('/request?serviceId='+item.service_id)} style={s.commerce}><Text style={s.commerceText}>Get quote</Text></Pressable>:null}
+      {item.product_id?<Pressable accessibilityRole="button" onPress={()=>router.push('/product?id='+item.product_id)} style={s.commerce}><Text style={s.commerceText}>View product</Text></Pressable>:null}
     </View>:null}
    </View>}
   />
   <CustomerTabBar active="/social"/>
+  <ConfirmSheet visible={Boolean(ownerAction)} title={ownerAction?.kind==='ARCHIVE'?'Archive this post?':'Delete this post?'} subtitle={ownerAction?.kind==='ARCHIVE'?'It will be hidden from public feeds. You can restore it from Account → Archive.':'This removes the post from Everest Local. Retained moderation and marketplace records are unaffected.'} busy={ownerBusy} confirmLabel={ownerAction?.kind==='ARCHIVE'?'Archive post':'Delete post'} onCancel={()=>{if(!ownerBusy)setOwnerAction(null)}} onConfirm={()=>void confirmOwnerAction()}/>
+  <ReportPostSheet postId={reportingPost} kind={mode==='CLIPS'?'clip':'post'} onClose={()=>setReportingPost(null)} onReported={id=>{reportedPostIds.add(id);setPosts(current=>current.filter(post=>post.id!==id));setClips(current=>current.filter(clip=>clip.id!==id));}}/>
   {commentPost?<PostCommentsSheet key={`${commentPost.id}:${userId??'guest'}`} post={commentPost} linkedCommentId={typeof params.commentId==='string'?params.commentId:undefined} onClose={()=>setCommentPost(null)} onCountChange={(delta,total)=>{updateEngagement(commentPost.id,engagement=>({...engagement,commentCount:total??Math.max(0,engagement.commentCount+delta)}));setCommentPost(previous=>previous?{...previous,engagement:{...previous.engagement,commentCount:total??Math.max(0,previous.engagement.commentCount+delta)}}:previous);}}/>:null}
  </SafeAreaView>
 }

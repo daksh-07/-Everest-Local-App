@@ -1,0 +1,51 @@
+{
+  "scope": "PostgreSQL 17.6 loopback, exact comment table policies and independent SQL sessions with synthetic auth.uid settings; not Supabase Realtime/PostgREST",
+  "tests": [
+    {
+      "name": "account A creates own visible comment",
+      "pass": true
+    },
+    {
+      "name": "account B cannot impersonate A",
+      "pass": true
+    },
+    {
+      "name": "account B cannot edit or hide A comment",
+      "pass": true
+    },
+    {
+      "name": "account B reply retains parent and account identity",
+      "pass": true
+    },
+    {
+      "name": "account A edit is visible to B",
+      "pass": true
+    },
+    {
+      "name": "simultaneous stale edits cannot overwrite the winner",
+      "pass": true
+    },
+    {
+      "name": "lost-response retry with stable ID cannot duplicate insert",
+      "pass": true
+    },
+    {
+      "name": "post author can hide B reply and both readers lose hidden row",
+      "pass": true
+    },
+    {
+      "name": "guest can read public conversation but cannot write",
+      "pass": true
+    },
+    {
+      "name": "follower-only conversation cannot leak to unrelated account",
+      "pass": true
+    },
+    {
+      "name": "disabled comments reject new inserts while preserving reads",
+      "pass": true
+    }
+  ],
+  "passed": 11,
+  "failed": 0
+}

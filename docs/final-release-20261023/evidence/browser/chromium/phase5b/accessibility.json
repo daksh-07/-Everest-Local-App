@@ -1,0 +1,170 @@
+[
+  {
+    "path": "/everest-live?requestId=live1",
+    "theme": "LIGHT",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/everest-live?requestId=live1",
+    "theme": "LIGHT",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/everest-live?requestId=live1",
+    "theme": "DARK",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/everest-live?requestId=live1",
+    "theme": "DARK",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-jobs",
+    "theme": "LIGHT",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-jobs",
+    "theme": "LIGHT",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-jobs",
+    "theme": "DARK",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-jobs",
+    "theme": "DARK",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-calendar",
+    "theme": "LIGHT",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-calendar",
+    "theme": "LIGHT",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-calendar",
+    "theme": "DARK",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-calendar",
+    "theme": "DARK",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-inbox",
+    "theme": "LIGHT",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-inbox",
+    "theme": "LIGHT",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-inbox",
+    "theme": "DARK",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-inbox",
+    "theme": "DARK",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-crm",
+    "theme": "LIGHT",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-crm",
+    "theme": "LIGHT",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-crm",
+    "theme": "DARK",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-crm",
+    "theme": "DARK",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-my-work",
+    "theme": "LIGHT",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-my-work",
+    "theme": "LIGHT",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-my-work",
+    "theme": "DARK",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-my-work",
+    "theme": "DARK",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-availability",
+    "theme": "LIGHT",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-availability",
+    "theme": "LIGHT",
+    "width": 1280,
+    "violations": []
+  },
+  {
+    "path": "/business-availability",
+    "theme": "DARK",
+    "width": 390,
+    "violations": []
+  },
+  {
+    "path": "/business-availability",
+    "theme": "DARK",
+    "width": 1280,
+    "violations": []
+  }
+]

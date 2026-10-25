@@ -21,13 +21,14 @@ const business={id:biz,name:'Phase Five Garden Care',status:'ACTIVE',verificatio
 const service={id:'s1',business_id:biz,name:'Garden maintenance',base_price:90,duration_minutes:60,delivery_mode:'LOCAL',active:true,service_booking_settings:{instant_booking_enabled:false}};
 const product={id:'p1',business_id:biz,business_name:business.name,name:'Local garden kit',price:20,sale_price:null,status:'ACTIVE',product_images:[],primary_image_path:null};
 const result={kind:'SERVICE',id:'s1',title:'Garden maintenance',subtitle:'Local service',score:60,metadata:{business_id:biz}};
-const report={engine,baseline,scenarios:[],layouts:[],errors:[]};
+const report={engine,baseline,scenarios:[],layouts:[],errors:[],errorDetails:[],failedRequests:[]};
 async function open(path,state={},authenticated=false){
  const context=await browser.newContext({viewport:{width:state.width||390,height:844},reducedMotion:state.motion||'reduce',isMobile:Boolean(state.touch),hasTouch:Boolean(state.touch)});
  await context.addInitScript(({session,authenticated,theme})=>{if(!localStorage.getItem('everest-local-theme'))localStorage.setItem('everest-local-theme',theme);if(authenticated)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session))},{session,authenticated,theme:state.theme||'LIGHT'});
  console.log('Fixture',path,state.fail??'healthy');
  const page=await context.newPage();await trackFixtureReads(page);if(state.clock)await page.clock.install();page.setDefaultTimeout(15000);const calls=[];
- page.on('pageerror',error=>report.errors.push(error.message));
+ page.on('pageerror',error=>{report.errors.push(error.message);report.errorDetails.push({path,url:page.url(),message:error.message,stack:error.stack});console.error('PAGE_ERROR',path,error.stack)});
+ page.on('requestfailed',request=>report.failedRequests.push({path,url:new URL(request.url()).pathname,error:request.failure()?.errorText}));
  const sockets=[];
  await page.routeWebSocket('**/realtime/**',ws=>{
   if(state.noRealtime){ws.close();return;}
@@ -114,11 +115,13 @@ try{
   await shot(page,screen+'-recovered');await closePage(page,context);
  }
  {
-  const state={fail:['get_everest_live_state']};const {page,context}=await open('/everest-live?requestId=live1',state,true);await page.getByText('Live request unavailable',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
+  // Isolate the explicit retry from subscription-triggered automatic recovery.
+  // Realtime reconnection is exercised separately below.
+  const state={fail:['get_everest_live_state'],noRealtime:true};const {page,context,calls}=await open('/everest-live?requestId=live1',state,true);await page.getByText('Live request unavailable',{exact:true}).waitFor();await settleFixtureReads(page);
   const retry=page.getByRole('button',{name:/Reconnect|Try again|Retry/});
   if(!baseline)await retry.waitFor();
   report.scenarios.push({screen:'live',initialFailureHasRetry:await retry.count()});
-  if(!baseline){assert.ok(await retry.count(),'Live initial error must be retryable');state.fail=[];await retry.click();await page.getByText('Everest Live',{exact:true}).waitFor();}
+  if(!baseline){assert.ok(await retry.count(),'Live initial error must be retryable');const before=calls.filter(call=>call.name==='get_everest_live_state').length;state.fail=[];await retry.click();await page.getByText('Everest Live',{exact:true}).waitFor();assert.ok(calls.filter(call=>call.name==='get_everest_live_state').length>before,'Explicit retry makes a new status read');}
   await shot(page,'live-initial-error');await closePage(page,context);
  }
  // Provider notification is actionable only for roles allowed to operate work.
@@ -136,11 +139,13 @@ try{
   const stale=await page.getByText('Open job',{exact:true}).count();assert.equal(stale,baseline?1:0,'late job response is scoped to its requested tab');
   report.scenarios.push({lateJobsTabResponse:stale,baseline});await closePage(page,context);
  }
+ // Closed fixture sockets can change the headline to its reconnecting copy.
+ // Confirm loaded state via the stable notification metric, not online-only copy.
  // Live's 30s fallback poll must not restart its 45s expansion deadline.
  {
   const clockState={clock:true,noRealtime:true};const {page,context,calls}=await open('/everest-live?requestId=live1',clockState,true);
-  await page.getByText('Everest Live',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
-  await page.getByText('2 businesses notified',{exact:true}).waitFor();await page.clock.runFor(50);
+  await page.getByText('Everest Live',{exact:true}).waitFor();await page.clock.runFor(1000);await settleFixtureReads(page);
+  await page.getByText('Notified',{exact:true}).locator('..').getByText('2',{exact:true}).waitFor();await page.clock.runFor(50);
   clockState.viewed=1;await page.clock.fastForward(30000);await page.getByText('1',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
   await page.clock.fastForward(16000);await page.waitForLoadState('networkidle');
   if(!baseline)await page.getByText(/(Search area|Searching within) 7 km/).waitFor();
@@ -159,7 +164,7 @@ try{
  // Opportunity-only updates and an offline read recover without inventing fresh state.
  {
   const state={clock:true};const {page,context,sockets,calls}=await open('/everest-live?requestId=live1',state,true);
-  await page.getByText('2 businesses notified',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
+  await page.getByText('Notified',{exact:true}).locator('..').getByText('2',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
   const emit=table=>{for(const {ws,joins} of sockets)for(const join of joins){const ids=join.changes.filter(c=>c.table===table).map(c=>c.id);if(ids.length){const payload={ids,data:{type:'UPDATE',schema:'public',table,columns:[],record:{id:'offer1',request_id:'live1'},old_record:{},commit_timestamp:new Date().toISOString()}};ws.send(JSON.stringify(join.v2?[join.join_ref,null,join.topic,'postgres_changes',payload]:{topic:join.topic,event:'postgres_changes',payload}));}}};
   const before=calls.filter(c=>c.name==='get_everest_live_state'&&c.method==='POST').length;state.viewed=1;for(let i=0;i<10;i++)emit('opportunities');
   await page.getByText('1 business has viewed your request',{exact:true}).waitFor();
@@ -176,7 +181,7 @@ try{
  // Resubscription refreshes missed events immediately, before the fallback poll.
  {
   const state={clock:true};const {page,context,sockets}=await open('/everest-live?requestId=live1',state,true);
-  await page.getByText('2 businesses notified',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
+  await page.getByText('Notified',{exact:true}).locator('..').getByText('2',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
   state.viewed=1;for(const socket of [...sockets])socket.ws.close({code:1012,reason:'Fixture reconnect'});
   await page.getByText('Reconnecting · showing the last confirmed status',{exact:true}).waitFor();
   await page.clock.fastForward(5000);
@@ -234,7 +239,7 @@ try{
   await page.getByRole('button',{name:'Cancel search',exact:true}).click();
   await page.getByRole('button',{name:'Cancel request',exact:true}).click();
   await page.getByText('Cancellation was not confirmed. Retry to check your request.',{exact:true}).waitFor();
-  assert.equal(typeof state.releaseStatus,'function');state.holdStatus=false;state.releaseStatus();await page.getByText('2 businesses notified',{exact:true}).waitFor();await settleFixtureReads(page);
+  assert.equal(typeof state.releaseStatus,'function');state.holdStatus=false;state.releaseStatus();await page.getByText('Notified',{exact:true}).locator('..').getByText('2',{exact:true}).waitFor();await settleFixtureReads(page);
   await page.getByText('Cancellation was not confirmed. Retry to check your request.',{exact:true}).waitFor();
   assert.ok(page.url().includes('/everest-live'));
   assert.equal(calls.filter(c=>c.name==='cancel_everest_live'&&c.method==='POST').length,1);
@@ -295,7 +300,7 @@ try{
    await page.getByText(path.includes('everest-live')?'Your responses are ready':path.includes('business-jobs')?'Open job':path.includes('business-calendar')?'Scheduled garden visit':path.includes('business-inbox')?'No customer conversations yet':path.includes('business-crm')?'Garden lead':path.includes('business-my-work')?'You’re clear.':'Save availability',{exact:true}).first().waitFor();
    await page.waitForLoadState('networkidle');
    await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);
-   for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
+   for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){
     await page.setViewportSize({width,height:width===320?568:844});
     await page.waitForTimeout(220);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,path+' overflow '+width);
@@ -317,7 +322,7 @@ try{
    const {page,context}=await open(path,state,true);await page.waitForLoadState('networkidle');
    for(const theme of ['LIGHT','DARK']){
     await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);
-    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){
      await page.setViewportSize({width,height:844});await page.waitForTimeout(150);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,path+' '+mode+' overflow');
      report.layouts.push({path,theme,motion:'reduce',width,state:mode});

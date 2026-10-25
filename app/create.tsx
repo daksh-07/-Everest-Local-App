@@ -17,14 +17,14 @@ export default function Create(){
  const {colors}=useAppTheme();const s=useMemo(()=>styles(colors),[colors]);
  const choose=(route:string)=>{void haptic.selection();router.replace(route as never)};
  return <View style={s.root}>
-  <Pressable accessibilityLabel="Close Create" onPress={()=>router.back()} style={StyleSheet.absoluteFill}/>
+  <Pressable accessibilityRole="button" accessibilityLabel="Close Create" onPress={()=>router.back()} style={StyleSheet.absoluteFill}/>
   <SafeAreaView edges={['bottom']} style={s.sheet}>
    <View style={s.handle}/>
    <View style={s.header}>
     <View style={{flex:1}}><Text style={s.kicker}>Create on Everest</Text><Text style={s.title}>Share something local</Text><Text style={s.subtitle}>Choose a format. You can change audience, location and music on the next screen.</Text></View>
-    <Pressable onPress={()=>router.back()} accessibilityLabel="Close" style={s.close}><Ionicons name="close" size={21} color={colors.text}/></Pressable>
+    <Pressable accessibilityRole="button" onPress={()=>router.back()} accessibilityLabel="Close" style={s.close}><Ionicons name="close" size={21} color={colors.text}/></Pressable>
    </View>
-   <View style={s.grid}>{choices.map(item=><Pressable key={item.title} onPress={()=>choose(item.route)} style={({pressed})=>[s.card,pressed&&s.cardPressed]}>
+   <View style={s.grid}>{choices.map(item=><Pressable accessibilityRole="button" key={item.title} onPress={()=>choose(item.route)} style={({pressed})=>[s.card,pressed&&s.cardPressed]}>
     <View style={[s.icon,{backgroundColor:item.title==='Story'?colors.tertiaryContainer:colors.primaryContainer}]}><Ionicons name={item.icon} size={25} color={item.title==='Story'?colors.onTertiaryContainer:colors.onPrimaryContainer}/></View>
     <View style={{flex:1,minWidth:0}}><View style={s.cardTitleRow}><Text style={s.cardTitle}>{item.title}</Text><View style={s.tag}><Text style={s.tagText}>{item.tag}</Text></View></View><Text style={s.cardCopy}>{item.copy}</Text></View>
     <Ionicons name="chevron-forward" size={19} color={colors.muted}/>

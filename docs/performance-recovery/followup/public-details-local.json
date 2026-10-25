@@ -1,0 +1,15 @@
+{
+  "base": "http://localhost:4176",
+  "results": [
+    {
+      "table": "products",
+      "opened": true
+    },
+    {
+      "table": "businesses",
+      "opened": true
+    }
+  ],
+  "failures": [],
+  "errors": []
+}

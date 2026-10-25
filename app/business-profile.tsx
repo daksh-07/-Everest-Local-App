@@ -36,6 +36,7 @@ export default function BusinessProfile() {
   const [followers,setFollowers]=useState(0);
   const [posts,setPosts]=useState<SocialPost[]>([]);
   const [highlights,setHighlights]=useState<StoryHighlight[]>([]);
+  const [benefitsRequireSignIn,setBenefitsRequireSignIn]=useState(false);
   const [membershipPlans,setMembershipPlans]=useState<MembershipPlan[]>([]);
   const [packages,setPackages]=useState<BusinessPackage[]>([]);
   const [followBusy,setFollowBusy]=useState(false);
@@ -65,21 +66,26 @@ export default function BusinessProfile() {
   useEffect(()=>{let active=true;
    setSaved(false);setFollowing(false);setFollowers(0);setPosts([]);setHighlights([]);setMembershipPlans([]);setPackages([]);setServiceSheet(null);setWarning('');setError('');setMessage('');
    if(!key)return;
-   void Promise.allSettled([isBusinessSaved(key),isFollowing({businessId:key}),getFollowCounts({businessId:key}),listPublicPosts({businessId:key,limit:10}),listHighlights({businessId:key})]).then(results=>{
+   setBenefitsRequireSignIn(false);
+   void supabase.auth.getSession().then(({data:{session}})=>{
+   if(!active)return;
+   const signedIn=Boolean(session);setBenefitsRequireSignIn(!signedIn);
+   void Promise.allSettled([signedIn?isBusinessSaved(key):Promise.resolve(false),signedIn?isFollowing({businessId:key}):Promise.resolve(false),signedIn?getFollowCounts({businessId:key}):Promise.resolve(null),listPublicPosts({businessId:key,limit:10}),listHighlights({businessId:key})]).then(results=>{
     if(!active)return;
     const [saved,following,counts,posts,highlights]=results;
     if(saved.status==='fulfilled')setSaved(saved.value);
     if(following.status==='fulfilled')setFollowing(following.value);
-    if(counts.status==='fulfilled')setFollowers(counts.value.follower_count);
+    if(counts.status==='fulfilled'&&counts.value)setFollowers(counts.value.follower_count);
     if(posts.status==='fulfilled')setPosts(posts.value);
     if(highlights.status==='fulfilled')setHighlights(highlights.value);
     if(results.some(result=>result.status==='rejected'))setWarning('Some community details could not be loaded. Business information is still available.');
    });
-   void Promise.allSettled([listPublicMembershipPlans(key),listPublicPackages(key)]).then(([plans,packages])=>{
+   if(signedIn)void Promise.allSettled([listPublicMembershipPlans(key),listPublicPackages(key)]).then(([plans,packages])=>{
     if(!active)return;
     if(plans.status==='fulfilled')setMembershipPlans(plans.value);
     if(packages.status==='fulfilled')setPackages(packages.value);
    });
+   }).catch(()=>{if(active)setWarning('Your account details could not be restored. Retry this page to try again.');});
    return()=>{active=false};
   },[key]);
 
@@ -110,27 +116,28 @@ export default function BusinessProfile() {
     <SectionStatus label="Reviews" section={reviewSection}/>
     <View style={s.actionRow}>
       <Pressable accessibilityRole="button" accessibilityLabel={services.length===1?`Request a quote for ${services[0].name}`:'Request a quote'} style={({pressed})=>[s.actionPrimary,pressed&&{opacity:.85}]} onPress={()=>{if(services.length===1)setServiceSheet(services[0]);else if(services.length>1)scrollRef.current?.scrollTo({y:Math.max(0,servicesY.current-12),animated:!reducedMotion});else router.push('/request')}}><Text style={s.actionPrimaryText}>Request a quote</Text></Pressable>
-      <Pressable disabled={followBusy||saving} onPress={()=>void toggleFollow()} style={({pressed})=>[s.followButton,following&&s.followingButton,pressed&&{opacity:.8}]} accessibilityRole="button" accessibilityState={{selected:following}} accessibilityLabel={following?'Unfollow business':'Follow business'}><Ionicons name={following?'checkmark':'add'} size={18} color={following?colors.onPrimaryContainer:colors.text}/><Text style={[s.followText,following&&{color:colors.onPrimaryContainer}]}>{following?'Following':'Follow'}</Text></Pressable>
+      <Pressable accessibilityRole="button" disabled={followBusy||saving} onPress={()=>void toggleFollow()} style={({pressed})=>[s.followButton,following&&s.followingButton,pressed&&{opacity:.8}]} accessibilityState={{selected:following}} accessibilityLabel={following?'Unfollow business':'Follow business'}><Ionicons name={following?'checkmark':'add'} size={18} color={following?colors.onPrimaryContainer:colors.text}/><Text style={[s.followText,following&&{color:colors.onPrimaryContainer}]}>{following?'Following':'Follow'}</Text></Pressable>
     </View>
-    {followers>0?<Pressable onPress={()=>router.push('/business-followers?businessId='+business.id+'&name='+encodeURIComponent(business.name))} style={s.followerCount} accessibilityRole="button" accessibilityLabel={`View ${followers} followers`}><Text tabular style={s.followerNumber}>{followers}</Text><Text style={s.followerLabel}> {followers===1?'follower':'followers'}</Text></Pressable>:null}
+    {followers>0?<Pressable accessibilityRole="button" onPress={()=>router.push('/business-followers?businessId='+business.id+'&name='+encodeURIComponent(business.name))} style={s.followerCount} accessibilityLabel={`View ${followers} followers`}><Text tabular style={s.followerNumber}>{followers}</Text><Text style={s.followerLabel}> {followers===1?'follower':'followers'}</Text></Pressable>:null}
     {!!warning&&<Text style={s.warning}>{warning}</Text>}{!!error&&<Text style={s.error}>{error}</Text>}{!!message&&<Text style={s.message}>{message}</Text>}
     {business.description&&<Text style={s.copy}>{business.description}</Text>}
     {business.website_url?<Pressable accessibilityRole="link" onPress={()=>void Linking.openURL(business.website_url!)} style={s.website}><Ionicons name="globe-outline" size={16} color={colors.accent}/><Text numberOfLines={1} style={s.websiteText}>{websiteLabel(business.website_url)}</Text><Ionicons name="open-outline" size={14} color={colors.muted}/></Pressable>:null}
-    {highlights.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.highlightRail}>{highlights.map(item=><Pressable key={item.id} onPress={()=>router.push(('/highlight?id='+item.id) as never)} style={s.highlightItem}><View style={s.highlightCover}>{item.coverUrl?<Image source={{uri:item.coverUrl}} style={s.highlightImage}/>:<Ionicons name="sparkles-outline" size={21} color={colors.accent}/>}</View><Text numberOfLines={2} style={s.highlightName}>{item.title}</Text></Pressable>)}</ScrollView>:null}
+    {highlights.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.highlightRail}>{highlights.map(item=><Pressable accessibilityRole="button" key={item.id} onPress={()=>router.push(('/highlight?id='+item.id) as never)} style={s.highlightItem}><View style={s.highlightCover}>{item.coverUrl?<Image source={{uri:item.coverUrl}} style={s.highlightImage}/>:<Ionicons name="sparkles-outline" size={21} color={colors.accent}/>}</View><Text numberOfLines={2} style={s.highlightName}>{item.title}</Text></Pressable>)}</ScrollView>:null}
     <Text onLayout={e=>{servicesY.current=e.nativeEvent.layout.y}} accessibilityRole="header" variant="section" style={s.heading}>Services</Text>
     <SectionStatus label="Services" section={serviceSection}/>
     {services.length?<View style={s.serviceList}>{services.map((item,index)=>{const instant=isInstant(item);return <Pressable accessibilityRole="button" accessibilityLabel={`${item.name}. ${serviceFacts(item)}. ${instant?'Instant booking available.':''} View details`} onPress={()=>setServiceSheet(item)} key={item.id} style={({pressed})=>[s.serviceRow,index>0&&s.serviceDivider,pressed&&{backgroundColor:colors.soft}]}>
       <View style={{flex:1,minWidth:0}}><Text style={s.cardTitle}>{item.name}</Text>{item.description?<Text numberOfLines={2} style={s.meta}>{item.description}</Text>:null}<Text tabular style={s.serviceFacts}>{serviceFacts(item)}</Text>{instant?<View style={s.instantTag}><Ionicons name="flash" size={12} color={colors.onSecondaryContainer}/><Text style={s.instantTagText}>Instant booking</Text></View>:null}</View>
       <Ionicons name="chevron-forward" size={18} color={colors.textSecondary}/>
     </Pressable>})}</View>:serviceSection.loading||serviceSection.error?null:<View style={s.emptyInline}><Text style={s.meta}>This business hasn’t listed services yet. You can still describe what you need.</Text><Pressable accessibilityRole="button" onPress={()=>router.push('/request')} style={s.inlineAction}><Text style={s.inlineActionText}>Request a quote</Text></Pressable></View>}
+    {benefitsRequireSignIn?<Pressable accessibilityRole="button" accessibilityLabel="Sign in for memberships and packages" onPress={()=>router.push('/auth')} style={s.inlineAction}><Text style={s.meta}>Sign in for memberships and packages</Text></Pressable>:null}
     {(membershipPlans.length||packages.length)?<><Text variant="section" style={s.heading}>Memberships & packages</Text><Text style={s.growthIntro}>Save with recurring plans or prepaid service credits from {business.name}. Recurring billing never starts until you approve it in Stripe Checkout.</Text>
-    {membershipPlans.map(plan=><View key={plan.id} style={s.card}><View style={s.cardHeader}><View style={{flex:1}}><Text style={s.cardTitle}>{plan.name}</Text><Text style={s.meta}>{plan.description||'Recurring customer membership'}</Text></View><Text tabular style={s.planPrice}>{formatMoney(plan.price)}</Text></View><Text tabular style={s.price}>{'Every '+intervalLabel(plan.billing_interval_unit,plan.billing_interval_count)+(plan.included_credits?' · '+plan.included_credits+' service credit'+(plan.included_credits===1?'':'s')+' / period':'')}</Text><Pressable disabled={!!growthBusy} onPress={()=>void joinMembership(plan.id)} style={s.growthCta}><Text style={s.growthCtaText}>{growthBusy==='membership:'+plan.id?'Opening…':'Join & review billing'}</Text></Pressable></View>)}
-    {packages.map(item=><View key={item.id} style={s.card}><View style={s.cardHeader}><View style={{flex:1}}><Text style={s.cardTitle}>{item.name}</Text><Text style={s.meta}>{item.description||'Prepaid service package'}</Text></View><Text tabular style={s.planPrice}>{formatMoney(item.price)}</Text></View><Text tabular style={s.price}>{item.credit_count+' service credit'+(item.credit_count===1?'':'s')+(item.expires_after_days?' · valid '+item.expires_after_days+' days':'')}</Text><Pressable disabled={!!growthBusy} onPress={()=>void purchasePackage(item.id)} style={s.growthCta}><Text style={s.growthCtaText}>{growthBusy==='package:'+item.id?'Opening…':'Buy package'}</Text></Pressable></View>)}</>:null}
+    {membershipPlans.map(plan=><View key={plan.id} style={s.card}><View style={s.cardHeader}><View style={{flex:1}}><Text style={s.cardTitle}>{plan.name}</Text><Text style={s.meta}>{plan.description||'Recurring customer membership'}</Text></View><Text tabular style={s.planPrice}>{formatMoney(plan.price)}</Text></View><Text tabular style={s.price}>{'Every '+intervalLabel(plan.billing_interval_unit,plan.billing_interval_count)+(plan.included_credits?' · '+plan.included_credits+' service credit'+(plan.included_credits===1?'':'s')+' / period':'')}</Text><Pressable accessibilityRole="button" disabled={!!growthBusy} onPress={()=>void joinMembership(plan.id)} style={s.growthCta}><Text style={s.growthCtaText}>{growthBusy==='membership:'+plan.id?'Opening…':'Join & review billing'}</Text></Pressable></View>)}
+    {packages.map(item=><View key={item.id} style={s.card}><View style={s.cardHeader}><View style={{flex:1}}><Text style={s.cardTitle}>{item.name}</Text><Text style={s.meta}>{item.description||'Prepaid service package'}</Text></View><Text tabular style={s.planPrice}>{formatMoney(item.price)}</Text></View><Text tabular style={s.price}>{item.credit_count+' service credit'+(item.credit_count===1?'':'s')+(item.expires_after_days?' · valid '+item.expires_after_days+' days':'')}</Text><Pressable accessibilityRole="button" disabled={!!growthBusy} onPress={()=>void purchasePackage(item.id)} style={s.growthCta}><Text style={s.growthCtaText}>{growthBusy==='package:'+item.id?'Opening…':'Buy package'}</Text></Pressable></View>)}</>:null}
     <SectionStatus label="Products" section={productSection}/>
-    {products.length?<><View style={s.headingRow}><Text variant="section" style={s.headingCompact}>Products</Text>{products.length?<Pressable onPress={()=>router.push(('/shop?business='+business.id+'&businessName='+encodeURIComponent(business.name)) as never)}><Text style={s.viewAll}>See all</Text></Pressable>:null}</View>
+    {products.length?<><View style={s.headingRow}><Text variant="section" style={s.headingCompact}>Products</Text>{products.length?<Pressable accessibilityRole="button" onPress={()=>router.push(('/shop?business='+business.id+'&businessName='+encodeURIComponent(business.name)) as never)}><Text style={s.viewAll}>See all</Text></Pressable>:null}</View>
     {products.length?<View style={s.productGrid}>{products.map(item=><Pressable accessibilityRole="button" accessibilityLabel={`View ${item.name}`} onPress={()=>router.push(`/product?id=${item.id}`)} key={item.id} style={s.productCard}>{item.image_url?<Image source={{uri:item.image_url}} style={s.productImage}/>:<View style={[s.productImage,s.productImageFallback]}><Ionicons name="image-outline" size={24} color={colors.muted}/></View>}<View style={s.productBody}><Text numberOfLines={2} style={s.cardTitle}>{item.name}</Text><Text tabular style={s.price}>{formatMoney(item.sale_price??item.price)}</Text><Text numberOfLines={2} style={s.meta}>{item.status==='OUT_OF_STOCK'?'Out of stock':[item.pickup_available?'Pickup':null,item.delivery_eligible?'Delivery':null].filter(Boolean).join(' · ')}</Text></View></Pressable>)}</View>:null}</>:null}
     {posts.length?<Text variant="section" style={s.heading}>Posts</Text>:null}
-    {posts.length ? posts.map(post=><View key={post.id} style={s.card}><Text style={s.postType}>{formatStatus(post.post_type,'Post')}</Text>{post.caption&&<Text style={s.cardTitle}>{post.caption}</Text>}<Text style={s.meta}>{formatDay(post.created_at)}</Text>{post.service_id&&<Pressable style={s.postCta} onPress={()=>router.push(`/request?serviceId=${post.service_id}`)}><Text style={s.postCtaText}>Get a quote</Text></Pressable>}{post.product_id&&<Pressable style={s.postCta} onPress={()=>router.push(`/product?id=${post.product_id}`)}><Text style={s.postCtaText}>View product</Text></Pressable>}</View>) : null}
+    {posts.length ? posts.map(post=><View key={post.id} style={s.card}><Text style={s.postType}>{formatStatus(post.post_type,'Post')}</Text>{post.caption&&<Text style={s.cardTitle}>{post.caption}</Text>}<Text style={s.meta}>{formatDay(post.created_at)}</Text>{post.service_id&&<Pressable accessibilityRole="button" style={s.postCta} onPress={()=>router.push(`/request?serviceId=${post.service_id}`)}><Text style={s.postCtaText}>Get a quote</Text></Pressable>}{post.product_id&&<Pressable accessibilityRole="button" style={s.postCta} onPress={()=>router.push(`/product?id=${post.product_id}`)}><Text style={s.postCtaText}>View product</Text></Pressable>}</View>) : null}
   </ScrollView>
   <ServiceSheet service={serviceSheet} businessName={business.name} busy={!!serviceSheet&&growthBusy==='ask:'+serviceSheet.id} onClose={()=>setServiceSheet(null)}
    onBook={item=>{setServiceSheet(null);router.push(`/instant-book?serviceId=${item.id}&name=${encodeURIComponent(item.name)}`)}}
@@ -151,7 +158,7 @@ function ServiceSheet({service,businessName,busy,onClose,onBook,onQuote,onAsk}:{
   const rows:[string,string][]=[['Price',service.base_price!=null?`From ${formatMoney(service.base_price)}`:'Quote required'],['Duration',service.duration_minutes?`About ${service.duration_minutes} min`:'Agreed with you'],['Where',deliveryLabel(service.delivery_mode)],['Booking',instant?'Instant booking or a quote':'Quote first, then you choose']];
   return <Modal visible transparent animationType={reduced?'none':'slide'} onRequestClose={onClose}>
     <View style={[sheet.overlay,{backgroundColor:c.overlay}]}>
-      <Pressable accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={onClose}/>
+      <Pressable accessibilityRole="button" accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={onClose}/>
       <SafeAreaView edges={['bottom']} style={[sheet.body,{backgroundColor:c.canvas}]}>
         <View style={[sheet.handle,{backgroundColor:c.border}]}/>
         <Text style={[sheet.eyebrow,{color:c.textSecondary}]}>{businessName}</Text>

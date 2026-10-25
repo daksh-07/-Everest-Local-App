@@ -51,7 +51,7 @@ export function PostSoundPlayer({
   <Pressable accessibilityRole="button" accessibilityLabel={playing?'Pause sound':'Play sound'} onPress={toggle} disabled={!audible.length} style={[s.play,!audible.length&&{opacity:.45}]}>
    <Ionicons name={playing?'pause':'play'} size={16} color={colors.onBrand}/>
   </Pressable>
-  <Pressable disabled={!onOpenSound} onPress={()=>onOpenSound?.(primary)} style={s.meta}>
+  <Pressable accessibilityRole="button" disabled={!onOpenSound} onPress={()=>onOpenSound?.(primary)} style={s.meta}>
    <View style={s.titleRow}><Ionicons name={primary.source==='VOICEOVER'?'mic':'musical-note'} size={12} color={colors.accent}/><Text numberOfLines={1} style={s.title}>{primary.title}</Text></View>
    <Text numberOfLines={1} style={s.copy}>{sourceLabel(primary)}{voice&&voice.id!==primary.id?' · voiceover mixed':''}{photoDurationMs?' · '+seconds(photoDurationMs):''}</Text>
   </Pressable>

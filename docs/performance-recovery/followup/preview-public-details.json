@@ -1,0 +1,15 @@
+{
+  "base": "https://everest-local-i6372h1jx-dakshgolani5-4632.vercel.app",
+  "results": [
+    {
+      "table": "products",
+      "opened": true
+    },
+    {
+      "table": "businesses",
+      "opened": true
+    }
+  ],
+  "failures": [],
+  "errors": []
+}

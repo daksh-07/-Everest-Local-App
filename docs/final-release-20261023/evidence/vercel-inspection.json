@@ -1,0 +1,16 @@
+{
+  "message": "Vercel API request failed (403: forbidden). Not authorized: Trying to access resource under scope \"dakshgolani5-4632\". You must re-authenticate to this scope or use a token with access to this scope.",
+  "recovery": "Call authorize_team_access (or authorize_team_sso if that is the available tool) with this teamId and show the user the returned link. After they approve team access and complete SSO if required, retry the same request with this connection. Do not ask them to reconnect.",
+  "remediation": {
+    "actor": "agent",
+    "action": "authorize_team_access"
+  },
+  "status": 403,
+  "code": "forbidden",
+  "operation": "GET /v9/projects/{idOrName}",
+  "saml": false,
+  "ssoEnforced": false,
+  "scope": "dakshgolani5-4632",
+  "teamId": "team_dsF0uzqRx5WaRhQlCndgzo0e",
+  "requestId": "syd1:sfo1::ldtwm-1792753877662-fcb1423caa84"
+}

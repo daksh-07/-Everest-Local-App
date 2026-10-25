@@ -1,0 +1,221 @@
+✖ reports require a confirmed report identifier (73.196683ms)
+✖ a hidden post requires exactly one returned row before closing the report (13.502048ms)
+✖ report closure validates the RPC boolean and describes partial success (10.167575ms)
+✔ confirmed moderation changes close the selected report (10.505229ms)
+✖ archivePost rejects zero-row writes (61.454419ms)
+✖ archivePost confirms a returned post (56.704666ms)
+✖ restorePost rejects zero-row writes (29.885465ms)
+✖ restorePost confirms a returned post (47.944941ms)
+✖ deletePost rejects zero-row writes (24.262557ms)
+✖ deletePost confirms a returned post (60.108843ms)
+✖ updatePostCaption rejects zero-row writes (36.250839ms)
+✖ updatePostCaption confirms a returned post (22.946861ms)
+✖ setPostCommentsEnabled rejects zero-row writes (44.962572ms)
+✖ setPostCommentsEnabled confirms a returned post (33.310503ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 1
+ℹ fail 13
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 856.331293
+
+✖ failing tests:
+
+test at tests/social-mutation-confirmation.test.mjs:25:1
+✖ reports require a confirmed report identifier (73.196683ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:28:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /could not be confirmed/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:33:1
+✖ a hidden post requires exactly one returned row before closing the report (13.502048ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:36:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /could not be hidden/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:40:1
+✖ report closure validates the RPC boolean and describes partial success (10.167575ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:42:2)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /post is hidden.*report could not be closed/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:51:2
+✖ archivePost rejects zero-row writes (61.454419ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:53:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:55:2
+✖ archivePost confirms a returned post (56.704666ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(db.calls.some(call=>call[0]==='select'&&call[1]==='id'))
+  
+      at TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:58:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:51:2
+✖ restorePost rejects zero-row writes (29.885465ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:53:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:55:2
+✖ restorePost confirms a returned post (47.944941ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(db.calls.some(call=>call[0]==='select'&&call[1]==='id'))
+  
+      at TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:58:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:51:2
+✖ deletePost rejects zero-row writes (24.262557ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:53:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:55:2
+✖ deletePost confirms a returned post (60.108843ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(db.calls.some(call=>call[0]==='select'&&call[1]==='id'))
+  
+      at TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:58:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:51:2
+✖ updatePostCaption rejects zero-row writes (36.250839ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:53:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:55:2
+✖ updatePostCaption confirms a returned post (22.946861ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(db.calls.some(call=>call[0]==='select'&&call[1]==='id'))
+  
+      at TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:58:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:51:2
+✖ setPostCommentsEnabled rejects zero-row writes (44.962572ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:53:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/social-mutation-confirmation.test.mjs:55:2
+✖ setPostCommentsEnabled confirms a returned post (33.310503ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(db.calls.some(call=>call[0]==='select'&&call[1]==='id'))
+  
+      at TestContext.<anonymous> (file:///workspace/everest/tests/social-mutation-confirmation.test.mjs:58:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

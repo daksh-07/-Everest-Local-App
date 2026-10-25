@@ -1,4 +1,5 @@
 import 'react-native-url-polyfill/auto';
+import {createReadFetch} from './read-fetch';
 import { createClient, processLock } from '@supabase/supabase-js';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from './supabase.config';
 
@@ -32,7 +33,7 @@ export const supabase = createClient(url, anonKey, {
     detectSessionInUrl: true,
     lock: processLock,
   },
-  global: { headers: { 'x-client-info': 'everest-local-web' } },
+  global: { fetch: createReadFetch((input,init)=>fetch(input,init)), headers: { 'x-client-info': 'everest-local-web' } },
 });
 
 export function requireSupabaseConfig() {

@@ -28,7 +28,7 @@ export default function BusinessToday(){
  const experience=useExperience();const insets=useSafeAreaInsets();
  const {colors}=useAppTheme();const st=useMemo(()=>styles(colors),[colors]);
  const [refreshing,setRefreshing]=useState(false);
- const workspace=useSection('today-workspace',getWorkspaceContext);
+ const workspace=useSection('today-workspace',()=>getWorkspaceContext({preferBusiness:true}));
  const business=workspace.data?.businesses.find(item=>item.id===workspace.data?.active_business_id)??null;
  const verified=business?.verification_status==='VERIFIED';
  const key=workspace.data?.mode==='BUSINESS'&&verified?business!.id:null;
@@ -103,7 +103,7 @@ export default function BusinessToday(){
    <SectionStatus label="Workspace" section={workspace}/>
   </>}</ScrollView><BusinessTabBar active="/business-today"/></View></SafeAreaView>;
 }
-function Quick({label,icon,onPress,colors}:{label:string;icon:keyof typeof Ionicons.glyphMap;onPress:()=>void;colors:ThemeColors}){return <Pressable onPress={onPress} style={[quickStyles.quick,{borderColor:colors.border,backgroundColor:colors.surface}]}><Ionicons name={icon} size={17} color={colors.accent}/><Text style={[quickStyles.quickText,{color:colors.text}]}>{label}</Text></Pressable>}
+function Quick({label,icon,onPress,colors}:{label:string;icon:keyof typeof Ionicons.glyphMap;onPress:()=>void;colors:ThemeColors}){return <Pressable accessibilityRole="button" onPress={onPress} style={[quickStyles.quick,{borderColor:colors.border,backgroundColor:colors.surface}]}><Ionicons name={icon} size={17} color={colors.accent}/><Text style={[quickStyles.quickText,{color:colors.text}]}>{label}</Text></Pressable>}
 const quickStyles=StyleSheet.create({quick:{minHeight:52,borderRadius:14,borderWidth:StyleSheet.hairlineWidth,paddingHorizontal:14,flexDirection:'row',alignItems:'center',gap:10,flexBasis:'48%',flexGrow:1},quickText:{fontSize:15,lineHeight:20,fontWeight:'500',flexShrink:1}});
 const styles=(c:ThemeColors)=>StyleSheet.create({
  safe:{flex:1,backgroundColor:c.canvas},page:{paddingTop:8,maxWidth:920,width:'100%',alignSelf:'center'},

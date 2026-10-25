@@ -1,0 +1,10 @@
+{
+  "tool": "supabase_create_branch",
+  "project_id": "bmwbljefnamvjnmuvkvv",
+  "name": "everest-final-release-20261023",
+  "error": {
+    "name": "PaymentRequiredException",
+    "message": "Branching is supported only on the Pro plan or above"
+  },
+  "created": false
+}

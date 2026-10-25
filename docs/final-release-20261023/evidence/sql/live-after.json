@@ -1,0 +1,194 @@
+{
+  "scope": "PostgreSQL 17 loopback; exact repository SQL with minimal fixtures, not Supabase staging",
+  "baseline": false,
+  "tests": [
+    {
+      "name": "named area cannot bypass local distance",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "AVAILABLE_NOW honors future available_from",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "removed member assignment does not exclude business",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "name": "nearby capable verified provider",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "name": "matching nearby named area remains eligible",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "name": "named area cannot bypass online provider radius",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "named area cannot replace missing coordinates",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "null availability start is immediately available",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "name": "past availability start is available",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "name": "offline provider excluded",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "expired availability excluded",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "active member unfinished assignment still excludes business",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "suspended member assignment does not exclude business",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "name": "completed active assignment does not exclude business",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "name": "unverified business excluded",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "inactive business excluded",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "requests disabled business excluded",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "inactive capability excluded",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "wrong niche excluded",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "wrong category excluded",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "wrong service excluded",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "remote capability globally eligible",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "name": "remote does not require coordinates",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "name": "remote still requires availability",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "remote still requires matching capability",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "cancelled lifecycle cannot release",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "non-Live request cannot release",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "name": "repeat wave is idempotent; one offer/match",
+      "pass": true
+    },
+    {
+      "name": "offer expiry remains bounded by 20 minutes",
+      "pass": true
+    },
+    {
+      "name": "offer expiry bounded by request expiry",
+      "pass": true
+    },
+    {
+      "name": "expired request closes without offers",
+      "pass": true
+    },
+    {
+      "name": "anon cannot invoke internal wave",
+      "pass": true
+    },
+    {
+      "name": "authenticated cannot invoke internal wave",
+      "pass": true
+    }
+  ],
+  "passed": 33,
+  "failed": 0
+}

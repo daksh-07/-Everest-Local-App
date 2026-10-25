@@ -1,0 +1,5 @@
+
+> everest-local-app@1.0.0 audit:migrations
+> node scripts/migration-audit.mjs
+
+Migration audit passed: 244 migrations checked (34 legacy + 210 timestamped).

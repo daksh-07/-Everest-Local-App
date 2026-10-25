@@ -1,0 +1,11 @@
+{
+  "engine": "webkit",
+  "scenarios": [
+    "known empty queues",
+    "unavailable reports",
+    "unavailable drivers",
+    "capped reports",
+    "missing platform count"
+  ],
+  "errors": []
+}

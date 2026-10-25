@@ -3,12 +3,13 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'supabase/migrations/*phase5_public_discovery.sql'
+      - 'supabase/migrations/*.sql'
       - 'supabase/migrations/*phase6*.sql'
       - 'supabase/migrations/*phase7*.sql'
       - 'lib/social.ts'
       - 'docs/phase7-evidence/catalog-baseline.json'
       - 'scripts/verify-phase6-*.mjs'
+      - 'scripts/verify-release-integration-sql.mjs'
       - 'scripts/lib/phase6-*.mjs'
       - '.github/workflows/validate-phase6-backend.yml'
 permissions:
@@ -47,6 +48,7 @@ jobs:
           node scripts/verify-phase6-permissions.mjs
           node scripts/verify-phase6-comments-sql.mjs
           node scripts/verify-phase6-transactions.mjs
+          node scripts/verify-release-integration-sql.mjs
           PHASE6_DATABASE_URL='' EVEREST_QA_ARTIFACTS=/tmp/everest-phase6-sql/pglite node scripts/verify-phase6-live.mjs
           PHASE6_DATABASE_URL='' EVEREST_QA_ARTIFACTS=/tmp/everest-phase6-sql/pglite node scripts/verify-phase6-permissions.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

@@ -1,0 +1,671 @@
+{
+  "rls": [
+    {
+      "table": "follows",
+      "enabled": true
+    },
+    {
+      "table": "inventory",
+      "enabled": true
+    },
+    {
+      "table": "posts",
+      "enabled": true
+    },
+    {
+      "table": "user_blocks",
+      "enabled": true
+    },
+    {
+      "table": "user_connections",
+      "enabled": true
+    }
+  ],
+  "grants": [
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "follows",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "INSERT",
+      "with_hierarchy": "NO"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "follows",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT",
+      "with_hierarchy": "YES"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "follows",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "UPDATE",
+      "with_hierarchy": "NO"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "follows",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "DELETE",
+      "with_hierarchy": "NO"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "inventory",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT",
+      "with_hierarchy": "YES"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "user_blocks",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT",
+      "with_hierarchy": "YES"
+    },
+    {
+      "grantee": "authenticated",
+      "grantor": "postgres",
+      "table_name": "user_connections",
+      "is_grantable": "NO",
+      "table_schema": "public",
+      "table_catalog": "postgres",
+      "privilege_type": "SELECT",
+      "with_hierarchy": "YES"
+    }
+  ],
+  "policies": [
+    {
+      "cmd": "SELECT",
+      "qual": "(is_business_member(( SELECT products.business_id\n   FROM products\n  WHERE (products.id = inventory.product_id))) OR is_admin())",
+      "roles": [
+        "public"
+      ],
+      "tablename": "inventory",
+      "permissive": "PERMISSIVE",
+      "policyname": "inventory_business_access",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "((( SELECT auth.uid() AS uid) = follower_id) OR (( SELECT auth.uid() AS uid) = followed_user_id) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "follows",
+      "permissive": "PERMISSIVE",
+      "policyname": "follows_owner_access",
+      "schemaname": "public",
+      "with_check": "((( SELECT auth.uid() AS uid) = follower_id) OR is_admin())"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((bucket_id = 'clip-media'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "clip_media_owner_delete",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "clip_media_owner_insert",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'clip-media'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text) AND (EXISTS ( SELECT 1\n   FROM posts p\n  WHERE ((p.id = ((storage.foldername(objects.name))[2])::uuid) AND (p.author_id = auth.uid()) AND (p.content_format = 'CLIP'::text)))))"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((bucket_id = 'clip-media'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "clip_media_owner_update",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'clip-media'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'clip-media'::text) AND (EXISTS ( SELECT 1\n   FROM posts p\n  WHERE ((p.id = ((storage.foldername(objects.name))[2])::uuid) AND ((p.author_id = auth.uid()) OR is_admin() OR ((p.status = 'PUBLISHED'::text) AND (p.visibility = 'PUBLIC'::text) AND ((p.business_id IS NULL) OR (EXISTS ( SELECT 1\n           FROM businesses b\n          WHERE ((b.id = p.business_id) AND (b.status = 'ACTIVE'::business_status) AND (b.verification_status = 'VERIFIED'::verification_status))))) AND (NOT (EXISTS ( SELECT 1\n           FROM user_blocks ub\n          WHERE (((ub.blocker_id = auth.uid()) AND (ub.blocked_id = p.author_id)) OR ((ub.blocked_id = auth.uid()) AND (ub.blocker_id = p.author_id))))))))))))",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "clip_media_visible_select",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'driver-verification'::text) AND ((owner_id = ( SELECT (auth.uid())::text AS uid)) OR is_admin()))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "driver_verification_owner_read",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "driver_verification_owner_upload",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'driver-verification'::text) AND ((storage.foldername(name))[1] = ( SELECT (auth.uid())::text AS uid)))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'everest-music'::text) AND is_active_music_path(name))",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "everest_music_active_select",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((bucket_id = 'everest-music'::text) AND is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "everest_music_admin_delete",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "everest_music_admin_insert",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'everest-music'::text) AND is_admin())"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((bucket_id = 'everest-music'::text) AND is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "everest_music_admin_update",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'everest-music'::text) AND is_admin())"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((bucket_id = 'post-media'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "post_media_owner_delete",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "post_media_owner_insert",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'post-media'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text) AND (EXISTS ( SELECT 1\n   FROM posts p\n  WHERE ((p.id = ((storage.foldername(objects.name))[2])::uuid) AND (p.author_id = ( SELECT auth.uid() AS uid)) AND ((p.business_id IS NULL) OR is_business_member(p.business_id))))))"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((bucket_id = 'post-media'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "post_media_owner_update",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'post-media'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'post-media'::text) AND (EXISTS ( SELECT 1\n   FROM posts p\n  WHERE ((p.id = ((storage.foldername(objects.name))[2])::uuid) AND ((p.author_id = ( SELECT auth.uid() AS uid)) OR is_admin() OR ((p.status = 'PUBLISHED'::text) AND (NOT (EXISTS ( SELECT 1\n           FROM user_blocks ub\n          WHERE (((ub.blocker_id = ( SELECT auth.uid() AS uid)) AND (ub.blocked_id = p.author_id)) OR ((ub.blocked_id = ( SELECT auth.uid() AS uid)) AND (ub.blocker_id = p.author_id)))))) AND (((p.visibility = 'PUBLIC'::text) AND ((p.business_id IS NULL) OR (EXISTS ( SELECT 1\n           FROM businesses b\n          WHERE ((b.id = p.business_id) AND (b.status = 'ACTIVE'::business_status) AND (b.verification_status = 'VERIFIED'::verification_status)))))) OR ((p.visibility = 'FOLLOWERS'::text) AND (EXISTS ( SELECT 1\n           FROM follows f\n          WHERE ((f.follower_id = ( SELECT auth.uid() AS uid)) AND (((p.business_id IS NULL) AND (f.followed_user_id = p.author_id)) OR (f.business_id = p.business_id)))))))))))))",
+      "roles": [
+        "public"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "post_media_visible_select",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((bucket_id = 'product-media'::text) AND (EXISTS ( SELECT 1\n   FROM products p\n  WHERE ((p.id = ((storage.foldername(objects.name))[2])::uuid) AND (p.business_id = ((storage.foldername(objects.name))[1])::uuid) AND (has_business_permission(p.business_id, 'CATALOG_MANAGE'::text) OR is_admin())))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "product_media_member_delete",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "product_media_member_insert",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'product-media'::text) AND (EXISTS ( SELECT 1\n   FROM products p\n  WHERE ((p.id = ((storage.foldername(objects.name))[2])::uuid) AND (p.business_id = ((storage.foldername(objects.name))[1])::uuid) AND (has_business_permission(p.business_id, 'CATALOG_MANAGE'::text) OR is_admin())))))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'product-media'::text) AND (EXISTS ( SELECT 1\n   FROM products p\n  WHERE ((p.id = ((storage.foldername(objects.name))[2])::uuid) AND (is_business_member(p.business_id) OR (EXISTS ( SELECT 1\n           FROM businesses b\n          WHERE ((b.id = p.business_id) AND (b.status = 'ACTIVE'::business_status) AND (b.verification_status = 'VERIFIED'::verification_status) AND (p.status = ANY (ARRAY['ACTIVE'::product_status, 'OUT_OF_STOCK'::product_status]))))))))))",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "product_media_member_select",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((bucket_id = 'product-media'::text) AND (EXISTS ( SELECT 1\n   FROM products p\n  WHERE ((p.id = ((storage.foldername(objects.name))[2])::uuid) AND (p.business_id = ((storage.foldername(objects.name))[1])::uuid) AND (has_business_permission(p.business_id, 'CATALOG_MANAGE'::text) OR is_admin())))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "product_media_member_update",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'product-media'::text) AND (EXISTS ( SELECT 1\n   FROM products p\n  WHERE ((p.id = ((storage.foldername(objects.name))[2])::uuid) AND (p.business_id = ((storage.foldername(objects.name))[1])::uuid) AND (has_business_permission(p.business_id, 'CATALOG_MANAGE'::text) OR is_admin())))))"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((bucket_id = 'profile-media'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "profile_media_owner_delete",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "profile_media_owner_insert",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'profile-media'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((bucket_id = 'profile-media'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "profile_media_owner_update",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'profile-media'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(bucket_id = 'profile-media'::text)",
+      "roles": [
+        "public"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "profile_media_public_read",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'request-media'::text) AND (((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text) OR (EXISTS ( SELECT 1\n   FROM (service_requests r\n     JOIN opportunities o ON ((o.request_id = r.id)))\n  WHERE ((r.id = ((storage.foldername(objects.name))[2])::uuid) AND is_business_member(o.business_id)))) OR is_admin()))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "request_media_authorized_select",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((bucket_id = 'request-media'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text) AND (EXISTS ( SELECT 1\n   FROM service_requests r\n  WHERE ((r.id = ((storage.foldername(objects.name))[2])::uuid) AND (r.customer_id = ( SELECT auth.uid() AS uid))))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "request_media_owner_delete",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "request_media_owner_insert",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'request-media'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text) AND (EXISTS ( SELECT 1\n   FROM service_requests r\n  WHERE ((r.id = ((storage.foldername(objects.name))[2])::uuid) AND (r.customer_id = ( SELECT auth.uid() AS uid))))))"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((bucket_id = 'story-media'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "story_media_owner_delete",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "story_media_owner_insert",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'story-media'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text) AND (EXISTS ( SELECT 1\n   FROM stories s\n  WHERE ((s.id = ((storage.foldername(objects.name))[2])::uuid) AND (s.author_id = auth.uid())))))"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((bucket_id = 'story-media'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "story_media_owner_update",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'story-media'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'story-media'::text) AND can_view_story(((storage.foldername(name))[2])::uuid))",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "story_media_visible_select",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((bucket_id = 'user-audio'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "user_audio_owner_delete",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "user_audio_owner_insert",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'user-audio'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((bucket_id = 'user-audio'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "user_audio_owner_update",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'user-audio'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'user-audio'::text) AND (EXISTS ( SELECT 1\n   FROM audio_assets a\n  WHERE ((a.storage_bucket = 'user-audio'::text) AND (a.storage_path = objects.name) AND ((a.owner_id = auth.uid()) OR is_admin() OR (EXISTS ( SELECT 1\n           FROM (post_audio_tracks pat\n             JOIN posts p ON ((p.id = pat.post_id)))\n          WHERE ((pat.audio_asset_id = a.id) AND (p.status = 'PUBLISHED'::text) AND (NOT (EXISTS ( SELECT 1\n                   FROM user_blocks ub\n                  WHERE (((ub.blocker_id = auth.uid()) AND (ub.blocked_id = p.author_id)) OR ((ub.blocked_id = auth.uid()) AND (ub.blocker_id = p.author_id)))))) AND (((p.visibility = 'PUBLIC'::text) AND ((p.business_id IS NULL) OR (EXISTS ( SELECT 1\n                   FROM businesses b\n                  WHERE ((b.id = p.business_id) AND (b.status = 'ACTIVE'::business_status) AND (b.verification_status = 'VERIFIED'::verification_status)))))) OR ((p.visibility = 'FOLLOWERS'::text) AND (EXISTS ( SELECT 1\n                   FROM follows f\n                  WHERE ((f.follower_id = auth.uid()) AND (((p.business_id IS NULL) AND (f.followed_user_id = p.author_id)) OR (f.business_id = p.business_id)))))))))))))))",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "user_audio_visible_select",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((user_a = ( SELECT auth.uid() AS uid)) OR (user_b = ( SELECT auth.uid() AS uid)) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "user_connections",
+      "permissive": "PERMISSIVE",
+      "policyname": "connections_participant_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((blocker_id = ( SELECT auth.uid() AS uid)) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "user_blocks",
+      "permissive": "PERMISSIVE",
+      "policyname": "blocks_owner_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "(((author_id = ( SELECT auth.uid() AS uid)) AND ((business_id IS NULL) OR has_business_permission(business_id, 'CATALOG_MANAGE'::text))) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "posts",
+      "permissive": "PERMISSIVE",
+      "policyname": "posts_author_delete",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "posts",
+      "permissive": "PERMISSIVE",
+      "policyname": "posts_author_insert",
+      "schemaname": "public",
+      "with_check": "((author_id = ( SELECT auth.uid() AS uid)) AND ((business_id IS NULL) OR has_business_permission(business_id, 'CATALOG_MANAGE'::text) OR is_admin()))"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(((author_id = ( SELECT auth.uid() AS uid)) AND ((business_id IS NULL) OR has_business_permission(business_id, 'CATALOG_MANAGE'::text))) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "posts",
+      "permissive": "PERMISSIVE",
+      "policyname": "posts_author_update",
+      "schemaname": "public",
+      "with_check": "(((author_id = ( SELECT auth.uid() AS uid)) AND ((business_id IS NULL) OR has_business_permission(business_id, 'CATALOG_MANAGE'::text))) OR is_admin())"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((( SELECT auth.uid() AS uid) = author_id) OR is_admin() OR ((status = 'PUBLISHED'::text) AND ((( SELECT auth.uid() AS uid) IS NULL) OR (NOT (EXISTS ( SELECT 1\n   FROM user_blocks ub\n  WHERE (((ub.blocker_id = ( SELECT auth.uid() AS uid)) AND (ub.blocked_id = posts.author_id)) OR ((ub.blocked_id = ( SELECT auth.uid() AS uid)) AND (ub.blocker_id = posts.author_id))))))) AND (((visibility = 'PUBLIC'::text) AND ((business_id IS NULL) OR (EXISTS ( SELECT 1\n   FROM businesses b\n  WHERE ((b.id = posts.business_id) AND (b.status = 'ACTIVE'::business_status) AND (b.verification_status = 'VERIFIED'::verification_status)))))) OR ((visibility = 'FOLLOWERS'::text) AND (( SELECT auth.uid() AS uid) IS NOT NULL) AND ((EXISTS ( SELECT 1\n   FROM follows f\n  WHERE ((f.follower_id = ( SELECT auth.uid() AS uid)) AND (((posts.business_id IS NULL) AND (f.followed_user_id = posts.author_id)) OR (f.business_id = posts.business_id))))) OR (EXISTS ( SELECT 1\n   FROM user_connections uc\n  WHERE (((uc.user_a = ( SELECT auth.uid() AS uid)) AND (uc.user_b = posts.author_id)) OR ((uc.user_b = ( SELECT auth.uid() AS uid)) AND (uc.user_a = posts.author_id))))) OR (EXISTS ( SELECT 1\n   FROM post_collaborators pc\n  WHERE ((pc.post_id = posts.id) AND (pc.status = 'ACCEPTED'::text) AND (((pc.collaborator_user_id IS NOT NULL) AND ((EXISTS ( SELECT 1\n           FROM follows f\n          WHERE ((f.follower_id = ( SELECT auth.uid() AS uid)) AND (f.followed_user_id = pc.collaborator_user_id)))) OR (EXISTS ( SELECT 1\n           FROM user_connections uc\n          WHERE (((uc.user_a = ( SELECT auth.uid() AS uid)) AND (uc.user_b = pc.collaborator_user_id)) OR ((uc.user_b = ( SELECT auth.uid() AS uid)) AND (uc.user_a = pc.collaborator_user_id))))))) OR ((pc.collaborator_business_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM follows f\n          WHERE ((f.follower_id = ( SELECT auth.uid() AS uid)) AND (f.business_id = pc.collaborator_business_id))))))))))))))",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "tablename": "posts",
+      "permissive": "PERMISSIVE",
+      "policyname": "posts_public_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((owner_id = ( SELECT auth.uid() AS uid)) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "story_highlights",
+      "permissive": "PERMISSIVE",
+      "policyname": "story_highlights_owner_delete",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "story_highlights",
+      "permissive": "PERMISSIVE",
+      "policyname": "story_highlights_owner_insert",
+      "schemaname": "public",
+      "with_check": "((owner_id = ( SELECT auth.uid() AS uid)) AND ((business_id IS NULL) OR is_business_member(business_id)))"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((owner_id = ( SELECT auth.uid() AS uid)) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "story_highlights",
+      "permissive": "PERMISSIVE",
+      "policyname": "story_highlights_owner_update",
+      "schemaname": "public",
+      "with_check": "((owner_id = ( SELECT auth.uid() AS uid)) OR is_admin())"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((owner_id = ( SELECT auth.uid() AS uid)) OR is_admin() OR (((( SELECT auth.uid() AS uid) IS NULL) OR (NOT users_blocked(( SELECT auth.uid() AS uid), owner_id))) AND (((business_id IS NOT NULL) AND (EXISTS ( SELECT 1\n   FROM businesses b\n  WHERE ((b.id = story_highlights.business_id) AND (b.status = 'ACTIVE'::business_status) AND (b.verification_status = 'VERIFIED'::verification_status))))) OR ((business_id IS NULL) AND (EXISTS ( SELECT 1\n   FROM public_profiles pp\n  WHERE ((pp.id = story_highlights.owner_id) AND (pp.visibility = 'PUBLIC'::text))))))))",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "tablename": "story_highlights",
+      "permissive": "PERMISSIVE",
+      "policyname": "story_highlights_read",
+      "schemaname": "public",
+      "with_check": null
+    }
+  ],
+  "functions": [
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ],
+      "name": "is_admin",
+      "definition": "CREATE OR REPLACE FUNCTION public.is_admin()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select public.is_admin_identity()\n    and coalesce(auth.jwt() ->> 'aal', 'aal1') = 'aal2'\n    and exists (\n      select 1\n      from jsonb_array_elements(coalesce(auth.jwt() -> 'amr', '[]'::jsonb)) as factor\n      where factor ->> 'method' = 'password'\n    );\n$function$\n"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ],
+      "name": "is_admin_identity",
+      "definition": "CREATE OR REPLACE FUNCTION public.is_admin_identity()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select exists (\n    select 1 from public.profiles\n    where id = auth.uid()\n      and id = '716edb35-a0cb-4cbf-99b2-41fa8500ffd3'::uuid\n      and role = 'ADMIN'\n  );\n$function$\n"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ],
+      "name": "is_business_member",
+      "definition": "CREATE OR REPLACE FUNCTION public.is_business_member(p_business_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n  select exists(\n    select 1\n    from public.business_members bm\n    where bm.business_id=p_business_id\n      and bm.user_id=auth.uid()\n      and bm.status='ACTIVE'\n  );\n$function$\n"
+    }
+  ]
+}

@@ -20,13 +20,14 @@ const business={id:biz,name:'Phase Five Garden Care',status:'ACTIVE',verificatio
 const service={id:'s1',business_id:biz,name:'Garden maintenance',base_price:90,duration_minutes:60,delivery_mode:'LOCAL',active:true,service_booking_settings:{instant_booking_enabled:false}};
 const product={id:'p1',business_id:biz,business_name:business.name,name:'Local garden kit',price:20,sale_price:null,status:'ACTIVE',product_images:[],primary_image_path:null};
 const result={kind:'SERVICE',id:'s1',title:'Garden maintenance',subtitle:'Local service',score:60,metadata:{business_id:biz}};
-const report={engine,baseline,scenarios:[],layouts:[],errors:[]};
+const report={engine,baseline,scenarios:[],layouts:[],errors:[],errorDetails:[],failedRequests:[]};
 async function open(path,state={},authenticated=false){
  const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
  await context.addInitScript(({session,authenticated})=>{if(!localStorage.getItem('everest-local-theme'))localStorage.setItem('everest-local-theme','LIGHT');if(authenticated)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session))},{session,authenticated});
  console.log('Fixture',path,state.fail??'healthy');
  const page=await context.newPage();await trackFixtureReads(page);page.setDefaultTimeout(15000);const calls=[];
- page.on('pageerror',error=>report.errors.push(error.message));
+ page.on('pageerror',error=>{report.errors.push(error.message);report.errorDetails.push({path,url:page.url(),state:{empty:state.empty,fail:state.fail},message:error.message,stack:error.stack});console.error('PAGE_ERROR',path,error.stack)});
+ page.on('requestfailed',request=>report.failedRequests.push({path,url:new URL(request.url()).pathname,error:request.failure()?.errorText}));
  await page.routeWebSocket('**/realtime/**',ws=>ws.close());
  await page.route(/supabase\.co/,async route=>{
   const req=route.request(),url=new URL(req.url()),name=url.pathname.split('/').pop();calls.push(name);
@@ -67,6 +68,22 @@ async function shot(page,name){
  await page.screenshot({path:`${output}/${name}.png`,fullPage:true})}
 try{
  if(process.env.PHASE5_LAYOUT_ONLY!=='1'){
+ // A denied/unavailable GPS path must still allow explicit manual locality entry.
+ {
+  const {page,context,calls}=await open('/');
+  await page.route(/nominatim\.openstreetmap\.org\/search/,route=>route.fulfill({json:[{lat:'-37.80',lon:'144.96',address:{suburb:'Carlton',city:'Melbourne',state:'Victoria',country:'Australia',postcode:'3053'}}]}));
+  await page.getByRole('button',{name:'Set your location',exact:true}).click();
+  await page.getByRole('button',{name:'Show businesses in this area',exact:true}).click();
+  await page.getByText('Enter a suburb or locality.',{exact:true}).waitFor();
+  await page.getByRole('textbox',{name:'Suburb or locality',exact:true}).fill('Carlton');
+  await page.getByRole('textbox',{name:'City',exact:true}).fill('Melbourne');
+  await page.getByRole('textbox',{name:'State',exact:true}).fill('VIC');
+  await page.getByRole('button',{name:'Show businesses in this area',exact:true}).click();
+  await page.getByRole('button',{name:/Location: Carlton/}).waitFor();
+  assert.equal(calls.includes('save_my_locality'),false,'Guest browsing never attempts to write profile locality');
+  report.scenarios.push('Manual location validates input and updates guest browsing without profile writes');
+  await closePage(page,context);
+ }
  // Home: Shop fails while business/feed remain healthy; only Shop retries.
  {
   const state={fail:['shop_products']};const {page,context,calls}=await open('/',state);
@@ -83,10 +100,17 @@ try{
  }
  // Profile: each core child read can fail without hiding identity or other healthy children.
  for(const failed of ['services','products','reviews']){
-  const state={fail:[failed],denied:failed==='services'};const {page,context}=await open('/business-profile?id='+biz,state);
+  const state={fail:[failed],denied:failed==='services'};const {page,context,calls}=await open('/business-profile?id='+biz,state);
   if(baseline){await page.getByText('We could not load this business right now. Please try again.',{exact:true}).waitFor();assert.equal(await page.getByText(business.name,{exact:true}).count(),0);}
-  else{await page.getByText(business.name,{exact:true}).waitFor();await page.getByRole('button',{name:'Retry '+failed,exact:true}).waitFor();if(failed!=='services')await page.getByText(service.name,{exact:true}).waitFor();await shot(page,'profile-'+failed+'-unavailable');state.fail=[];await page.getByRole('button',{name:'Retry '+failed,exact:true}).click();await page.getByRole('button',{name:'Retry '+failed,exact:true}).waitFor({state:'hidden'});}
+  else{await page.getByText(business.name,{exact:true}).waitFor();await page.getByRole('button',{name:'Sign in for memberships and packages',exact:true}).waitFor();assert.equal(calls.some(name=>['is_following','get_follow_counts','business_membership_plans','business_packages'].includes(name)),false,'Guest profile does not issue authenticated-only reads');await page.getByRole('button',{name:'Retry '+failed,exact:true}).waitFor();if(failed!=='services')await page.getByText(service.name,{exact:true}).waitFor();await shot(page,'profile-'+failed+'-unavailable');state.fail=[];await page.getByRole('button',{name:'Retry '+failed,exact:true}).click();await page.getByRole('button',{name:'Retry '+failed,exact:true}).waitFor({state:'hidden'});}
   report.scenarios.push(`Profile ${failed} failure ${baseline?'hides business identity':'isolated with retry'}`);await shot(page,'profile-'+failed);await closePage(page,context);
+ }
+ if(!baseline){
+  const {page,context,calls}=await open('/business-profile?id='+biz,{},true);
+  await page.getByText(business.name,{exact:true}).waitFor();await settleFixtureReads(page);
+  for(const name of ['is_following','get_follow_counts','business_membership_plans','business_packages'])assert.ok(calls.includes(name),'Signed-in profile retains '+name);
+  assert.equal(await page.getByRole('button',{name:'Sign in for memberships and packages',exact:true}).count(),0);
+  report.scenarios.push('Profile guest reads are scoped and authenticated community/benefit reads are preserved');await closePage(page,context);
  }
  // Today: one CRM dataset fails; healthy current job must be visible.
  {
@@ -171,7 +195,7 @@ try{
     await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);
     await page.waitForTimeout(300);
     assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--everest-canvas')),theme==='DARK'?'#000000':'#F8FAFC','Theme actually applied');
-    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){
      await page.setViewportSize({width,height:width===320?568:844});await page.waitForTimeout(250);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${name} ${theme} ${width}: document fits`);
      await page.waitForFunction(()=>[...document.querySelectorAll('[role="button"], [role="link"], input')].every(e=>{
@@ -212,18 +236,18 @@ try{
     if(name==='search')await page.getByText('No Everest results',{exact:true}).waitFor();
     if(name==='profile')await page.getByText('This business hasn’t listed services yet. You can still describe what you need.',{exact:true}).waitFor();
     if(name==='today')await page.getByText('You’re all caught up',{exact:true}).waitFor();
-    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){await page.setViewportSize({width,height:844});await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);report.emptyLayouts.push({name,theme,width})}
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){await page.setViewportSize({width,height:844});await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);report.emptyLayouts.push({name,theme,width})}
     state.empty=false;
     const [failed,label]=({home:['shop_products','Retry shop'],search:['universal_search','Try again'],profile:['services','Retry services'],today:['crm_opportunities','Retry sales']})[name];
     state.fail=[failed];await reload(page);
     const retry=page.getByRole('button',{name:label,exact:true});await retry.waitFor();
-    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){await page.setViewportSize({width,height:844});await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await retry.scrollIntoViewIfNeeded();const rect=await retry.boundingBox();assert.ok(rect&&rect.height>=44&&rect.x>=0&&rect.x+rect.width<=width+1);report.errorLayouts.push({name,theme,width})}
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){await page.setViewportSize({width,height:844});await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await retry.scrollIntoViewIfNeeded();const rect=await retry.boundingBox();assert.ok(rect&&rect.height>=44&&rect.x>=0&&rect.x+rect.width<=width+1);report.errorLayouts.push({name,theme,width})}
     state.fail=[];await retry.click();await retry.waitFor({state:'hidden'});
    }
    state.empty=false;await page.emulateMedia({reducedMotion:'no-preference'});await reload(page);await page.waitForTimeout(400);
    for(const theme of ['LIGHT','DARK']){
     await page.evaluate(theme=>localStorage.setItem('everest-local-theme',theme),theme);await reload(page);await page.waitForTimeout(150);
-    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280]){await page.setViewportSize({width,height:844});await page.waitForTimeout(50);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);report.layouts.push({name,theme,width,reducedMotion:false})}
+    for(const width of [320,375,390,430,...(process.env.EVEREST_QA_TABLET==='1'?[768,1024]:[]),1280,1440]){await page.setViewportSize({width,height:844});await page.waitForTimeout(50);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);report.layouts.push({name,theme,width,reducedMotion:false})}
    }
    await closePage(page,context);
   }
