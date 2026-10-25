@@ -1,0 +1,18 @@
+{
+  "status": "web_backend_released",
+  "merge_commit": "ed013dec0e1a11ad628663bc0fd723a8600ce7ee",
+  "tested_source": "88628ebc6616c847f6502e937129d13aef3562d6",
+  "production_url": "https://everest-local-app.vercel.app",
+  "deployment_id": "dpl_q5PRacsE9dSYozLnXkVayvR8rWVA",
+  "deployment_state": "READY",
+  "production_smokes": "passed",
+  "client_tests": 509,
+  "local_sql_checks": {
+    "guest": 22,
+    "integration": 21,
+    "discovery": 28,
+    "transactions": 35
+  },
+  "native_device_acceptance": "unverified",
+  "native_store_release": false
+}

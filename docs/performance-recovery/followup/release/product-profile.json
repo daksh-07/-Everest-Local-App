@@ -1,0 +1,15 @@
+{
+  "base": "https://everest-local-app.vercel.app",
+  "results": [
+    {
+      "table": "products",
+      "opened": true
+    },
+    {
+      "table": "businesses",
+      "opened": true
+    }
+  ],
+  "failures": [],
+  "errors": []
+}

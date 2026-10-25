@@ -1,0 +1,85 @@
+{
+  "at": "2026-10-25T09:14:28.136Z",
+  "results": [
+    {
+      "name": "businesses",
+      "status": 200,
+      "ms": 762,
+      "rows": 1,
+      "error": null
+    },
+    {
+      "name": "categories",
+      "status": 200,
+      "ms": 454,
+      "rows": 1,
+      "error": null
+    },
+    {
+      "name": "services",
+      "status": 200,
+      "ms": 352,
+      "rows": 0,
+      "error": null
+    },
+    {
+      "name": "products",
+      "status": 200,
+      "ms": 288,
+      "rows": 1,
+      "error": null
+    },
+    {
+      "name": "posts",
+      "status": 200,
+      "ms": 303,
+      "rows": 1,
+      "error": null
+    },
+    {
+      "name": "post_media",
+      "status": 200,
+      "ms": 270,
+      "rows": 1,
+      "error": null
+    },
+    {
+      "name": "post_comments",
+      "status": 200,
+      "ms": 282,
+      "rows": 1,
+      "error": null
+    },
+    {
+      "name": "post_reactions",
+      "status": 200,
+      "ms": 275,
+      "rows": 1,
+      "error": null
+    },
+    {
+      "name": "verified_work_posts",
+      "status": 200,
+      "ms": 275,
+      "rows": 0,
+      "error": null
+    },
+    {
+      "name": "shop_products",
+      "status": 200,
+      "ms": 288,
+      "rows": 1,
+      "error": null
+    },
+    {
+      "name": "follows",
+      "status": 200,
+      "private_rows": 0
+    },
+    {
+      "name": "user_connections",
+      "status": 200,
+      "private_rows": 0
+    }
+  ]
+}

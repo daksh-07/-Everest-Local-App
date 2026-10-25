@@ -32,7 +32,7 @@ Read-only post-rollout checks:
 
 Supabase staging-branch creation was attempted and rejected because this project's plan does not support branching. No plan upgrade was requested or performed. Local isolated SQL contracts and real read-only production checks were used instead. No issued staging-account Auth flows, real two-user messages/realtime or real transaction writes were performed. Physical Android/iOS and assistive-technology acceptance remain unavailable. Native bundle exports from the original recovery passed; no native binary release is part of this web recovery.
 
-Web release status and final CI/deployment links are recorded separately after validation completes. The reported whole-app freeze on affected real accounts/devices has not been independently reproduced; this work fixes the demonstrated permission failures, indefinite reads and delayed tab commits, and does not claim every possible incident scenario is resolved.
+**Web/backend recovery is released. See the final release record below.** The reported whole-app freeze on affected real accounts/devices has not been independently reproduced; this work fixes the demonstrated permission failures, indefinite reads and delayed tab commits, and does not claim every possible incident scenario is resolved.
 
 ## Further verified profile/search recovery
 
@@ -43,3 +43,19 @@ The server intentionally restricts follow state/count RPCs and membership/packag
 Final-source Android and iOS production bundles also export successfully; physical device and issued-account limits above still apply. Live's clock test now inspects its stable Notified metric: deliberately closed sockets may correctly switch the headline to reconnecting copy, even while the confirmed count is 2. An isolated reproduction in Chromium 156 confirmed this distinction and the expansion assertion passes. Geometry checks wait for the animated track to settle, retaining the original size/bounds assertions.
 
 Read-only production EXPLAIN ANALYZE samples after repair: businesses planning 1.26 ms / execution 0.726 ms; posts planning 5.504 ms / execution 3.584 ms. These tiny current datasets do not establish scalability or device latency. No speculative index changes were applied.
+
+## Final web release and post-deployment verification
+
+PR [#112](https://github.com/daksh-07/-Everest-Local-App/pull/112) merged into the deployed integration branch as **ed013dec0e1a11ad628663bc0fd723a8600ce7ee**. Its tree is byte-identical to tested source **88628ebc6616c847f6502e937129d13aef3562d6**. All final web CI gates pass:
+
+- [Recovery + SQL contracts](https://github.com/daksh-07/-Everest-Local-App/actions/runs/40178698334)
+- [Live/business operations, Chromium and WebKit](https://github.com/daksh-07/-Everest-Local-App/actions/runs/40178698286)
+- [Discovery/navigation/visual/typography, Chromium and WebKit](https://github.com/daksh-07/-Everest-Local-App/actions/runs/40178698333)
+
+Vercel production deployment **dpl_q5PRacsE9dSYozLnXkVayvR8rWVA** is READY. [Everest Local](https://everest-local-app.vercel.app) serves `build-info.json` with the exact merge SHA and environment `production`. The production aliases point to this deployment. No payment-provider configuration was changed.
+
+Post-deployment on the real public domain: Home/Explore and real product/business-profile/back navigation pass with zero failed REST reads and zero page exceptions. All ten explicit discovery endpoint probes return 200; guest follower/connection probes still expose zero rows. The synthetic authenticated/guest regression against the deployed bundle passes repeated/rapid tabs, held-read retry, offline/reconnect, customer access-error isolation and privileged fail-closed checks. These fixtures never issue real production transaction writes or use real user credentials. Raw JSON and CI snapshots are in `release/`.
+
+Real guest browser URL transitions after release: **66–109 ms**, median **79.5 ms**, versus **309–333 ms**, median **318.5 ms**, with the previous client after the first backend repair. Linux Chromium 154.0.8037.57, 390×844 ordinary desktop viewport, four transitions per run, real public backend. Cold UI was 1596 ms in the post-release sample; no startup gain is asserted. Synthetic authenticated post-release URL median is 100 ms over 15 transitions (range 77–354 ms); first visits remain slower than warm transitions. This is route timing, not device paint/FPS measurement or a universal SLA.
+
+This closes the demonstrated web/backend blockers and the failing Live test. Physical native-device/account acceptance and the originally reported affected-device freeze remain unverified; no native store binary was published. The final platform bundles export, but that is not native certification. Rollback web deployment: dpl_C5ZESeGs4Gg26MdFKoE7LGdqasjB / 651814d. Backend rollback scripts restore the captured prior permissions, including the old discovery failures; they do not remove migration history or customer data.
