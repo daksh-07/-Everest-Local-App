@@ -1,0 +1,88 @@
+{
+  "at": "2026-10-25T08:34:07.221Z",
+  "base": "https://everest-local-app.vercel.app",
+  "browser": "154.0.8037.57",
+  "cold_ms": 1133,
+  "transitions": [
+    {
+      "name": "Explore",
+      "ms": 333
+    },
+    {
+      "name": "Home",
+      "ms": 325
+    },
+    {
+      "name": "Explore",
+      "ms": 312
+    },
+    {
+      "name": "Home",
+      "ms": 309
+    }
+  ],
+  "reads": [
+    {
+      "path": "/rest/v1/rpc/list_discovery_feed",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/rpc/shop_products",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/businesses",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/post_media",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/rpc/list_discovery_feed",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/post_media",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/post_reactions",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/post_comments",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/verified_work_posts",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/public_profiles",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/stories",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/rpc/list_everest_music",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/rpc/list_discovery_clips",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/posts",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/post_audio_tracks",
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "failures": []
+}

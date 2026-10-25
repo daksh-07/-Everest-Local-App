@@ -1,6 +1,8 @@
-# Everest Local performance recovery — 24 October 2026
+# Everest Local performance recovery — original investigation, 24 October 2026
 
-**Release status: NO-GO for declaring the incident resolved.** Focused code fixes and reproducible browser evidence are delivered in PR #112. The reported whole-app freeze has not been reproduced with real affected accounts/devices. No production deployment, database mutation, migration or payment change was made.
+**Historical status below. See [25 October completion evidence](followup/README.md) for the applied backend repair, resolved Live test and current release results.**
+
+**Original release status: NO-GO for declaring the incident resolved.** Focused code fixes and reproducible browser evidence are delivered in PR #112. The reported whole-app freeze has not been reproduced with real affected accounts/devices. No production deployment, database mutation, migration or payment change was made.
 
 ## Source and regression analysis
 
