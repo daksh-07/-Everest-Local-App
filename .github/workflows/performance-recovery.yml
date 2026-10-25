@@ -7,6 +7,8 @@ on:
       - 'lib/**'
       - 'tests/**'
       - 'scripts/verify-performance-recovery.mjs'
+      - 'scripts/verify-guest-recovery-sql.mjs'
+      - 'supabase/migrations/20261022120000_restore_public_guest_reads.sql'
       - '.github/workflows/performance-recovery.yml'
   workflow_dispatch:
 permissions:
@@ -15,6 +17,14 @@ jobs:
   recovery:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 55436:5432
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,6 +35,14 @@ jobs:
       - run: npm run typecheck && npm run lint
       - run: node --experimental-strip-types --test tests/*.test.mjs
       - run: npm run build:web && npm run audit && npm run audit:migrations
+      - run: npm install --prefix /tmp/sql-tools pg@8.16.3
+      - name: Guest RLS and integration contracts
+        env:
+          PHASE6_DATABASE_URL: postgresql://postgres@127.0.0.1:55436/postgres
+          PG_MODULE: /tmp/sql-tools/node_modules/pg/lib/index.js
+        run: |
+          node scripts/verify-guest-recovery-sql.mjs
+          node scripts/verify-release-integration-sql.mjs
       - run: npm install --prefix /tmp/browser-tools playwright@1.64.1
       - run: /tmp/browser-tools/node_modules/.bin/playwright install --with-deps chromium
       - name: Browser recovery regressions

@@ -115,11 +115,13 @@ try{
   await shot(page,screen+'-recovered');await closePage(page,context);
  }
  {
-  const state={fail:['get_everest_live_state']};const {page,context}=await open('/everest-live?requestId=live1',state,true);await page.getByText('Live request unavailable',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
+  // Isolate the explicit retry from subscription-triggered automatic recovery.
+  // Realtime reconnection is exercised separately below.
+  const state={fail:['get_everest_live_state'],noRealtime:true};const {page,context,calls}=await open('/everest-live?requestId=live1',state,true);await page.getByText('Live request unavailable',{exact:true}).waitFor();await settleFixtureReads(page);
   const retry=page.getByRole('button',{name:/Reconnect|Try again|Retry/});
   if(!baseline)await retry.waitFor();
   report.scenarios.push({screen:'live',initialFailureHasRetry:await retry.count()});
-  if(!baseline){assert.ok(await retry.count(),'Live initial error must be retryable');state.fail=[];await retry.click();await page.getByText('Everest Live',{exact:true}).waitFor();}
+  if(!baseline){assert.ok(await retry.count(),'Live initial error must be retryable');const before=calls.filter(call=>call.name==='get_everest_live_state').length;state.fail=[];await retry.click();await page.getByText('Everest Live',{exact:true}).waitFor();assert.ok(calls.filter(call=>call.name==='get_everest_live_state').length>before,'Explicit retry makes a new status read');}
   await shot(page,'live-initial-error');await closePage(page,context);
  }
  // Provider notification is actionable only for roles allowed to operate work.
