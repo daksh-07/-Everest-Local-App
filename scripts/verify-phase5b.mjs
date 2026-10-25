@@ -142,7 +142,7 @@ try{
  // Live's 30s fallback poll must not restart its 45s expansion deadline.
  {
   const clockState={clock:true,noRealtime:true};const {page,context,calls}=await open('/everest-live?requestId=live1',clockState,true);
-  await page.getByText('Everest Live',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
+  await page.getByText('Everest Live',{exact:true}).waitFor();await page.clock.runFor(1000);await settleFixtureReads(page);
   await page.getByText('2 businesses notified',{exact:true}).waitFor();await page.clock.runFor(50);
   clockState.viewed=1;await page.clock.fastForward(30000);await page.getByText('1',{exact:true}).waitFor();await page.waitForLoadState('networkidle');
   await page.clock.fastForward(16000);await page.waitForLoadState('networkidle');
