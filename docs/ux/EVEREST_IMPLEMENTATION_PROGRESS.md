@@ -1,0 +1,34 @@
+# Implementation progress — 29 October 2026
+
+## Current batch
+
+Branch: `codex/product-quality-20261028`, based on deployed source `ed013dec0e1a11ad628663bc0fd723a8600ce7ee`. Target: `integration/final-release-20261023`, not the older `main`. No merge, production deployment, database mutation, billing change or paid dependency was performed.
+
+Implemented:
+
+- Explicit country for manual browsing locality; shared web geocoder no longer imposes AU restriction.
+- Missing-field focus, persistent labels, marked optional inputs, action-specific pending state and preserved input after failure.
+- Empty geocoder responses are not cached; immediate retries can recover.
+- Honest Home discovery wording; geographic service coverage is not implied.
+- Empty search category/quote recovery and photo-filter removal.
+- Search quote actions retain `/request` through the existing auth return storage on web/native. Existing screen access guards still apply.
+- Actual geocoder tests and exported-app browser fixtures; added to existing discovery CI, including Chromium/WebKit configuration.
+
+Records: [audit](EVEREST_PRODUCT_AUDIT.md), [97-screen / 53-component inventory](EVEREST_SCREEN_INVENTORY.md), [research](EVEREST_RESEARCH_EVIDENCE.md), [decisions](EVEREST_DESIGN_SYSTEM.md), [experiment backlog](EVEREST_EXPERIMENT_BACKLOG.md), [validation](EVEREST_VALIDATION_REPORT.md).
+
+## Roadmap and handover
+
+1. Review this batch and obtain CI/preview evidence. Keep draft until browser CI and relevant downstream checks pass. Roll back by reverting this isolated commit/PR; no schema rollback is involved.
+2. Country-aware discovery before pagination: Home currently matches suburb/city/state text and falls back broadly. Inspect canonical business countries/service areas and coordinate existing India drafts; no client-only market promise.
+3. Request flow: remove remaining country assumptions; add safe editable interruption recovery with user-scoped draft ownership, expiry and clear-on-submit/logout. Test taxonomy, price/date review, location denial and pending mutation recovery end to end.
+4. Full customer acceptance: quotes, booking, repeat booking, cart, order and messaging. Reconcile unmerged transaction PR #105 before duplicating backend changes. Use isolated accounts/Stripe test mode; do not transact against production.
+5. Business acceptance: Today → opportunity → quote → assigned job → completion; fail-closed employee permissions; manual listing creation/retry. Retain already-established jobs-first hierarchy and advanced CRM access.
+6. Community: social-to-provider attribution, reporting, owner controls and message requests. Keep high-intent tasks clear of social diversion.
+7. Shared components: keyboard/focus, dynamic text, reduced motion, contrast, virtualized lists and actual device profiling. Do not spend time rewriting functioning copy merely for novelty.
+8. Experimentation: establish authorized, privacy-conscious baseline instrumentation, then choose one prioritized experiment. No current traffic, statistical significance or conversion impact is known.
+
+## Explicitly unfinished
+
+The full application audit, every micro-interaction, all 15 end-to-end scenarios, broad fresh competitor investigation, physical-device tests, native compilation/store acceptance and real staging payment/message/dispatch flows are **not complete**. Source inventory is not runtime verification. The partial audit does not assign numerical scores to uninspected screens. Existing historical evidence is linked, never relabelled as freshly executed.
+
+The prior release report says Supabase branching was unavailable on the plan. This pass did not retry provisioning or change plans. Remaining country/payment availability must be verified independently of the location selector. Preserve the historical migration hash/remote ledger mappings in the recovery documentation.

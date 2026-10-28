@@ -1,0 +1,2690 @@
+{
+  "baseline": "ed013dec0e1a11ad628663bc0fd723a8600ce7ee",
+  "date": "2026-10-28",
+  "method": "Static TSX enumeration and literal import/API/navigation extraction; dynamic paths and runtime authorization require separate verification. Not a functionality assertion.",
+  "routes": [
+    {
+      "route": "/account",
+      "file": "app/account.tsx",
+      "group": "Shared / customer",
+      "lines": 315,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/AskEverestButton",
+        "@/components/ui/Icon",
+        "@/lib/types",
+        "@/lib/access",
+        "@/lib/errors",
+        "@/lib/theme",
+        "@/components/ModeSwitcher",
+        "@/components/CustomerTabBar",
+        "@/lib/customer-pager",
+        "@/components/PostMediaImage",
+        "@/lib/social",
+        "@/lib/request-post-media",
+        "@/lib/motion",
+        "@/lib/haptics"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/auth",
+        "/connections",
+        "/create",
+        "/create-post",
+        "/edit-profile"
+      ]
+    },
+    {
+      "route": "/activity",
+      "file": "app/activity.tsx",
+      "group": "Shared / customer",
+      "lines": 81,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/components/CustomerTabBar",
+        "@/lib/customer-pager",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/components/ui",
+        "@/lib/format"
+      ],
+      "direct_api_names": [
+        "bookings",
+        "orders",
+        "quotes",
+        "service_requests"
+      ],
+      "literal_destinations": [
+        "/search"
+      ]
+    },
+    {
+      "route": "/admin-operations",
+      "file": "app/admin-operations.tsx",
+      "group": "Shared / customer",
+      "lines": 44,
+      "dependencies": [
+        "@/lib/theme",
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/lib/admin-mfa",
+        "@/lib/admin-operations",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/admin"
+      ]
+    },
+    {
+      "route": "/admin",
+      "file": "app/admin.tsx",
+      "group": "Shared / customer",
+      "lines": 252,
+      "dependencies": [
+        "@/lib/theme",
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/ui/ConfirmSheet",
+        "@/lib/format",
+        "@/lib/errors",
+        "@/lib/post-reports",
+        "@/lib/supabase",
+        "@/lib/types",
+        "@/lib/admin-mfa"
+      ],
+      "direct_api_names": [
+        "admin_set_verification",
+        "businesses",
+        "driver_applications"
+      ],
+      "literal_destinations": [
+        "/admin-operations",
+        "/auth",
+        "/delivery",
+        "/driver-verification"
+      ]
+    },
+    {
+      "route": "/appearance",
+      "file": "app/appearance.tsx",
+      "group": "Shared / customer",
+      "lines": 41,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/experience",
+        "@/lib/theme"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/archive",
+      "file": "app/archive.tsx",
+      "group": "Shared / customer",
+      "lines": 30,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/social",
+        "@/lib/social-expansion",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/highlights"
+      ]
+    },
+    {
+      "route": "/assistant",
+      "file": "app/assistant.tsx",
+      "group": "Shared / customer",
+      "lines": 690,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/workspace",
+        "@/lib/customer-calendar"
+      ],
+      "direct_api_names": [
+        "assistant"
+      ],
+      "literal_destinations": [
+        "/search"
+      ]
+    },
+    {
+      "route": "/auth",
+      "file": "app/auth.tsx",
+      "group": "Shared / customer",
+      "lines": 632,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/AuthRolePicker",
+        "@/lib/motion",
+        "@/lib/quick-actions",
+        "@/lib/theme",
+        "@/lib/theme-colors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "route": "/available-now",
+      "file": "app/available-now.tsx",
+      "group": "Shared / customer",
+      "lines": 40,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/customer-location",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "business_availability",
+        "businesses",
+        "profiles"
+      ],
+      "literal_destinations": [
+        "/business-profile",
+        "/search"
+      ]
+    },
+    {
+      "route": "/booking",
+      "file": "app/booking.tsx",
+      "group": "Shared / customer",
+      "lines": 92,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui",
+        "@/lib/job-operations",
+        "@/lib/messaging",
+        "@/lib/service-payments",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/types",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "bookings",
+        "businesses",
+        "quotes",
+        "reviews",
+        "service_booking_payment_summary",
+        "service_payments"
+      ],
+      "literal_destinations": [
+        "/quotes",
+        "/request",
+        "/reviews"
+      ]
+    },
+    {
+      "route": "/bookings",
+      "file": "app/bookings.tsx",
+      "group": "Shared / customer",
+      "lines": 38,
+      "dependencies": [
+        "@/components/ui/MotionPressable",
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/components/ui/ContentSkeleton",
+        "@/components/CustomerTabBar",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/experience",
+        "@/components/ui",
+        "@/lib/format",
+        "@/lib/types"
+      ],
+      "direct_api_names": [
+        "bookings"
+      ],
+      "literal_destinations": [
+        "/request"
+      ]
+    },
+    {
+      "route": "/business-automations",
+      "file": "app/business-automations.tsx",
+      "group": "Business",
+      "lines": 28,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/integrations",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/business-control"
+      ]
+    },
+    {
+      "route": "/business-availability",
+      "file": "app/business-availability.tsx",
+      "group": "Business",
+      "lines": 37,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/BusinessTabBar",
+        "@/components/ModeSwitcher",
+        "@/lib/crm",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/components/ui",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "business_availability",
+        "business_booking_settings",
+        "services"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-bookings",
+      "file": "app/business-bookings.tsx",
+      "group": "Business",
+      "lines": 24,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/catalog",
+        "@/lib/supabase",
+        "@/lib/marketplace",
+        "@/lib/theme",
+        "@/lib/types"
+      ],
+      "direct_api_names": [
+        "bookings",
+        "service_payments"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-calendar-integrations",
+      "file": "app/business-calendar-integrations.tsx",
+      "group": "Business",
+      "lines": 21,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/integrations",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/business-integrations"
+      ]
+    },
+    {
+      "route": "/business-calendar",
+      "file": "app/business-calendar.tsx",
+      "group": "Business",
+      "lines": 113,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/ui",
+        "@/components/CrmDateTimeField",
+        "@/components/BusinessTabBar",
+        "@/components/ModeSwitcher",
+        "@/lib/crm",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/motion",
+        "@/components/OperationalFeedback",
+        "@/lib/operational-reads",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "bookings",
+        "business_availability"
+      ],
+      "literal_destinations": [
+        "/business-availability",
+        "/business-crm-booking"
+      ]
+    },
+    {
+      "route": "/business-control",
+      "file": "app/business-control.tsx",
+      "group": "Business",
+      "lines": 108,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/components/BusinessTabBar",
+        "@/components/ModeSwitcher",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "orders",
+        "payouts",
+        "products",
+        "services"
+      ],
+      "literal_destinations": [
+        "/business-verification"
+      ]
+    },
+    {
+      "route": "/business-crm-booking",
+      "file": "app/business-crm-booking.tsx",
+      "group": "Business",
+      "lines": 66,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/CrmDateTimeField",
+        "@/components/BusinessTabBar",
+        "@/lib/crm",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "bookings"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-crm-quote",
+      "file": "app/business-crm-quote.tsx",
+      "group": "Business",
+      "lines": 68,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/CrmDateTimeField",
+        "@/components/BusinessTabBar",
+        "@/lib/crm",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-crm",
+      "file": "app/business-crm.tsx",
+      "group": "Business",
+      "lines": 147,
+      "dependencies": [
+        "@/lib/motion",
+        "@/lib/experience",
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/BusinessTabBar",
+        "@/components/ModeSwitcher",
+        "@/lib/crm",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/components/ui",
+        "@/components/OperationalFeedback",
+        "@/lib/operational-reads",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "bookings",
+        "conversations",
+        "crm_opportunities"
+      ],
+      "literal_destinations": [
+        "/business-customers"
+      ]
+    },
+    {
+      "route": "/business-customer",
+      "file": "app/business-customer.tsx",
+      "group": "Business",
+      "lines": 166,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/CrmDateTimeField",
+        "@/components/BusinessTabBar",
+        "@/lib/crm",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/errors",
+        "@/lib/format",
+        "@/lib/initials",
+        "@/components/ui"
+      ],
+      "direct_api_names": [
+        "bookings",
+        "crm_notes",
+        "quotes",
+        "service_payments"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-customers",
+      "file": "app/business-customers.tsx",
+      "group": "Business",
+      "lines": 100,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/BusinessTabBar",
+        "@/components/ModeSwitcher",
+        "@/lib/crm",
+        "@/lib/contact-import",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "bookings"
+      ],
+      "literal_destinations": [
+        "/business-crm"
+      ]
+    },
+    {
+      "route": "/business-dashboard",
+      "file": "app/business-dashboard.tsx",
+      "group": "Business",
+      "lines": 3,
+      "dependencies": [],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-deal",
+      "file": "app/business-deal.tsx",
+      "group": "Business",
+      "lines": 66,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/CrmDateTimeField",
+        "@/components/BusinessTabBar",
+        "@/lib/crm",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/business-crm"
+      ]
+    },
+    {
+      "route": "/business-dm-automation",
+      "file": "app/business-dm-automation.tsx",
+      "group": "Business",
+      "lines": 72,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/catalog",
+        "@/lib/business-dm",
+        "@/lib/billing",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/business-upgrade"
+      ]
+    },
+    {
+      "route": "/business-followers",
+      "file": "app/business-followers.tsx",
+      "group": "Business",
+      "lines": 54,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/social",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/public-user"
+      ]
+    },
+    {
+      "route": "/business-growth-p1",
+      "file": "app/business-growth-p1.tsx",
+      "group": "Business",
+      "lines": 18,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/BusinessTabBar",
+        "@/lib/growth",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/business-availability"
+      ]
+    },
+    {
+      "route": "/business-growth",
+      "file": "app/business-growth.tsx",
+      "group": "Business",
+      "lines": 87,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/BusinessTabBar",
+        "@/lib/crm",
+        "@/lib/growth",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-inbox",
+      "file": "app/business-inbox.tsx",
+      "group": "Business",
+      "lines": 78,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/format",
+        "@/components/BusinessTabBar",
+        "@/components/ModeSwitcher",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/messaging",
+        "@/lib/theme"
+      ],
+      "direct_api_names": [
+        "conversations"
+      ],
+      "literal_destinations": [
+        "/business-verification"
+      ]
+    },
+    {
+      "route": "/business-integrations",
+      "file": "app/business-integrations.tsx",
+      "group": "Business",
+      "lines": 214,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/components/BusinessTabBar",
+        "@/components/ModeSwitcher",
+        "@/lib/integrations",
+        "@/lib/billing",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/business-automations",
+        "/business-calendar-integrations",
+        "/business-control"
+      ]
+    },
+    {
+      "route": "/business-invite",
+      "file": "app/business-invite.tsx",
+      "group": "Business",
+      "lines": 89,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/business-operations",
+        "@/lib/quick-actions",
+        "@/lib/auth",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/workspace",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-job",
+      "file": "app/business-job.tsx",
+      "group": "Business",
+      "lines": 151,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/lib/experience",
+        "@/components/BusinessTabBar",
+        "@/lib/job-operations",
+        "@/lib/marketplace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/types",
+        "@/lib/errors",
+        "@/lib/format",
+        "@/components/ui"
+      ],
+      "direct_api_names": [
+        "bookings"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-jobs",
+      "file": "app/business-jobs.tsx",
+      "group": "Business",
+      "lines": 144,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui",
+        "@/components/ui/Icon",
+        "@/components/BusinessTabBar",
+        "@/components/ModeSwitcher",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/marketplace",
+        "@/lib/operational-reads",
+        "@/lib/types",
+        "@/lib/theme"
+      ],
+      "direct_api_names": [
+        "bookings"
+      ],
+      "literal_destinations": [
+        "/business-leads",
+        "/business-my-work",
+        "/business-verification"
+      ]
+    },
+    {
+      "route": "/business-leads",
+      "file": "app/business-leads.tsx",
+      "group": "Business",
+      "lines": 51,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/BusinessTabBar",
+        "@/components/ModeSwitcher",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "list_my_business_opportunities",
+        "request-media",
+        "send_quote_for_business"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-my-work",
+      "file": "app/business-my-work.tsx",
+      "group": "Business",
+      "lines": 108,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/components/AskEverestButton",
+        "@/components/BusinessTabBar",
+        "@/components/ModeSwitcher",
+        "@/lib/business-operations",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/components/ui",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-onboarding",
+      "file": "app/business-onboarding.tsx",
+      "group": "Business",
+      "lines": 1,
+      "dependencies": [],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-operations",
+      "file": "app/business-operations.tsx",
+      "group": "Business",
+      "lines": 83,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/BusinessTabBar",
+        "@/components/BusinessOperationsPrimitives",
+        "@/components/BusinessOperationsStyles",
+        "@/components/ModeSwitcher",
+        "@/lib/business-operations",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-orders",
+      "file": "app/business-orders.tsx",
+      "group": "Business",
+      "lines": 22,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/supabase",
+        "@/lib/catalog",
+        "@/lib/theme",
+        "@/lib/types"
+      ],
+      "direct_api_names": [
+        "deliveries",
+        "orders",
+        "request_delivery_for_order",
+        "update_order_status"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-payouts",
+      "file": "app/business-payouts.tsx",
+      "group": "Business",
+      "lines": 163,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/catalog",
+        "@/lib/supabase",
+        "@/lib/stripe-connect",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "marketplace_payout_ledger"
+      ],
+      "literal_destinations": [
+        "/business-verification"
+      ]
+    },
+    {
+      "route": "/business-profile-edit",
+      "file": "app/business-profile-edit.tsx",
+      "group": "Business",
+      "lines": 34,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/workspace",
+        "@/lib/social-expansion",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "businesses"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/business-profile",
+      "file": "app/business-profile.tsx",
+      "group": "Business",
+      "lines": 185,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/ContentSkeleton",
+        "@/components/ui/Icon",
+        "@/lib/supabase",
+        "@/lib/marketplace",
+        "@/lib/social",
+        "@/lib/product-commerce",
+        "@/lib/growth",
+        "@/lib/theme",
+        "@/lib/messaging",
+        "@/lib/social-expansion",
+        "@/components/ui",
+        "@/lib/format",
+        "@/lib/motion",
+        "@/lib/errors",
+        "@/lib/use-section",
+        "@/lib/section-state",
+        "@/components/SectionStatus",
+        "@/lib/initials"
+      ],
+      "direct_api_names": [
+        "businesses",
+        "products",
+        "reviews",
+        "services"
+      ],
+      "literal_destinations": [
+        "/auth",
+        "/business-followers",
+        "/request"
+      ]
+    },
+    {
+      "route": "/business-today",
+      "file": "app/business-today.tsx",
+      "group": "Business",
+      "lines": 129,
+      "dependencies": [
+        "@/components/ui/MotionPressable",
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/components/BusinessTabBar",
+        "@/components/ui",
+        "@/components/ModeSwitcher",
+        "@/components/AskEverestButton",
+        "@/lib/crm",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/experience",
+        "@/lib/format",
+        "@/lib/use-section",
+        "@/lib/section-state",
+        "@/components/SectionStatus"
+      ],
+      "direct_api_names": [
+        "bookings",
+        "businesses",
+        "conversations",
+        "crm_opportunities",
+        "crm_pipeline_stages",
+        "marketplace_payout_ledger",
+        "orders",
+        "quotes"
+      ],
+      "literal_destinations": [
+        "/business-availability",
+        "/business-calendar",
+        "/business-control",
+        "/business-crm",
+        "/business-inbox",
+        "/business-jobs",
+        "/business-operations",
+        "/business-orders",
+        "/business-payouts",
+        "/business-verification",
+        "/notifications"
+      ]
+    },
+    {
+      "route": "/business-upgrade",
+      "file": "app/business-upgrade.tsx",
+      "group": "Business",
+      "lines": 132,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/billing",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/components/AppleSubscriptionControls",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/business-control"
+      ]
+    },
+    {
+      "route": "/business-verification",
+      "file": "app/business-verification.tsx",
+      "group": "Business",
+      "lines": 219,
+      "dependencies": [
+        "@/lib/theme",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/lib/catalog",
+        "@/lib/business-verification",
+        "@/lib/abn"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/business-payouts"
+      ]
+    },
+    {
+      "route": "/business",
+      "file": "app/business.tsx",
+      "group": "Business",
+      "lines": 68,
+      "dependencies": [
+        "@/lib/theme",
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/lib/business",
+        "@/lib/taxonomy",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/business-verification"
+      ]
+    },
+    {
+      "route": "/cart",
+      "file": "app/cart.tsx",
+      "group": "Shared / customer",
+      "lines": 35,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/commerce",
+        "@/lib/product-commerce",
+        "@/lib/commerce",
+        "@/lib/theme"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/shop"
+      ]
+    },
+    {
+      "route": "/chat-input-regression",
+      "file": "app/chat-input-regression.tsx",
+      "group": "Shared / customer",
+      "lines": 14,
+      "dependencies": [
+        "@/lib/theme"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/connections",
+      "file": "app/connections.tsx",
+      "group": "Shared / customer",
+      "lines": 35,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/connections",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/public-user"
+      ]
+    },
+    {
+      "route": "/create-clip",
+      "file": "app/create-clip.tsx",
+      "group": "Shared / customer",
+      "lines": 98,
+      "dependencies": [
+        "@/components/ui/ScreenHeader",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/SoundPicker",
+        "@/components/ClipPlayer",
+        "@/components/ClipEditor",
+        "@/lib/social-expansion",
+        "@/lib/audio-studio",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "posts",
+        "profiles"
+      ],
+      "literal_destinations": [
+        "/auth"
+      ]
+    },
+    {
+      "route": "/create-post",
+      "file": "app/create-post.tsx",
+      "group": "Shared / customer",
+      "lines": 192,
+      "dependencies": [
+        "@/components/ui/ScreenHeader",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/social",
+        "@/lib/request-post-media",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/haptics",
+        "@/components/SoundPicker",
+        "@/components/PhotoSoundPreview",
+        "@/lib/audio-studio",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "posts",
+        "products",
+        "profiles",
+        "services"
+      ],
+      "literal_destinations": [
+        "/auth",
+        "/social"
+      ]
+    },
+    {
+      "route": "/create-story",
+      "file": "app/create-story.tsx",
+      "group": "Shared / customer",
+      "lines": 45,
+      "dependencies": [
+        "@/components/ui/ScreenHeader",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/MusicPicker",
+        "@/components/ClipPlayer",
+        "@/lib/social-expansion",
+        "@/lib/workspace",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "profiles"
+      ],
+      "literal_destinations": [
+        "/auth",
+        "/social"
+      ]
+    },
+    {
+      "route": "/create",
+      "file": "app/create.tsx",
+      "group": "Shared / customer",
+      "lines": 57,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/theme",
+        "@/lib/haptics"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/customer-calendar",
+      "file": "app/customer-calendar.tsx",
+      "group": "Shared / customer",
+      "lines": 60,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/customer-calendar",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/delete-account",
+      "file": "app/delete-account.tsx",
+      "group": "Shared / customer",
+      "lines": 5,
+      "dependencies": [
+        "@/lib/theme",
+        "@/components/ui/AppText"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/auth"
+      ]
+    },
+    {
+      "route": "/delivery",
+      "file": "app/delivery.tsx",
+      "group": "Shared / customer",
+      "lines": 44,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/supabase",
+        "@/lib/access",
+        "@/lib/driver",
+        "@/lib/theme",
+        "@/lib/types"
+      ],
+      "direct_api_names": [
+        "accept_delivery_assignment",
+        "assign_delivery_driver",
+        "deliveries",
+        "delivery_assignments",
+        "driver_applications",
+        "profiles",
+        "update_delivery_status"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/driver-dashboard",
+      "file": "app/driver-dashboard.tsx",
+      "group": "Shared / customer",
+      "lines": 1,
+      "dependencies": [],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/driver-onboarding",
+      "file": "app/driver-onboarding.tsx",
+      "group": "Shared / customer",
+      "lines": 337,
+      "dependencies": [
+        "@/lib/theme",
+        "@/lib/errors",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/lib/driver"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/delivery"
+      ]
+    },
+    {
+      "route": "/driver-verification",
+      "file": "app/driver-verification.tsx",
+      "group": "Shared / customer",
+      "lines": 72,
+      "dependencies": [
+        "@/lib/theme",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/lib/supabase",
+        "@/lib/driver",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "driver_applications",
+        "driver_documents",
+        "driver_status_history",
+        "driver_vehicles",
+        "driver_verifications",
+        "evaluate_driver_compliance",
+        "profiles"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/edit-profile",
+      "file": "app/edit-profile.tsx",
+      "group": "Shared / customer",
+      "lines": 22,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/marketplace",
+        "@/lib/profile-media",
+        "@/lib/preferences",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/everest-live",
+      "file": "app/everest-live.tsx",
+      "group": "Shared / customer",
+      "lines": 183,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/marketplace",
+        "@/lib/quote-acceptance",
+        "@/lib/everest-live",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/experience",
+        "@/components/LiveSearchMap",
+        "@/components/ui",
+        "@/lib/format",
+        "@/lib/motion",
+        "@/lib/live-presentation",
+        "@/lib/haptics",
+        "@/lib/resilience",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/activity",
+        "/bookings",
+        "/help"
+      ]
+    },
+    {
+      "route": "/external-businesses",
+      "file": "app/external-businesses.tsx",
+      "group": "Shared / customer",
+      "lines": 82,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "authorise_external_enquiry",
+        "external-discovery",
+        "profiles",
+        "record_external_business_selection",
+        "service_requests"
+      ],
+      "literal_destinations": [
+        "/external-quotes",
+        "/request"
+      ]
+    },
+    {
+      "route": "/external-quotes",
+      "file": "app/external-quotes.tsx",
+      "group": "Shared / customer",
+      "lines": 27,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/supabase",
+        "@/lib/theme"
+      ],
+      "direct_api_names": [
+        "external_enquiries",
+        "revoke_external_enquiry"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/help",
+      "file": "app/help.tsx",
+      "group": "Shared / customer",
+      "lines": 14,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/preferences",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/highlight",
+      "file": "app/highlight.tsx",
+      "group": "Shared / customer",
+      "lines": 68,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/components/ClipPlayer",
+        "@/lib/social-expansion",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/highlights",
+      "file": "app/highlights.tsx",
+      "group": "Shared / customer",
+      "lines": 36,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/social-expansion",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/archive"
+      ]
+    },
+    {
+      "route": "/",
+      "file": "app/index.tsx",
+      "group": "Shared / customer",
+      "lines": 294,
+      "dependencies": [
+        "@/components/CustomerLocationSelector",
+        "@/components/ui/MotionPressable",
+        "@/components/ui/AppText",
+        "@/components/PagerAwareScrollView",
+        "@/components/ui/Icon",
+        "@/components/CustomerTabBar",
+        "@/components/ServiceCategoryGrid",
+        "@/lib/customer-pager",
+        "@/components/PostMediaImage",
+        "@/components/ui",
+        "@/components/AmbientEdge",
+        "@/lib/haptics",
+        "@/lib/motion",
+        "@/lib/social",
+        "@/lib/request-post-media",
+        "@/lib/product-commerce",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/format",
+        "@/lib/customer-location",
+        "@/lib/experience",
+        "@/lib/use-section",
+        "@/lib/section-state",
+        "@/components/SectionStatus",
+        "@/lib/weather"
+      ],
+      "direct_api_names": [
+        "bookings",
+        "businesses",
+        "notifications",
+        "profiles",
+        "service_requests"
+      ],
+      "literal_destinations": [
+        "/business-today"
+      ]
+    },
+    {
+      "route": "/instant-book",
+      "file": "app/instant-book.tsx",
+      "group": "Shared / customer",
+      "lines": 20,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/customer-location",
+        "@/lib/retention",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/booking"
+      ]
+    },
+    {
+      "route": "/memberships",
+      "file": "app/memberships.tsx",
+      "group": "Shared / customer",
+      "lines": 65,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/components/CustomerTabBar",
+        "@/lib/growth",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "businesses"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/messages",
+      "file": "app/messages.tsx",
+      "group": "Shared / customer",
+      "lines": 754,
+      "dependencies": [
+        "@/lib/initials",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/messaging",
+        "@/lib/marketplace",
+        "@/lib/connections",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/motion",
+        "@/lib/chat-layout",
+        "@/lib/visual-viewport",
+        "@/lib/chat-web-runtime",
+        "@/lib/chat-focus",
+        "@/components/CustomerTabBar",
+        "@/lib/customer-pager"
+      ],
+      "direct_api_names": [
+        "business_members",
+        "businesses"
+      ],
+      "literal_destinations": [
+        "/business-dm-automation",
+        "/public-user",
+        "/search"
+      ]
+    },
+    {
+      "route": "/notification-settings",
+      "file": "app/notification-settings.tsx",
+      "group": "Shared / customer",
+      "lines": 12,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/preferences",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/notifications",
+      "file": "app/notifications.tsx",
+      "group": "Shared / customer",
+      "lines": 30,
+      "dependencies": [
+        "@/lib/format",
+        "@/components/ui/AppText",
+        "@/components/ui/ContentSkeleton",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/workspace"
+      ],
+      "direct_api_names": [
+        "mark_all_notifications_read",
+        "mark_notification_read",
+        "notifications"
+      ],
+      "literal_destinations": [
+        "/business-control",
+        "/business-inbox",
+        "/business-jobs",
+        "/business-leads",
+        "/business-today",
+        "/social"
+      ]
+    },
+    {
+      "route": "/opportunities",
+      "file": "app/opportunities.tsx",
+      "group": "Business",
+      "lines": 37,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/types",
+        "@/lib/marketplace-fees",
+        "@/lib/workspace",
+        "@/components/ui/Icon",
+        "@/lib/format",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "list_my_business_opportunities",
+        "send_quote_for_business"
+      ],
+      "literal_destinations": [
+        "/business-payouts"
+      ]
+    },
+    {
+      "route": "/orders",
+      "file": "app/orders.tsx",
+      "group": "Shared / customer",
+      "lines": 48,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/ContentSkeleton",
+        "@/lib/supabase",
+        "@/lib/commerce",
+        "@/lib/theme",
+        "@/lib/types",
+        "@/components/ui/Icon",
+        "@/components/ui",
+        "@/lib/format"
+      ],
+      "direct_api_names": [
+        "deliveries"
+      ],
+      "literal_destinations": [
+        "/shop"
+      ]
+    },
+    {
+      "route": "/privacy",
+      "file": "app/privacy.tsx",
+      "group": "Shared / customer",
+      "lines": 15,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/product-editor",
+      "file": "app/product-editor.tsx",
+      "group": "Business",
+      "lines": 61,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/catalog",
+        "@/lib/product-commerce",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/product",
+      "file": "app/product.tsx",
+      "group": "Shared / customer",
+      "lines": 93,
+      "dependencies": [
+        "@/lib/supabase",
+        "@/lib/haptics",
+        "@/lib/motion",
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/Icon",
+        "@/lib/product-commerce",
+        "@/lib/commerce",
+        "@/lib/marketplace",
+        "@/lib/theme",
+        "@/lib/messaging",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/auth",
+        "/cart"
+      ]
+    },
+    {
+      "route": "/products",
+      "file": "app/products.tsx",
+      "group": "Business",
+      "lines": 28,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/catalog",
+        "@/lib/product-commerce",
+        "@/lib/supabase",
+        "@/lib/theme"
+      ],
+      "direct_api_names": [
+        "products"
+      ],
+      "literal_destinations": [
+        "/product-editor"
+      ]
+    },
+    {
+      "route": "/promote-post",
+      "file": "app/promote-post.tsx",
+      "group": "Shared / customer",
+      "lines": 86,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/components/CustomerTabBar",
+        "@/lib/post-promotions",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "posts"
+      ],
+      "literal_destinations": [
+        "/auth"
+      ]
+    },
+    {
+      "route": "/public-user",
+      "file": "app/public-user.tsx",
+      "group": "Shared / customer",
+      "lines": 388,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/connections",
+        "@/lib/theme",
+        "@/lib/social-expansion",
+        "@/lib/request-post-media",
+        "@/components/PostMediaImage",
+        "@/lib/errors",
+        "@/lib/format",
+        "@/components/ui"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/connections",
+        "/messages"
+      ]
+    },
+    {
+      "route": "/quotes",
+      "file": "app/quotes.tsx",
+      "group": "Shared / customer",
+      "lines": 97,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/marketplace",
+        "@/lib/quote-acceptance",
+        "@/lib/messaging",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/types",
+        "@/lib/format",
+        "@/components/ui",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "quotes",
+        "reviews",
+        "service_matches"
+      ],
+      "literal_destinations": [
+        "/auth",
+        "/bookings"
+      ]
+    },
+    {
+      "route": "/request",
+      "file": "app/request.tsx",
+      "group": "Shared / customer",
+      "lines": 1641,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ServicePicker",
+        "@/lib/motion",
+        "@/components/DateTimeField",
+        "@/lib/marketplace",
+        "@/lib/request-post-media",
+        "@/lib/supabase",
+        "@/lib/errors",
+        "@/lib/taxonomy",
+        "@/lib/theme",
+        "@/lib/everest-live",
+        "@/lib/customer-location",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "opportunities",
+        "service_requests",
+        "services"
+      ],
+      "literal_destinations": [
+        "/activity"
+      ]
+    },
+    {
+      "route": "/requests",
+      "file": "app/requests.tsx",
+      "group": "Shared / customer",
+      "lines": 42,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/types",
+        "@/lib/theme",
+        "@/components/ui/Icon",
+        "@/components/ui",
+        "@/lib/format"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/request"
+      ]
+    },
+    {
+      "route": "/reviews",
+      "file": "app/reviews.tsx",
+      "group": "Shared / customer",
+      "lines": 48,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui",
+        "@/lib/reviews",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/saved-searches",
+      "file": "app/saved-searches.tsx",
+      "group": "Shared / customer",
+      "lines": 21,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/retention",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/search"
+      ]
+    },
+    {
+      "route": "/saved",
+      "file": "app/saved.tsx",
+      "group": "Shared / customer",
+      "lines": 64,
+      "dependencies": [
+        "@/lib/theme",
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/marketplace",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/search",
+      "file": "app/search.tsx",
+      "group": "Shared / customer",
+      "lines": 659,
+      "dependencies": [
+        "@/lib/section-state",
+        "@/lib/errors",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/universal-search",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/retention",
+        "@/components/ServiceCategoryGrid",
+        "@/components/ui/ErrorBanner",
+        "@/lib/motion",
+        "@/lib/search-history"
+      ],
+      "direct_api_names": [
+        "opportunities",
+        "profiles",
+        "service_requests"
+      ],
+      "literal_destinations": [
+        "/auth",
+        "/business-profile",
+        "/connections",
+        "/product",
+        "/public-user",
+        "/request",
+        "/requests",
+        "/saved-searches"
+      ]
+    },
+    {
+      "route": "/service-areas",
+      "file": "app/service-areas.tsx",
+      "group": "Business",
+      "lines": 12,
+      "dependencies": [
+        "@/lib/theme",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/lib/catalog",
+        "@/lib/supabase",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "add_service_area",
+        "service_areas"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/services",
+      "file": "app/services.tsx",
+      "group": "Business",
+      "lines": 21,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/lib/catalog",
+        "@/lib/services",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/services",
+        "@/lib/taxonomy"
+      ],
+      "direct_api_names": [
+        "services"
+      ],
+      "literal_destinations": []
+    },
+    {
+      "route": "/settings",
+      "file": "app/settings.tsx",
+      "group": "Shared / customer",
+      "lines": 19,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/auth",
+        "@/lib/marketplace",
+        "@/lib/access",
+        "@/lib/types",
+        "@/components/SettingsRow",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/account",
+        "/activity",
+        "/appearance",
+        "/auth",
+        "/business-dashboard",
+        "/business-verification",
+        "/connections",
+        "/customer-calendar",
+        "/driver-dashboard",
+        "/edit-profile",
+        "/help",
+        "/notification-settings",
+        "/privacy",
+        "/saved",
+        "/social-privacy",
+        "/terms"
+      ]
+    },
+    {
+      "route": "/share-result",
+      "file": "app/share-result.tsx",
+      "group": "Shared / customer",
+      "lines": 24,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [
+        "bookings",
+        "profiles",
+        "publish_verified_work_post"
+      ],
+      "literal_destinations": [
+        "/social"
+      ]
+    },
+    {
+      "route": "/shop",
+      "file": "app/shop.tsx",
+      "group": "Shared / customer",
+      "lines": 38,
+      "dependencies": [
+        "@/components/ui/MotionPressable",
+        "@/components/ui/AppText",
+        "@/lib/format",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/product-commerce",
+        "@/lib/theme",
+        "@/lib/commerce",
+        "@/lib/experience"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/cart"
+      ]
+    },
+    {
+      "route": "/social-privacy",
+      "file": "app/social-privacy.tsx",
+      "group": "Shared / customer",
+      "lines": 18,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/connections",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/social",
+      "file": "app/social.tsx",
+      "group": "Shared / customer",
+      "lines": 356,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/PostCommentsSheet",
+        "@/components/ui/ConfirmSheet",
+        "@/components/ReportPostSheet",
+        "@/components/PagerAwareScrollView",
+        "@/components/ui/Icon",
+        "@/lib/social",
+        "@/lib/request-post-media",
+        "@/lib/supabase",
+        "@/lib/customer-location",
+        "@/lib/theme",
+        "@/components/CustomerTabBar",
+        "@/lib/customer-pager",
+        "@/lib/haptics",
+        "@/components/ClipPlayer",
+        "@/components/PostSoundPlayer",
+        "@/components/PostMediaImage",
+        "@/lib/social-expansion",
+        "@/lib/audio-studio",
+        "@/lib/errors",
+        "@/lib/format",
+        "@/lib/chat-focus"
+      ],
+      "direct_api_names": [
+        "businesses",
+        "posts",
+        "public_profiles",
+        "verified_work_posts"
+      ],
+      "literal_destinations": [
+        "/auth",
+        "/create",
+        "/create-clip",
+        "/create-story",
+        "/product",
+        "/request",
+        "/search"
+      ]
+    },
+    {
+      "route": "/sound",
+      "file": "app/sound.tsx",
+      "group": "Shared / customer",
+      "lines": 57,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/audio-studio",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/story",
+      "file": "app/story.tsx",
+      "group": "Shared / customer",
+      "lines": 76,
+      "dependencies": [
+        "@/lib/format",
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/components/ClipPlayer",
+        "@/lib/social-expansion",
+        "@/lib/theme",
+        "@/lib/errors"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    },
+    {
+      "route": "/support",
+      "file": "app/support.tsx",
+      "group": "Shared / customer",
+      "lines": 30,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": [
+        "/auth",
+        "/delete-account",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "route": "/terms",
+      "file": "app/terms.tsx",
+      "group": "Shared / customer",
+      "lines": 16,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ],
+      "direct_api_names": [],
+      "literal_destinations": []
+    }
+  ],
+  "components": [
+    {
+      "file": "components/AmbientEdge.tsx",
+      "lines": 100,
+      "dependencies": [
+        "@/lib/motion",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/AppleSubscriptionControls.ios.tsx",
+      "lines": 132,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/apple-billing",
+        "@/lib/theme",
+        "@/lib/errors"
+      ]
+    },
+    {
+      "file": "components/AppleSubscriptionControls.tsx",
+      "lines": 5,
+      "dependencies": []
+    },
+    {
+      "file": "components/AskEverestButton.tsx",
+      "lines": 17,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/lib/theme",
+        "@/lib/haptics"
+      ]
+    },
+    {
+      "file": "components/AuthRolePicker.tsx",
+      "lines": 60,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/theme",
+        "@/lib/theme-colors"
+      ]
+    },
+    {
+      "file": "components/BusinessOperationsPrimitives.tsx",
+      "lines": 19,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/BusinessOperationsStyles",
+        "@/lib/business-operations",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/BusinessOpportunityAlert.tsx",
+      "lines": 181,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/supabase",
+        "@/lib/workspace",
+        "@/lib/motion",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/BusinessTabBar.tsx",
+      "lines": 70,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/experience",
+        "@/lib/workspace"
+      ]
+    },
+    {
+      "file": "components/ClipEditor.tsx",
+      "lines": 116,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/ClipPlayer",
+        "@/lib/social-expansion",
+        "@/lib/audio-studio",
+        "@/lib/theme",
+        "@/lib/haptics"
+      ]
+    },
+    {
+      "file": "components/ClipPlayer.tsx",
+      "lines": 97,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/social-expansion"
+      ]
+    },
+    {
+      "file": "components/CrmDateTimeField.native.tsx",
+      "lines": 18,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/CrmDateTimeField.tsx",
+      "lines": 18,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/CrmDateTimeField.web.tsx",
+      "lines": 13,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/CustomerLocationSelector.tsx",
+      "lines": 59,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/lib/customer-location",
+        "@/lib/motion",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/CustomerTabBar.tsx",
+      "lines": 51,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/theme",
+        "@/lib/experience",
+        "@/lib/customer-pager",
+        "@/lib/motion",
+        "@/lib/haptics"
+      ]
+    },
+    {
+      "file": "components/DateTimeField.native.tsx",
+      "lines": 12,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/DateTimeField.tsx",
+      "lines": 12,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/DateTimeField.web.tsx",
+      "lines": 18,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/EverestLiveMiniPlayer.tsx",
+      "lines": 173,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/supabase",
+        "@/lib/everest-live",
+        "@/lib/theme",
+        "@/lib/chat-focus"
+      ]
+    },
+    {
+      "file": "components/GlobalSwipeNavigator.tsx",
+      "lines": 118,
+      "dependencies": [
+        "@/components/CustomerTabBar",
+        "@/app/index",
+        "@/app/social",
+        "@/app/activity",
+        "@/app/messages",
+        "@/app/account",
+        "@/lib/haptics",
+        "@/lib/motion",
+        "@/lib/theme",
+        "@/lib/customer-pager"
+      ]
+    },
+    {
+      "file": "components/LiveSearchMap.native.tsx",
+      "lines": 64,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/everest-live",
+        "@/lib/motion",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/LiveSearchMap.tsx",
+      "lines": 17,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/everest-live",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/LiveSearchMap.web.tsx",
+      "lines": 71,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/everest-live",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ModeSwitcher.tsx",
+      "lines": 53,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/business-operations",
+        "@/lib/workspace",
+        "@/lib/theme",
+        "@/lib/errors"
+      ]
+    },
+    {
+      "file": "components/MusicPicker.tsx",
+      "lines": 60,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/social-expansion",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ]
+    },
+    {
+      "file": "components/OperationalFeedback.tsx",
+      "lines": 10,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui",
+        "@/lib/operational-reads"
+      ]
+    },
+    {
+      "file": "components/PagerAwareScrollView.tsx",
+      "lines": 17,
+      "dependencies": [
+        "@/lib/customer-pager"
+      ]
+    },
+    {
+      "file": "components/PhotoSoundPreview.tsx",
+      "lines": 65,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/audio-studio",
+        "@/lib/theme",
+        "@/lib/haptics"
+      ]
+    },
+    {
+      "file": "components/PostCommentsSheet.tsx",
+      "lines": 170,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/components/ui",
+        "@/lib/social",
+        "@/lib/comment-conversation",
+        "@/lib/supabase",
+        "@/lib/theme",
+        "@/lib/motion",
+        "@/lib/visual-viewport",
+        "@/lib/resilience",
+        "@/lib/errors",
+        "@/lib/format"
+      ]
+    },
+    {
+      "file": "components/PostMediaImage.tsx",
+      "lines": 17,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/request-post-media",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/PostSoundPlayer.tsx",
+      "lines": 65,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/Icon",
+        "@/lib/audio-studio",
+        "@/lib/theme",
+        "@/lib/haptics"
+      ]
+    },
+    {
+      "file": "components/PwaInstallPrompt.tsx",
+      "lines": 115,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ReportPostSheet.tsx",
+      "lines": 76,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/theme",
+        "@/lib/motion",
+        "@/lib/errors",
+        "@/lib/post-reports"
+      ]
+    },
+    {
+      "file": "components/SectionStatus.tsx",
+      "lines": 11,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/ErrorBanner",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ServiceCategoryGrid.tsx",
+      "lines": 37,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/theme",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ServicePicker.tsx",
+      "lines": 453,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/lib/taxonomy",
+        "@/lib/theme",
+        "@/lib/motion",
+        "@/lib/haptics"
+      ]
+    },
+    {
+      "file": "components/SettingsRow.tsx",
+      "lines": 10,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/theme",
+        "@/lib/experience"
+      ]
+    },
+    {
+      "file": "components/SoundPicker.tsx",
+      "lines": 169,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/components/ui/AppTextInput",
+        "@/components/ui/Icon",
+        "@/lib/audio-studio",
+        "@/lib/social-expansion",
+        "@/lib/theme",
+        "@/lib/haptics",
+        "@/lib/errors"
+      ]
+    },
+    {
+      "file": "components/ui/AppButton.tsx",
+      "lines": 64,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/experience",
+        "@/lib/haptics",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ui/AppCard.tsx",
+      "lines": 11,
+      "dependencies": [
+        "@/lib/experience",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ui/AppText.tsx",
+      "lines": 30,
+      "dependencies": [
+        "@/lib/font-ready",
+        "@/lib/typography",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ui/AppTextInput.tsx",
+      "lines": 16,
+      "dependencies": [
+        "@/lib/font-ready",
+        "@/lib/typography"
+      ]
+    },
+    {
+      "file": "components/ui/ConfirmSheet.tsx",
+      "lines": 39,
+      "dependencies": [
+        "@/lib/theme",
+        "@/lib/motion"
+      ]
+    },
+    {
+      "file": "components/ui/ContentSkeleton.tsx",
+      "lines": 15,
+      "dependencies": [
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ui/EmptyState.tsx",
+      "lines": 25,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ui/ErrorBanner.tsx",
+      "lines": 23,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ui/Icon.tsx",
+      "lines": 18,
+      "dependencies": []
+    },
+    {
+      "file": "components/ui/LoadingState.tsx",
+      "lines": 12,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ui/MotionPressable.tsx",
+      "lines": 36,
+      "dependencies": [
+        "@/lib/experience",
+        "@/lib/motion"
+      ]
+    },
+    {
+      "file": "components/ui/ScreenHeader.tsx",
+      "lines": 51,
+      "dependencies": [
+        "@/components/ui/Icon",
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ui/SectionHeader.tsx",
+      "lines": 24,
+      "dependencies": [
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ui/Skeleton.tsx",
+      "lines": 8,
+      "dependencies": [
+        "@/lib/theme"
+      ]
+    },
+    {
+      "file": "components/ui/StatusBadge.tsx",
+      "lines": 16,
+      "dependencies": [
+        "@/components/ui/AppText",
+        "@/lib/theme"
+      ]
+    }
+  ]
+}
