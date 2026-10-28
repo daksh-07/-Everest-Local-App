@@ -9,6 +9,8 @@
 - iOS and Android JS/Hermes bundle exports: passed. These are not native binary builds or device acceptance.
 - Static navigation audit: 97 routes validated. Migration audit: 244 canonical migrations. No migration edits/applies. `npm ci` generated legacy test aliases; the repository cleanup script removed all 95 aliases after tests.
 - Focused Chromium fixture matrix: **48 scenario groups, 72 layout checks, 72 axe scans** across DEFAULT/PULSE/CLASSIC, light/dark and 320×844, 390×844, 320×568, 1280×800. **Zero page errors, zero horizontal overflow, zero axe violations.** See `evidence/after-report.json`.
+- Broader Chromium discovery: **10 scenarios, 96 loaded + 48 empty + 48 error layouts, eight axe scans**, zero page errors; report in `evidence/discovery-report-chromium.json`.
+- Preview smoke: published Home, location controls and missing-field focus verified through the cloud browser; no writes or actual location permission requested.
 - Baseline: 12 layout combinations captured at deployed source; screenshots in `evidence/location-before-*` and `evidence/search-before-*`.
 
 ## What the browser fixtures exercise
@@ -20,6 +22,8 @@ Mocked login is UI integration evidence, not verification of real Supabase Auth 
 ## Limits and unsuccessful attempts
 
 The standard local Playwright browser download returned invalid/truncated archives. An isolated npm-distributed Chromium runtime was used instead; no application dependency was added. A later broad-suite launch failed with a truncated local executable (SIGSEGV before page load); fresh decompression repaired the executable. Initial fixture failures exposed the real negative-cache bug and the guest-auth handoff gap. Expanded axe scans found an unnamed Search loading indicator. These were fixed and the expanded matrix then passed.
+
+Initial WebKit CI completed the focused UI scenarios but failed the zero-error assertion when location-triggered reads were interrupted by hard navigation. The fixture now uses the existing request-settling helper before navigation/teardown; error assertions are unchanged. The rerun must pass before WebKit is reported as successful.
 
 WebKit local runtime, physical iPhone/Android, VoiceOver/TalkBack, native binary compilation, production writes and live Stripe acceptance were not completed. CI is configured to run Chromium/WebKit; pending jobs must not be reported as passed. Automated axe checks are limited to the inspected states and do not establish full WCAG conformance. No performance or conversion improvement is quantified.
 

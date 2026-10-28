@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {URL} from 'node:url';
 import {Buffer} from 'node:buffer';
 import fs from 'node:fs/promises';
+import {trackFixtureReads,settleFixtureReads} from './lib/browser-fixture.mjs';
 const {chromium,webkit}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const engine=process.env.EVEREST_QA_BROWSER||'chromium';
 const {default:AxeBuilder}=await import(process.env.AXE_MODULE||'@axe-core/playwright');
@@ -16,7 +17,7 @@ try{
  for(const theme of ['LIGHT','DARK'])for(const mode of ['DEFAULT','PULSE','CLASSIC'])for(const {width,height} of [{width:320,height:844},{width:390,height:844},{width:320,height:568},{width:1280,height:800}]){
   const context=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'});
   await context.addInitScript(({theme,mode})=>{localStorage.setItem('everest-local-theme',theme);localStorage.setItem('everest-local-experience-v1',mode)},{theme,mode});
-  const page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));
+  const page=await context.newPage();await trackFixtureReads(page);page.on('pageerror',e=>report.errors.push(e.message));
   await page.routeWebSocket('**/realtime/**',ws=>ws.close());
   let geocodes=0,profileWrites=0,releaseLookup;let authenticated=false;
   const user={id:'11111111-1111-4111-8111-111111111111',aud:'authenticated',role:'authenticated',email:'fixture@example.invalid',app_metadata:{},user_metadata:{}};
@@ -73,6 +74,7 @@ try{
    assert.equal(profileWrites,0);assert.equal(queries.every(q=>q.includes('Canada')&&!q.includes('Australia')),true);
    report.scenarios.push(`${suffix}: missing inputs focus, no ambiguous fetch, pending, retained error, keyboard retry, global country, guest no write`);
   }else await page.screenshot({path:`${out}/location-before-${suffix}.png`});
+  await settleFixtureReads(page);
   await page.goto(base+'/search?q=Car&tab=SERVICE');await page.getByText('No Everest results',{exact:true}).waitFor();
   await page.screenshot({path:`${out}/search-${baseline?'before':'after'}-${suffix}.png`});
   if(!baseline){
@@ -94,7 +96,7 @@ try{
    report.scenarios.push(`${suffix}: empty-search category recovery and guest sign-in returns to request and consumes intent`);
   }
   report.layouts.push({theme,mode,width,overflow:await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)});
-  await context.close();
+  await settleFixtureReads(page);await context.close();
  }
  assert.deepEqual(report.accessibility.flatMap(scan=>scan.violations),[]);
  assert.deepEqual(report.errors,[]);assert.equal(report.layouts.some(x=>x.overflow),false);

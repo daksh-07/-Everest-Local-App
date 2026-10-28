@@ -2,6 +2,8 @@
 
 ## Current batch
 
+Review: [PR #113](https://github.com/daksh-07/-Everest-Local-App/pull/113). Published source commit `6bb9659` has the exact tested tree `f6db6c4`; original local commit was `4f445fc`. Preview: https://everest-local-3ksgm8d1n-dakshgolani5-4632.vercel.app (READY). Final review removes a duplicate Home caption; later evidence commits must identify their own CI state.
+
 Branch: `codex/product-quality-20261028`, based on deployed source `ed013dec0e1a11ad628663bc0fd723a8600ce7ee`. Target: `integration/final-release-20261023`, not the older `main`. No merge, production deployment, database mutation, billing change or paid dependency was performed.
 
 Implemented:
