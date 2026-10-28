@@ -1,0 +1,80 @@
+{
+  "baseline": true,
+  "browser": "153.0.8010.0",
+  "scenarios": [],
+  "errors": [],
+  "layouts": [
+    {
+      "theme": "LIGHT",
+      "mode": "DEFAULT",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "DEFAULT",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "PULSE",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "PULSE",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "CLASSIC",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "CLASSIC",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "theme": "DARK",
+      "mode": "DEFAULT",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "theme": "DARK",
+      "mode": "DEFAULT",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "theme": "DARK",
+      "mode": "PULSE",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "theme": "DARK",
+      "mode": "PULSE",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "theme": "DARK",
+      "mode": "CLASSIC",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "theme": "DARK",
+      "mode": "CLASSIC",
+      "width": 390,
+      "overflow": false
+    }
+  ]
+}

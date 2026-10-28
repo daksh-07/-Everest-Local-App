@@ -34,6 +34,10 @@ on:
       - 'components/GlobalSwipeNavigator.tsx'
       - 'components/ServiceCategoryGrid.tsx'
       - 'lib/universal-search.ts'
+      - 'lib/customer-location.ts'
+      - 'components/CustomerLocationSelector.tsx'
+      - 'scripts/verify-product-quality.mjs'
+      - 'tests/customer-location-global.test.mjs'
       - 'lib/use-section.ts'
       - 'lib/section-state.ts'
       - 'components/SectionStatus.tsx'
@@ -108,6 +112,7 @@ jobs:
           if [ "$EVEREST_QA_BROWSER" = chromium ]; then
             export EVEREST_BROWSER_PATH="$(node --input-type=module -e 'import {chromium} from "/tmp/everest-browser-tools/node_modules/playwright/index.mjs"; console.log(chromium.executablePath())')"
           fi
+          AXE_MODULE=/tmp/everest-browser-tools/node_modules/@axe-core/playwright/dist/index.mjs EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/product-quality node scripts/verify-product-quality.mjs
           node scripts/verify-discovery-foundation.mjs
           node scripts/verify-search-discovery.mjs
           node scripts/verify-business-job.mjs

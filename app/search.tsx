@@ -1,7 +1,7 @@
 import {isAccessFailure} from '@/lib/section-state';
 import {userMessage} from '@/lib/errors';
 import {useEffect,useMemo,useRef,useState} from 'react';
-import { ActivityIndicator, Alert, Image, Modal, PanResponder, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, PanResponder, Platform, Pressable, ScrollView, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import {Ionicons} from '@/components/ui/Icon';
@@ -9,6 +9,7 @@ import {router,useLocalSearchParams} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {universalSearch,type UniversalKind,type UniversalResult} from '@/lib/universal-search';
 import {supabase} from '@/lib/supabase';
+import {storePendingQuickActionRoute} from '@/lib/quick-actions';
 import {useAppTheme} from '@/lib/theme';
 import {saveSearch} from '@/lib/retention';
 import {ServiceCategoryGrid} from '@/components/ServiceCategoryGrid';
@@ -259,6 +260,17 @@ export default function Search(){
     }
   }
 
+  async function requestQuotes(){
+    if(signedIn){router.push('/request');return;}
+    // Preserve the chosen task through the existing auth return mechanism.
+    // Storage failure must not prevent sign-in; route guards still own access.
+    try{
+      if(Platform.OS==='web')globalThis.localStorage?.setItem('everest-auth-return-to','/request');
+      else await storePendingQuickActionRoute('/request');
+    }catch{/* Private browsing or unavailable secure storage: sign-in remains usable. */}
+    router.push('/auth');
+  }
+
   async function saveCurrentSearch(){
     const text=q.trim();
     if(!text||savingSearch)return;
@@ -438,7 +450,7 @@ export default function Search(){
             <ServiceCategoryGrid onSelect={query=>{setTab('SERVICE');setQ(query)}}/>
             <View style={{marginTop:18,paddingVertical:18,borderTopWidth:1,borderBottomWidth:1,borderColor:c.border,flexDirection:'row',alignItems:'center',gap:12}}>
               <View style={{flex:1,minWidth:0}}><Text style={{fontSize:16,fontWeight:'700',color:c.text}}>Have a job in mind?</Text><Text style={{fontSize:14,lineHeight:20,color:c.textSecondary,marginTop:4}}>Describe it once and request quotes.</Text></View>
-              <Pressable accessibilityRole="button" accessibilityLabel="Request quotes from search" onPress={()=>router.push('/request')} style={{minHeight:44,justifyContent:'center',paddingHorizontal:10}}><Text style={{fontSize:14,fontWeight:'700',color:c.accent}}>Request quotes</Text></Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel="Request quotes from search" onPress={()=>void requestQuotes()} style={{minHeight:44,justifyContent:'center',paddingHorizontal:10}}><Text style={{fontSize:14,fontWeight:'700',color:c.accent}}>Request quotes</Text></Pressable>
             </View>
             {history.length?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:24,marginBottom:10}}>
               <View>
@@ -466,7 +478,7 @@ export default function Search(){
             )}
           </View>
         ):loading&&!hasResults?(
-          <ActivityIndicator style={{marginTop:40}} color={c.text}/>
+          <ActivityIndicator accessibilityLabel="Searching Everest" style={{marginTop:40}} color={c.text}/>
         ):error&&!hasResults?(
           requiresSignIn?<View style={{paddingVertical:30}}><Text accessibilityRole="header" style={{fontSize:20,fontWeight:'800',color:c.text}}>Sign in to search Everest</Text><Text style={{fontSize:16,lineHeight:24,color:c.textSecondary,marginTop:8}}>Search is currently available to signed-in members. Your query stays here when you return.</Text><Pressable accessibilityRole="button" accessibilityLabel="Sign in to search" onPress={()=>{router.setParams({q:q.trim(),tab});void rememberSearch();router.push('/auth')}} style={{minHeight:48,marginTop:18,borderRadius:12,backgroundColor:c.brand,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:16,fontWeight:'700',color:c.onBrand}}>Sign in</Text></Pressable></View>:<ErrorBanner message={error} onRetry={()=>setRetry(value=>value+1)}/>
         ):tab==='JOB'?(
@@ -521,8 +533,14 @@ export default function Search(){
           <View style={{paddingVertical:38,alignItems:'center'}}>
             <Text style={{fontSize:16,fontWeight:'900',color:c.text}}>No Everest results</Text>
             <Text style={{fontSize:12,color:c.muted,marginTop:6,textAlign:'center'}}>
-              {photoOnly?'No results match the active filters.':'Try another keyword, category, or nearby service.'}
+              {photoOnly?'No results match the active filters.':'Try a different keyword or browse service categories.'}
             </Text>
+            <Pressable accessibilityRole="button" onPress={()=>{if(photoOnly)setPhotoOnly(false);else setQ('')}} style={{minHeight:48,justifyContent:'center',paddingHorizontal:16,marginTop:12}}>
+              <Text style={{fontSize:14,fontWeight:'700',color:c.accent}}>{photoOnly?'Remove photo filter':'Browse service categories'}</Text>
+            </Pressable>
+            {tab==='SERVICE'||tab==='BUSINESS'||tab==='TOP'?<Pressable accessibilityRole="button" accessibilityLabel="Request quotes from search" onPress={()=>void requestQuotes()} style={{minHeight:48,justifyContent:'center',paddingHorizontal:16}}>
+              <Text style={{fontSize:14,fontWeight:'700',color:c.accent}}>Request quotes instead</Text>
+            </Pressable>:null}
           </View>
         )}
 
