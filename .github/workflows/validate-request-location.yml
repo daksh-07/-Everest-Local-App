@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'app/request.tsx'
+      - 'app/_layout.tsx'
+      - 'lib/auth.ts'
+      - 'lib/request-draft*'
+      - 'scripts/verify-request-drafts.mjs'
       - 'lib/customer-location.ts'
       - 'scripts/verify-request-location.mjs'
       - '.github/workflows/validate-request-location.yml'
@@ -40,8 +44,11 @@ jobs:
             export EVEREST_BROWSER_PATH="$(node --input-type=module -e 'import {chromium} from "/tmp/request-tools/node_modules/playwright/index.mjs"; console.log(chromium.executablePath())')"
           fi
           node scripts/verify-request-location.mjs
+          EVEREST_QA_ARTIFACTS=/tmp/request-drafts node scripts/verify-request-drafts.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: request-location-${{ matrix.browser }}
-          path: /tmp/request-location
+          path: |
+            /tmp/request-location
+            /tmp/request-drafts

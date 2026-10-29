@@ -2,6 +2,7 @@ import { Platform, Linking } from 'react-native';
 import { supabase, requireSupabaseConfig } from './supabase';
 import { z } from 'zod';
 import {disableCurrentDevicePushNotifications} from './push-notifications';
+import {requestDrafts} from './request-drafts';
 import {clearPendingQuickActionRoute} from './quick-actions';
 
 const emailSchema = z.string().trim().email().max(254);
@@ -108,6 +109,7 @@ export async function signIn(email:string,password:string){
 
 export async function signOut(){
   requireSupabaseConfig();
+  await requestDrafts.clearAll().catch(()=>undefined);
   // Best-effort privacy/state cleanup: never let local cleanup block sign-out.
   await disableCurrentDevicePushNotifications().catch(()=>false);
   await clearPendingQuickActionRoute().catch(()=>undefined);

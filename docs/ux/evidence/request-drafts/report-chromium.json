@@ -1,0 +1,90 @@
+{
+  "engine": "chromium",
+  "runs": [
+    {
+      "theme": "LIGHT",
+      "mode": "DEFAULT",
+      "refresh": true,
+      "navigation": true,
+      "authInterruption": true,
+      "locationReconfirmation": true,
+      "unknownOutcomeRecoveredWithoutRepost": true,
+      "originalPayloadRetry": true,
+      "logoutClearsCopy": true,
+      "photoFailureHandled": true,
+      "posted": 4,
+      "axeViolations": 0
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "PULSE",
+      "refresh": true,
+      "navigation": true,
+      "authInterruption": true,
+      "locationReconfirmation": true,
+      "unknownOutcomeRecoveredWithoutRepost": true,
+      "originalPayloadRetry": true,
+      "logoutClearsCopy": true,
+      "photoFailureHandled": false,
+      "posted": 3,
+      "axeViolations": 0
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "CLASSIC",
+      "refresh": true,
+      "navigation": true,
+      "authInterruption": true,
+      "locationReconfirmation": true,
+      "unknownOutcomeRecoveredWithoutRepost": true,
+      "originalPayloadRetry": true,
+      "logoutClearsCopy": true,
+      "photoFailureHandled": false,
+      "posted": 3,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "DEFAULT",
+      "refresh": true,
+      "navigation": true,
+      "authInterruption": true,
+      "locationReconfirmation": true,
+      "unknownOutcomeRecoveredWithoutRepost": true,
+      "originalPayloadRetry": true,
+      "logoutClearsCopy": true,
+      "photoFailureHandled": false,
+      "posted": 3,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "PULSE",
+      "refresh": true,
+      "navigation": true,
+      "authInterruption": true,
+      "locationReconfirmation": true,
+      "unknownOutcomeRecoveredWithoutRepost": true,
+      "originalPayloadRetry": true,
+      "logoutClearsCopy": true,
+      "photoFailureHandled": false,
+      "posted": 3,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "CLASSIC",
+      "refresh": true,
+      "navigation": true,
+      "authInterruption": true,
+      "locationReconfirmation": true,
+      "unknownOutcomeRecoveredWithoutRepost": true,
+      "originalPayloadRetry": true,
+      "logoutClearsCopy": true,
+      "photoFailureHandled": false,
+      "posted": 3,
+      "axeViolations": 0
+    }
+  ],
+  "errors": []
+}
