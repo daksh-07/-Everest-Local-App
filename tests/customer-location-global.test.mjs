@@ -53,3 +53,9 @@ test('an empty provider response does not poison an immediate retry',async()=>{
  assert.equal(await api.geocodeCustomerLocality(input),null);
  assert.equal((await api.geocodeCustomerLocality(input)).city,'Toronto');assert.equal(calls,2);
 });
+
+test('a service address requires an explicit country before any lookup',async()=>{
+ let calls=0;const api=geocoder(async()=>{calls++;throw Error('Should not fetch')});
+ assert.equal(await api.geocodeServiceAddress({addressLine1:'10 Test Street',suburb:'Richmond',city:'Richmond',state:'BC'}),null);
+ assert.equal(calls,0);
+});

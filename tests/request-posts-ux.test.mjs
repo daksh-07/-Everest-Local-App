@@ -29,7 +29,7 @@ test('request UX removes typed date/time and Sydney hardcode',()=>{
 });
 
 test('remote requests do not trigger location collection automatically',()=>{
- assert.match(request,/if\s*\(effectiveMode\s*===\s*['"]REMOTE['"]\s*\|\|\s*locating\)\s*return/);
+ assert.match(request,/if\s*\(effectiveMode\s*===\s*['"]REMOTE['"]\s*\|\|\s*locating(?:\s*\|\|\s*locationLock\.current)?\)\s*return/);
  assert.match(request,/Remote request — no GPS or local address is required/);
 });
 

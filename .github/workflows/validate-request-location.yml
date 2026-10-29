@@ -1,0 +1,47 @@
+name: Validate request location
+on:
+  pull_request:
+    paths:
+      - 'app/request.tsx'
+      - 'lib/customer-location.ts'
+      - 'scripts/verify-request-location.mjs'
+      - '.github/workflows/validate-request-location.yml'
+permissions:
+  contents: read
+jobs:
+  request-location:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:web
+      - name: Install isolated browser tools
+        run: |
+          npm install --prefix /tmp/request-tools playwright@1.64.1 serve@14.2.4 @axe-core/playwright@4.14.0
+          /tmp/request-tools/node_modules/.bin/playwright install --with-deps ${{ matrix.browser }}
+      - name: Verify request address recovery
+        env:
+          PLAYWRIGHT_MODULE: /tmp/request-tools/node_modules/playwright/index.mjs
+          AXE_MODULE: /tmp/request-tools/node_modules/@axe-core/playwright/dist/index.mjs
+          EVEREST_QA_BROWSER: ${{ matrix.browser }}
+          EVEREST_PREVIEW_URL: http://localhost:4173
+          EVEREST_QA_ARTIFACTS: /tmp/request-location
+        run: |
+          /tmp/request-tools/node_modules/.bin/serve -s dist -l 4173 > /tmp/request-server.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://localhost:4173/ >/dev/null && break; sleep 1; done
+          if [ "$EVEREST_QA_BROWSER" = chromium ]; then
+            export EVEREST_BROWSER_PATH="$(node --input-type=module -e 'import {chromium} from "/tmp/request-tools/node_modules/playwright/index.mjs"; console.log(chromium.executablePath())')"
+          fi
+          node scripts/verify-request-location.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: request-location-${{ matrix.browser }}
+          path: /tmp/request-location

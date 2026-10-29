@@ -1,0 +1,12 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> everest-local-app@1.0.0 audit
+> node scripts/static-audit.mjs
+
+Static audit passed: 873 source/config files inspected and 97 Expo Router routes validated.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> everest-local-app@1.0.0 audit:migrations
+> node scripts/migration-audit.mjs
+
+Migration audit passed: 244 migrations checked (34 legacy + 210 timestamped).
