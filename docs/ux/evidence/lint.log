@@ -1,0 +1,37 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> everest-local-app@1.0.0 lint
+> eslint .
+
+
+/workspace/scratch/ecf0e2469a6c/everest/app/business-followers.tsx
+  37:34  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/workspace/scratch/ecf0e2469a6c/everest/app/connections.tsx
+  17:30  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/workspace/scratch/ecf0e2469a6c/everest/app/external-quotes.tsx
+  21:30  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/workspace/scratch/ecf0e2469a6c/everest/app/highlight.tsx
+  39:4  warning  React Hook useEffect has a missing dependency: 'story'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  50:5  warning  React Hook useMemo has a missing dependency: 'pause'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+
+/workspace/scratch/ecf0e2469a6c/everest/app/highlights.tsx
+  20:30  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/workspace/scratch/ecf0e2469a6c/everest/app/notifications.tsx
+  24:30  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/workspace/scratch/ecf0e2469a6c/everest/app/public-user.tsx
+  86:31  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/workspace/scratch/ecf0e2469a6c/everest/app/search.tsx
+  185:5  warning  React Hook useEffect has a missing dependency: 'loadJobs'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/workspace/scratch/ecf0e2469a6c/everest/app/story.tsx
+  42:4  warning  React Hook useEffect has a missing dependency: 'story'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  57:5  warning  React Hook useMemo has a missing dependency: 'pause'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+
+✖ 11 problems (0 errors, 11 warnings)
+

@@ -32,7 +32,8 @@ async function fetchJsonCached<T>(url:string):Promise<T|null>{
   const response=await fetch(url,{headers:{Accept:'application/json'},signal:controller?.signal});
   if(!response.ok)return null;
   const value=await response.json() as T;
-  webCache.set(url,{expires:Date.now()+WEB_CACHE_MS,value});
+  // Empty/provider-error responses must remain retryable immediately.
+  if(value&&(!Array.isArray(value)||value.length>0)&&!(typeof value==='object'&&'error' in value))webCache.set(url,{expires:Date.now()+WEB_CACHE_MS,value});
   if(webCache.size>40){const first=webCache.keys().next().value as string|undefined;if(first)webCache.delete(first)}
   return value;
  }catch{return null}finally{if(timer)clearTimeout(timer)}
@@ -146,7 +147,7 @@ export async function resolveCustomerServiceLocation():Promise<CustomerServiceLo
 
 async function geocodeWeb(query:string){
  try{
-  const params=new URLSearchParams({format:'jsonv2',q:query,limit:'1',addressdetails:'1',countrycodes:'au'});
+  const params=new URLSearchParams({format:'jsonv2',q:query,limit:'1',addressdetails:'1'});
   const rows=await fetchJsonCached<Array<{lat:string;lon:string;display_name?:string;address?:WebAddress}>>(`https://nominatim.openstreetmap.org/search?${params.toString()}`);
   if(!rows)return null;
   const row=rows[0];if(!row)return null;
@@ -157,9 +158,9 @@ async function geocodeWeb(query:string){
 }
 
 export async function geocodeCustomerLocality(input:{suburb?:string|null;city?:string|null;state?:string|null;country?:string|null}):Promise<CustomerLocality|null>{
- const suburb=clean(input.suburb),city=clean(input.city),state=clean(input.state),country=clean(input.country)||'Australia';
+ const suburb=clean(input.suburb),city=clean(input.city),state=clean(input.state),country=clean(input.country);
  const query=unique([suburb,city&&city!==suburb?city:'',state,country]).join(', ');
- if(!query||(!suburb&&!city))return null;
+ if(!country||(!suburb&&!city))return null;
 
  if(Platform.OS==='web'){
   const row=await geocodeWeb(query);
@@ -191,9 +192,9 @@ export async function geocodeCustomerLocality(input:{suburb?:string|null;city?:s
 }
 
 export async function geocodeServiceAddress(input:{addressLine1:string;suburb:string;city:string;state:string;postalCode?:string;country?:string}):Promise<CustomerServiceLocation|null>{
- const addressLine1=clean(input.addressLine1),suburb=clean(input.suburb),city=clean(input.city),state=clean(input.state),postalCode=clean(input.postalCode),country=clean(input.country)||'Australia';
+ const addressLine1=clean(input.addressLine1),suburb=clean(input.suburb),city=clean(input.city),state=clean(input.state),postalCode=clean(input.postalCode),country=clean(input.country);
  const query=formatAddress({addressLine1,suburb,city,state,postalCode,country});
- if(!addressLine1||!suburb||!state)return null;
+ if(!addressLine1||!suburb||!state||!country)return null;
  if(Platform.OS==='web')return geocodeWeb(query);
  try{
   const rows=await withTimeout(Location.geocodeAsync(query),GEO_TIMEOUT_MS,'Address lookup');

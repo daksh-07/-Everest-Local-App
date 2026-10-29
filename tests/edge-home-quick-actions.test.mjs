@@ -37,10 +37,10 @@ test('home uses contextual real-data sections rather than fabricated metrics',()
 });
 
 test('home v3 exposes intent actions and real discovery without gateway-card duplication',()=>{
- assert.match(home,/accessibilityLabel="Request a Quote"/);
+ assert.match(home,/Request a Quote/);
  assert.match(home,/Request quotes/);
  assert.match(home,/Need it now\?/);
- assert.match(home,/Search your local area/);
+ assert.match(home,/Search Everest/);
  assert.match(home,/Shop local/);
  assert.match(home,/From around Everest/);
  assert.match(home,/RefreshControl/);

@@ -97,6 +97,10 @@ function ThemedRootLayout() {
   useEffect(()=>{if(!authInitialized||!supabaseConfigured||startupError)return;
     const needsAuth=protectedRoutes.has(pathname)||businessApplicationRoutes.has(pathname)||businessRestrictedRoutes.has(pathname)||adminRoutes.has(pathname)||deliveryRoutes.has(pathname)||driverApplicationRoutes.has(pathname);
     if(!needsAuth)return;
+    if(!sessionUserId&&pathname==='/request'){
+      if(Platform.OS==='web'){try{globalThis.localStorage?.setItem('everest-auth-return-to','/request')}catch{/* Auth remains available without storage. */}}
+      else {void storePendingQuickActionRoute('/request').catch(()=>undefined).finally(()=>nav.replace('/auth'));return;}
+    }
     if(!sessionUserId){nav.replace('/auth');return;}
     if(adminRoutes.has(pathname)){if(!access?.is_authorized_admin){nav.replace('/');return;}if(!access.is_admin&&pathname!=='/admin'){nav.replace('/admin');return;}return;}
     if(driverApplicationRoutes.has(pathname))return;

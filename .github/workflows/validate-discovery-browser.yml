@@ -2,7 +2,7 @@ name: Validate discovery browser experience
 
 on:
   pull_request:
-    branches: [main, integration/final-release-20261023, 'codex/experience-foundation-2026-10-12']
+    branches: [main, integration/final-release-20261023, 'codex/experience-foundation-2026-10-12', 'codex/business-attention-20261030']
     paths:
       - 'scripts/lib/browser-fixture.mjs'
       - 'assets/fonts/**'
@@ -19,6 +19,14 @@ on:
       - 'app/social.tsx'
       - 'app/bookings.tsx'
       - 'app/orders.tsx'
+      - 'app/cart.tsx'
+      - 'app/product.tsx'
+      - 'app/business-orders.tsx'
+      - 'components/OrderDetails.tsx'
+      - 'components/ui/TransactionLoading.tsx'
+      - 'lib/commerce.ts'
+      - 'lib/orders.ts'
+      - 'scripts/verify-commerce-flow.mjs'
       - 'app/notifications.tsx'
       - 'app/business-profile.tsx'
       - 'app/business-today.tsx'
@@ -34,6 +42,10 @@ on:
       - 'components/GlobalSwipeNavigator.tsx'
       - 'components/ServiceCategoryGrid.tsx'
       - 'lib/universal-search.ts'
+      - 'lib/customer-location.ts'
+      - 'components/CustomerLocationSelector.tsx'
+      - 'scripts/verify-product-quality.mjs'
+      - 'tests/customer-location-global.test.mjs'
       - 'lib/use-section.ts'
       - 'lib/section-state.ts'
       - 'components/SectionStatus.tsx'
@@ -108,12 +120,14 @@ jobs:
           if [ "$EVEREST_QA_BROWSER" = chromium ]; then
             export EVEREST_BROWSER_PATH="$(node --input-type=module -e 'import {chromium} from "/tmp/everest-browser-tools/node_modules/playwright/index.mjs"; console.log(chromium.executablePath())')"
           fi
+          AXE_MODULE=/tmp/everest-browser-tools/node_modules/@axe-core/playwright/dist/index.mjs EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/product-quality node scripts/verify-product-quality.mjs
           node scripts/verify-discovery-foundation.mjs
           node scripts/verify-search-discovery.mjs
           node scripts/verify-business-job.mjs
           node scripts/verify-public-profile.mjs
           AXE_MODULE=/tmp/everest-browser-tools/node_modules/@axe-core/playwright/dist/index.mjs EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/phase5 node scripts/verify-phase5.mjs
           PGLITE_MODULE=/tmp/everest-browser-tools/node_modules/@electric-sql/pglite/dist/index.js node scripts/verify-phase5-permissions.mjs
+          EVEREST_QA_BOOKING=1 EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/commerce node scripts/verify-commerce-flow.mjs
           EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/refinement node scripts/verify-visual-refinement.mjs
           EVEREST_QA_ARTIFACTS=/tmp/everest-discovery-qa/typography node scripts/verify-typography-browser.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

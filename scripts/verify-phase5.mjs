@@ -16,7 +16,7 @@ const browser=await (engine==='webkit'?webkit:chromium).launch(engine==='webkit'
 const uid='11111111-1111-4111-8111-111111111111',biz='33333333-3333-4333-8333-333333333333';
 const user={id:uid,aud:'authenticated',role:'authenticated',email:'fixture@example.invalid',app_metadata:{},user_metadata:{}};
 const session={access_token:`${Buffer.from('{}').toString('base64url')}.${Buffer.from(JSON.stringify({sub:uid,exp:4102444800})).toString('base64url')}.fixture`,refresh_token:'fixture',expires_at:4102444800,expires_in:999999,token_type:'bearer',user};
-const business={id:biz,name:'Phase Five Garden Care',status:'ACTIVE',verification_status:'VERIFIED',member_role:'OWNER',suburb:'Carlton',city:'Melbourne',state:'VIC',description:'Care for your local garden.',can_view_crm:true,can_view_finance:true,can_view_orders:true};
+const business={id:biz,name:'Phase Five Garden Care',country:'Australia',accepts_requests:true,accepts_orders:true,status:'ACTIVE',verification_status:'VERIFIED',member_role:'OWNER',suburb:'Carlton',city:'Melbourne',state:'VIC',description:'Care for your local garden.',can_view_crm:true,can_view_finance:true,can_view_orders:true};
 const service={id:'s1',business_id:biz,name:'Garden maintenance',base_price:90,duration_minutes:60,delivery_mode:'LOCAL',active:true,service_booking_settings:{instant_booking_enabled:false}};
 const product={id:'p1',business_id:biz,business_name:business.name,name:'Local garden kit',price:20,sale_price:null,status:'ACTIVE',product_images:[],primary_image_path:null};
 const result={kind:'SERVICE',id:'s1',title:'Garden maintenance',subtitle:'Local service',score:60,metadata:{business_id:biz}};
@@ -73,12 +73,13 @@ try{
   const {page,context,calls}=await open('/');
   await page.route(/nominatim\.openstreetmap\.org\/search/,route=>route.fulfill({json:[{lat:'-37.80',lon:'144.96',address:{suburb:'Carlton',city:'Melbourne',state:'Victoria',country:'Australia',postcode:'3053'}}]}));
   await page.getByRole('button',{name:'Set your location',exact:true}).click();
-  await page.getByRole('button',{name:'Show businesses in this area',exact:true}).click();
-  await page.getByText('Enter a suburb or locality.',{exact:true}).waitFor();
-  await page.getByRole('textbox',{name:'Suburb or locality',exact:true}).fill('Carlton');
-  await page.getByRole('textbox',{name:'City',exact:true}).fill('Melbourne');
-  await page.getByRole('textbox',{name:'State',exact:true}).fill('VIC');
-  await page.getByRole('button',{name:'Show businesses in this area',exact:true}).click();
+  await page.getByRole('button',{name:'Use this location',exact:true}).click();
+  await page.getByText('Enter a city or locality.',{exact:true}).waitFor();
+  await page.getByRole('textbox',{name:'City or locality',exact:true}).fill('Carlton');
+  await page.getByRole('textbox',{name:'Country',exact:true}).fill('Australia');
+  await page.getByRole('textbox',{name:'City (optional)',exact:true}).fill('Melbourne');
+  await page.getByRole('textbox',{name:'State or region (optional)',exact:true}).fill('VIC');
+  await page.getByRole('button',{name:'Use this location',exact:true}).click();
   await page.getByRole('button',{name:/Location: Carlton/}).waitFor();
   assert.equal(calls.includes('save_my_locality'),false,'Guest browsing never attempts to write profile locality');
   report.scenarios.push('Manual location validates input and updates guest browsing without profile writes');

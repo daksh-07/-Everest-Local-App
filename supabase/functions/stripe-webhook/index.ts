@@ -1,3 +1,4 @@
+import {transactionEvent} from '../_shared/transaction-events.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'npm:stripe@22.6.2';
 
@@ -290,8 +291,9 @@ Deno.serve(async req=>{
    const isService=paymentMetadata.payment_kind==='service';
    const orderId=paymentMetadata.order_id;
    const servicePaymentId=paymentMetadata.service_payment_id;
-   const successEvents=event.type==='payment_intent.succeeded'||event.type==='checkout.session.completed';
-   const failureEvents=event.type==='payment_intent.payment_failed'||event.type==='payment_intent.canceled'||event.type==='checkout.session.expired'||event.type==='checkout.session.async_payment_failed';
+   const outcome=transactionEvent(event.type,(paymentObject as Stripe.Checkout.Session).payment_status);
+   const successEvents=outcome==='success';
+   const failureEvents=outcome==='failure';
 
    if(isService){
     if(!servicePaymentId){await db.rpc('finish_stripe_event',{p_event_id:event.id,p_success:false});return json({error:'Missing service payment metadata'},400);}

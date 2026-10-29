@@ -1,13 +1,14 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {checkoutReturnUrls} from '../_shared/checkout-return.ts';
 import Stripe from 'https://esm.sh/stripe@18.5.0?target=deno';
 
 type OrderResult={order_id:string;order_number:string;total:number;reused:boolean};
 type OrderFeeSnapshot={
  business_id:string;marketplace_fee:number;provider_net:number;fee_policy_version:string;
- subtotal:number;delivery_fee:number;total:number;
+ subtotal:number;delivery_fee:number;total:number;delivery_method:string;
 };
 type CheckoutItem={product_name:string;unit_price:number;quantity:number};
-type CheckoutRequest={delivery_method?:unknown;delivery_address?:unknown};
+type CheckoutRequest={delivery_method?:unknown;delivery_address?:unknown;return_platform?:unknown};
 type ConnectBusiness={
  stripe_connected_account_id:string|null;stripe_connect_status:string;
  stripe_details_submitted:boolean;stripe_charges_enabled:boolean;stripe_payouts_enabled:boolean;
@@ -36,6 +37,8 @@ Deno.serve(async req=>{
   try{input=await req.json() as CheckoutRequest;}catch{input={};}
   const deliveryMethod=input.delivery_method==='EVEREST_DELIVERY'||input.delivery_method==='SAME_DAY'||input.delivery_method==='SHIPPING'?input.delivery_method:'PICKUP';
   const deliveryAddress=deliveryMethod==='PICKUP'?null:input.delivery_address;
+  // Validate deployment return configuration before creating any order.
+  checkoutReturnUrls(Deno.env.get('APP_PUBLIC_URL'),'order','validate');
   if(deliveryAddress!==null&&typeof deliveryAddress!=='object')return json({error:'Invalid delivery address'},400);
 
   const {data:rawOrder,error}=await userClient.rpc('create_order_from_cart',{
@@ -51,12 +54,13 @@ Deno.serve(async req=>{
    {data:existingPayment,error:existingPaymentError},
   ]=await Promise.all([
    admin.from('order_items').select('product_name,unit_price,quantity').eq('order_id',orderId),
-   admin.from('orders').select('business_id,subtotal,delivery_fee,total,marketplace_fee,provider_net,fee_policy_version').eq('id',orderId).single(),
-   admin.from('payments').select('provider_checkout_session_id,stripe_connected_account_id').eq('order_id',orderId).eq('idempotency_key',idem).maybeSingle(),
+   admin.from('orders').select('business_id,subtotal,delivery_fee,total,marketplace_fee,provider_net,fee_policy_version,delivery_method').eq('id',orderId).single(),
+   admin.from('payments').select('id,idempotency_key,provider_checkout_session_id,stripe_connected_account_id').eq('order_id',orderId).eq('customer_id',user.id).eq('status','PENDING').maybeSingle(),
   ]);
   if(itemError)throw itemError;
   if(orderTotalsError)throw orderTotalsError;
   if(existingPaymentError)throw existingPaymentError;
+  if(!existingPayment?.id||!existingPayment.idempotency_key)throw new Error('Pending payment unavailable');
 
   const fee=rawTotals as OrderFeeSnapshot;
   const {data:business,error:businessError}=await admin.from('businesses')
@@ -83,7 +87,10 @@ Deno.serve(async req=>{
     // Backward compatibility for a pre-Connect pending checkout created on the platform.
     existingSession=await stripe.checkout.sessions.retrieve(existingPayment.provider_checkout_session_id);
    }
-   return json({orderId,orderNumber:order.order_number,total:order.total,checkoutUrl:existingSession.url,reused:true});
+   if(existingSession.status==='expired'){
+    const {error:expiryError}=await admin.rpc('process_stripe_order_failure',{p_order_id:orderId});if(expiryError)throw expiryError;
+   }
+   return json({orderId,orderNumber:order.order_number,total:Number(fee.total),checkoutUrl:existingSession.status==='open'?existingSession.url:null,checkoutState:existingSession.status==='expired'?'EXPIRED':existingSession.status==='complete'?'COMPLETE':'OPEN',reused:true});
   }
 
   const items=(rawItems??[]) as CheckoutItem[];
@@ -108,6 +115,10 @@ Deno.serve(async req=>{
    ...(applicationFeeCents>0?{application_fee_amount:applicationFeeCents}:{}),
   };
 
+  const {error:claimError}=await admin.rpc('claim_order_checkout',{p_order_id:orderId});if(claimError)throw claimError;
+  // A timeout can hide a successfully-created Stripe session. Never release
+  // reservations after starting this request; retry the canonical Stripe key.
+  stripeSessionCreated=true;
   const session=await stripe.checkout.sessions.create({
    mode:'payment',
    line_items:[
@@ -116,15 +127,14 @@ Deno.serve(async req=>{
      quantity:i.quantity,
     })),
     ...(Number(fee.delivery_fee)>0?[{
-     price_data:{currency:'aud',product_data:{name:deliveryMethod==='SHIPPING'?'Shipping':'Delivery'},unit_amount:Math.round(Number(fee.delivery_fee)*100)},
+     price_data:{currency:'aud',product_data:{name:fee.delivery_method==='SHIPPING'?'Shipping':'Delivery'},unit_amount:Math.round(Number(fee.delivery_fee)*100)},
      quantity:1,
     }]:[]),
    ],
    metadata:paymentMetadata,
    payment_intent_data:paymentIntentData,
-   success_url:`everestlocal://order/success?order_id=${encodeURIComponent(orderId)}`,
-   cancel_url:`everestlocal://order/cancelled?order_id=${encodeURIComponent(orderId)}`,
-  },{idempotencyKey:idem,stripeAccount:connectedId});
+   ...checkoutReturnUrls(Deno.env.get('APP_PUBLIC_URL'),'order',orderId),
+  },{idempotencyKey:existingPayment.idempotency_key,stripeAccount:connectedId});
 
   stripeSessionCreated=true;
   const {error:paymentError}=await admin.from('payments').update({
@@ -134,17 +144,26 @@ Deno.serve(async req=>{
    stripe_charge_model:'DIRECT',
    stripe_application_fee:Number(fee.marketplace_fee),
    updated_at:new Date().toISOString(),
-  }).eq('order_id',orderId).eq('idempotency_key',idem).eq('status','PENDING');
+  }).eq('id',existingPayment.id).eq('order_id',orderId).eq('status','PENDING');
   if(paymentError)throw paymentError;
 
   return json({
    orderId,orderNumber:order.order_number,total:fee.total,
    marketplaceFee:fee.marketplace_fee,
    providerNetBeforeStripeFees:fee.provider_net,
-   checkoutUrl:session.url,reused:order.reused,
+   checkoutUrl:session.url,checkoutState:'OPEN',reused:order.reused,
   });
  }catch(error){
   if(orderId&&!stripeSessionCreated){try{await userClient.rpc('release_my_order_reservations',{p_order_id:orderId});}catch{/* best-effort reservation cleanup */}}
+  const tagged=error as {code?:string;message?:string};
+  const eligibility:Record<string,{code:string;message:string}>={
+   MARKETPLACE_DESTINATION_REQUIRED:{code:'DESTINATION_REQUIRED',message:'Enter the destination country.'},
+   MARKETPLACE_CROSS_BORDER_UNSUPPORTED:{code:'CROSS_BORDER_UNSUPPORTED',message:'Delivery and shipping to another country are not available. Choose pickup or another business.'},
+   MARKETPLACE_FULFILMENT_UNKNOWN:{code:'FULFILMENT_UNKNOWN',message:'This business’s fulfilment location needs confirmation. Choose another business or contact the seller.'},
+   MARKETPLACE_PRODUCT_UNAVAILABLE:{code:'PRODUCT_UNAVAILABLE',message:'This product or fulfilment method is no longer available. Review your cart.'},
+  };
+  const rejected=tagged?.code==='22023'?eligibility[tagged.message??'']:undefined;
+  if(rejected&&!stripeSessionCreated)return json({error:rejected.message,code:rejected.code},422);
   console.error('checkout_failed',{message:error instanceof Error?error.message:'unknown',orderId:orderId??null,stripeSessionCreated});
   return json({error:'Checkout could not be created. No payment was confirmed.'},500);
  }

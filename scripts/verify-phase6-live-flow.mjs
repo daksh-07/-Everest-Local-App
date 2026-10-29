@@ -1,3 +1,4 @@
+import {installCountryMatchingFixture} from './lib/country-matching-fixture.mjs';
 // Verify the boundary from actual Live start/release SQL to the quote-state contract.
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
@@ -48,8 +49,9 @@ async function fresh(){await reset();await db.exec(`update service_requests set 
 try{
  const start=await latestFunction('start_everest_live');await db.exec(start.sql);
  if(!baseline){
+  await db.exec("do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;end$$;");
   const names=(await fs.readdir('supabase/migrations')).filter(name=>name.endsWith('_phase6_live_matching_correctness.sql')||name.endsWith('_phase6_live_request_quote_lifecycle.sql')).sort();
-  for(const name of names)await db.exec(await fs.readFile('supabase/migrations/'+name,'utf8'));
+  for(const name of names)await db.exec(await fs.readFile('supabase/migrations/'+name,'utf8'));await installCountryMatchingFixture(db);
  }
  for(const [name,run] of [
   ['released Live request is eligible for the existing QUOTING contract',async()=>{await fresh();await db.query("select start_everest_live($1,'ASAP')",[req]);await db.query('select quote_contract($1)',[req]);}],

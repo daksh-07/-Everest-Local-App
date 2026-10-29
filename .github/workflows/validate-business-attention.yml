@@ -1,0 +1,93 @@
+name: Validate business request attention
+on:
+  pull_request:
+    paths:
+      - 'app/business-today.tsx'
+      - 'lib/business-attention.ts'
+      - 'tests/business-attention.test.mjs'
+      - 'scripts/verify-business-attention.mjs'
+      - '.github/workflows/validate-business-attention.yml'
+permissions:
+  contents: read
+jobs:
+  business-attention:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:web
+      - name: Install isolated browser tools
+        run: |
+          npm install --prefix /tmp/request-tools playwright@1.64.1 serve@14.2.4 @axe-core/playwright@4.14.0
+          /tmp/request-tools/node_modules/.bin/playwright install --with-deps ${{ matrix.browser }}
+      - name: Verify requests, response navigation and recovery
+        env:
+          PLAYWRIGHT_MODULE: /tmp/request-tools/node_modules/playwright/index.mjs
+          AXE_MODULE: /tmp/request-tools/node_modules/@axe-core/playwright/dist/index.mjs
+          EVEREST_QA_BROWSER: ${{ matrix.browser }}
+          EVEREST_PREVIEW_URL: http://localhost:4173
+          EVEREST_QA_ARTIFACTS: /tmp/business-attention
+        run: |
+          /tmp/request-tools/node_modules/.bin/serve -s dist -l 4173 > /tmp/request-server.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://localhost:4173/ >/dev/null && break; sleep 1; done
+          if [ "$EVEREST_QA_BROWSER" = chromium ]; then
+            export EVEREST_BROWSER_PATH="$(node --input-type=module -e 'import {chromium} from "/tmp/request-tools/node_modules/playwright/index.mjs"; console.log(chromium.executablePath())')"
+          fi
+          node scripts/verify-business-attention.mjs
+          node scripts/verify-business-job.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: business-attention-${{ matrix.browser }}
+          path: /tmp/business-attention
+
+  transaction-contracts:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 55436:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Install isolated SQL test tools
+        run: npm install --prefix /tmp/everest-sql-tools --no-audit --no-fund pg@8.16.3 @electric-sql/pglite@0.5.10
+      - name: Verify exact migrations in PostgreSQL and PGlite
+        env:
+          PHASE6_DATABASE_URL: postgresql://postgres@127.0.0.1:55436/postgres
+          PG_MODULE: /tmp/everest-sql-tools/node_modules/pg/lib/index.js
+          PGLITE_MODULE: /tmp/everest-sql-tools/node_modules/@electric-sql/pglite/dist/index.js
+          EVEREST_QA_ARTIFACTS: /tmp/everest-phase6-sql/postgres
+        run: |
+          node scripts/verify-phase6-live.mjs
+          node scripts/verify-phase6-live-flow.mjs
+          node scripts/verify-phase6-permissions.mjs
+          node scripts/verify-phase6-comments-sql.mjs
+          node scripts/verify-phase6-transactions.mjs
+          node --test tests/marketplace-country-sql.test.mjs
+          node scripts/verify-release-integration-sql.mjs
+          PHASE6_DATABASE_URL='' EVEREST_QA_ARTIFACTS=/tmp/everest-phase6-sql/pglite node scripts/verify-phase6-live.mjs
+          PHASE6_DATABASE_URL='' EVEREST_QA_ARTIFACTS=/tmp/everest-phase6-sql/pglite node scripts/verify-phase6-permissions.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: phase6-database-contracts
+          path: /tmp/everest-phase6-sql
+          if-no-files-found: error

@@ -1,0 +1,618 @@
+[
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "fulfilment requires address",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "fulfilment requires address",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "fulfilment requires address",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "fulfilment requires address",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  }
+]

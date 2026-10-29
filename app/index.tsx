@@ -1,3 +1,5 @@
+import {discoverBusinesses,type DiscoveryPlace} from '@/lib/business-discovery';
+import {requestDrafts} from '@/lib/request-drafts';
 import {CustomerLocationSelector} from '@/components/CustomerLocationSelector';
 import {MotionPressable as Pressable} from '@/components/ui/MotionPressable';
 import {useEffect,useMemo,useRef,useState} from 'react';
@@ -25,12 +27,10 @@ import {formatDay,formatMoney,formatSchedule,formatStatus} from '@/lib/format';
 import {geocodeCustomerLocality,resolveCustomerLocality,saveLocalityToProfile,type CustomerLocality} from '@/lib/customer-location';
 import {useExperience} from '@/lib/experience';
 import {useSection} from '@/lib/use-section';
-import {readResult} from '@/lib/section-state';
 import {SectionStatus} from '@/components/SectionStatus';
 import {getCurrentWeather,type CurrentWeather} from '@/lib/weather';
 
 type IconName=keyof typeof Ionicons.glyphMap;
-type BusinessPreview={id:string;name:string;logo_url:string|null;verification_status:string;suburb:string|null;city:string|null;state:string|null};
 type ProductPreview=ShopProduct&{imageUrl:string|null};
 type ContextCard={kind:'booking'|'request';title:string;detail:string;route:'/bookings'|'/requests'};
 function greeting(){const h=new Date().getHours();return h<12?'Good morning':h<18?'Good afternoon':'Good evening'}
@@ -51,6 +51,8 @@ export default function Home(){const hosted=useCustomerRouteHost();return hosted
 export function HomeScreen({visible=true}:{visible?:boolean}={}){
  const experience=useExperience();
  const {colors:c}=useAppTheme();const {width}=useWindowDimensions();const desktop=width>=980;const compact=width<360;const s=useMemo(()=>styles(c,desktop),[c,desktop]);const osReducedMotion=useReducedMotion();const reduced=osReducedMotion||experience.mode==='CLASSIC';
+ const [hasRequestDraft,setHasRequestDraft]=useState(false);
+ useEffect(()=>{if(!visible)return;let active=true;void supabase.auth.getSession().then(async({data})=>{if(!data.session?.user.id){if(active)setHasRequestDraft(false);return;}const session=requestDrafts.open(data.session.user.id);try{const draft=await session.load();if(active)setHasRequestDraft(Boolean(draft))}finally{session.close()}}).catch(()=>undefined);return()=>{active=false}},[visible]);
  const [name,setName]=useState('');const [avatar,setAvatar]=useState<string|null>(null);const [suburb,setSuburb]=useState('Set location');
  const [unread,setUnread]=useState(0);const [postMedia,setPostMedia]=useState<Record<string,string[]>>({});
  const [mediaWarning,setMediaWarning]=useState('');const [loadError,setLoadError]=useState('');const [weather,setWeather]=useState<CurrentWeather|null>(null);const [weatherLoading,setWeatherLoading]=useState(false);
@@ -74,23 +76,10 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
    if(current&&current.latitude===coordinates.latitude&&current.longitude===coordinates.longitude)setWeatherLoading(false);
   }
  }
- const [locality,setLocality]=useState<Pick<CustomerLocality,'suburb'|'city'|'state'>|null>(null);
+ const [locality,setLocality]=useState<DiscoveryPlace|null>(null);
  const localityRef=useRef(locality);localityRef.current=locality;
- const discoveryKey=JSON.stringify(locality&&[locality.suburb,locality.city,locality.state]);
- const businessSection=useSection<BusinessPreview[]>(discoveryKey,async()=>{
-  const merged=new Map<string,BusinessPreview>();
-  if(locality)for(const [field,value] of [['suburb',locality.suburb],['city',locality.city],['state',locality.state]] as const){
-   if(!value.trim())continue;
-   const rows=await readResult(supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').ilike(field,value.trim()).limit(8));
-   for(const item of rows)merged.set(item.id,item);
-   if(merged.size>=8)break;
-  }
-  if(!merged.size){
-   const rows=await readResult(supabase.from('businesses').select('id,name,logo_url,verification_status,suburb,city,state').eq('status','ACTIVE').limit(8));
-   for(const item of rows)merged.set(item.id,item);
-  }
-  return [...merged.values()].slice(0,8);
- });
+ const discoveryKey=JSON.stringify(locality&&[locality.suburb,locality.city,locality.state,locality.country]);
+ const businessSection=useSection(discoveryKey,()=>discoverBusinesses(locality));
  const postSection=useSection<SocialPost[]>(discoveryKey,async()=>{
   const feed=await listPublicPosts({limit:locality?20:4});
   const terms=locality?[locality.suburb,locality.city,locality.state].map(v=>v.trim().toLowerCase()).filter(Boolean):[];
@@ -106,7 +95,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
   const signed=await signedProductMediaBatch(localProducts.map(product=>product.primary_image_path),6*3600).catch(()=>({} as Record<string,string|null>));
   return localProducts.map(product=>({...product,imageUrl:product.primary_image_path?signed[product.primary_image_path]??null:null}));
  });
- const businesses=businessSection.data??[],products=shopSection.data??[],posts=postSection.data??[];
+ const businesses=businessSection.data?.rows??[],products=shopSection.data??[],posts=postSection.data??[];
  useEffect(()=>{let active=true;const rows=postSection.data;if(!rows)return;
   setMediaWarning('');setPostMedia({});
   void signedPostMediaResilient(rows.map(post=>post.id),{onPartialFailure:()=>{if(active)setMediaWarning('Some community photos could not be loaded. Retry community to try again.')}})
@@ -137,7 +126,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  useEffect(()=>{
   const personal=personalSection.data;if(!personal)return;
   const {profile,notifications,booking,request}=personal,p=profile.data;
-  if(!profile.error&&p){setName(p.full_name??'');setAvatar(p.avatar_url??null);if(!localityRef.current&&p.city){setSuburb(p.suburb||p.city);setLocality({suburb:p.suburb||p.city,city:p.city,state:p.state||''});void geocodeCustomerLocality({suburb:p.suburb,city:p.city,state:p.state,country:p.country}).then(coordinates=>{if(coordinates&&!weatherCoordinates.current)void loadWeather(coordinates)}).catch(()=>undefined)}}
+  if(!profile.error&&p){setName(p.full_name??'');setAvatar(p.avatar_url??null);if(!localityRef.current&&p.city){setSuburb(p.suburb||p.city);setLocality({suburb:p.suburb||p.city,city:p.city,state:p.state||'',country:p.country?.trim()||''});void geocodeCustomerLocality({suburb:p.suburb,city:p.city,state:p.state,country:p.country}).then(coordinates=>{if(coordinates&&!weatherCoordinates.current)void loadWeather(coordinates)}).catch(()=>undefined)}}
   if(!notifications.error)setUnread(notifications.count??0);
   if(!booking.error&&!request.error){
    if(booking.data){const b=booking.data;setContext({kind:'booking',title:'Upcoming booking',detail:b.scheduled_date?formatSchedule(b.scheduled_date,b.scheduled_time):formatStatus(b.status),route:'/bookings'})}
@@ -156,7 +145,7 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
  useEffect(()=>{const subscription=AppState.addEventListener('change',state=>{if(state!=='active')return;const coordinates=weatherCoordinates.current;if(!coordinates)return;void getCurrentWeather(coordinates).then(next=>{const current=weatherCoordinates.current;if(next&&current&&current.latitude===coordinates.latitude&&current.longitude===coordinates.longitude)setWeather(next)}).catch(()=>undefined)});return()=>subscription.remove()},[]);
  useEffect(()=>{if(reduced){enter.setValue(1);return}Animated.timing(enter,{toValue:1,duration:MOTION.standard,easing:ease,useNativeDriver:true}).start()},[enter,reduced]);
  const appear={opacity:enter,transform:[{translateY:enter.interpolate({inputRange:[0,1],outputRange:[reduced?0:8,0]})}]};
- const go=(route:string)=>{void haptic.selection();router.push(route as never)};
+ const go=(route:string)=>{void haptic.selection();let scoped=locality?.country&&(route.startsWith('/search')||route==='/available-now')&&!route.includes('country=')?route+(route.includes('?')?'&':'?')+'country='+encodeURIComponent(locality.country):route;if(locality?.country&&route==='/available-now')scoped+='&city='+encodeURIComponent(locality.city)+'&suburb='+encodeURIComponent(locality.suburb)+'&state='+encodeURIComponent(locality.state);router.push(scoped as never)};
  const hello=name?greeting()+', '+name.split(' ')[0]:'What do you need today?';
  const classic=experience.mode==='CLASSIC';
  const hasPlace=suburb!=='Set location';
@@ -181,12 +170,12 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
      <Text accessibilityRole="header" variant="hero" style={[s.greeting,classic&&{fontSize:t.typography.hero,lineHeight:Math.round(t.typography.hero*1.18)}]}>{classic?'What would you like to do?':hello}</Text>
      {!name||classic?<Text style={s.heroCopy}>{classic?'Find a business, book a service or shop nearby.':'Find a service, compare quotes or shop local.'}</Text>:null}
      <View style={[s.search,{minHeight:classic?t.controls.minHeight+12:56,borderRadius:t.shape.medium,borderWidth:t.surfaces.borderWidth}]}>
-      <Pressable onPress={()=>go('/search')} style={({pressed})=>[s.searchMain,pressed&&s.searchPressed]} accessibilityRole="button" accessibilityLabel="Search services, businesses and products"><Ionicons name="search" size={20} color={c.text}/><Text numberOfLines={1} style={s.searchText}>{compact?'Search locally':classic?'Search for a service, business, or product':'Search your local area'}</Text></Pressable>
+      <Pressable onPress={()=>go('/search')} style={({pressed})=>[s.searchMain,pressed&&s.searchPressed]} accessibilityRole="button" accessibilityLabel="Search services, businesses and products"><Ionicons name="search" size={20} color={c.text}/><Text numberOfLines={1} style={s.searchText}>{compact?'Search Everest':classic?'Search for a service, business, or product':'Search Everest'}</Text></Pressable>
       <View style={s.searchDivider}/>
       <Pressable onPress={()=>go('/assistant')} style={({pressed})=>[s.askButton,pressed&&s.press]} accessibilityRole="button" accessibilityLabel="Ask Everest for help" hitSlop={4}><Ionicons name="sparkles-outline" size={19} color={c.accent}/><Text style={s.askText}>Ask</Text></Pressable>
      </View>
      <View style={[s.quickIntentRow,compact&&s.quickIntentStack]}>
-      <Pressable onPress={()=>go('/request')} style={({pressed})=>[s.quickIntent,s.quickIntentPrimary,{borderRadius:t.shape.medium},pressed&&s.actionPressed]} accessibilityRole="button" accessibilityLabel="Request a Quote"><View style={s.intentCopy}><Text numberOfLines={1} style={s.quickIntentPrimaryTitle}>Request quotes</Text><Text numberOfLines={1} style={s.quickIntentPrimaryCopy}>Describe it once</Text></View><Ionicons name="arrow-forward" size={18} color={c.onBrand}/></Pressable>
+      <Pressable onPress={()=>go('/request')} style={({pressed})=>[s.quickIntent,s.quickIntentPrimary,{borderRadius:t.shape.medium},pressed&&s.actionPressed]} accessibilityRole="button" accessibilityLabel={hasRequestDraft?'Continue saved request':'Request a Quote'}><View style={s.intentCopy}><Text numberOfLines={1} style={s.quickIntentPrimaryTitle}>{hasRequestDraft?'Continue request':'Request quotes'}</Text><Text numberOfLines={1} style={s.quickIntentPrimaryCopy}>{hasRequestDraft?'Saved on this device':'Describe it once'}</Text></View><Ionicons name="arrow-forward" size={18} color={c.onBrand}/></Pressable>
       <AmbientEdge borderRadius={t.shape.medium} tone="live" style={[s.quickLiveGlow,compact&&s.quickLiveStacked]}><Pressable onPress={()=>go('/request?live=1')} style={({pressed})=>[s.quickIntent,s.quickIntentLive,{borderRadius:t.shape.medium},pressed&&s.actionPressed]} accessibilityRole="button" accessibilityLabel="Find someone now with Everest Live"><View style={s.intentCopy}><Text numberOfLines={1} style={s.quickIntentTitle}>Need it now?</Text><View style={s.liveRow}><View style={s.liveDot}/><Text numberOfLines={1} style={s.liveIntentCopy}>Everest Live</Text></View></View><Ionicons name="radio-outline" size={19} color={c.secondaryText}/></Pressable></AmbientEdge>
      </View>
      {context?<Pressable onPress={()=>go(context.route)} style={({pressed})=>[s.context,{borderRadius:t.shape.medium},pressed&&s.press]} accessibilityRole="button" accessibilityLabel={`Continue: ${context.title}, ${context.detail}`}><View style={s.contextIcon}><Ionicons name={context.kind==='booking'?'calendar':'document-text'} size={18} color={c.accent}/></View><View style={{flex:1,minWidth:0}}><Text style={s.contextLabel}>Continue where you left off</Text><Text numberOfLines={1} style={s.contextTitle}>{context.title}</Text><Text numberOfLines={1} style={s.contextDetail}>{context.detail}</Text></View><Ionicons name="chevron-forward" size={18} color={c.muted}/></Pressable>:null}
@@ -196,11 +185,11 @@ export function HomeScreen({visible=true}:{visible?:boolean}={}){
     <ServiceCategoryGrid onSelect={query=>go('/search?q='+encodeURIComponent(query)+'&tab=SERVICE')}/>
     {loadError?<ErrorBanner message={loadError} retryLabel="Retry location" onRetry={()=>void refreshLocality(true)}/>:null}
 
-    <SectionHeader title="Local businesses" caption={hasPlace?'Check each business’s service area before booking':'Businesses on Everest'} secondaryAction={{label:'Available now',onPress:()=>go('/available-now')}} action={{label:'See all',accessibilityLabel:'See all businesses',onPress:()=>go('/search?tab=BUSINESS')}}/>
+    <SectionHeader title={locality?.country?`Businesses in ${locality.country}`:'Businesses on Everest'} caption={locality?.country?(businessSection.data?.scope==='COUNTRY'?'Showing country-wide matches. Check each business’s service area and availability.':'Check each business’s service area and availability.'):(hasPlace?'Choose a country to narrow business results.':undefined)} secondaryAction={{label:'Available now',onPress:()=>go('/available-now')}} action={{label:'See all',accessibilityLabel:'See all businesses',onPress:()=>go('/search?tab=BUSINESS'+(locality?.country?'&country='+encodeURIComponent(locality.country):''))}}/>
     <SectionStatus label="Businesses" section={businessSection}/>
-    {businessSection.loading&&!businessSection.data?<BusinessSkeleton colors={c}/>:businesses.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.rail}>{businesses.map(b=>{const place=[b.suburb,b.city].filter(Boolean).join(', ')||b.state||'Local business';const verified=b.verification_status==='VERIFIED';return <Pressable key={b.id} onPress={()=>go('/business-profile?id='+b.id)} style={({pressed})=>[s.businessCard,{borderRadius:t.shape.medium},pressed&&s.cardPressed]} accessibilityRole="button" accessibilityLabel={`${b.name}${verified?', verified':''}, ${place}`}>{b.logo_url?<Image source={{uri:b.logo_url}} style={s.businessImage}/>:<View style={s.businessFallback}><Text style={s.monogram}>{initials(b.name)}</Text></View>}<View style={s.cardBody}><View style={s.businessTitleRow}><Text numberOfLines={1} style={s.cardTitle}>{b.name}</Text>{verified?<Ionicons name="checkmark-circle" size={15} color={c.accent}/>:null}</View><Text numberOfLines={1} style={s.cardMeta}>{place}</Text></View></Pressable>})}</ScrollView>:businessSection.error?null:<Pressable onPress={()=>go('/search?tab=BUSINESS')} style={({pressed})=>[s.emptyLine,{borderRadius:t.shape.medium},pressed&&s.press]} accessibilityRole="button"><Text style={s.emptyText}>Explore local businesses on Everest</Text><Ionicons name="arrow-forward" size={17} color={c.muted}/></Pressable>}
+    {businessSection.loading&&!businessSection.data?<BusinessSkeleton colors={c}/>:businesses.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.rail}>{businesses.map(b=>{const place=[b.suburb,b.city].filter(Boolean).join(', ')||b.state||'Local business';const verified=b.verification_status==='VERIFIED';return <Pressable key={b.id} onPress={()=>go('/business-profile?id='+b.id)} style={({pressed})=>[s.businessCard,{borderRadius:t.shape.medium},pressed&&s.cardPressed]} accessibilityRole="button" accessibilityLabel={`${b.name}${verified?', verified':''}, ${place}${b.accepts_requests===false?', not taking service requests':''}`}>{b.logo_url?<Image source={{uri:b.logo_url}} style={s.businessImage}/>:<View style={s.businessFallback}><Text style={s.monogram}>{initials(b.name)}</Text></View>}<View style={s.cardBody}><View style={s.businessTitleRow}><Text numberOfLines={1} style={s.cardTitle}>{b.name}</Text>{verified?<Ionicons name="checkmark-circle" size={15} color={c.accent}/>:null}</View><Text numberOfLines={1} style={s.cardMeta}>{place}</Text>{b.accepts_requests===false?<Text style={s.cardMeta}>Not taking service requests</Text>:null}</View></Pressable>})}</ScrollView>:businessSection.error?null:<Pressable onPress={()=>locality?.country?setLocationSelector(true):go('/search?tab=BUSINESS')} style={({pressed})=>[s.emptyLine,{borderRadius:t.shape.medium},pressed&&s.press]} accessibilityRole="button"><Text style={s.emptyText}>{locality?.country?`No businesses found in ${locality.country}. Change location`:'Explore businesses on Everest'}</Text><Ionicons name="arrow-forward" size={17} color={c.muted}/></Pressable>}
 
-    <SectionHeader title="Shop local" caption="Products from businesses on Everest" action={{label:'See all',accessibilityLabel:'See all products',onPress:()=>go('/shop')}}/>
+    <SectionHeader title="Shop local" caption="Across Everest · Prices in AUD. Check pickup, delivery or shipping availability." action={{label:'See all',accessibilityLabel:'See all products',onPress:()=>go('/shop')}}/>
     <SectionStatus label="Shop" section={shopSection}/>
     {products.length?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.rail}>{products.map(product=>{const onSale=product.sale_price!==null&&product.sale_price!==undefined&&product.sale_price<product.price;return <Pressable key={product.id} onPress={()=>go('/product?id='+product.id)} style={({pressed})=>[s.productCard,pressed&&s.cardPressed]} accessibilityRole="button" accessibilityLabel={`${product.name}, ${formatMoney(product.sale_price??product.price)}, from ${product.business_name}`}>{product.imageUrl?<Image source={{uri:product.imageUrl}} style={[s.productImage,{borderRadius:t.shape.medium}]}/>:<View style={[s.productImage,s.productFallback,{borderRadius:t.shape.medium}]}><Ionicons name="bag-handle-outline" size={24} color={c.muted}/></View>}<View style={s.productBody}><Text numberOfLines={2} style={s.productName}>{product.name}</Text><View style={s.priceRow}><Text tabular style={s.productPrice}>{formatMoney(product.sale_price??product.price)}</Text>{onSale?<Text tabular style={s.wasPrice}>{formatMoney(product.price)}</Text>:null}</View><Text numberOfLines={1} style={s.cardMeta}>{product.business_name}{product.suburb?' · '+product.suburb:''}</Text></View></Pressable>})}</ScrollView>:shopSection.loading||shopSection.error?null:<Pressable onPress={()=>go('/shop')} style={({pressed})=>[s.emptyLine,{borderRadius:t.shape.medium},pressed&&s.press]} accessibilityRole="button"><Text style={s.emptyText}>Browse products from local businesses</Text><Ionicons name="arrow-forward" size={17} color={c.muted}/></Pressable>}
 

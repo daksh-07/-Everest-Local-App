@@ -15,6 +15,8 @@ test('inventory reservations cannot be negative or exceed physical stock', () =>
 test('checkout and inventory adjustment remain server-authoritative', async () => {
   const commerce = await readFile('lib/commerce.ts', 'utf8');
   assert.match(commerce, /supabase\.functions\.invoke\(['"]checkout['"]/i);
-  assert.doesNotMatch(commerce, /stock_quantity\s*:/i);
-  assert.doesNotMatch(commerce, /reserved_quantity\s*:/i);
+  // Stock may be read for honest UI limits, but never written by this client.
+  assert.doesNotMatch(commerce, /from\(['"](?:inventory|product_variants)['"]\)\.(?:update|insert|upsert)/i);
+  assert.doesNotMatch(commerce, /p_(?:stock|reserved|available)_quantity\s*:/i);
+  assert.match(commerce, /supabase\.rpc\(['"]set_my_cart_item_v2['"]/);
 });

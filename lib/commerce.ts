@@ -1,19 +1,293 @@
-import {supabase,requireSupabaseConfig} from './supabase';
-import type {Order} from './types';
-type CartProduct={id:string;name:string;price:number;sale_price:number|null;status:string;business_id:string;delivery_eligible:boolean;pickup_available:boolean;shipping_available:boolean;product_images?:{storage_path:string|null;url:string|null;is_primary:boolean|null;sort_order:number|null}[]|null};
-type CartVariant={id:string;title:string;price:number|null;available:boolean};
-export interface CartItem{id:string;quantity:number;product_id:string;variant_id:string|null;products:CartProduct|null;product_variants:CartVariant|null};
-export type ProductDeliveryMethod='PICKUP'|'EVEREST_DELIVERY'|'SAME_DAY'|'SHIPPING';
-type CheckoutResult={orderId:string;orderNumber:string;total:number;checkoutUrl:string|null;reused:boolean};
-function commerceError(fallback:string){return new Error(fallback)}
-function validStripeCheckoutUrl(value:unknown):value is string{if(typeof value!=='string'||!value)return false;try{const url=new URL(value);return url.protocol==='https:'&&url.hostname==='checkout.stripe.com'&&url.username===''&&url.password===''}catch{return false}}
-function parseCheckoutResult(value:unknown):CheckoutResult{if(!value||typeof value!=='object')throw commerceError('Checkout returned an invalid response. Please try again.');const result=value as Record<string,unknown>;if(typeof result.orderId!=='string'||!result.orderId||typeof result.orderNumber!=='string'||!result.orderNumber||typeof result.total!=='number'||!Number.isFinite(result.total)||result.total<0||typeof result.reused!=='boolean'||(result.checkoutUrl!==null&&!validStripeCheckoutUrl(result.checkoutUrl)))throw commerceError('Checkout returned an invalid response. Please try again.');return {orderId:result.orderId,orderNumber:result.orderNumber,total:result.total,checkoutUrl:result.checkoutUrl as string|null,reused:result.reused}}
-export async function getOrCreateCart(){requireSupabaseConfig();const {data,error}=await supabase.rpc('get_or_create_cart');if(error)throw commerceError('Unable to load your cart right now.');if(typeof data!=='string'||!data)throw commerceError('Unable to load your cart right now.');return data}
-async function setCartItem(productId:string,variantId:string|null,quantity:number){requireSupabaseConfig();if(!productId||!Number.isInteger(quantity)||quantity<0||quantity>99)throw commerceError('Invalid cart quantity.');const {error}=await supabase.rpc('set_my_cart_item_v2',{p_product_id:productId,p_variant_id:variantId,p_quantity:quantity});if(error)throw commerceError(quantity===0?'Unable to remove this item from your cart right now.':'Unable to update your cart. Check availability and try again.')}
-export async function addToCart(productId:string,quantity=1,variantId:string|null=null):Promise<void>{if(!Number.isInteger(quantity)||quantity<1)throw commerceError('Invalid quantity.');await setCartItem(productId,variantId,quantity)}
-export async function getCart():Promise<CartItem[]>{const {data:{session}}=await supabase.auth.getSession();if(!session)return [];const cartId=await getOrCreateCart();const {data,error}=await supabase.from('cart_items').select('id,quantity,product_id,variant_id,products(id,name,price,sale_price,status,business_id,delivery_eligible,pickup_available,shipping_available,product_images(storage_path,url,is_primary,sort_order)),product_variants(id,title,price,available)').eq('cart_id',cartId);if(error)throw commerceError('Unable to load your cart right now.');return (data??[]).map(item=>{const rawProduct=item.products as unknown as CartProduct[]|CartProduct|null;const rawVariant=item.product_variants as unknown as CartVariant[]|CartVariant|null;return {...item,products:Array.isArray(rawProduct)?rawProduct[0]??null:rawProduct,product_variants:Array.isArray(rawVariant)?rawVariant[0]??null:rawVariant} as CartItem})}
-export async function removeFromCart(productId:string,variantId:string|null=null):Promise<void>{await setCartItem(productId,variantId,0)}
-export async function setCartQuantity(productId:string,variantId:string|null,quantity:number):Promise<void>{await setCartItem(productId,variantId,quantity)}
-export function cartUnitPrice(item:CartItem){return Number(item.product_variants?.price??item.products?.sale_price??item.products?.price??0)}
-export async function checkout(idempotencyKey:string,deliveryMethod:ProductDeliveryMethod='PICKUP',deliveryAddress:string|null=null):Promise<CheckoutResult>{requireSupabaseConfig();if(idempotencyKey.length<16)throw new Error('Invalid checkout idempotency key.');const address=deliveryAddress?.trim()||null;if(deliveryMethod!=='PICKUP'&&(!address||address.length<5))throw new Error('Enter a valid delivery address.');const {data,error}=await supabase.functions.invoke('checkout',{body:{delivery_method:deliveryMethod,delivery_address:address?{address_line:address}:null},headers:{'Idempotency-Key':idempotencyKey}});if(error)throw commerceError('Checkout is temporarily unavailable. Please try again.');if(data?.error)throw commerceError('Checkout could not be completed. Please review your cart and try again.');return parseCheckoutResult(data)}
-export async function myOrders():Promise<Order[]>{const {data:{user}}=await supabase.auth.getUser();if(!user)return[];const {data,error}=await supabase.from('orders').select('id,order_number,status,payment_status,total,created_at,delivery_method').eq('customer_id',user.id).order('created_at',{ascending:false});if(error)throw commerceError('Unable to load your orders right now.');return (data??[]) as Order[]}
+import { Platform } from 'react-native';
+import { supabase, requireSupabaseConfig } from './supabase';
+import type { Order } from './types';
+type CartProduct = {
+  id: string;
+  name: string;
+  price: number;
+  sale_price: number | null;
+  status: string;
+  business_id: string;
+  delivery_eligible: boolean;
+  pickup_available: boolean;
+  shipping_available: boolean;
+  product_images?:{storage_path:string|null;url:string|null;is_primary:boolean|null;sort_order:number|null}[]|null;
+  track_stock: boolean;
+  made_to_order: boolean;
+  businesses: { name: string;country:string;status:string;verification_status:string;accepts_orders:boolean } | null;
+  inventory: { stock_quantity: number; reserved_quantity: number } | null;
+};
+type CartVariant = {
+  id: string;
+  title: string;
+  price: number | null;
+  available: boolean;
+  stock_quantity: number;
+  reserved_quantity: number;
+};
+export interface CartItem {
+  id: string;
+  quantity: number;
+  product_id: string;
+  variant_id: string | null;
+  products: CartProduct | null;
+  product_variants: CartVariant | null;
+}
+export type ProductDeliveryMethod =
+  | 'PICKUP'
+  | 'EVEREST_DELIVERY'
+  | 'SAME_DAY'
+  | 'SHIPPING';
+type CheckoutResult = {
+  orderId: string;
+  orderNumber: string;
+  total: number;
+  checkoutUrl: string | null;
+  reused: boolean;
+  checkoutState: 'OPEN' | 'COMPLETE' | 'EXPIRED' | 'UNAVAILABLE';
+};
+function commerceError(fallback: string) {
+  return new Error(fallback);
+}
+function validStripeCheckoutUrl(value: unknown): value is string {
+  if (typeof value !== 'string' || !value) return false;
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === 'https:' &&
+      url.hostname === 'checkout.stripe.com' &&
+      url.username === '' &&
+      url.password === ''
+    );
+  } catch {
+    return false;
+  }
+}
+function parseCheckoutResult(value: unknown): CheckoutResult {
+  if (!value || typeof value !== 'object')
+    throw commerceError(
+      'Checkout returned an invalid response. Please try again.',
+    );
+  const result = value as Record<string, unknown>;
+  if (
+    typeof result.orderId !== 'string' ||
+    !result.orderId ||
+    typeof result.orderNumber !== 'string' ||
+    !result.orderNumber ||
+    typeof result.total !== 'number' ||
+    !Number.isFinite(result.total) ||
+    result.total < 0 ||
+    typeof result.reused !== 'boolean' ||
+    (result.checkoutUrl !== null && !validStripeCheckoutUrl(result.checkoutUrl))
+  )
+    throw commerceError(
+      'Checkout returned an invalid response. Please try again.',
+    );
+  return {
+    orderId: result.orderId,
+    orderNumber: result.orderNumber,
+    total: result.total,
+    checkoutUrl: result.checkoutUrl as string | null,
+    reused: result.reused,
+    checkoutState:
+      result.checkoutState === 'OPEN' ||
+      result.checkoutState === 'COMPLETE' ||
+      result.checkoutState === 'EXPIRED'
+        ? result.checkoutState
+        : result.checkoutUrl
+          ? 'OPEN'
+          : 'UNAVAILABLE',
+  };
+}
+export async function getOrCreateCart() {
+  requireSupabaseConfig();
+  const { data, error } = await supabase.rpc('get_or_create_cart');
+  if (error) throw commerceError('Unable to load your cart right now.');
+  if (typeof data !== 'string' || !data)
+    throw commerceError('Unable to load your cart right now.');
+  return data;
+}
+async function setCartItem(
+  productId: string,
+  variantId: string | null,
+  quantity: number,
+) {
+  requireSupabaseConfig();
+  if (
+    !productId ||
+    !Number.isInteger(quantity) ||
+    quantity < 0 ||
+    quantity > 99
+  )
+    throw commerceError('Invalid cart quantity.');
+  const { error } = await supabase.rpc('set_my_cart_item_v2', {
+    p_product_id: productId,
+    p_variant_id: variantId,
+    p_quantity: quantity,
+  });
+  if (error)
+    throw commerceError(
+      quantity === 0
+        ? 'Unable to remove this item from your cart right now.'
+        : 'Unable to update your cart. Check availability and try again.',
+    );
+}
+export async function addToCart(
+  productId: string,
+  quantity = 1,
+  variantId: string | null = null,
+): Promise<void> {
+  if (!Number.isInteger(quantity) || quantity < 1)
+    throw commerceError('Invalid quantity.');
+  await setCartItem(productId, variantId, quantity);
+}
+export async function getCart(): Promise<CartItem[]> {
+  const {data:{session}}=await supabase.auth.getSession();if(!session)return [];
+  const cartId = await getOrCreateCart();
+  const { data, error } = await supabase
+    .from('cart_items')
+    .select(
+      'id,quantity,product_id,variant_id,products(id,name,price,sale_price,status,business_id,delivery_eligible,pickup_available,shipping_available,track_stock,made_to_order,product_images(storage_path,url,is_primary,sort_order),businesses(name,country,status,verification_status,accepts_orders),inventory(stock_quantity,reserved_quantity)),product_variants(id,title,price,available,stock_quantity,reserved_quantity)',
+    )
+    .eq('cart_id', cartId);
+  if (error) throw commerceError('Unable to load your cart right now.');
+  return (data ?? []).map((item) => {
+    const rawProduct = item.products as unknown as
+      | CartProduct[]
+      | CartProduct
+      | null;
+    const rawVariant = item.product_variants as unknown as
+      | CartVariant[]
+      | CartVariant
+      | null;
+    const product = Array.isArray(rawProduct)
+      ? (rawProduct[0] ?? null)
+      : rawProduct;
+    if (product) {
+      product.inventory = Array.isArray(product.inventory)
+        ? (product.inventory[0] ?? null)
+        : product.inventory;
+      product.businesses = Array.isArray(product.businesses)
+        ? (product.businesses[0] ?? null)
+        : product.businesses;
+    }
+    return {
+      ...item,
+      products: product,
+      product_variants: Array.isArray(rawVariant)
+        ? (rawVariant[0] ?? null)
+        : rawVariant,
+    } as CartItem;
+  });
+}
+export async function removeFromCart(
+  productId: string,
+  variantId: string | null = null,
+): Promise<void> {
+  await setCartItem(productId, variantId, 0);
+}
+export async function setCartQuantity(
+  productId: string,
+  variantId: string | null,
+  quantity: number,
+): Promise<void> {
+  await setCartItem(productId, variantId, quantity);
+}
+export function cartUnitPrice(item: CartItem) {
+  return Number(
+    item.product_variants?.price ??
+      item.products?.sale_price ??
+      item.products?.price ??
+      0,
+  );
+}
+export async function checkout(
+  idempotencyKey: string,
+  deliveryMethod: ProductDeliveryMethod = 'PICKUP',
+  deliveryAddress: string | null = null,
+  country: string | null = null,
+): Promise<CheckoutResult> {
+  requireSupabaseConfig();
+  if (idempotencyKey.length < 16)
+    throw new Error('Invalid checkout idempotency key.');
+  const address = deliveryAddress?.trim() || null;
+  if (deliveryMethod !== 'PICKUP' && (!address || address.length < 5))
+    throw new Error('Enter a valid delivery address.');
+  if(deliveryMethod!=='PICKUP'&&(!country?.trim()||country.trim().length<2||country.trim().length>150))throw Object.assign(new Error('Enter the destination country.'),{code:'DESTINATION_REQUIRED'});
+  const { data, error } = await supabase.functions.invoke('checkout', {
+    body: {
+      delivery_method: deliveryMethod,
+      delivery_address: address ? { address_line: address,country:country?.trim()||null } : null,
+      return_platform: Platform.OS === 'web' ? 'web' : 'native',
+    },
+    headers: { 'Idempotency-Key': idempotencyKey },
+  });
+  if(error){
+    const response=(error as {context?:{json?:()=>Promise<unknown>}}).context;
+    if(response?.json){const payload=await response.json().catch(()=>null) as {code?:unknown}|null;const message=checkoutEligibilityMessage(payload);if(message)throw Object.assign(new Error(message),{code:payload?.code});}
+    throw commerceError('Checkout is temporarily unavailable. Please try again.');
+  }
+  if (data?.error)
+    throw commerceError(
+      'Checkout could not be completed. Please review your cart and try again.',
+    );
+  return parseCheckoutResult(data);
+}
+export async function myOrders(): Promise<Order[]> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user)
+    throw commerceError('Please sign in again to view your orders.');
+  const { data, error } = await supabase
+    .from('orders')
+    .select(
+      'id,order_number,status,payment_status,total,created_at,delivery_method',
+    )
+    .eq('customer_id', user.id)
+    .order('created_at', { ascending: false });
+  if (error) throw commerceError('Unable to load your orders right now.');
+  return (data ?? []) as Order[];
+}
+
+export type PendingCartCheckout = {
+  id: string;
+  total: number;
+  delivery_method: string | null;
+};
+export async function pendingCartCheckout(): Promise<PendingCartCheckout | null> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user)
+    throw commerceError('Please sign in again to load your cart.');
+  const { data, error } = await supabase
+    .from('carts')
+    .select(
+      'checkout:orders!carts_active_checkout_order_id_fkey(id,total,delivery_method,status,payment_status)',
+    )
+    .eq('customer_id', user.id)
+    .maybeSingle();
+  if (error)
+    throw commerceError(
+      'Your active checkout could not be checked. Please try again.',
+    );
+  const raw = data?.checkout;
+  const order = Array.isArray(raw) ? raw[0] : raw;
+  return order?.status === 'PENDING' && order.payment_status === 'PENDING'
+    ? {
+        id: order.id,
+        total: Number(order.total),
+        delivery_method: order.delivery_method,
+      }
+    : null;
+}
+
+/** Display only enumerated eligibility messages; never expose raw database/provider errors. */
+export function checkoutEligibilityMessage(error:unknown){
+ const code=error&&typeof error==='object'&&'code' in error?String(error.code):'';
+ const messages:Record<string,string>={DESTINATION_REQUIRED:'Enter the destination country.',CROSS_BORDER_UNSUPPORTED:'Delivery and shipping to another country are not available. Choose pickup or another business.',FULFILMENT_UNKNOWN:'This business’s fulfilment location needs confirmation. Choose another business or contact the seller.',PRODUCT_UNAVAILABLE:'This product or fulfilment method is no longer available. Review your cart.'};
+ return messages[code]??null;
+}

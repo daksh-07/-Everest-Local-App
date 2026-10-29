@@ -1,0 +1,1 @@
+chromium: business job workspace interactions passed (checklist gate, confirm-before-complete, cancel is inert, scheduled step). Fixture transport only.

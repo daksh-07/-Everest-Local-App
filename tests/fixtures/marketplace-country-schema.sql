@@ -1,0 +1,27 @@
+-- Synthetic minimal schema only; never production records or hosted auth.
+do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;end$$;
+create schema auth;
+create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('test.uid',true),'')::uuid$$;
+create function public.is_admin() returns boolean language sql as $$select false$$;
+create table public.businesses(id uuid primary key,owner_id uuid,status text,verification_status text,accepts_requests boolean,country text,latitude numeric,longitude numeric,category_id uuid);
+create function public.is_business_member(p_id uuid) returns boolean language sql as $$select exists(select 1 from public.businesses where id=p_id and owner_id=auth.uid())$$;
+create table public.service_requests(id uuid primary key,customer_id uuid,description text default 'Synthetic cleaning request',status text default 'OPEN',is_live boolean default true,live_status text default 'SEARCHING',live_expires_at timestamptz default now()+interval '1 hour',expires_at timestamptz default now()+interval '2 days',updated_at timestamptz,latitude numeric,longitude numeric,service_id uuid,service_definition_id uuid,delivery_mode text default 'LOCAL',category_id uuid,suburb text,city text,state text,country text,matching_wave_count integer default 0,last_match_wave_at timestamptz,live_radius_km numeric,live_radius_stage integer,preferred_date date,preferred_time time,timing_mode text,time_window_start time,time_window_end time,budget numeric,budget_min numeric,budget_max numeric,media_urls text[]);
+create table public.services(id uuid primary key,business_id uuid,active boolean,service_definition_id uuid,delivery_mode text,category_id uuid);
+create table public.service_areas(id uuid default gen_random_uuid(),business_id uuid,active boolean,suburb text,city text,state text);
+create table public.business_availability(business_id uuid,status text,available_from timestamptz,available_until timestamptz);
+create table public.business_members(business_id uuid,user_id uuid,status text);
+create table public.driver_availability(driver_id uuid,status text,service_radius_km numeric);
+create table public.service_provider_locations(provider_id uuid,latitude numeric,longitude numeric,recorded_at timestamptz);
+create table public.service_dispatch_provider_config(provider_id uuid,travel_speed_kmh numeric);
+create table public.service_dispatch_assignments(provider_id uuid,completed_at timestamptz);
+create table public.opportunities(id uuid default gen_random_uuid(),request_id uuid,business_id uuid,status text default 'OPEN',created_at timestamptz default now(),expires_at timestamptz,is_live boolean,notified_at timestamptz,approximate_distance_km numeric,eta_seconds integer,unique(request_id,business_id));
+create table public.service_matches(request_id uuid,business_id uuid,score integer,reason jsonb,created_at timestamptz default now(),unique(request_id,business_id));
+create table public.quotes(id uuid default gen_random_uuid(),request_id uuid,business_id uuid,status text default 'SENT');
+create table public.bookings(id uuid default gen_random_uuid(),request_id uuid,business_id uuid,status text default 'PENDING_PAYMENT');
+create table public.notifications(user_id uuid,kind text,title text,body text,data jsonb);
+create function public.everest_live_audit(uuid,text,jsonb) returns void language sql as $$select$$;
+create function public.dispatch_eta_proxy_seconds(numeric,numeric,numeric,numeric,numeric) returns integer language sql as $$select 100$$;
+alter table public.businesses add column accepts_orders boolean default true;
+create table public.products(id uuid primary key,business_id uuid,status text default 'ACTIVE',pickup_available boolean default true,delivery_eligible boolean default true,shipping_available boolean default true);
+create table public.orders(id uuid primary key default gen_random_uuid(),business_id uuid,delivery_method text,delivery_address jsonb);
+create table public.order_items(order_id uuid,product_id uuid,quantity integer);

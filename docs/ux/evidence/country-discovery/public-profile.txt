@@ -1,0 +1,1 @@
+chromium: public profile interactions passed (remove-connection confirm, cancel is inert, message sheet). Fixture transport only.

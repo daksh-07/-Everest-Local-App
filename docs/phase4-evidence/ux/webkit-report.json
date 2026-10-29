@@ -1,0 +1,2032 @@
+[
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "slow cart uses structural loading",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "failed cart mutation keeps quantity and shows local busy feedback",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "fulfilment validates inline and focuses the missing address",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "booking payment survives slow and failed secondary sections",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "supporting details retry independently",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "unknown review state does not offer duplicate review creation",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "review retry restores the completed booking action",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "expired product checkout returns to a refreshable cart with a fresh attempt",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "slow cart uses structural loading",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "failed cart mutation keeps quantity and shows local busy feedback",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "fulfilment validates inline and focuses the missing address",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "booking payment survives slow and failed secondary sections",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "supporting details retry independently",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "unknown review state does not offer duplicate review creation",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "review retry restores the completed booking action",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "expired product checkout returns to a refreshable cart with a fresh attempt",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 320,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "slow cart uses structural loading",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "failed cart mutation keeps quantity and shows local busy feedback",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "fulfilment validates inline and focuses the missing address",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "booking payment survives slow and failed secondary sections",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "supporting details retry independently",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "unknown review state does not offer duplicate review creation",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "review retry restores the completed booking action",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "expired product checkout returns to a refreshable cart with a fresh attempt",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "slow cart uses structural loading",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "failed cart mutation keeps quantity and shows local busy feedback",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "fulfilment validates inline and focuses the missing address",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "booking payment survives slow and failed secondary sections",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "supporting details retry independently",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "unknown review state does not offer duplicate review creation",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "review retry restores the completed booking action",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "expired product checkout returns to a refreshable cart with a fresh attempt",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 375,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "slow cart uses structural loading",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "failed cart mutation keeps quantity and shows local busy feedback",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "fulfilment validates inline and focuses the missing address",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "booking payment survives slow and failed secondary sections",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "supporting details retry independently",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "unknown review state does not offer duplicate review creation",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "review retry restores the completed booking action",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "expired product checkout returns to a refreshable cart with a fresh attempt",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "slow cart uses structural loading",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "failed cart mutation keeps quantity and shows local busy feedback",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "fulfilment validates inline and focuses the missing address",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "booking payment survives slow and failed secondary sections",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "supporting details retry independently",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "unknown review state does not offer duplicate review creation",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "review retry restores the completed booking action",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "expired product checkout returns to a refreshable cart with a fresh attempt",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "slow cart uses structural loading",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "failed cart mutation keeps quantity and shows local busy feedback",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "fulfilment validates inline and focuses the missing address",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "booking payment survives slow and failed secondary sections",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "supporting details retry independently",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "unknown review state does not offer duplicate review creation",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "review retry restores the completed booking action",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "expired product checkout returns to a refreshable cart with a fresh attempt",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "slow cart uses structural loading",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "failed cart mutation keeps quantity and shows local busy feedback",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "fulfilment validates inline and focuses the missing address",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "booking payment survives slow and failed secondary sections",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "supporting details retry independently",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "unknown review state does not offer duplicate review creation",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "review retry restores the completed booking action",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "expired product checkout returns to a refreshable cart with a fresh attempt",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "slow cart uses structural loading",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "failed cart mutation keeps quantity and shows local busy feedback",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "fulfilment validates inline and focuses the missing address",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "booking payment survives slow and failed secondary sections",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "supporting details retry independently",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "unknown review state does not offer duplicate review creation",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "review retry restores the completed booking action",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "expired product checkout returns to a refreshable cart with a fresh attempt",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "LIGHT",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "variant sold out and authoritative quantity cap",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "add selected variant and quantity",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "slow cart uses structural loading",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "failed cart mutation keeps quantity and shows local busy feedback",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "cart quantity and totals",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "fulfilment validates inline and focuses the missing address",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "checkout network error remains recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "duplicate taps issue one checkout request",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "cancellation returns to correct order without claiming paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "pending checkout keeps saved prices and resumes reserved stock",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "success URL alone does not mark paid",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "server payment refresh and persisted order details",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "failed order loading retry",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "merchant confirms fulfilment through pickup collection",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "read-only workspace has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "unpaid order has no fulfilment controls",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "unauthorised workspace clears order records",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "booking payment survives slow and failed secondary sections",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "supporting details retry independently",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "booking return waits for authoritative payment",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "expired service checkout is recoverable",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "duplicate service payment tap and cancellation return",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "booking polls server deposit and remaining balance",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "unknown review state does not offer duplicate review creation",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "review retry restores the completed booking action",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "switching bookings cannot retain stale payment actions",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "expired product checkout returns to a refreshable cart with a fresh attempt",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "empty cart cannot start checkout",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "width": 1280,
+    "theme": "DARK",
+    "scenario": "expired or guest authentication requires sign in",
+    "passed": true
+  }
+]

@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, integration/final-release-20261023]
 permissions:
   contents: read
 jobs:
@@ -72,6 +72,10 @@ jobs:
         run: npm run test:ui-release
       - name: Product marketplace regressions
         run: npm run test:products
+      - name: Phase 4 transaction and inventory regressions
+        run: node --experimental-strip-types --test tests/cart-checkout-guard.test.mjs tests/booking-guidance.test.mjs tests/checkout-handler.test.mjs tests/service-checkout-handler.test.mjs tests/checkout-lifecycle.test.mjs tests/order-presentation.test.mjs tests/order-inventory-sql.test.mjs tests/cart-presentation.test.mjs tests/product-presentation.test.mjs
+      - name: Marketplace country and photo recovery contracts
+        run: node --test tests/marketplace-country-sql.test.mjs tests/request-drafts.test.mjs tests/request-photo-recovery.test.mjs tests/integrated-cart-recovery.test.mjs
       - name: Service dispatch regression tests
         run: npm run test:dispatch && node --test tests/service-aware-dispatch-audit.test.mjs
       - name: Business verification tests
