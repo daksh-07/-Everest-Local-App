@@ -17,10 +17,10 @@ Status labels apply to the complete journey, not the presence of a screen. Mocke
 | Guest Home → search → empty-result recovery | Implemented but partially validated | #113 Chromium/WebKit and live guest walkthroughs; production release still pending |
 | Browsing location denial/manual country/retry | Implemented but partially validated | #113 rendered fixtures; physical permission/settings recovery outstanding |
 | Request country/address confirmation | Implemented but partially validated | #114 both browser engines; physical keyboard/GPS acceptance outstanding |
-| Persistent request text, service choice, address and budget | Implemented but partially validated | New implementation and Chromium interruption matrix; final CI and native lifecycle acceptance pending |
+| Persistent request text, service choice, address and budget | Implemented but partially validated | #115 Chromium/WebKit and recovery CI passed; native lifecycle and hosted staging acceptance remain pending |
 | Durable request photo attachments | Not implemented | Drafts explicitly tell users to reattach photos; no reliance on temporary picker URIs |
 | Uncertain request posting → status/retry | Implemented but partially validated | Immutable persisted payload/key, status lookup and explicit retry; mocked committed/lost-response and uncommitted cases exercised; live staging gate remains |
-| Country-aware business discovery | Not implemented | Home currently matches administrative names without country and falls back broadly; country must be constrained before limit/offset |
+| Country-aware business discovery | Implemented but partially validated | Home, scoped business-name directory/search and available-now apply country predicates before limits; new fixture/CI evidence is in the country discovery PR. Canonical country identifiers and physical/native acceptance remain open |
 | Country-aware service/product search | Not implemented | Existing universal_search/shop_products have no country argument; no client-side post-pagination filtering can claim completeness |
 | Currency/market checkout eligibility | Blocked, with the precise dependency | Production service/membership payment constraints enforce AUD; no verified non-AUD checkout path. Requires reviewed market/payment work and isolated acceptance; do not relabel prices from country |
 | Search → provider → request → quote | Implemented but partially validated | Routes and existing request/quote fixtures exist; actual multi-account staging acceptance not run |
@@ -66,3 +66,7 @@ On physical iPhone Safari/PWA, Android Chrome/PWA and native Expo/release builds
 - With isolated accounts, test real push while foreground/background/phone locked, urgent timeout/acceptance, employee denial, payment cancel/fail/succeed and authoritative webhook confirmation.
 
 Record device/OS/browser/build, actual steps, screenshots, expected/observed outcome and whether a real backend or fixture was used. None of these physical-device checks were executed in this environment.
+
+## Transaction integration conflict evidence
+
+A fresh non-mutating merge-tree review of #105 against deployed integration found conflicts in the discovery workflow, booking, business orders, cart, messages, product and commerce files. Details are in `EVEREST_COUNTRY_DISCOVERY.md`. No financial implementation was auto-selected or deployed.

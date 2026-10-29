@@ -110,7 +110,7 @@ function HistoryRow({
           <View style={{flex:1}}>
             <Text numberOfLines={1} style={{fontSize:13,fontWeight:'800',color:c.text}}>{item.query}</Text>
             <Text style={{fontSize:12,color:c.muted,marginTop:3}}>
-              {historyLabel(item.tab)} · {formatHistoryTime(item.createdAt)}
+              {historyLabel(item.tab)}{item.country?` · ${item.country}`:''} · {formatHistoryTime(item.createdAt)}
             </Text>
           </View>
         </Pressable>
@@ -135,9 +135,13 @@ function HistoryRow({
 export default function Search(){
   const {colors:c}=useAppTheme();
   const reducedMotion=useReducedMotion();
-  const params=useLocalSearchParams<{q?:string;tab?:string}>();
+  const params=useLocalSearchParams<{q?:string;tab?:string;country?:string}>();
+  const [country,setCountry]=useState(typeof params.country==='string'?params.country.trim().slice(0,150):'');
   const [q,setQ]=useState(typeof params.q==='string'?params.q:'');
   const [tab,setTab]=useState<Tab>(tabs.includes(params.tab as Tab)?params.tab as Tab:'TOP');
+  const browsingBusinesses=tab==='BUSINESS';
+  const browsingCountry=browsingBusinesses&&Boolean(country);
+  useEffect(()=>{setCountry(typeof params.country==='string'?params.country.trim().slice(0,150):'')},[params.country]);
   const [items,setItems]=useState<UniversalResult[]>([]);
   const [jobs,setJobs]=useState<JobResult[]>([]);
   const [loading,setLoading]=useState(false);
@@ -154,7 +158,7 @@ export default function Search(){
   const [sortMode,setSortMode]=useState<SortMode>('RELEVANCE');
   const version=useRef(0);
   const [viewer,setViewer]=useState('guest');
-  const requestKey=JSON.stringify([q.trim(),tab,viewer]);
+  const requestKey=JSON.stringify([q.trim(),tab,viewer,tab==='BUSINESS'?country:'']);
   const lastRequestKey=useRef('');
   const [loadedKey,setLoadedKey]=useState('');
   const hasResults=loadedKey===requestKey&&(tab==='JOB'?jobs.length>0:items.length>0);
@@ -170,24 +174,24 @@ export default function Search(){
     const sameRequest=lastRequestKey.current===requestKey;lastRequestKey.current=requestKey;
     setError('');setRequiresSignIn(false);
     if(!sameRequest){setItems([]);setJobs([]);setLoadedKey('')}
-    setLoading(Boolean(q.trim()));
+    setLoading(Boolean(q.trim()||browsingBusinesses));
     const timer=setTimeout(()=>{
       const text=q.trim();
-      if(!text){setLoading(false);return}
+      if(!text&&!browsingBusinesses){setLoading(false);return}
       setLoading(true);
       if(tab==='JOB')void loadJobs(text,current);
-      else void universalSearch(text,tab as UniversalKind,30,0,controller.signal)
+      else void universalSearch(text,tab as UniversalKind,30,0,controller.signal,browsingCountry?country:undefined)
         .then(x=>{if(version.current===current){setItems(x);setLoadedKey(requestKey)}})
         .catch(e=>{if(version.current!==current)return;const denied=isAccessFailure(e);const needsAccount=!signedIn&&denied;if(denied){setItems([]);setJobs([]);setLoadedKey('')}setRequiresSignIn(needsAccount);setError(needsAccount?'Sign in to search Everest':'Search could not be loaded. Check your connection and try again.')})
         .finally(()=>{if(version.current===current)setLoading(false)});
     },350);
     return()=>{clearTimeout(timer);version.current=current+1;controller.abort()};
-  },[q,tab,retry,signedIn,requestKey]);
+  },[q,tab,retry,signedIn,requestKey,browsingCountry,browsingBusinesses,country]);
 
-  async function rememberSearch(text=q.trim(),kind=tab){
+  async function rememberSearch(text=q.trim(),kind=tab,scope=country){
     if(!text)return;
     try{
-      const next=await addSearchHistory(text,kind);
+      const next=await addSearchHistory(text,kind,kind==='BUSINESS'?scope:undefined);
       setHistory(next);
     }catch{
       // Search must remain usable even if local history cannot be written.
@@ -274,6 +278,7 @@ export default function Search(){
   async function saveCurrentSearch(){
     const text=q.trim();
     if(!text||savingSearch)return;
+    if(browsingCountry){setError('Country-scoped saved alerts are not available yet. Search all areas before saving alerts.');return;}
     setSavingSearch(true);
     setError('');
     try{
@@ -328,8 +333,9 @@ export default function Search(){
   function openHistoryEntry(item:SearchHistoryEntry){
     const nextTab=tabs.includes(item.tab as Tab)?item.tab as Tab:'TOP';
     setTab(nextTab);
+    const scope=item.country?.trim()||'';setCountry(scope);router.setParams({country:scope||undefined});
     setQ(item.query);
-    void rememberSearch(item.query,nextTab);
+    void rememberSearch(item.query,nextTab,scope);
   }
 
   const filteredItems=useMemo(()=>{
@@ -423,9 +429,10 @@ export default function Search(){
               {photoOnly||sortMode!=='RELEVANCE'?<View style={{width:6,height:6,borderRadius:3,backgroundColor:c.brand}}/>:null}
             </Pressable>
             <Pressable accessibilityRole="button"
-              disabled={savingSearch}
+              disabled={savingSearch||browsingCountry}
+              accessibilityState={{disabled:savingSearch||browsingCountry,busy:savingSearch}}
               onPress={()=>void saveCurrentSearch()}
-              style={{flex:1,minHeight:44,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
+              style={{opacity:(savingSearch||browsingCountry)?0.55:1,flex:1,minHeight:44,borderRadius:13,borderWidth:1,borderColor:c.border,backgroundColor:c.surface,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:7}}
             >
               <Ionicons name="bookmark-outline" size={16} color={c.text}/>
               <Text style={{fontSize:12,fontWeight:'900',color:c.text}}>{savingSearch?'Saving…':'Save this search'}</Text>
@@ -443,7 +450,8 @@ export default function Search(){
           {loading?<Text accessibilityLiveRegion="polite" style={{color:c.textSecondary}}>Updating results…</Text>:null}
           {error?<ErrorBanner message="Results could not be refreshed. Previously loaded matches are shown." onRetry={()=>setRetry(value=>value+1)}/>:<Pressable disabled={loading} accessibilityRole="button" accessibilityLabel="Refresh results" onPress={()=>setRetry(value=>value+1)} style={{minHeight:44,justifyContent:'center'}}><Text style={{color:c.accent,fontSize:14}}>Refresh results</Text></Pressable>}
         </View>:null}
-        {!q.trim()?(
+        {country?<View style={{paddingVertical:12}}><Text style={{color:c.textSecondary,fontSize:14}}>{browsingCountry?`Business names in ${country}. Saved alerts for this country are not available yet.`:'All areas. Country filtering applies to the Businesses tab.'}</Text><Pressable accessibilityRole="button" accessibilityLabel="Search all countries" onPress={()=>{setCountry('');router.setParams({country:undefined})}} style={{minHeight:44,justifyContent:'center'}}><Text style={{color:c.accent,fontWeight:'700'}}>Search all areas</Text></Pressable></View>:null}
+        {!q.trim()&&!browsingBusinesses?(
           <View>
             <Text variant="section" style={{color:c.text,marginTop:10}}>Find a local service</Text>
             <Text style={{fontSize:14,lineHeight:21,color:c.textSecondary,marginTop:5}}>Choose a category or search in your own words.</Text>
@@ -524,6 +532,7 @@ export default function Search(){
               <View style={{flex:1}}>
                 <Text style={{fontSize:16,lineHeight:22,fontWeight:'700',color:c.text}}>{x.title}</Text>
                 <Text numberOfLines={2} style={{fontSize:14,lineHeight:20,color:c.textSecondary,marginTop:4}}>{x.subtitle}</Text>
+                {x.kind==='BUSINESS'&&x.metadata.accepts_requests===false?<Text style={{fontSize:14,lineHeight:20,color:c.textSecondary,marginTop:4}}>Not taking service requests</Text>:null}
                 <Text style={{fontSize:12,fontWeight:'900',color:c.accent,marginTop:5}}>{x.kind==='PERSON'?'PERSON':x.kind}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.muted}/>
@@ -531,11 +540,11 @@ export default function Search(){
           ))
         ):(
           <View style={{paddingVertical:38,alignItems:'center'}}>
-            <Text style={{fontSize:16,fontWeight:'900',color:c.text}}>No Everest results</Text>
+            <Text style={{fontSize:16,fontWeight:'900',color:c.text}}>{browsingCountry?`No businesses found in ${country}`:'No Everest results'}</Text>
             <Text style={{fontSize:12,color:c.muted,marginTop:6,textAlign:'center'}}>
               {photoOnly?'No results match the active filters.':'Try a different keyword or browse service categories.'}
             </Text>
-            <Pressable accessibilityRole="button" onPress={()=>{if(photoOnly)setPhotoOnly(false);else setQ('')}} style={{minHeight:48,justifyContent:'center',paddingHorizontal:16,marginTop:12}}>
+            <Pressable accessibilityRole="button" onPress={()=>{if(photoOnly)setPhotoOnly(false);else {setQ('');setTab('SERVICE')}}} style={{minHeight:48,justifyContent:'center',paddingHorizontal:16,marginTop:12}}>
               <Text style={{fontSize:14,fontWeight:'700',color:c.accent}}>{photoOnly?'Remove photo filter':'Browse service categories'}</Text>
             </Pressable>
             {tab==='SERVICE'||tab==='BUSINESS'||tab==='TOP'?<Pressable accessibilityRole="button" accessibilityLabel="Request quotes from search" onPress={()=>void requestQuotes()} style={{minHeight:48,justifyContent:'center',paddingHorizontal:16}}>

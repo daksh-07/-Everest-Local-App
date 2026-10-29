@@ -6,6 +6,7 @@ export type SearchHistoryEntry={
   query:string;
   tab:string;
   createdAt:string;
+  country?:string;
 };
 
 const KEY='everest.search.history.v1';
@@ -36,7 +37,7 @@ export async function getSearchHistory():Promise<SearchHistoryEntry[]>{
     if(!Array.isArray(parsed))return [];
     return parsed
       .filter((item):item is SearchHistoryEntry=>Boolean(
-        item&&typeof item.id==='string'&&typeof item.query==='string'&&typeof item.tab==='string'&&typeof item.createdAt==='string',
+        item&&(item.country===undefined||(typeof item.country==='string'&&item.country.length<=150))&&typeof item.id==='string'&&typeof item.query==='string'&&typeof item.tab==='string'&&typeof item.createdAt==='string',
       ))
       .slice(0,LIMIT);
   }catch{
@@ -44,18 +45,20 @@ export async function getSearchHistory():Promise<SearchHistoryEntry[]>{
   }
 }
 
-export async function addSearchHistory(query:string,tab:string){
+export async function addSearchHistory(query:string,tab:string,country?:string){
   const clean=query.trim().replace(/\s+/g,' ').slice(0,100);
   if(!clean)return getSearchHistory();
 
+  const scope=country?.trim().slice(0,150)||undefined;
   const current=await getSearchHistory();
-  const deduped=current.filter(item=>item.query.toLowerCase()!==clean.toLowerCase()||item.tab!==tab);
+  const deduped=current.filter(item=>item.query.toLowerCase()!==clean.toLowerCase()||item.tab!==tab||(item.country||'').toLowerCase()!==(scope||'').toLowerCase());
   const next:[SearchHistoryEntry,...SearchHistoryEntry[]]=[
     {
       id:String(Date.now())+'-'+Math.random().toString(36).slice(2,8),
       query:clean,
       tab,
       createdAt:new Date().toISOString(),
+      ...(scope?{country:scope}:{}),
     },
     ...deduped,
   ];
