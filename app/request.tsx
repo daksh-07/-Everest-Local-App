@@ -715,7 +715,7 @@ export default function Request() {
           style={{ flex: 1 }}
           contentContainerStyle={s.page}
           keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
+          keyboardDismissMode={Platform.OS === "web" ? "none" : "on-drag"}
         >
           <Animated.View
             style={{

@@ -37,3 +37,5 @@ Request draft recovery remains open: specify opt-in/device storage, account isol
 ## First published CI outcome
 
 Source `4a96ec5` passed Chromium request-location and performance recovery CI. WebKit passed several configurations but timed out waiting for a missing-country alert. This is unresolved; WebKit must not be called passed. Added failure-only field/DOM/screenshot diagnostics while preserving the same assertions. A local WebKit download succeeded, but its system libraries were unavailable and the dependency installer failed with a runtime `setgroups` restriction. CI remains the usable WebKit environment.
+
+The diagnostic rerun reproduced focus falling back to `body`. Inspection of the installed React Native Web ScrollView `_handleScroll` confirmed that `keyboardDismissMode="on-drag"` dismisses the keyboard on every scroll event, including focus-driven scrolling. Request now uses `none` on web and retains `on-drag` on native. This addresses corrective focus and avoids typing being interrupted when the browser scrolls an input into view. Cross-browser rerun remains required.
