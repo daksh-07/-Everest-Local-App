@@ -1,0 +1,17 @@
+# Business Today: incoming customer requests — 30 October 2026 (Sydney)
+
+Observed source defect: Today loaded CRM opportunities, bookings and messages, but never loaded marketplace opportunities. An eligible incoming request could coexist with “You’re all caught up”. The customer-response path existed in `/opportunities` but was missing from the working-day queue.
+
+Implemented: read `list_my_business_opportunities` with the active workspace business ID and OPEN status through existing RLS-safe API; exclude expired, malformed and terminal rows from display; sort by soonest expiry; include incoming customer requests after the current job and before CRM follow-ups. A clearly labelled Customer requests row and Manage shortcut open the existing opportunity workflow. Respond deep-links the request ID to its existing quote form. It never accepts a job or sends a quote by itself.
+
+Failed or pending opportunity reads now participate in the existing incomplete-state check, preventing the false all-caught-up message. Section-specific retry preserves the rest of Today. Returning to Today and foregrounding the app refresh requests. Server quote eligibility, authorisation, fees, dispatch, payout and submission behaviour are unchanged. The notification icon no longer announces an unread-message count as a notification count.
+
+Decision: retain jobs-first hierarchy and advanced CRM access, consistent with the existing audit/design register and research on visible status and recovery. Rejected a CRM-only renaming (still misses marketplace work), a second editable quote form (duplicates consequential logic), and automatic quote submission (requires deliberate business review). No speculative revenue or conversion gain is claimed.
+
+Validation is against actual exported UI with synthetic transport. Held reads, active business scope, expired exclusion, response deep link, return refresh, failure and retry are exercised; unit tests run the actual projection function. CI/preview and exact-source results are recorded in the PR. Native JS export is not a physical app, background notification or screen-reader test. Real multi-account staging and push delivery remain separate gates in the journey checklist.
+
+Rollback: revert this isolated batch. No schema, data, payment or security rollback is needed.
+
+A guest preview smoke check of #116 at `3ee72205` verified manual Richmond/Canada selection, no Australian businesses in the Canada directory, and a successful deployed Available now read with an empty state and no query error. This verifies a negative supply case, not positive international booking eligibility. Screenshot review found Home’s shop caption still lacked the intended AUD/fulfilment caveat; this batch adds it without relabelling amounts or restricting supply through incomplete client filtering.
+
+Local results: 543 unit/security tests passed; TypeScript passed; lint has zero errors and eleven pre-existing warnings; static audit and migration audit passed (97 routes / 244 migrations, none applied). Chromium passes six mode/theme Today scenarios at 390×844 with six zero-violation axe scans, no horizontal overflow and no page errors. iOS/Android JS/Hermes exports passed. No physical binary/device acceptance is implied. CI reruns the existing PostgreSQL/PGlite transaction, Live, permission, comment and integration contracts on this source, alongside both browser engines and recovery CI; results remain pending until recorded in the PR.
