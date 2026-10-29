@@ -4,7 +4,7 @@
 // Usage: serve a web export (e.g. `npx serve -s dist -l 4173`), then
 //   EVEREST_PREVIEW_URL=http://localhost:4173 EVEREST_QA_ARTIFACTS=docs/design/evidence/after node scripts/capture-design-evidence.mjs
 import fs from 'node:fs/promises';
-const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'/workspace/shared/everest-tools/node_modules/playwright/index.mjs');
 const base=process.env.EVEREST_PREVIEW_URL||'http://localhost:4173';
 const output=process.env.EVEREST_QA_ARTIFACTS||'/tmp/everest-design-evidence';
 const viewports=(process.env.EVEREST_QA_VIEWPORTS||'320x568,390x844,412x915,1280x800').split(',').map(v=>{const [w,h]=v.split('x').map(Number);return {w,h}});
@@ -45,6 +45,11 @@ const feedPosts=[
  feedPost('p3',uid,businesses[2].id,'Before and after: full ceramic-safe hand wash in Fitzroy this morning.','BEFORE_AFTER',1600),
 ];
 const rpcFixtures={
+ get_my_assigned_jobs:()=>[
+  {assignment_id:'a1',source:'EVEREST',booking_id:'b3',crm_booking_id:null,status:'ASSIGNED',job_status:'CONFIRMED',label:'Garden maintenance',customer_name:'Marcus Lee',scheduled_at:minutesAgo(-240),location:'Carlton VIC',price:null,team_id:null,note:null},
+  {assignment_id:'a2',source:'EVEREST',booking_id:'b2',crm_booking_id:null,status:'IN_PROGRESS',job_status:'IN_PROGRESS',label:'Hedge trimming & green waste',customer_name:'Priya Shah',scheduled_at:minutesAgo(60),location:'14 Errol Street, North Melbourne VIC',price:null,team_id:null,note:null},
+  {assignment_id:'a3',source:'CRM',booking_id:null,crm_booking_id:'cb0',status:'COMPLETED',job_status:'COMPLETED',label:'Lawn and edges',customer_name:'Priya Shah',scheduled_at:minutesAgo(60*24),location:null,price:null,team_id:null,note:null}
+ ],
  get_public_user_profile:body=>body?.p_user==='99999999-9999-4999-8999-999999999999'?({id:body.p_user,display_name:'Marcus Lee',username:null,avatar_url:null,bio:null,website_url:null,suburb:null,joined_at:minutesAgo(60*24*3),connection_count:0,mutual_count:0,connection_state:'NONE'}):({id:other,display_name:'Priya Shah',username:'priyashah',avatar_url:null,bio:'Gardener, dog walker and long-time North Melbourne local. Ask me for trade recommendations.',website_url:'https://example.invalid',suburb:'North Melbourne',joined_at:minutesAgo(60*24*420),connection_count:38,mutual_count:4,connection_state:'CONNECTED'}),
  get_booking_service_location:()=>[{request_id:'r2',address_line1:'14 Errol Street',suburb:'North Melbourne',city:'Melbourne',state:'VIC',postal_code:'3051',country:'AU',service_address_label:'14 Errol Street, North Melbourne VIC 3051',latitude:-37.8027,longitude:144.9497}],
  list_discovery_feed:()=>feedPosts,
@@ -70,6 +75,12 @@ const screens={
  bookings:{path:'/bookings',signedIn:true},
  orders:{path:'/orders',signedIn:true},
  cart:{path:'/cart',signedIn:true},
+ 'cart-review':{path:'/cart',signedIn:true,scrollTo:'Continue to secure checkout'},
+ 'cart-delivery':{path:'/cart',signedIn:true,click:'Everest Delivery',commerce:'valid'},
+ 'cart-mixed':{path:'/cart',signedIn:true,commerce:'mixed'},
+ 'cart-unavailable':{path:'/cart',signedIn:true,commerce:'unavailable'},
+ 'orders-history':{path:'/orders',signedIn:true,click:'History'},
+ 'orders-delivery-error':{path:'/orders',signedIn:true,commerce:'delivery-error'},
  product:{path:'/product?id='+products[1].id,signedIn:true},
  'business-profile':{path:'/business-profile?id='+biz,signedIn:true},
  request:{path:'/request',signedIn:true},
@@ -80,6 +91,12 @@ const screens={
  'business-calendar':{path:'/business-calendar',signedIn:true,business:true},
  'business-inbox':{path:'/business-inbox',signedIn:true,business:true},
  'business-crm':{path:'/business-crm',signedIn:true,business:true},
+ 'business-crm-booking':{path:'/business-crm-booking?id=cb1',signedIn:true,business:true},
+ 'business-crm-booking-new':{path:'/business-crm-booking',signedIn:true,business:true},
+ 'business-crm-reschedule':{path:'/business-crm-booking?id=cb1',signedIn:true,business:true,click:'Reschedule'},
+ 'business-crm-status':{path:'/business-crm-booking?id=cb1',signedIn:true,business:true,click:'Completed'},
+ 'business-my-work':{path:'/business-my-work',signedIn:true,business:true},
+ 'business-work-complete':{path:'/business-my-work',signedIn:true,business:true,click:'Complete job'},
  'business-job':{path:'/business-job?id=b2',signedIn:true,business:true},
  'business-job-new':{path:'/business-job?id=b3',signedIn:true,business:true},
  'business-customer':{path:'/business-customer?id=ct1',signedIn:true,business:true},
@@ -126,8 +143,9 @@ function rows(table,isBusiness){
   case 'quotes':return [{id:'q1',request_id:'r1',business_id:biz,customer_id:uid,status:'SENT',description:'Trim front and back hedges, remove all green waste.',price:240,deposit:24,total:240,proposed_date:'2026-10-21',proposed_time:'10:00:00',valid_until:'2026-10-28T00:00:00Z',created_at:'2026-10-15T09:00:00Z',businesses:{id:biz,name:businesses[0].name,logo_url:null,verification_status:'VERIFIED'}},{id:'q2',request_id:'r1',business_id:businesses[1].id,customer_id:uid,status:'SENT',description:'Hedge trim and tidy. Green waste extra.',price:195,deposit:20,total:195,proposed_date:'2026-10-23',proposed_time:'14:00:00',valid_until:'2026-10-25T00:00:00Z',created_at:'2026-10-15T11:00:00Z',businesses:{id:businesses[1].id,name:businesses[1].name,logo_url:null,verification_status:'UNVERIFIED'}}];
   case 'services':return [{id:'s1',business_id:biz,name:'Garden maintenance',description:'Mowing, edging, hedges and seasonal tidy-ups.',base_price:85,duration_minutes:60,status:'ACTIVE',delivery_mode:'LOCAL',service_booking_settings:{instant_booking_enabled:false}}];
   case 'products':return products.map(p=>({...p,short_description:'Rinse-free wash and two plush microfibre towels.',description:'Everything needed for a ceramic-safe hand wash at home. Biodegradable, pH-neutral formula.',condition:'NEW',brand:'Fitzroy Detailing',key_features:['pH-neutral formula','Two 40 × 40 cm microfibre towels','Makes up to 20 washes'],tags:['car care'],attributes:{},fulfillment:'PICKUP_OR_DELIVERY',track_stock:true,made_to_order:false,delivery_eligible:true,pickup_available:true,shipping_available:false,shipping_fee:null,dispatch_days:1,listing_quality:null,businesses:{id:p.business_id,name:p.business_name,logo_url:null,verification_status:'VERIFIED',suburb:p.suburb,city:p.city,state:p.state},inventory:{stock_quantity:p.stock_quantity,reserved_quantity:0,low_stock_threshold:2},product_images:[],product_variants:[{id:'v1',product_id:p.id,title:'Standard',option_values:{size:'Standard'},price:null,sku:'WK-1',image_id:null,stock_quantity:3,reserved_quantity:0,low_stock_threshold:1,available:true,sort_order:0},{id:'v2',product_id:p.id,title:'Large',option_values:{size:'Large'},price:69.95,sku:'WK-2',image_id:null,stock_quantity:0,reserved_quantity:0,low_stock_threshold:1,available:false,sort_order:1}]}));
-  case 'cart_items':return [{id:'ci1',quantity:1,product_id:products[1].id,variant_id:'v1',products:{id:products[1].id,name:products[1].name,price:59.95,sale_price:49.95,status:'ACTIVE',business_id:products[1].business_id,delivery_eligible:true,pickup_available:true,shipping_available:false},product_variants:{id:'v1',title:'Standard',price:null,available:true}},{id:'ci2',quantity:2,product_id:products[0].id,variant_id:null,products:{id:products[0].id,name:products[0].name,price:34,sale_price:null,status:'ACTIVE',business_id:biz,delivery_eligible:false,pickup_available:true,shipping_available:false},product_variants:null}];
-  case 'orders':return [{id:'o1',order_number:'EV-1042',status:'PREPARING',payment_status:'PAID',total:133.95,created_at:'2026-10-12T10:00:00Z',delivery_method:'PICKUP',business_id:biz,businesses:{name:businesses[0].name}},{id:'o2',order_number:'EV-1031',status:'COMPLETED',payment_status:'PAID',total:49.95,created_at:'2026-09-28T10:00:00Z',delivery_method:'DELIVERY',business_id:businesses[2].id,businesses:{name:businesses[2].name}}];
+  case 'cart_items':return [{id:'ci1',quantity:1,product_id:products[1].id,variant_id:'v1',products:{id:products[1].id,name:products[1].name,price:59.95,sale_price:49.95,status:'ACTIVE',business_id:products[1].business_id,delivery_eligible:true,pickup_available:true,shipping_available:false,track_stock:true,made_to_order:false,businesses:{name:'Fixture local business'},inventory:{stock_quantity:10,reserved_quantity:0}},product_variants:{id:'v1',title:'Standard',price:null,available:true,stock_quantity:3,reserved_quantity:0}},{id:'ci2',quantity:2,product_id:products[0].id,variant_id:null,products:{id:products[0].id,name:products[0].name,price:34,sale_price:null,status:'ACTIVE',business_id:biz,delivery_eligible:false,pickup_available:true,shipping_available:false,track_stock:true,made_to_order:false,businesses:{name:'Fixture local business'},inventory:{stock_quantity:10,reserved_quantity:0}},product_variants:null}];
+  case 'deliveries':return [{order_id:'o3',status:'OUT_FOR_DELIVERY',eta:minutesAgo(-40)}];
+  case 'orders':return [{id:'o3',order_number:'EV-1046',status:'OUT_FOR_DELIVERY',payment_status:'SUCCEEDED',total:59.95,created_at:minutesAgo(120),delivery_method:'EVEREST_DELIVERY'},{id:'o4',order_number:'EV-1047',status:'PENDING',payment_status:'REQUIRES_ACTION',total:34,created_at:minutesAgo(30),delivery_method:'SHIPPING'},{id:'o1',order_number:'EV-1042',status:'PREPARING',payment_status:'SUCCEEDED',total:133.95,created_at:'2026-10-12T10:00:00Z',delivery_method:'PICKUP',business_id:biz,businesses:{name:businesses[0].name}},{id:'o2',order_number:'EV-1031',status:'COMPLETED',payment_status:'SUCCEEDED',total:49.95,created_at:'2026-09-28T10:00:00Z',delivery_method:'EVEREST_DELIVERY',business_id:businesses[2].id,businesses:{name:businesses[2].name}}];
   case 'public_profiles':return [{id:uid,display_name:'Sam Taylor',avatar_url:null},{id:other,display_name:'Priya Shah',avatar_url:null}];
   case 'post_reactions':return [{post_id:'p1',user_id:other},{post_id:'p1',user_id:uid},{post_id:'p2',user_id:uid}];
   case 'post_comments':return [{post_id:'p1'},{post_id:'p1'},{post_id:'p3'}];
@@ -153,13 +171,13 @@ function rows(table,isBusiness){
  }
 }
 await fs.mkdir(output,{recursive:true});
-const browser=await chromium.launch({args:['--no-sandbox']});
+const browser=await chromium.launch({executablePath:process.env.EVEREST_BROWSER_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
 const report=[];
 for(const key of selected){const screen=screens[key];if(!screen)continue;
  for(const theme of themes)for(const {w,h} of viewports){
   const context=await browser.newContext({viewport:{width:w,height:h},isMobile:w<768,hasTouch:w<768,reducedMotion:'reduce',deviceScaleFactor:w<768?2:1,timezoneId:'Australia/Melbourne',locale:'en-AU'});
   await context.addInitScript(({theme,session,signedIn})=>{localStorage.setItem('everest-local-theme',theme);if(signedIn)localStorage.setItem('sb-bmwbljefnamvjnmuvkvv-auth-token',JSON.stringify(session))},{theme,session,signedIn:screen.signedIn});
-  const page=await context.newPage();await page.clock.setFixedTime(FIXTURE_NOW);const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&/runtime error|TypeError|ReferenceError/.test(m.text()))errors.push(m.text().slice(0,400))});
+  let cartRows=null;const writes=[];const page=await context.newPage();await page.clock.setFixedTime(FIXTURE_NOW);const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&/runtime error|TypeError|ReferenceError/.test(m.text()))errors.push(m.text().slice(0,400))});
   await page.routeWebSocket('**/realtime/**',ws=>ws.close());
   await page.route(/open-meteo|nominatim|bigdatacloud/,route=>route.fulfill({status:503,json:{}}));
   await page.route('**/*.supabase.co/**',async route=>{
@@ -167,6 +185,12 @@ for(const key of selected){const screen=screens[key];if(!screen)continue;
    if(url.pathname.includes('/auth/'))return route.fulfill({status:screen.signedIn?200:401,json:screen.signedIn?user:{message:'no session'}});
    if(url.pathname.includes('/storage/'))return route.fulfill({status:200,json:[]});
    if(url.pathname.includes('/rpc/')){
+    if(process.env.EVEREST_QA_COMMERCE_ACTIONS==='1'&&table==='set_my_cart_item_v2'){
+     const b=request.postDataJSON();writes.push(b);
+     cartRows=cartRows.filter(i=>!(i.product_id===b.p_product_id&&i.variant_id===b.p_variant_id&&b.p_quantity===0)).map(i=>i.product_id===b.p_product_id&&i.variant_id===b.p_variant_id?{...i,quantity:b.p_quantity}:i);
+     return route.fulfill({json:null});
+    }
+    if(['crm_set_booking_status','update_business_job_assignment_status'].includes(table)){errors.push('mutation occurred before confirmation');return route.fulfill({status:403,json:{message:'Writes blocked by inert QA fixture'}})}
     if(table==='get_my_access_context')return route.fulfill({json:{profile_role:screen.business?'BUSINESS':'CUSTOMER',is_business_member:!!screen.business,is_verified_business:!!screen.business,business_id:screen.business?biz:null,business_name:screen.business?businesses[0].name:null}});
     if(table==='get_my_workspace_context')return route.fulfill({json:{mode:screen.business?'BUSINESS':'CUSTOMER',active_business_id:screen.business?biz:null,businesses:screen.business?[{...businesses[0],member_role:'OWNER',status:'ACTIVE',can_view_all_jobs:true,can_assign_jobs:true,can_view_team:true,can_manage_team:true,can_view_crm:true,can_view_finance:true}]:[]}});
     if(rpcFixtures[table]){let body=null;try{body=request.postDataJSON()}catch{body=null}return route.fulfill({json:rpcFixtures[table](body)})}
@@ -174,14 +198,50 @@ for(const key of selected){const screen=screens[key];if(!screen)continue;
     return route.fulfill({json:[]});
    }
    if(request.method()!=='GET'&&request.method()!=='HEAD')return route.fulfill({status:403,json:{message:'Writes blocked by inert QA fixture'}});
-   let json=applyFilters(rows(table,screen.business),url.searchParams);
+   if(table==='deliveries'&&screen.commerce==='delivery-error')return route.fulfill({status:503,json:{message:'fixture failure'}});
+   let fixtureRows=rows(table,screen.business);
+   if(table==='cart_items'&&screen.commerce!=='mixed')fixtureRows=fixtureRows.map((item,index)=>({...item,products:{...item.products,business_id:biz,delivery_eligible:true,status:screen.commerce==='unavailable'&&index===0?'ARCHIVED':'ACTIVE'}}));
+   if(table==='cart_items'){if(cartRows===null)cartRows=fixtureRows;fixtureRows=cartRows;}
+   let json=applyFilters(fixtureRows,url.searchParams);
    if(request.headers().accept?.includes('vnd.pgrst.object'))json=json[0]??null;
    return route.fulfill({status:200,json,headers:{'access-control-expose-headers':'content-range','content-range':`0-${Math.max(0,(Array.isArray(json)?json.length:1)-1)}/${Array.isArray(json)?json.length:1}`}});
   });
   await page.goto(base+screen.path,{waitUntil:'networkidle'}).catch(()=>undefined);
   await page.waitForTimeout(1200);
+  // Auth hydration can remount a pushed route; wait for real content, not a fixed delay.
+  if(key.startsWith('business-crm-'))await page.getByText(key==='business-crm-booking-new'?'1. Customer & linked records':'Autumn garden tidy-up',{exact:true}).waitFor({state:'visible'});
+  if(key==='business-my-work'||key==='business-work-complete')await page.getByText('Current job',{exact:true}).waitFor({state:'visible'});
+  if(key.startsWith('orders'))await page.getByRole('tab',{name:/In progress/}).waitFor({state:'visible'});
+  if(key.startsWith('cart'))await page.getByRole('button',{name:'Continue to secure checkout'}).waitFor({state:'visible'});
   // Optional interaction before capture: tap the first control whose accessible name contains `click`.
-  if(screen.click){const target=page.getByRole('button',{name:screen.click}).or(page.getByRole('tab',{name:screen.click})).first();await target.click().catch(()=>errors.push('click target not found: '+screen.click));await page.waitForTimeout(900)}
+  if(screen.click){const target=page.getByRole('button',{name:screen.click}).or(page.getByRole('tab',{name:screen.click})).or(page.getByRole('radio',{name:screen.click})).first();await target.click().catch(()=>errors.push('click target not found: '+screen.click));await page.waitForTimeout(900)}
+  if(screen.scrollTo)await page.getByRole('button',{name:screen.scrollTo}).scrollIntoViewIfNeeded();
+  if(key.startsWith('cart')){
+   const checkout=page.getByRole('button',{name:'Continue to secure checkout'});
+   if(['cart-mixed','cart-unavailable'].includes(key)&&!(await checkout.isDisabled()))errors.push('unsafe checkout enabled');
+   if(key==='cart-delivery'){
+    await page.getByRole('textbox',{name:'Delivery or shipping address'}).fill('1');
+    await checkout.click();
+    if(!(await page.getByText('Enter your street address, suburb and postcode to continue.',{exact:true}).isVisible()))errors.push('short address error absent');
+    if(!(await page.getByRole('textbox',{name:'Delivery or shipping address'}).evaluate(el=>el===document.activeElement)))errors.push('address field not focused');
+    await page.getByRole('textbox',{name:'Delivery or shipping address'}).fill('14 Errol Street, North Melbourne VIC 3051');
+    if(await checkout.isDisabled())errors.push('valid address cannot continue');
+   }
+  }
+  if(key==='orders'&&!(await page.getByText('Payment needs attention',{exact:true}).isVisible()))errors.push('payment guidance absent');
+  if(key==='orders-history'&&!(await page.getByText('Order delivered',{exact:true}).isVisible()))errors.push('history absent');
+  if(process.env.EVEREST_QA_COMMERCE_ACTIONS==='1'&&key==='cart'){
+   await page.getByRole('button',{name:'Increase quantity of Ceramic-safe wash kit'}).click();
+   await page.getByText('$99.90',{exact:true}).waitFor();
+   if(writes.length!==1||writes[0].p_variant_id!=='v1'||writes[0].p_quantity!==2)errors.push('variant quantity mutation incorrect');
+   await page.getByRole('button',{name:'Remove Native seedling tray (12) from cart',exact:true}).click();
+   await page.getByText('Native seedling tray (12)',{exact:true}).waitFor({state:'hidden'});
+   if(writes.at(-1)?.p_quantity!==0)errors.push('remove did not submit zero quantity');
+  }
+  if(process.env.EVEREST_QA_COMMERCE_ACTIONS==='1'&&key==='product'){
+   const sold=page.getByRole('radio').filter({hasText:'Large'});if(!(await sold.isDisabled()))errors.push('sold-out option enabled');
+   const inc=page.getByRole('button',{name:'Increase quantity',exact:true});await inc.click();await inc.click();if(!(await inc.isDisabled()))errors.push('stock bound not enforced');
+  }
   const file=`${output}/${key}-${theme.toLowerCase()}-${w}x${h}.png`;
   await page.screenshot({path:file,fullPage:process.env.EVEREST_QA_FULL==='1'});
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
@@ -191,3 +251,5 @@ for(const key of selected){const screen=screens[key];if(!screen)continue;
 await browser.close();
 await fs.writeFile(`${output}/report.json`,JSON.stringify(report,null,1));
 console.log(report.map(r=>`${r.screen} ${r.theme} ${r.viewport} overflow=${r.horizontalOverflow} errors=${r.errors.length}`).join('\n'));
+
+if(report.some(r=>r.horizontalOverflow||r.errors.length))process.exitCode=1;

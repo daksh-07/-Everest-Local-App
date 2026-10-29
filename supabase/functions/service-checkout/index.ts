@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {checkoutReturnUrls} from '../_shared/checkout-return.ts';
 import Stripe from 'https://esm.sh/stripe@18.5.0?target=deno';
 
 type ServicePaymentResult={payment_id:string;booking_id:string;amount:number;currency:string;payment_kind?:'DEPOSIT'|'BALANCE';provider_checkout_session_id:string|null;reused:boolean};
@@ -30,6 +31,7 @@ Deno.serve(async req=>{
  let paymentId:string|undefined;
 
  try{
+  checkoutReturnUrls(Deno.env.get('APP_PUBLIC_URL'),'booking',bookingId);
   // Database payment creation also enforces current payout readiness.
   const {data:raw,error}=await userClient.rpc('create_service_payment',{p_booking_id:bookingId,p_idempotency_key:idem});
   if(error)throw error;
@@ -56,10 +58,9 @@ Deno.serve(async req=>{
   if(businessError)throw businessError;
   const connected=business as ConnectBusiness|null;
   if(!connectReady(connected)){
-   await admin.from('service_payments').update({
-    status:'FAILED',updated_at:new Date().toISOString(),
-   }).eq('id',paymentId).eq('status','PENDING').is('provider_checkout_session_id',null);
-   return json({error:'This business is still setting up payouts. No payment was taken.'},409);
+   // An earlier Stripe request may have succeeded before its response was
+   // persisted. Only Stripe's final state may fail an existing attempt.
+   return json({error:'This business is still setting up payouts. No new checkout was opened. Refresh the booking to check any existing payment.'},409);
   }
   const connectedId=connected!.stripe_connected_account_id!;
 
@@ -73,7 +74,10 @@ Deno.serve(async req=>{
     // Backward compatibility for a checkout created before Stripe Connect routing.
     existing=await stripe.checkout.sessions.retrieve(payment.provider_checkout_session_id);
    }
-   return json({paymentId,bookingId,total:payment.amount,checkoutUrl:existing.url,reused:true});
+   if(existing.status==='expired'){
+    const {error:expiryError}=await admin.rpc('process_stripe_service_failure',{p_payment_id:paymentId});if(expiryError)throw expiryError;
+   }
+   return json({paymentId,bookingId,total:payment.amount,checkoutUrl:existing.status==='open'?existing.url:null,checkoutState:existing.status==='expired'?'EXPIRED':existing.status==='complete'?'COMPLETE':'OPEN',reused:true});
   }
 
   const applicationFeeCents=Math.max(0,Math.round(Number(fee.marketplace_fee)*100));
@@ -109,8 +113,7 @@ Deno.serve(async req=>{
    }],
    metadata,
    payment_intent_data:paymentIntentData,
-   success_url:`everestlocal://booking/success?booking_id=${encodeURIComponent(bookingId)}`,
-   cancel_url:`everestlocal://booking/cancelled?booking_id=${encodeURIComponent(bookingId)}`,
+   ...checkoutReturnUrls(Deno.env.get('APP_PUBLIC_URL'),'booking',bookingId),
   },{idempotencyKey:paymentId,stripeAccount:connectedId});
 
   const {error:updateError}=await admin.from('service_payments').update({
@@ -127,7 +130,7 @@ Deno.serve(async req=>{
    paymentId,bookingId,total:payment.amount,
    marketplaceFee:fee.marketplace_fee,
    providerNetBeforeStripeFees:fee.provider_net,
-   checkoutUrl:session.url,reused:payment.reused,
+   checkoutUrl:session.url,checkoutState:'OPEN',reused:payment.reused,
   });
  }catch(error){
   console.error('service_checkout_failed',{message:error instanceof Error?error.message:'unknown',bookingId,paymentId:paymentId??null});

@@ -17,7 +17,7 @@ on:
       - 'tests/native-store-release.test.mjs'
       - '.github/workflows/validate-ios-native.yml'
   pull_request:
-    branches: [main]
+    branches: [main, integration/final-release-20261023]
     paths:
       - 'app.json'
       - 'app.config.js'

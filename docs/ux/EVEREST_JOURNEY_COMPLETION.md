@@ -75,3 +75,8 @@ A fresh non-mutating merge-tree review of #105 against deployed integration foun
 ## Source and integration continuation — 30 October (Sydney)
 
 #116 (`3ee72205`, tested tree `264d26db`) is ready for review with Chromium/WebKit country CI 40886038043 and recovery CI 40886038001 successful. READY preview: https://everest-local-39e5lctuh-dakshgolani5-4632.vercel.app/ . Integrate in dependency order #113 → #114 → #115 → #116 → business-attention follow-up, retargeting each successor and rerunning CI. Do not merge #105 wholesale into the older main branch. Production remains `ed013dec`. The business-attention PR records its own exact-source verification.
+
+
+## Reconciled candidate — 30 October 2026 (Sydney)
+
+The dedicated `codex/reconcile-marketplace-20261030` candidate now resolves all seven #105 merge conflicts against #117, preserving the five UX prerequisites and subsequent production fixes. #105 remains useful and is not recommended for obsolete closure. [Integration review](EVEREST_INTEGRATION_REVIEW.md) records each conflict, backend dependencies and release/rollback order. Local combined-source verification passes 589 tests and native JS exports; exact CI/preview results belong to the combined PR. This candidate is not merged or deployed. Production metadata confirms its phase4 migration and claim/pickup functions are absent, so backend rollout and hosted acceptance remain gated.

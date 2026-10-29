@@ -1,7 +1,7 @@
 name: Validate Phase 6 and 7 backend contracts
 on:
   pull_request:
-    branches: [main]
+    branches: [main, integration/final-release-20261023]
     paths:
       - 'supabase/migrations/*.sql'
       - 'supabase/migrations/*phase6*.sql'

@@ -48,3 +48,8 @@ The prior release report says Supabase branching was unavailable on the plan. Th
 ## Business response continuation — 30 October 2026 (Sydney)
 
 #116 is ready for review: both browser engines and recovery CI passed; preview READY at the same `3ee72205` source. The next isolated batch fixes Today’s missing marketplace request read and false all-caught-up state, with active-workspace scope, expiry filtering, existing response deep link, focus/foreground refresh and failure retry. [Business attention](EVEREST_BUSINESS_ATTENTION.md) records scope and alternatives. Full transaction, device and market gates remain in the journey checklist.
+
+
+## Consolidation — 30 October 2026 (Sydney)
+
+Reverified #113–#117 green/unmerged and production `ed013dec`. Reconciled all seven #105 conflicts on a two-parent review branch based on #117, with a combined PR targeting production integration rather than another dependency-only PR. Preserved current guest/cart, deposit-price, messaging and accessibility fixes. Combined unit/security suite passes 589 cases; local commerce acceptance adds real signed-out SDK state and an unavailable-quote amount guard. [Integration review](EVEREST_INTEGRATION_REVIEW.md) records exact decisions, backend rollout dependency and hosted/physical gates. No production mutation or financial operation.

@@ -55,3 +55,24 @@ Fixture artefacts that looked like bugs and were not (the app was correct): prod
 | NF-3 | — | 12 pre-existing ESLint `exhaustive-deps` warnings | Behavioural risk outside this scope | Review individually |
 
 No database, RLS, payment, Stripe or edge-function code was changed in either phase. Client queries were only narrowed (scoped to the signed-in customer or active business), never widened.
+
+## Phase 4 continuation (separate from the design-only phases above)
+
+The earlier no-backend-change statement describes phases 1–2. Phase 4 proposes a reviewed migration and checkout/webhook changes; none was applied to production. See [Phase 4 delivery](../phase4-delivery-report.md) and [task register](../phase4-task-register.md).
+
+| ID | Issue | Phase 4 implementation |
+|---|---|---|
+| P4-01 | Safari PWA viewport CSS was absent from the shipped SPA shell; composer started oversized | Shipped stylesheet, compact autosizing composer, viewport/list anchoring and WebKit regression coverage |
+| P4-02 | Checkout returns targeted nonexistent native-only order/booking routes | Trusted HTTPS destinations, real route parameters and legacy native mapping |
+| P4-03 | Retry keys/reloads could fail to find the stored product payment | Reuse stored order payment and canonical Stripe idempotency key |
+| P4-04 | Variant reservations settled/released parent inventory | Reservation-mode ledger, guarded atomic settlement/release and executable SQL checks |
+| P4-05 | Uncertain Stripe request could leave payable stock releasable | Persist provider-request claim before external creation; enforce it in customer cart/release RPCs |
+| P4-06 | Merchant pickup orders had no supported collection completion | Narrow paid/ready/pickup-only RPC with order-management permission checks |
+| P4-07 | Resumed cart could show current prices against an older saved total | Review immutable order-item snapshots |
+| P4-08 | Payout readiness loss could falsely fail an uncertain service payment | Preserve attempt until authoritative Stripe final state; test actual Edge handler |
+| P4-09 | Late checkout response could redirect after leaving the screen | Mounted-context guard; keyed booking context and synchronous action locks |
+| P4-10 | Closed product checkout attempt remained in a mounted cart after expiry | Clear the expired pending review, rotate the closed key and refresh on cart focus/foreground; actual handler and database retry checks |
+| P4-11 | Optional job/review failure blocked booking/payment content | Independent supporting reads, partial error/retry and unknown review state |
+| P4-12 | Incomplete delivery address disabled the CTA without focusing recovery | Inline validation before any checkout request, keyboard focus and preserved typed input |
+| P4-13 | Booking total/progress labels clipped at 320px | Constrained heading column and readable stage caption, checked at all five widths/themes |
+| P4-14 | Background refresh cleared payment-action errors; terminal arrival text could be stale | Separate action error state and authoritative terminal-status precedence |
