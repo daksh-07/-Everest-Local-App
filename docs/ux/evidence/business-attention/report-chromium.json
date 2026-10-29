@@ -1,0 +1,72 @@
+{
+  "engine": "chromium",
+  "runs": [
+    {
+      "theme": "LIGHT",
+      "mode": "DEFAULT",
+      "activeBusinessScoped": true,
+      "heldReadNotEmpty": true,
+      "expiredExcluded": true,
+      "requestResponseDeepLink": true,
+      "returnRefresh": true,
+      "failureRetry": true,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "DEFAULT",
+      "activeBusinessScoped": true,
+      "heldReadNotEmpty": true,
+      "expiredExcluded": true,
+      "requestResponseDeepLink": true,
+      "returnRefresh": true,
+      "failureRetry": true,
+      "axeViolations": 0
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "PULSE",
+      "activeBusinessScoped": true,
+      "heldReadNotEmpty": true,
+      "expiredExcluded": true,
+      "requestResponseDeepLink": true,
+      "returnRefresh": true,
+      "failureRetry": true,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "PULSE",
+      "activeBusinessScoped": true,
+      "heldReadNotEmpty": true,
+      "expiredExcluded": true,
+      "requestResponseDeepLink": true,
+      "returnRefresh": true,
+      "failureRetry": true,
+      "axeViolations": 0
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "CLASSIC",
+      "activeBusinessScoped": true,
+      "heldReadNotEmpty": true,
+      "expiredExcluded": true,
+      "requestResponseDeepLink": true,
+      "returnRefresh": true,
+      "failureRetry": true,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "CLASSIC",
+      "activeBusinessScoped": true,
+      "heldReadNotEmpty": true,
+      "expiredExcluded": true,
+      "requestResponseDeepLink": true,
+      "returnRefresh": true,
+      "failureRetry": true,
+      "axeViolations": 0
+    }
+  ],
+  "errors": []
+}

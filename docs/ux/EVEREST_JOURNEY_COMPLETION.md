@@ -20,7 +20,7 @@ Status labels apply to the complete journey, not the presence of a screen. Mocke
 | Persistent request text, service choice, address and budget | Implemented but partially validated | #115 Chromium/WebKit and recovery CI passed; native lifecycle and hosted staging acceptance remain pending |
 | Durable request photo attachments | Not implemented | Drafts explicitly tell users to reattach photos; no reliance on temporary picker URIs |
 | Uncertain request posting → status/retry | Implemented but partially validated | Immutable persisted payload/key, status lookup and explicit retry; mocked committed/lost-response and uncommitted cases exercised; live staging gate remains |
-| Country-aware business discovery | Implemented but partially validated | Home, scoped business-name directory/search and available-now apply country predicates before limits; new fixture/CI evidence is in the country discovery PR. Canonical country identifiers and physical/native acceptance remain open |
+| Country-aware business discovery | Implemented but partially validated | #116 Chromium/WebKit and recovery CI pass; Home, scoped business-name directory/search and available-now apply country predicates before limits; deployed guest Canada empty case also checked. Canonical country identifiers and physical/native acceptance remain open |
 | Country-aware service/product search | Not implemented | Existing universal_search/shop_products have no country argument; no client-side post-pagination filtering can claim completeness |
 | Currency/market checkout eligibility | Blocked, with the precise dependency | Production service/membership payment constraints enforce AUD; no verified non-AUD checkout path. Requires reviewed market/payment work and isolated acceptance; do not relabel prices from country |
 | Search → provider → request → quote | Implemented but partially validated | Routes and existing request/quote fixtures exist; actual multi-account staging acceptance not run |
@@ -31,7 +31,7 @@ Status labels apply to the complete journey, not the presence of a screen. Mocke
 | Business opportunity → response → quote | Implemented but partially validated | Existing scoped handlers/tests; fresh background/urgent notification and full staging response acceptance outstanding |
 | Business booking → assigned job → complete | Implemented but partially validated | Existing checklist/confirmation fixture and SQL authority evidence; native employee acceptance outstanding |
 | Business payment/payout eligibility | Blocked, with the precise dependency | Readiness requires Stripe test accounts/identity states and isolated webhook events; no live payout changes authorised |
-| Today/calendar/availability/CRM | Implemented but partially validated | Existing jobs-first hierarchy retained; complete task-level acceptance remains to run |
+| Today/calendar/availability/CRM | Implemented but partially validated | Today marketplace request queue, response deep link, return refresh and error/empty distinction now have rendered fixture acceptance. Calendar/availability/CRM task-level and physical acceptance remain partial |
 | Employee permissions/delegation | Implemented but partially validated | Existing scoped SQL checks supplement but do not replace multi-user staging/device acceptance |
 | Messaging/notifications/community | Implemented but partially validated | Existing source/fixture evidence; real push/background delivery and physical keyboard/media acceptance outstanding |
 
@@ -70,3 +70,8 @@ Record device/OS/browser/build, actual steps, screenshots, expected/observed out
 ## Transaction integration conflict evidence
 
 A fresh non-mutating merge-tree review of #105 against deployed integration found conflicts in the discovery workflow, booking, business orders, cart, messages, product and commerce files. Details are in `EVEREST_COUNTRY_DISCOVERY.md`. No financial implementation was auto-selected or deployed.
+
+
+## Source and integration continuation — 30 October (Sydney)
+
+#116 (`3ee72205`, tested tree `264d26db`) is ready for review with Chromium/WebKit country CI 40886038043 and recovery CI 40886038001 successful. READY preview: https://everest-local-39e5lctuh-dakshgolani5-4632.vercel.app/ . Integrate in dependency order #113 → #114 → #115 → #116 → business-attention follow-up, retargeting each successor and rerunning CI. Do not merge #105 wholesale into the older main branch. Production remains `ed013dec`. The business-attention PR records its own exact-source verification.

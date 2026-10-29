@@ -43,3 +43,8 @@ The prior release report says Supabase branching was unavailable on the plan. Th
 ## Country discovery continuation — 30 October 2026 (Sydney)
 
 #113, #114 and #115 were freshly read and remain open, mergeable and unmerged. #115 is ready for review with both browser engines and recovery CI passing at `926b739`. This continuation adds country predicates before business discovery/search pagination, explicit global opt-out, country-preserving recent searches, available-now server predicates and manual/error recovery, and disabled request/instant controls for known unavailable profiles. See [country discovery](EVEREST_COUNTRY_DISCOVERY.md) for decisions, boundaries and validation. The original roadmap above is historical; the journey checklist and PR source results supersede its draft/country status. No production release or financial changes have been made.
+
+
+## Business response continuation — 30 October 2026 (Sydney)
+
+#116 is ready for review: both browser engines and recovery CI passed; preview READY at the same `3ee72205` source. The next isolated batch fixes Today’s missing marketplace request read and false all-caught-up state, with active-workspace scope, expiry filtering, existing response deep link, focus/foreground refresh and failure retry. [Business attention](EVEREST_BUSINESS_ATTENTION.md) records scope and alternatives. Full transaction, device and market gates remain in the journey checklist.
