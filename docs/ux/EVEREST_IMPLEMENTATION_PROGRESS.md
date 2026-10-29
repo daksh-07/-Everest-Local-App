@@ -38,3 +38,8 @@ The prior release report says Supabase branching was unavailable on the plan. Th
 ## Continuation checkpoint — 29 October 2026
 
 #113 and #114 were reverified open, mergeable and green; neither is merged. Request-draft implementation and source tests are recorded in [request drafts](EVEREST_REQUEST_DRAFTS.md). The authoritative journey-by-journey completion and device/release checklist is [EVEREST_JOURNEY_COMPLETION.md](EVEREST_JOURNEY_COMPLETION.md). The current batch PR will carry exact source CI/preview results. Country/market and staging findings are qualified read-only evidence, not new payment capabilities.
+
+
+## Country discovery continuation — 30 October 2026 (Sydney)
+
+#113, #114 and #115 were freshly read and remain open, mergeable and unmerged. #115 is ready for review with both browser engines and recovery CI passing at `926b739`. This continuation adds country predicates before business discovery/search pagination, explicit global opt-out, country-preserving recent searches, available-now server predicates and manual/error recovery, and disabled request/instant controls for known unavailable profiles. See [country discovery](EVEREST_COUNTRY_DISCOVERY.md) for decisions, boundaries and validation. The original roadmap above is historical; the journey checklist and PR source results supersede its draft/country status. No production release or financial changes have been made.

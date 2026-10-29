@@ -1,0 +1,90 @@
+{
+  "engine": "chromium",
+  "runs": [
+    {
+      "theme": "LIGHT",
+      "mode": "DEFAULT",
+      "availabilityFailureRecovery": true,
+      "manualAvailabilityLocation": true,
+      "countryBeforePagination": true,
+      "scopeRetained": true,
+      "availabilityBeforePagination": true,
+      "blankPeopleRemainPrivate": true,
+      "unavailableProviderNotBookable": true,
+      "explicitGlobalOptOut": true,
+      "emptyCountryHasNoForeignFallback": true,
+      "axeViolations": 0
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "PULSE",
+      "availabilityFailureRecovery": true,
+      "manualAvailabilityLocation": true,
+      "countryBeforePagination": true,
+      "scopeRetained": true,
+      "availabilityBeforePagination": true,
+      "blankPeopleRemainPrivate": true,
+      "unavailableProviderNotBookable": true,
+      "explicitGlobalOptOut": true,
+      "emptyCountryHasNoForeignFallback": true,
+      "axeViolations": 0
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "CLASSIC",
+      "availabilityFailureRecovery": true,
+      "manualAvailabilityLocation": true,
+      "countryBeforePagination": true,
+      "scopeRetained": true,
+      "availabilityBeforePagination": true,
+      "blankPeopleRemainPrivate": true,
+      "unavailableProviderNotBookable": true,
+      "explicitGlobalOptOut": true,
+      "emptyCountryHasNoForeignFallback": true,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "DEFAULT",
+      "availabilityFailureRecovery": true,
+      "manualAvailabilityLocation": true,
+      "countryBeforePagination": true,
+      "scopeRetained": true,
+      "availabilityBeforePagination": true,
+      "blankPeopleRemainPrivate": true,
+      "unavailableProviderNotBookable": true,
+      "explicitGlobalOptOut": true,
+      "emptyCountryHasNoForeignFallback": true,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "PULSE",
+      "availabilityFailureRecovery": true,
+      "manualAvailabilityLocation": true,
+      "countryBeforePagination": true,
+      "scopeRetained": true,
+      "availabilityBeforePagination": true,
+      "blankPeopleRemainPrivate": true,
+      "unavailableProviderNotBookable": true,
+      "explicitGlobalOptOut": true,
+      "emptyCountryHasNoForeignFallback": true,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "CLASSIC",
+      "availabilityFailureRecovery": true,
+      "manualAvailabilityLocation": true,
+      "countryBeforePagination": true,
+      "scopeRetained": true,
+      "availabilityBeforePagination": true,
+      "blankPeopleRemainPrivate": true,
+      "unavailableProviderNotBookable": true,
+      "explicitGlobalOptOut": true,
+      "emptyCountryHasNoForeignFallback": true,
+      "axeViolations": 0
+    }
+  ],
+  "errors": []
+}
