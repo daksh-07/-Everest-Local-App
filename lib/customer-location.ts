@@ -192,9 +192,9 @@ export async function geocodeCustomerLocality(input:{suburb?:string|null;city?:s
 }
 
 export async function geocodeServiceAddress(input:{addressLine1:string;suburb:string;city:string;state:string;postalCode?:string;country?:string}):Promise<CustomerServiceLocation|null>{
- const addressLine1=clean(input.addressLine1),suburb=clean(input.suburb),city=clean(input.city),state=clean(input.state),postalCode=clean(input.postalCode),country=clean(input.country)||'Australia';
+ const addressLine1=clean(input.addressLine1),suburb=clean(input.suburb),city=clean(input.city),state=clean(input.state),postalCode=clean(input.postalCode),country=clean(input.country);
  const query=formatAddress({addressLine1,suburb,city,state,postalCode,country});
- if(!addressLine1||!suburb||!state)return null;
+ if(!addressLine1||!suburb||!state||!country)return null;
  if(Platform.OS==='web')return geocodeWeb(query);
  try{
   const rows=await withTimeout(Location.geocodeAsync(query),GEO_TIMEOUT_MS,'Address lookup');

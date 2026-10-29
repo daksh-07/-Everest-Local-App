@@ -1,0 +1,102 @@
+{
+  "engine": "chromium",
+  "runs": [
+    {
+      "theme": "LIGHT",
+      "mode": "DEFAULT",
+      "width": 320,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "DEFAULT",
+      "width": 390,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "PULSE",
+      "width": 320,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "PULSE",
+      "width": 390,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "CLASSIC",
+      "width": 320,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    },
+    {
+      "theme": "LIGHT",
+      "mode": "CLASSIC",
+      "width": 390,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "DEFAULT",
+      "width": 320,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "DEFAULT",
+      "width": 390,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "PULSE",
+      "width": 320,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "PULSE",
+      "width": 390,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "CLASSIC",
+      "width": 320,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    },
+    {
+      "theme": "DARK",
+      "mode": "CLASSIC",
+      "width": 390,
+      "lookups": 3,
+      "posted": 1,
+      "axeViolations": 0
+    }
+  ],
+  "errors": []
+}

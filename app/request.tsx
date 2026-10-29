@@ -123,12 +123,20 @@ export default function Request() {
     city: "",
     state: "",
     postalCode: "",
-    country: "Australia",
+    country: "",
     formattedAddress: "",
     source: "MANUAL",
     confirmed: false,
   });
-  const [locating, setLocating] = useState(false);
+  const [locationAction, setLocationAction] = useState<"DEVICE" | "MANUAL" | null>(null);
+  const locating = locationAction !== null;
+  const addressEdited = useRef(false);
+  const locationLock = useRef(false);
+  const streetInput = useRef<TextInput>(null);
+  const localityInput = useRef<TextInput>(null);
+  const regionInput = useRef<TextInput>(null);
+  const countryInput = useRef<TextInput>(null);
+  const locationErrorInput = useRef<{current: TextInput | null} | null>(null);
   const [date, setDate] = useState<Date | null>(live ? new Date() : null);
   const [timing, setTiming] = useState<RequestTimingMode>(
     live ? "ASAP" : "FLEXIBLE",
@@ -182,7 +190,16 @@ export default function Request() {
     return () => animation.stop();
   }, [step, reduced, transition, progress]);
 
-  useEffect(()=>{if(error)scrollRef.current?.scrollToEnd({animated:!reduced})},[error,reduced]);
+  useEffect(() => {
+    if (!error) return;
+    if (step === 2 && locationErrorInput.current) {
+      // Focus after validation has rendered, so the click/layout update cannot steal it.
+      const input = locationErrorInput.current;
+      const frame = requestAnimationFrame(() => input.current?.focus());
+      return () => cancelAnimationFrame(frame);
+    }
+    if (step !== 2) scrollRef.current?.scrollToEnd({animated:!reduced});
+  }, [error,reduced,step]);
 
   useEffect(() => {
     if (serviceId) {
@@ -227,12 +244,12 @@ export default function Request() {
         ]);
         if (!active) return;
         if (profileResult?.suburb && profileResult.city && profileResult.state)
-          setLocation(current=>current.suburb||current.city||current.state?current:({
+          setLocation(current=>addressEdited.current||current.suburb||current.city||current.state?current:({
             ...current,
             suburb: profileResult.suburb ?? "",
             city: profileResult.city ?? "",
             state: profileResult.state ?? "",
-            country: "Australia",
+            country: profileResult.country?.trim() || "",
             source: "PROFILE",
             confirmed: false,
           }));
@@ -262,8 +279,10 @@ export default function Request() {
   }, [serviceId]);
 
   async function locateDevice() {
-    if (effectiveMode === "REMOTE" || locating) return;
-    setLocating(true);
+    if (effectiveMode === "REMOTE" || locating || locationLock.current) return;
+    locationLock.current = true;
+    addressEdited.current = true;
+    setLocationAction("DEVICE");
     setError("");
     try {
       const precise = await resolveCustomerServiceLocation();
@@ -275,7 +294,7 @@ export default function Request() {
         city: precise.city,
         state: precise.state,
         postalCode: precise.postalCode,
-        country: precise.country || "Australia",
+        country: precise.country || "",
         formattedAddress: precise.formattedAddress,
         latitude: precise.latitude,
         longitude: precise.longitude,
@@ -288,21 +307,32 @@ export default function Request() {
         userMessage(e,"Precise location is unavailable. Enter the service address manually."),
       );
     } finally {
-      setLocating(false);
+      locationLock.current = false;
+      setLocationAction(null);
     }
   }
 
   async function confirmLocation(): Promise<boolean> {
-    if (
-      !location.addressLine1.trim() ||
-      !location.suburb.trim() ||
-      !location.state.trim()
-    ) {
-      setError("Add the street address, suburb and state first.");
+    if (locationLock.current) return false;
+    const missing = !location.addressLine1.trim()
+      ? {message: "Enter the street address.", input: streetInput}
+      : !location.suburb.trim()
+        ? {message: "Enter the city or locality.", input: localityInput}
+        : !location.state.trim()
+          ? {message: "Enter the state or region.", input: regionInput}
+          : !location.country.trim()
+            ? {message: "Enter the country for this service address.", input: countryInput}
+            : null;
+    if (missing) {
+      locationErrorInput.current = missing.input;
+      setError(missing.message);
+      missing.input.current?.focus();
       return false;
     }
-    if (locating) return false;
-    setLocating(true);
+    locationErrorInput.current = null;
+    locationLock.current = true;
+    addressEdited.current = true;
+    setLocationAction("MANUAL");
     setError("");
     try {
       let next=location;
@@ -313,7 +343,7 @@ export default function Request() {
           city:next.city||next.suburb,
           state:next.state,
           postalCode:next.postalCode,
-          country:next.country||"Australia",
+          country:next.country,
         });
         if(!geocoded)throw new Error("We could not locate that exact address. Check the street address and try again.");
         next={
@@ -322,7 +352,7 @@ export default function Request() {
           city:geocoded.city||next.city||next.suburb,
           state:geocoded.state||next.state,
           postalCode:geocoded.postalCode||next.postalCode,
-          country:geocoded.country||next.country||"Australia",
+          country:geocoded.country||next.country,
           formattedAddress:geocoded.formattedAddress,
           latitude:geocoded.latitude,
           longitude:geocoded.longitude,
@@ -331,7 +361,7 @@ export default function Request() {
           confirmed:true,
         };
       } else {
-        next={...next,formattedAddress:next.formattedAddress||[next.addressLine1,next.suburb,next.city,next.state,next.postalCode].filter(Boolean).join(", "),confirmed:true};
+        next={...next,formattedAddress:next.formattedAddress||[next.addressLine1,next.suburb,next.city,next.state,next.postalCode,next.country].filter(Boolean).join(", "),confirmed:true};
       }
       setLocation(next);
       return true;
@@ -339,11 +369,14 @@ export default function Request() {
       setError(userMessage(e,"The service address could not be confirmed."));
       return false;
     } finally {
-      setLocating(false);
+      locationLock.current = false;
+      setLocationAction(null);
     }
   }
 
-  function setManual(field: "addressLine1" | "suburb" | "city" | "state" | "postalCode", value: string) {
+  function setManual(field: "addressLine1" | "suburb" | "city" | "state" | "postalCode" | "country", value: string) {
+    if (locationLock.current) return;
+    addressEdited.current = true;
     setLocation((v) => ({
       ...v,
       [field]: value,
@@ -626,10 +659,7 @@ export default function Request() {
       ? Boolean(serviceId || selectedDefinition) &&
         description.trim().length >= 5
       : step === 2
-        ? effectiveMode === "REMOTE" ||
-          location.confirmed ||
-          (!locating &&
-            Boolean(location.addressLine1.trim() && location.suburb.trim() && location.state.trim()))
+        ? !locating
         : true);
   return (
     <SafeAreaView style={s.safe}>
@@ -643,7 +673,7 @@ export default function Request() {
               accessibilityRole="button"
               accessibilityLabel={step > 1 ? "Previous step" : "Go back"}
               style={s.back}
-              disabled={busy}
+              disabled={busy || locating}
               onPress={() => (step > 1 ? setStep((v) => v - 1) : router.back())}
             >
               <Ionicons name="chevron-back" size={25} color={colors.text} />
@@ -789,7 +819,7 @@ export default function Request() {
                         />
                         <View style={{ flex: 1 }}>
                           <Text style={s.locationName}>
-                            {location.formattedAddress || [location.addressLine1,location.suburb,location.state,location.postalCode].filter(Boolean).join(", ")}
+                            {location.formattedAddress || [location.addressLine1,location.suburb,location.state,location.postalCode,location.country].filter(Boolean).join(", ")}
                           </Text>
                           <Text style={s.meta}>
                             {location.source === "DEVICE"
@@ -797,6 +827,7 @@ export default function Request() {
                               : location.source === "PROFILE"
                                 ? "Area from your profile — add the street address below"
                                 : "Exact address entered manually"}
+                            {location.country ? ` · ${location.country}` : ""}
                             {location.accuracy!=null?` · ±${Math.max(1,Math.round(location.accuracy))} m`:""}
                           </Text>
                         </View>
@@ -815,6 +846,7 @@ export default function Request() {
                           <Pressable
                             accessibilityRole="button"
                             disabled={locating}
+                            accessibilityState={{disabled:locating,busy:locationAction==="DEVICE"}}
                             onPress={() => void locateDevice()}
                             style={[s.primarySmall, locating && s.disabled]}
                           >
@@ -824,12 +856,13 @@ export default function Request() {
                               color={colors.onBrand}
                             />
                             <Text style={s.primaryText}>
-                              {locating ? "Locating…" : "Use precise location"}
+                              {locationAction === "DEVICE" ? "Finding your location…" : "Use precise location"}
                             </Text>
                           </Pressable>
                           {location.suburb ? (
                             <Pressable
                               accessibilityRole="button"
+                              disabled={locating}
                               onPress={() => void confirmLocation()}
                               style={s.outlineSmall}
                             >
@@ -840,7 +873,10 @@ export default function Request() {
                           ) : null}
                         </View>
                         <Text style={s.or}>Or enter the service address</Text>
+                        <Text style={s.heading}>Street address</Text>
                         <TextInput
+                          ref={streetInput}
+                          editable={!locating}
                           value={location.addressLine1}
                           onChangeText={(v) => setManual("addressLine1", v)}
                           accessibilityLabel="Street address"
@@ -849,49 +885,39 @@ export default function Request() {
                           autoCapitalize="words"
                           style={s.input}
                         />
+                        <Text style={s.heading}>City or locality</Text>
                         <TextInput
+                          ref={localityInput}
+                          editable={!locating}
                           value={location.suburb}
                           onChangeText={(v) => setManual("suburb", v)}
-                          accessibilityLabel="Suburb"
-                          placeholder="Suburb"
+                          accessibilityLabel="City or locality"
+                          placeholder="City, town or suburb"
                           placeholderTextColor={colors.muted}
                           style={s.input}
                         />
-                        <View style={s.row}>
-                          <TextInput
-                            value={location.city}
-                            onChangeText={(v) => setManual("city", v)}
-                            accessibilityLabel="City"
-                            placeholder="City"
-                            placeholderTextColor={colors.muted}
-                            style={[s.input, { flex: 1 }]}
-                          />
-                          <TextInput
-                            value={location.state}
-                            onChangeText={(v) => setManual("state", v)}
-                            accessibilityLabel="State"
-                            placeholder="State"
-                            placeholderTextColor={colors.muted}
-                            style={[s.input, { flex: 1 }]}
-                          />
-                          <TextInput
-                            value={location.postalCode}
-                            onChangeText={(v) => setManual("postalCode", v)}
-                            accessibilityLabel="Postcode"
-                            placeholder="Postcode"
-                            keyboardType="number-pad"
-                            placeholderTextColor={colors.muted}
-                            style={[s.input, { flex: 1 }]}
-                          />
-                        </View>
-                        {location.addressLine1 && location.suburb && location.state ? (
+                        <Text style={s.heading}>Country</Text>
+                        <TextInput ref={countryInput} editable={!locating} value={location.country}
+                          onChangeText={(v) => setManual("country", v)} accessibilityLabel="Country"
+                          placeholder="Country" placeholderTextColor={colors.muted} autoCapitalize="words" style={s.input}/>
+                        <Text style={s.heading}>State or region</Text>
+                        <TextInput ref={regionInput} editable={!locating} value={location.state}
+                          onChangeText={(v) => setManual("state", v)} accessibilityLabel="State or region"
+                          placeholder="State or region" placeholderTextColor={colors.muted} autoCapitalize="words" style={s.input}/>
+                        <Text style={s.heading}>City (optional)</Text>
+                        <TextInput editable={!locating} value={location.city} onChangeText={(v) => setManual("city", v)}
+                          accessibilityLabel="City (optional)" placeholder="For a more specific locality" placeholderTextColor={colors.muted} style={s.input}/>
+                        <Text style={s.heading}>Postal code (optional)</Text>
+                        <TextInput editable={!locating} value={location.postalCode} onChangeText={(v) => setManual("postalCode", v)}
+                          accessibilityLabel="Postal code (optional)" placeholder="Postal code" autoCapitalize="characters" placeholderTextColor={colors.muted} style={s.input}/>
+                        {location.addressLine1 && location.suburb && location.state && location.country ? (
                           <Pressable
                             accessibilityRole="button"
                             disabled={locating}
                             onPress={() => void confirmLocation()}
                             style={s.outline}
                           >
-                            <Text style={s.outlineText}>{locating?"Locating address…":"Confirm precise address"}</Text>
+                            <Text style={s.outlineText}>{locationAction==="MANUAL"?"Locating address…":"Confirm precise address"}</Text>
                           </Pressable>
                         ) : null}
                       </>
