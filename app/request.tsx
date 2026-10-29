@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, AppState, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/ui/AppText';
 import { AppTextInput as TextInput } from '@/components/ui/AppTextInput';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { ServicePicker } from "@/components/ServicePicker";
 import { useReducedMotion } from "@/lib/motion";
@@ -29,6 +29,7 @@ import { type ThemeColors, useAppTheme } from "@/lib/theme";
 import { startEverestLive, type LiveArrivalWindow } from "@/lib/everest-live";
 import { geocodeServiceAddress, resolveCustomerServiceLocation, serviceAddressLabel } from "@/lib/customer-location";
 import {userMessage} from '@/lib/errors';
+import {hasPastRequestedTime,requestDrafts,type RequestDraft} from '@/lib/request-drafts';
 
 type LocationValue = {
   addressLine1: string;
@@ -89,6 +90,7 @@ export default function Request() {
     serviceId?: string;
     mode?: string;
     live?: string;
+    resume?: string;
   }>();
   const live = params.live === "1" || params.live === "true";
   const serviceId =
@@ -162,6 +164,78 @@ export default function Request() {
   >(null);
   const submitRef = useRef(false);
   const requestIdempotencyKeyRef = useRef<string | null>(null);
+  const [draftReady,setDraftReady]=useState(false);
+  const [savedDraft,setSavedDraft]=useState<RequestDraft|null>(null);
+  const [draftStatus,setDraftStatus]=useState('');
+  const [draftNotice,setDraftNotice]=useState('');
+  const restoredDefinition=useRef('');
+  const [attempt,setAttempt]=useState<RequestDraft['attempt']>();
+  const draftSession=useRef<ReturnType<typeof requestDrafts.open>|null>(null);
+  const draftOwner=useRef('');
+  const draftPaused=useRef(false);
+  const draftTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const readyRef=useRef(false);readyRef.current=draftReady;
+  const snapshot:RequestDraft={version:1,ownerId:draftOwner.current,savedAt:Date.now(),
+    entry:{serviceId,live,mode:params.mode==='REMOTE'||params.mode==='BOTH'?params.mode:'LOCAL'},
+    form:{description,definitionId:selectedDefinition?.id??'',mode,
+      location:{addressLine1:location.addressLine1,suburb:location.suburb,city:location.city,state:location.state,postalCode:location.postalCode,country:location.country},
+      date:date?localDate(date):null,timing,arrivalWindow,windowKey,exactTime:exactTime?timeValue(exactTime):null,budgetChoice,customBudget},
+    ...(attempt?{attempt}:{}),
+  };
+  const snapshotRef=useRef(snapshot);snapshotRef.current=snapshot;
+  const snapshotKey=JSON.stringify({...snapshot,savedAt:0,ownerId:''});
+  const flushDraft=useCallback(async()=>{
+    if(!readyRef.current||draftPaused.current||!draftSession.current)return;
+    const value=snapshotRef.current;
+    if(!value.form.description.trim()&&!value.form.definitionId&&!value.entry.serviceId)return;
+    await draftSession.current.save(value);
+  },[]);
+  useFocusEffect(useCallback(()=>{
+    let active=true;setDraftReady(false);readyRef.current=false;draftPaused.current=false;
+    void supabase.auth.getSession().then(async({data})=>{
+      if(!active||!data.session?.user.id)return;
+      draftOwner.current=data.session.user.id;
+      const session=requestDrafts.open(draftOwner.current);draftSession.current=session;
+      const draft=await session.load();if(!active)return;
+      if(draft)setSavedDraft(draft);else setDraftReady(true);
+    }).catch(()=>{if(active){setDraftStatus('Draft saving is unavailable on this device. Keep this page open and retry before posting.');setDraftReady(true)}});
+    return()=>{active=false;if(draftTimer.current)clearTimeout(draftTimer.current);if(readyRef.current&&!draftPaused.current){try{void draftSession.current?.save({...snapshotRef.current,entry:{...snapshotRef.current.entry,serviceId,live}}).catch(()=>undefined)}catch{/* Explicit logout can already have invalidated this writer. */}}draftSession.current?.close();draftSession.current=null};
+  },[serviceId,live]));
+  useEffect(()=>{
+    if(!draftReady||draftPaused.current)return;
+    if(!description.trim()&&!selectedDefinition&&!serviceId){setDraftStatus('Your details will be saved on this device as you write.');return;}
+    setDraftStatus('Saving draft…');
+    draftTimer.current=setTimeout(()=>{void flushDraft().then(()=>setDraftStatus('Draft saved on this device for 7 days.')).catch(()=>setDraftStatus('Draft could not be saved. Keep this page open and retry before posting.'))},350);
+    return()=>{if(draftTimer.current)clearTimeout(draftTimer.current)};
+  },[snapshotKey,draftReady,flushDraft,description,selectedDefinition,serviceId]);
+  useEffect(()=>{
+    const flush=()=>{void flushDraft().catch(()=>undefined)};
+    const sub=AppState.addEventListener('change',state=>{if(state!=='active')flush()});
+    if(Platform.OS==='web'){globalThis.addEventListener?.('pagehide',flush);globalThis.document?.addEventListener('visibilitychange',flush)}
+    return()=>{sub.remove();if(Platform.OS==='web'){globalThis.removeEventListener?.('pagehide',flush);globalThis.document?.removeEventListener('visibilitychange',flush)}};
+  },[flushDraft]);
+  function resumeDraft(draft:RequestDraft){
+    const target='/request'+(draft.entry.serviceId?'?serviceId='+encodeURIComponent(draft.entry.serviceId):'?')+(draft.entry.live?'&live=1':'')+'&mode='+draft.entry.mode+'&resume=1';
+    if(draft.entry.serviceId!==serviceId||draft.entry.live!==live){router.replace(target as never);return;}
+    const f=draft.form;setDescription(f.description);setMode(f.mode);addressEdited.current=true;
+    setLocation({...f.location,formattedAddress:'',source:'MANUAL',confirmed:false});
+    restoredDefinition.current=f.definitionId;const selected=serviceDefinitions.find(row=>row.id===f.definitionId)??null;setSelectedDefinition(selected);
+    const staleDate=hasPastRequestedTime({preferredDate:f.date??undefined,preferredTime:f.exactTime??undefined,timingMode:f.timing});setDate(f.date&&!staleDate?new Date(f.date+'T12:00:00'):null);
+    setTiming(staleDate?'FLEXIBLE':f.timing);setWindowKey(staleDate?null:f.windowKey);
+    setExactTime(f.exactTime&&!staleDate?new Date(localDate(new Date())+'T'+f.exactTime+':00'):null);
+    setArrivalWindow(f.arrivalWindow);setBudgetChoice(f.budgetChoice);setCustomBudget(f.customBudget);
+    setAttempt(draft.attempt);draftPaused.current=Boolean(draft.attempt);
+    setSavedDraft(null);setDraftReady(true);setStep(1);
+    setDraftNotice(staleDate?'Your saved date has passed. Choose a new date before posting.':'Draft restored. Review the details and confirm the service address again.');
+  }
+  async function discardDraft(){
+    try{await draftSession.current?.clear();setSavedDraft(null);setDraftReady(true);setAttempt(undefined);setDescription('');setSelectedDefinition(null);setPhotos([]);setLocation({addressLine1:'',suburb:'',city:'',state:'',postalCode:'',country:'',formattedAddress:'',source:'MANUAL',confirmed:false});setDate(live?new Date():null);setTiming(live?'ASAP':'FLEXIBLE');setWindowKey(null);setExactTime(null);setBudgetChoice('NONE');setCustomBudget('');requestIdempotencyKeyRef.current=null;draftPaused.current=false;setDraftStatus('Saved request removed from this device.');}
+    catch{setDraftStatus('The saved request could not be removed. Please retry.');}
+  }
+  const resumeDraftRef=useRef(resumeDraft);resumeDraftRef.current=resumeDraft;
+  useEffect(()=>{
+    if(params.resume==='1'&&savedDraft&&savedDraft.entry.serviceId===serviceId&&savedDraft.entry.live===live){resumeDraftRef.current(savedDraft);router.setParams({resume:undefined})}
+  },[params.resume,savedDraft,serviceId,live]);
   const definitionMode =
     selectedDefinition?.default_delivery_mode ?? serviceMode;
   const effectiveMode =
@@ -213,6 +287,7 @@ export default function Request() {
         const taxonomy = await listServiceTaxonomy();
         if (!active) return;
         setServiceDefinitions(taxonomy.services);
+        if(restoredDefinition.current){const restored=taxonomy.services.find(row=>row.id===restoredDefinition.current)??null;setSelectedDefinition(restored);if(!restored)setDraftNotice('Your previous service type is no longer available. Choose another service.');}
         setTaxonomyCategories([...taxonomy.roots, ...taxonomy.subcategories]);
         setError("");
       } catch {
@@ -229,6 +304,7 @@ export default function Request() {
 
   useEffect(() => {
     let active = true;
+    setServiceLoading(Boolean(serviceId));setServiceValid(!serviceId);setServiceName('');setServiceMode(null);
     (async () => {
       try {
         const [profileResult, serviceResult] = await Promise.all([
@@ -390,10 +466,10 @@ export default function Request() {
   }
   async function choosePhotos() {
     setError("");
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setError("Photo access is required to attach images.");
-      return;
+    // Web picker activation must remain in the button's user gesture; browsers need no media permission here.
+    if (Platform.OS !== 'web') {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {setError("Photo access is required to attach images.");return;}
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
@@ -465,6 +541,7 @@ export default function Request() {
       }
     }
     if (stage === 3) {
+      if(hasPastRequestedTime({preferredDate:date?localDate(date):undefined,preferredTime:exactTime?timeValue(exactTime):undefined,timingMode:timing})){setError("Choose a future date and time before posting.");return false;}
       if (timing === "EXACT_TIME" && !exactTime) {
         setError("Choose the specific time.");
         return false;
@@ -490,40 +567,51 @@ export default function Request() {
     }
     if (validate(step)) setStep((v) => Math.min(3, v + 1));
   }
+  async function clearPostedDraft(){
+    draftPaused.current=true;
+    await draftSession.current?.clear();
+  }
+  async function finishPosted(id:string,fromSubmit:boolean){
+    let mediaError='';
+    if(fromSubmit&&photos.length){try{await uploadRequestMedia(id,photos,(done,total)=>setUploadProgress(`Uploading ${done}/${total}`))}catch{mediaError='Your request is posted, but some photos could not be attached. Open Activity to view your request.'}}
+    if(live){
+      setPendingLiveRequestId(id);
+      if(!fromSubmit||mediaError){setError(mediaError);return;}
+      await startEverestLive(id,arrivalWindow);
+      await clearPostedDraft();router.replace(`/everest-live?requestId=${id}`);return;
+    }
+    await clearPostedDraft().catch(()=>undefined);
+    const [statusResult,offersResult]=await Promise.allSettled([
+      supabase.from('service_requests').select('status').eq('id',id).single(),
+      supabase.from('opportunities').select('id',{count:'exact',head:true}).eq('request_id',id),
+    ]);
+    const status=statusResult.status==='fulfilled'&&!statusResult.value.error?String(statusResult.value.data?.status??'UNKNOWN'):'UNKNOWN';
+    const opportunities=offersResult.status==='fulfilled'&&!offersResult.value.error?offersResult.value.count??0:0;
+    setSuccess({id,status,opportunities});setError(mediaError);
+  }
+  async function checkAttempt(){
+    if(!attempt||busy)return;setBusy(true);setError('');
+    try{
+      const {data,error}=await supabase.from('service_requests').select('id').eq('customer_id',draftOwner.current).eq('request_idempotency_key',attempt.idempotencyKey).maybeSingle();
+      if(error)throw error;
+      if(data?.id)await finishPosted(data.id,false);
+      else setError('Posting has not been confirmed. Retry the same request below; this continues the original request instead of creating another.');
+    }catch{setError('Request status is unavailable. Check your connection and try again. Your recovery copy is kept.');}
+    finally{setBusy(false)}
+  }
   async function submit() {
-    if (
-      submitRef.current ||
-      busy ||
-      !validate(1) ||
-      !validate(2) ||
-      !validate(3)
-    )
-      return;
-    submitRef.current = true;
-    setBusy(true);
-    setError("");
-    try {
-      if (live && pendingLiveRequestId) {
-        try {
-          await startEverestLive(pendingLiveRequestId, arrivalWindow);
-          const id = pendingLiveRequestId;
-          setPendingLiveRequestId(null);
-          router.replace(`/everest-live?requestId=${id}`);
-          return;
-        } catch (e) {
-          setError(
-            userFacingError(
-              e,
-              "Your request is already posted, but Everest Live could not start. Please retry.",
-            ),
-          );
-          return;
-        }
+    if(submitRef.current||busy)return;
+    if(!attempt&&!pendingLiveRequestId&&(!validate(1)||!validate(2)||!validate(3)))return;
+    submitRef.current=true;setBusy(true);setError('');
+    try{
+      if(pendingLiveRequestId){await startEverestLive(pendingLiveRequestId,arrivalWindow);await clearPostedDraft();router.replace(`/everest-live?requestId=${pendingLiveRequestId}`);return;}
+      if(attempt){
+        if(hasPastRequestedTime(attempt))throw new Error('The requested date has passed. Check request status or Activity before starting a new request.');
+        const id=await createServiceRequest(attempt);await finishPosted(id,true);return;
       }
-      const win = windowKey ? timingWindows[windowKey] : undefined;
-      if (!requestIdempotencyKeyRef.current)
-        requestIdempotencyKeyRef.current = createClientIdempotencyKey("service-request");
-      const id = await createServiceRequest({
+      const win=windowKey?timingWindows[windowKey]:undefined;
+      if(!requestIdempotencyKeyRef.current)requestIdempotencyKeyRef.current=createClientIdempotencyKey('service-request');
+      const input:NonNullable<RequestDraft['attempt']> = {
         idempotencyKey: requestIdempotencyKeyRef.current,
         categoryId: selectedDefinition?.category_id,
         serviceDefinitionId: selectedDefinition?.id,
@@ -559,62 +647,15 @@ export default function Request() {
         timeWindowStart: win?.[0],
         timeWindowEnd: win?.[1],
         ...budgetValues(),
-      });
-      if (photos.length) {
-        setUploadProgress(`Uploading 0/${photos.length}`);
-        await uploadRequestMedia(id, photos, (done, total) =>
-          setUploadProgress(`Uploading ${done}/${total}`),
-        );
-      }
-      if (live) {
-        try {
-          await startEverestLive(id, arrivalWindow);
-          router.replace(`/everest-live?requestId=${id}`);
-          return;
-        } catch (e) {
-          setPendingLiveRequestId(id);
-          setError(
-            userFacingError(
-              e,
-              "Your request is posted, but Everest Live could not start. Tap Retry Live Search.",
-            ),
-          );
-          return;
-        }
-      }
-      const [requestResult, oppResult] = await Promise.allSettled([
-        supabase
-          .from("service_requests")
-          .select("status")
-          .eq("id", id)
-          .single(),
-        supabase
-          .from("opportunities")
-          .select("id", { count: "exact", head: true })
-          .eq("request_id", id),
-      ]);
-      const requestStatus =
-        requestResult.status === "fulfilled" && !requestResult.value.error
-          ? String(requestResult.value.data?.status ?? "OPEN")
-          : "OPEN";
-      const opportunityCount =
-        oppResult.status === "fulfilled" && !oppResult.value.error
-          ? (oppResult.value.count ?? 0)
-          : 0;
-      setSuccess({
-        id,
-        status: requestStatus,
-        opportunities: opportunityCount,
-      });
-    } catch (e) {
-      setError(
-        userFacingError(e, "We could not post your request. Please retry."),
-      );
-    } finally {
-      setUploadProgress("");
-      setBusy(false);
-      submitRef.current = false;
-    }
+      };
+      if(!draftSession.current)throw new Error('Draft recovery is unavailable. Please reopen this request and try again.');
+      draftPaused.current=true;
+      try{await draftSession.current.save({...snapshotRef.current,attempt:input})}catch{draftPaused.current=false;throw new Error('Recovery could not be saved on this device. Keep this page open, enable device storage and retry.');}
+      setAttempt(input);
+      const id=await createServiceRequest(input);
+      await finishPosted(id,true);
+    }catch(e){setError(userFacingError(e,'We could not confirm posting. Your request is kept. Check its status or retry the same request.'));}
+    finally{setUploadProgress('');setBusy(false);submitRef.current=false;}
   }
 
   if (success)
@@ -625,13 +666,14 @@ export default function Request() {
             <Ionicons name="sparkles" size={28} color={colors.accent} />
           </View>
           <Text style={s.title}>
-            We’re finding the best businesses near you.
+            Your request is posted.
           </Text>
           <Text style={s.copy}>
             {success.opportunities > 0
               ? `${success.opportunities} eligible business${success.opportunities === 1 ? "" : "es"} are in the first response wave.`
               : "Your request is posted. Everest is checking eligible businesses and service coverage."}
           </Text>
+          {error?<Text accessibilityRole="alert" style={s.error}>{error}</Text>:null}
           <View style={s.progressCard}>
             <ProgressRow done label="Request posted" />
             <ProgressRow
@@ -650,6 +692,22 @@ export default function Request() {
         </View>
       </SafeAreaView>
     );
+
+  if(!draftReady||savedDraft||attempt)return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">
+    <Text accessibilityRole="header" style={s.title}>{savedDraft?'Continue your saved request?':attempt?'Check your request status':'Restoring your request…'}</Text>
+    {savedDraft?<><Text style={s.copy}>Saved on this device. You can review and edit it before posting. Photos need to be added again after reopening.</Text><Text style={s.heading}>{savedDraft.form.description||'Unfinished service request'}</Text>
+      <Pressable accessibilityRole="button" onPress={()=>resumeDraft(savedDraft)} style={s.primary}><Text style={s.primaryText}>Continue saved request</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={()=>void discardDraft()} style={s.textButton}><Text style={s.textButtonText}>Discard saved request and start new</Text></Pressable></>:attempt?<>
+      <Text style={s.copy}>Posting was interrupted. Check whether this request was posted before trying again. Retrying continues the original request instead of creating another.</Text>
+      <Text style={s.heading}>{attempt.description}</Text><Text style={s.copy}>{attempt.serviceAddressLabel||'Remote service'}{attempt.preferredDate?` · Requested date: ${attempt.preferredDate}`:''}</Text>
+      <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void checkAttempt()} style={s.primary}><Text style={s.primaryText}>Check request status</Text></Pressable>
+      <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void submit()} style={s.outline}><Text style={s.outlineText}>{pendingLiveRequestId?'Continue live search':'Retry posting same request'}</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={()=>router.replace('/activity')} style={s.textButton}><Text style={s.textButtonText}>View activity</Text></Pressable>
+    </>:<ActivityIndicator accessibilityLabel="Restoring saved request"/>}
+    {busy?<ActivityIndicator accessibilityLabel="Checking request recovery"/>:null}
+    {draftStatus?<Text accessibilityLiveRegion="polite" style={s.copy}>{draftStatus}</Text>:null}
+    {error?<Text accessibilityRole="alert" style={s.error}>{error}</Text>:null}
+  </ScrollView></SafeAreaView>;
 
   const canContinue =
     !busy &&
@@ -730,6 +788,8 @@ export default function Request() {
               ],
             }}
           >
+            {draftNotice?<Text style={s.copy}>{draftNotice}</Text>:null}
+            <Text style={s.meta}>{draftStatus||'Your request is saved on this device.'} Photos need to be added again after reopening.</Text>
             {step === 1 ? (
               <>
                 <Text style={s.title}>What service do you need?</Text>
@@ -745,7 +805,7 @@ export default function Request() {
                     selected={selectedDefinition}
                     loading={taxonomyLoading}
                     onSelect={(item) => {
-                      setSelectedDefinition(item);
+                      restoredDefinition.current='';setSelectedDefinition(item);
                       if (item.default_delivery_mode !== "BOTH")
                         setMode(item.default_delivery_mode);
                     }}
@@ -1118,6 +1178,7 @@ export default function Request() {
                   </Text>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={photos.length?`Add photos (${photos.length}/10)`:"Add photos"}
                     onPress={() => void choosePhotos()}
                     style={s.outline}
                   >

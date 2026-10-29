@@ -34,3 +34,7 @@ Records: [audit](EVEREST_PRODUCT_AUDIT.md), [97-screen / 53-component inventory]
 The full application audit, every micro-interaction, all 15 end-to-end scenarios, broad fresh competitor investigation, physical-device tests, native compilation/store acceptance and real staging payment/message/dispatch flows are **not complete**. Source inventory is not runtime verification. The partial audit does not assign numerical scores to uninspected screens. Existing historical evidence is linked, never relabelled as freshly executed.
 
 The prior release report says Supabase branching was unavailable on the plan. This pass did not retry provisioning or change plans. Remaining country/payment availability must be verified independently of the location selector. Preserve the historical migration hash/remote ledger mappings in the recovery documentation.
+
+## Continuation checkpoint — 29 October 2026
+
+#113 and #114 were reverified open, mergeable and green; neither is merged. Request-draft implementation and source tests are recorded in [request drafts](EVEREST_REQUEST_DRAFTS.md). The authoritative journey-by-journey completion and device/release checklist is [EVEREST_JOURNEY_COMPLETION.md](EVEREST_JOURNEY_COMPLETION.md). The current batch PR will carry exact source CI/preview results. Country/market and staging findings are qualified read-only evidence, not new payment capabilities.
