@@ -22,6 +22,7 @@ import { TransactionLoading } from '@/components/ui/TransactionLoading';
 import { OrderDetails } from '@/components/OrderDetails';
 import { Ionicons } from '@/components/ui/Icon';
 import {
+  checkoutEligibilityMessage,
   cartUnitPrice,
   checkout,
   getCart,
@@ -62,6 +63,7 @@ export default function Cart() {
   const [error, setError] = useState('');
   const [method, setMethod] = useState<ProductDeliveryMethod>('PICKUP');
   const [address, setAddress] = useState('');
+  const [country,setCountry]=useState('');const [countryError,setCountryError]=useState('');const countryRef=useRef<TextInput>(null);
   const [addressError, setAddressError] = useState('');
   const addressRef = useRef<TextInput>(null);
   const [pendingItem, setPendingItem] = useState<string | null>(null);
@@ -218,12 +220,14 @@ export default function Cart() {
     }
     if (!pending && method !== 'PICKUP' && address.trim().length < 5) {
       setAddressError(
-        'Enter your street address, suburb and postcode to continue.',
+        'Enter a delivery address, including city or locality and postal code if used.',
       );
       addressRef.current?.focus();
       return;
     }
     setAddressError('');
+    if(!pending&&method!=='PICKUP'&&(country.trim().length<2||country.trim().length>150)){setCountryError('Enter the destination country.');countryRef.current?.focus();return;}
+    setCountryError('');
     operationRef.current = true;
     setBusy(true);
     setError('');
@@ -232,6 +236,7 @@ export default function Cart() {
         checkoutKey.current,
         pending ? 'PICKUP' : method,
         pending || method === 'PICKUP' ? null : address,
+        pending || method === 'PICKUP' ? null : country,
       );
       if (!mountedRef.current) return;
       if (!result.checkoutUrl) {
@@ -262,8 +267,8 @@ export default function Cart() {
         if (!(await Linking.canOpenURL(result.checkoutUrl))) throw new Error();
         await Linking.openURL(result.checkoutUrl);
       }
-    } catch {
-      setError(
+    } catch (error) {
+      setError(checkoutEligibilityMessage(error)||
         'Checkout could not be opened. Try again, or check Orders before starting another payment.',
       );
     } finally {
@@ -642,7 +647,8 @@ export default function Cart() {
                       accessibilityLabel="Delivery or shipping address"
                       autoComplete="street-address"
                       textContentType="fullStreetAddress"
-                      placeholder="Street address, suburb and postcode"
+                      placeholder="Street address, city or locality, postal code if used"
+                      returnKeyType="next" onSubmitEditing={()=>countryRef.current?.focus()}
                       placeholderTextColor={colors.muted}
                       autoCapitalize="words"
                       style={[
@@ -660,9 +666,13 @@ export default function Cart() {
                       </Text>
                     ) : (
                       <Text style={s.meta}>
-                        Include your street, suburb and postcode.
+                        Include your street, city or locality and postal code if used.
                       </Text>
                     )}
+                    <Text style={s.addressLabel}>Country</Text>
+                    <TextInput ref={countryRef} value={country} onChangeText={value=>{setCountry(value);setCountryError('')}} editable={!locked} accessibilityLabel="Destination country" autoComplete="country" textContentType="countryName" autoCapitalize="words" placeholder="Country for delivery or shipping" placeholderTextColor={colors.muted} returnKeyType="go" onSubmitEditing={()=>void pay()} style={[s.input,!!countryError&&{borderColor:colors.danger}]}/>
+                    {countryError?<Text accessibilityRole="alert" style={s.error}>{countryError}</Text>:null}
+                    <Text style={s.meta}>Delivery and shipping stay within the business’s country. Check the seller’s delivery area before paying. Prices are in AUD.</Text>
                   </>
                 )}
               </>
@@ -670,6 +680,7 @@ export default function Cart() {
             <Text accessibilityRole="header" style={s.section}>
               3. Review & checkout
             </Text>
+            <Text style={s.meta}>Prices are in AUD. Review fulfilment and the final total before paying.</Text>
             <View style={s.summary}>
               <View style={s.total}>
                 <Text style={s.totalLabel}>Item subtotal</Text>

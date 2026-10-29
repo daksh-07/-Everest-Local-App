@@ -19,7 +19,7 @@ const inputSchema=z.object({
 export const requestDraftSchema=z.object({
  version:z.literal(1),ownerId:id,savedAt:z.number().finite(),
  entry:z.object({serviceId:z.union([id,z.literal('')]),live:z.boolean(),mode}),
- form:z.object({description:text(5000),definitionId:z.union([id,z.literal('')]),mode,location:address,
+ form:z.object({photoCount:z.number().int().min(0).max(10).optional(),description:text(5000),definitionId:z.union([id,z.literal('')]),mode,location:address,
   date:date.nullable(),timing:z.enum(['ASAP','FLEXIBLE','TIME_WINDOW','EXACT_TIME']),arrivalWindow:z.enum(['ASAP','WITHIN_30_MINUTES','WITHIN_1_HOUR','TODAY']),
   windowKey:z.enum(['MORNING','AFTERNOON','EVENING']).nullable(),exactTime:text(5).nullable(),budgetChoice:z.enum(['NONE','UNDER_100','100_250','250_500','500_PLUS','CUSTOM']),customBudget:text(30),
  }),

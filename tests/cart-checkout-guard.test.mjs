@@ -44,6 +44,7 @@ function harness(overrides = {}) {
     hasFulfillmentMethod: true,
     method: 'EVEREST_DELIVERY',
     address: '14 Errol Street, North Melbourne VIC 3051',
+    country:'Australia',setCountryError:()=>{},countryRef:{current:{focus(){calls.focus++}}},checkoutEligibilityMessage:()=>null,
     addressRef: {
       current: {
         focus() {
@@ -92,7 +93,7 @@ test('missing address validates locally, focuses the field and preserves typed t
   assert.equal(h.calls.focus, 1);
   assert.match(
     h.calls.addressErrors.at(-1),
-    /street address, suburb and postcode/,
+    /city or locality/,
   );
   assert.equal(h.env.address, '12');
   assert.equal(h.env.operationRef.current, false);
@@ -176,4 +177,8 @@ test('a completed Checkout return cannot mark an order paid or discard a still-p
   assert.equal(h.calls.loads, 0);
   assert.deepEqual(h.calls.pending, []);
   assert.equal(h.calls.redirects[0].params.checkout, 'returned');
+});
+
+test('non-pickup checkout requires an explicit country without losing the address',async()=>{
+ const h=harness({country:''});await h.invoke();assert.equal(h.calls.checkout.length,0);assert.equal(h.calls.focus,1);assert.equal(h.env.address,'14 Errol Street, North Melbourne VIC 3051');
 });

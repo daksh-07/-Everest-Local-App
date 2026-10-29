@@ -81,6 +81,7 @@ jobs:
           node scripts/verify-phase6-permissions.mjs
           node scripts/verify-phase6-comments-sql.mjs
           node scripts/verify-phase6-transactions.mjs
+          node --test tests/marketplace-country-sql.test.mjs
           node scripts/verify-release-integration-sql.mjs
           PHASE6_DATABASE_URL='' EVEREST_QA_ARTIFACTS=/tmp/everest-phase6-sql/pglite node scripts/verify-phase6-live.mjs
           PHASE6_DATABASE_URL='' EVEREST_QA_ARTIFACTS=/tmp/everest-phase6-sql/pglite node scripts/verify-phase6-permissions.mjs

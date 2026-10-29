@@ -23,6 +23,7 @@ function harness({
   appUrl = 'https://staging.example.invalid',
   authenticated = true,
   createTimeout = false,
+  createOrderError = null,
 } = {}) {
   const calls = { rpc: [], queries: [], creates: [], unique: new Map() };
   const payment = {
@@ -118,6 +119,7 @@ function harness({
     },
     rpc: async (name, args) => {
       calls.rpc.push({ name, args });
+      if(name==='create_order_from_cart'&&createOrderError)return {data:null,error:createOrderError};
       return {
         data:
           name === 'create_order_from_cart'
@@ -274,4 +276,8 @@ test('uncertain Stripe creation must not release a potentially payable reservati
     h.calls.rpc.some((c) => c.name === 'release_my_order_reservations'),
     false,
   );
+});
+
+test('destination rejection returns an allowlisted recovery message before any Stripe operation',async()=>{
+ for(const tag of ['MARKETPLACE_DESTINATION_REQUIRED','MARKETPLACE_CROSS_BORDER_UNSUPPORTED','MARKETPLACE_FULFILMENT_UNKNOWN','MARKETPLACE_PRODUCT_UNAVAILABLE']){const h=harness({createOrderError:{code:'22023',message:tag}});const response=await h.invoke('fixture-country-attempt-123');const result=await response.json();assert.equal(response.status,422);assert.ok(result.code);assert.equal(h.calls.creates.length,0);assert.equal(h.calls.queries.length,0);}
 });

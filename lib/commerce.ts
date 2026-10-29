@@ -14,7 +14,7 @@ type CartProduct = {
   product_images?:{storage_path:string|null;url:string|null;is_primary:boolean|null;sort_order:number|null}[]|null;
   track_stock: boolean;
   made_to_order: boolean;
-  businesses: { name: string } | null;
+  businesses: { name: string;country:string;status:string;verification_status:string;accepts_orders:boolean } | null;
   inventory: { stock_quantity: number; reserved_quantity: number } | null;
 };
 type CartVariant = {
@@ -147,7 +147,7 @@ export async function getCart(): Promise<CartItem[]> {
   const { data, error } = await supabase
     .from('cart_items')
     .select(
-      'id,quantity,product_id,variant_id,products(id,name,price,sale_price,status,business_id,delivery_eligible,pickup_available,shipping_available,track_stock,made_to_order,product_images(storage_path,url,is_primary,sort_order),businesses(name),inventory(stock_quantity,reserved_quantity)),product_variants(id,title,price,available,stock_quantity,reserved_quantity)',
+      'id,quantity,product_id,variant_id,products(id,name,price,sale_price,status,business_id,delivery_eligible,pickup_available,shipping_available,track_stock,made_to_order,product_images(storage_path,url,is_primary,sort_order),businesses(name,country,status,verification_status,accepts_orders),inventory(stock_quantity,reserved_quantity)),product_variants(id,title,price,available,stock_quantity,reserved_quantity)',
     )
     .eq('cart_id', cartId);
   if (error) throw commerceError('Unable to load your cart right now.');
@@ -205,6 +205,7 @@ export async function checkout(
   idempotencyKey: string,
   deliveryMethod: ProductDeliveryMethod = 'PICKUP',
   deliveryAddress: string | null = null,
+  country: string | null = null,
 ): Promise<CheckoutResult> {
   requireSupabaseConfig();
   if (idempotencyKey.length < 16)
@@ -212,18 +213,20 @@ export async function checkout(
   const address = deliveryAddress?.trim() || null;
   if (deliveryMethod !== 'PICKUP' && (!address || address.length < 5))
     throw new Error('Enter a valid delivery address.');
+  if(deliveryMethod!=='PICKUP'&&(!country?.trim()||country.trim().length<2||country.trim().length>150))throw Object.assign(new Error('Enter the destination country.'),{code:'DESTINATION_REQUIRED'});
   const { data, error } = await supabase.functions.invoke('checkout', {
     body: {
       delivery_method: deliveryMethod,
-      delivery_address: address ? { address_line: address } : null,
+      delivery_address: address ? { address_line: address,country:country?.trim()||null } : null,
       return_platform: Platform.OS === 'web' ? 'web' : 'native',
     },
     headers: { 'Idempotency-Key': idempotencyKey },
   });
-  if (error)
-    throw commerceError(
-      'Checkout is temporarily unavailable. Please try again.',
-    );
+  if(error){
+    const response=(error as {context?:{json?:()=>Promise<unknown>}}).context;
+    if(response?.json){const payload=await response.json().catch(()=>null) as {code?:unknown}|null;const message=checkoutEligibilityMessage(payload);if(message)throw Object.assign(new Error(message),{code:payload?.code});}
+    throw commerceError('Checkout is temporarily unavailable. Please try again.');
+  }
   if (data?.error)
     throw commerceError(
       'Checkout could not be completed. Please review your cart and try again.',
@@ -280,4 +283,11 @@ export async function pendingCartCheckout(): Promise<PendingCartCheckout | null>
         delivery_method: order.delivery_method,
       }
     : null;
+}
+
+/** Display only enumerated eligibility messages; never expose raw database/provider errors. */
+export function checkoutEligibilityMessage(error:unknown){
+ const code=error&&typeof error==='object'&&'code' in error?String(error.code):'';
+ const messages:Record<string,string>={DESTINATION_REQUIRED:'Enter the destination country.',CROSS_BORDER_UNSUPPORTED:'Delivery and shipping to another country are not available. Choose pickup or another business.',FULFILMENT_UNKNOWN:'This business’s fulfilment location needs confirmation. Choose another business or contact the seller.',PRODUCT_UNAVAILABLE:'This product or fulfilment method is no longer available. Review your cart.'};
+ return messages[code]??null;
 }

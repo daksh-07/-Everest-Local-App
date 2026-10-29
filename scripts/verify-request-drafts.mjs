@@ -74,6 +74,19 @@ try{for(const theme of ['LIGHT','DARK'])for(const mode of ['DEFAULT','PULSE','CL
   await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('textbox',{name:'Street address',exact:true}).fill('10 Fixture Street');await page.getByRole('button',{name:'Continue',exact:true}).click();
   const choosing=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Add photos',exact:true}).click();const chooser=await choosing;
   await chooser.setFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j1ioAAAAASUVORK5CYII=','base64')});
+  await page.getByRole('button',{name:'Add photos (1/10)',exact:true}).waitFor();
+  const waitPhotoCount=async expected=>page.waitForFunction(expected=>{const key=Object.keys(localStorage).find(k=>/^everest-request-draft\.v1\.[a-f0-9-]{36}$/.test(k));if(!key)return false;const manifest=JSON.parse(localStorage.getItem(key));let raw='';for(let i=0;i<manifest.count;i++)raw+=localStorage.getItem(`${key}.${manifest.generation}.${i}`)||'';return JSON.parse(raw).form.photoCount===expected},expected);
+  await waitPhotoCount(1);assert.equal(await page.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('everest-request-draft')).some(k=>/fixture\.png|data:image|blob:|file:\/\//.test(localStorage.getItem(k)))),false);
+  await settleFixtureReads(page);await page.reload();await page.getByRole('button',{name:'Continue saved request',exact:true}).click();await page.getByRole('button',{name:'Reattach photos',exact:true}).waitFor();
+  assert.equal(await page.getByRole('textbox',{name:'Job details'}).inputValue(),'Fixture photo upload failure after posting.');
+  const photoAxe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();assert.deepEqual(photoAxe.violations,[]);
+  const rechoosing=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Reattach photos',exact:true}).click();await (await rechoosing).setFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j1ioAAAAASUVORK5CYII=','base64')});
+  await page.getByRole('button',{name:'Reattach photos',exact:true}).waitFor({state:'hidden'});await waitPhotoCount(1);
+  await settleFixtureReads(page);await page.reload();await page.getByRole('button',{name:'Continue saved request',exact:true}).click();
+  await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('textbox',{name:'Street address',exact:true}).fill('10 Fixture Street');await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await page.getByRole('button',{name:'Post request',exact:true}).click();await page.getByRole('alert').filter({hasText:'Reattach the photos'}).waitFor();assert.equal(posted.length,3);
+  await page.getByRole('button',{name:'Continue without photos',exact:true}).click();await waitPhotoCount(0);
+  const choosingAgain=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Add photos',exact:true}).click();await (await choosingAgain).setFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j1ioAAAAASUVORK5CYII=','base64')});
   await page.getByRole('button',{name:'Add photos (1/10)',exact:true}).waitFor();failMedia=true;
   await page.getByRole('button',{name:'Post request',exact:true}).click();await page.getByRole('button',{name:'View activity',exact:true}).waitFor();await page.getByRole('alert').filter({hasText:'some photos could not be attached'}).waitFor();assert.equal(posted.length,4);photoFailureHandled=true;
  }
@@ -83,6 +96,6 @@ try{for(const theme of ['LIGHT','DARK'])for(const mode of ['DEFAULT','PULSE','CL
  await page.goto(base+'/account');await page.getByRole('button',{name:'Open account menu',exact:true}).click();await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.waitForURL(u=>u.pathname==='/'||u.pathname==='/auth');await settleFixtureReads(page);
  assert.equal(await page.evaluate(()=>localStorage.getItem('sb-bmwbljefnamvjnmuvkvv-auth-token')),null);
  assert.equal(await page.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('everest-request-draft.v1.')).length),0);
- report.runs.push({theme,mode,refresh:true,navigation:true,authInterruption:true,locationReconfirmation:true,unknownOutcomeRecoveredWithoutRepost:true,originalPayloadRetry:true,logoutClearsCopy:true,photoFailureHandled,posted:posted.length,axeViolations:axe.violations.length});await settleFixtureReads(page);await context.close();
+ report.runs.push({theme,mode,refresh:true,navigation:true,authInterruption:true,locationReconfirmation:true,unknownOutcomeRecoveredWithoutRepost:true,originalPayloadRetry:true,logoutClearsCopy:true,photoFailureHandled,photoRecoveryDecision:photoFailureHandled,posted:posted.length,axeViolations:axe.violations.length});await settleFixtureReads(page);await context.close();
 }assert.deepEqual(report.errors,[]);}finally{await fs.writeFile(`${out}/report-${engine}.json`,JSON.stringify(report,null,2));await browser.close()}
 console.log(JSON.stringify(report));

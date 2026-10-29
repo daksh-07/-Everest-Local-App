@@ -41,3 +41,9 @@ Local merged-source unit/security suite passes **589 tests**, including imported
 Keep #105 and #113–#117 open until the combined candidate is reviewed and accepted. Do not recommend closing #105 as obsolete. After approval, merge the reviewed combined candidate once, verify its release source, and close superseded PRs only with their replacement link. Backend rollout is a separate gated action. Reverting the frontend merge is not a sufficient rollback after inventory migration or live sessions; preserve the backend reconciliation/rollback plan and inspect provider state.
 
 The complete journey status/device checklist remains in `EVEREST_JOURNEY_COMPLETION.md`. Global service-area and product shipping eligibility is still incomplete; a country directory does not establish checkout serviceability.
+
+## Follow-up: country authority and photo recovery
+
+All ten workflow runs on published integration merge `cf81cfd` completed successfully, including native-store and WebKit jobs. This result applies to that source, not subsequent edits.
+
+The follow-up adds authoritative local-service country guards, explicit domestic product fulfilment country checks and an immediate photo-reattachment/continue-without decision after draft recovery. See `EVEREST_MARKETPLACE_ELIGIBILITY.md` for implementation limits and rollout gates. The full local suite including the additional checkout rollback case passed 614 tests, with typecheck passing and zero lint errors (eleven existing warnings); final browser and follow-up CI are pending. No hosted or physical-device acceptance is claimed.

@@ -151,6 +151,10 @@ export default function Request() {
   const [budgetChoice, setBudgetChoice] = useState<BudgetChoice>("NONE");
   const [customBudget, setCustomBudget] = useState("");
   const [photos, setPhotos] = useState<ImagePicker.ImagePickerAsset[]>([]);
+  const [expectedPhotoCount,setExpectedPhotoCount]=useState(0);
+  const [photoPickerBusy,setPhotoPickerBusy]=useState(false);
+  const photoPickerLock=useRef(false);const photoPickerEpoch=useRef(0);
+  const missingPhotos=Math.max(0,expectedPhotoCount-photos.length);
   const [uploadProgress, setUploadProgress] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -177,7 +181,7 @@ export default function Request() {
   const readyRef=useRef(false);readyRef.current=draftReady;
   const snapshot:RequestDraft={version:1,ownerId:draftOwner.current,savedAt:Date.now(),
     entry:{serviceId,live,mode:params.mode==='REMOTE'||params.mode==='BOTH'?params.mode:'LOCAL'},
-    form:{description,definitionId:selectedDefinition?.id??'',mode,
+    form:{photoCount:Math.max(photos.length,expectedPhotoCount),description,definitionId:selectedDefinition?.id??'',mode,
       location:{addressLine1:location.addressLine1,suburb:location.suburb,city:location.city,state:location.state,postalCode:location.postalCode,country:location.country},
       date:date?localDate(date):null,timing,arrivalWindow,windowKey,exactTime:exactTime?timeValue(exactTime):null,budgetChoice,customBudget},
     ...(attempt?{attempt}:{}),
@@ -191,7 +195,7 @@ export default function Request() {
     await draftSession.current.save(value);
   },[]);
   useFocusEffect(useCallback(()=>{
-    let active=true;setDraftReady(false);readyRef.current=false;draftPaused.current=false;
+    let active=true;setPhotoPickerBusy(false);setDraftReady(false);readyRef.current=false;draftPaused.current=false;
     void supabase.auth.getSession().then(async({data})=>{
       if(!active||!data.session?.user.id)return;
       draftOwner.current=data.session.user.id;
@@ -199,7 +203,7 @@ export default function Request() {
       const draft=await session.load();if(!active)return;
       if(draft)setSavedDraft(draft);else setDraftReady(true);
     }).catch(()=>{if(active){setDraftStatus('Draft saving is unavailable on this device. Keep this page open and retry before posting.');setDraftReady(true)}});
-    return()=>{active=false;if(draftTimer.current)clearTimeout(draftTimer.current);if(readyRef.current&&!draftPaused.current){try{void draftSession.current?.save({...snapshotRef.current,entry:{...snapshotRef.current.entry,serviceId,live}}).catch(()=>undefined)}catch{/* Explicit logout can already have invalidated this writer. */}}draftSession.current?.close();draftSession.current=null};
+    return()=>{active=false;photoPickerEpoch.current++;photoPickerLock.current=false;if(draftTimer.current)clearTimeout(draftTimer.current);if(readyRef.current&&!draftPaused.current){try{void draftSession.current?.save({...snapshotRef.current,entry:{...snapshotRef.current.entry,serviceId,live}}).catch(()=>undefined)}catch{/* Explicit logout can already have invalidated this writer. */}}draftSession.current?.close();draftSession.current=null};
   },[serviceId,live]));
   useEffect(()=>{
     if(!draftReady||draftPaused.current)return;
@@ -219,6 +223,7 @@ export default function Request() {
     if(draft.entry.serviceId!==serviceId||draft.entry.live!==live){router.replace(target as never);return;}
     const f=draft.form;setDescription(f.description);setMode(f.mode);addressEdited.current=true;
     setLocation({...f.location,formattedAddress:'',source:'MANUAL',confirmed:false});
+    setPhotos([]);setExpectedPhotoCount(f.photoCount??0);
     restoredDefinition.current=f.definitionId;const selected=serviceDefinitions.find(row=>row.id===f.definitionId)??null;setSelectedDefinition(selected);
     const staleDate=hasPastRequestedTime({preferredDate:f.date??undefined,preferredTime:f.exactTime??undefined,timingMode:f.timing});setDate(f.date&&!staleDate?new Date(f.date+'T12:00:00'):null);
     setTiming(staleDate?'FLEXIBLE':f.timing);setWindowKey(staleDate?null:f.windowKey);
@@ -229,7 +234,7 @@ export default function Request() {
     setDraftNotice(staleDate?'Your saved date has passed. Choose a new date before posting.':'Draft restored. Review the details and confirm the service address again.');
   }
   async function discardDraft(){
-    try{await draftSession.current?.clear();setSavedDraft(null);setDraftReady(true);setAttempt(undefined);setDescription('');setSelectedDefinition(null);setPhotos([]);setLocation({addressLine1:'',suburb:'',city:'',state:'',postalCode:'',country:'',formattedAddress:'',source:'MANUAL',confirmed:false});setDate(live?new Date():null);setTiming(live?'ASAP':'FLEXIBLE');setWindowKey(null);setExactTime(null);setBudgetChoice('NONE');setCustomBudget('');requestIdempotencyKeyRef.current=null;draftPaused.current=false;setDraftStatus('Saved request removed from this device.');}
+    try{await draftSession.current?.clear();setSavedDraft(null);setDraftReady(true);setAttempt(undefined);setDescription('');setSelectedDefinition(null);setPhotos([]);setExpectedPhotoCount(0);setLocation({addressLine1:'',suburb:'',city:'',state:'',postalCode:'',country:'',formattedAddress:'',source:'MANUAL',confirmed:false});setDate(live?new Date():null);setTiming(live?'ASAP':'FLEXIBLE');setWindowKey(null);setExactTime(null);setBudgetChoice('NONE');setCustomBudget('');requestIdempotencyKeyRef.current=null;draftPaused.current=false;setDraftStatus('Saved request removed from this device.');}
     catch{setDraftStatus('The saved request could not be removed. Please retry.');}
   }
   const resumeDraftRef=useRef(resumeDraft);resumeDraftRef.current=resumeDraft;
@@ -465,20 +470,21 @@ export default function Request() {
     }));
   }
   async function choosePhotos() {
-    setError("");
-    // Web picker activation must remain in the button's user gesture; browsers need no media permission here.
-    if (Platform.OS !== 'web') {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {setError("Photo access is required to attach images.");return;}
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsMultipleSelection: true,
-      selectionLimit: Math.max(1, 10 - photos.length),
-      quality: 0.82,
-    });
-    if (!result.canceled)
-      setPhotos((current) => [...current, ...result.assets].slice(0, 10));
+    if(photoPickerLock.current||busy||photos.length>=10)return;
+    photoPickerLock.current=true;setPhotoPickerBusy(true);setError('');
+    const epoch=photoPickerEpoch.current,owner=draftOwner.current;
+    try{
+      // Keep browser picker activation in the user's click; native permission is requested on demand.
+      if(Platform.OS!=='web'){
+        const permission=await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if(epoch!==photoPickerEpoch.current||owner!==draftOwner.current)return;
+        if(!permission.granted){setError('Photo access is required to attach images. You can continue without photos.');return;}
+      }
+      const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],allowsMultipleSelection:true,selectionLimit:Math.max(1,10-photos.length),quality:0.82});
+      if(epoch!==photoPickerEpoch.current||owner!==draftOwner.current)return;
+      if(!result.canceled)setPhotos(current=>[...current,...result.assets].slice(0,10));
+    }catch{if(epoch===photoPickerEpoch.current)setError('Photos could not be opened. Try again or continue without photos.');}
+    finally{if(epoch===photoPickerEpoch.current){photoPickerLock.current=false;setPhotoPickerBusy(false)}}
   }
   function chooseDate(kind: "TODAY" | "TOMORROW" | "WEEKEND") {
     const d = kind === "WEEKEND" ? nextSaturday() : new Date();
@@ -572,7 +578,7 @@ export default function Request() {
     await draftSession.current?.clear();
   }
   async function finishPosted(id:string,fromSubmit:boolean){
-    let mediaError='';
+    let mediaError=!fromSubmit&&expectedPhotoCount>photos.length?'Your request is posted. Photos from the saved draft were not restored. Open Activity to check your request.':'';
     if(fromSubmit&&photos.length){try{await uploadRequestMedia(id,photos,(done,total)=>setUploadProgress(`Uploading ${done}/${total}`))}catch{mediaError='Your request is posted, but some photos could not be attached. Open Activity to view your request.'}}
     if(live){
       setPendingLiveRequestId(id);
@@ -600,7 +606,8 @@ export default function Request() {
     finally{setBusy(false)}
   }
   async function submit() {
-    if(submitRef.current||busy)return;
+    if(submitRef.current||busy||photoPickerBusy)return;
+    if(missingPhotos>0&&!pendingLiveRequestId){setError('Reattach the photos from your saved request or choose to continue with fewer photos before posting.');return;}
     if(!attempt&&!pendingLiveRequestId&&(!validate(1)||!validate(2)||!validate(3)))return;
     submitRef.current=true;setBusy(true);setError('');
     try{
@@ -693,13 +700,20 @@ export default function Request() {
       </SafeAreaView>
     );
 
+  const photoRecovery=missingPhotos>0?<View style={s.section}>
+    <Text accessibilityRole="header" style={s.heading}>Reattach your photos</Text>
+    <Text accessibilityLiveRegion="polite" style={s.copy}>{missingPhotos} {missingPhotos===1?'photo needs':'photos need'} to be added again. Your other request details are saved. Images stay out of device draft storage.</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel="Reattach photos" accessibilityState={{disabled:busy||photoPickerBusy,busy:photoPickerBusy}} disabled={busy||photoPickerBusy} onPress={()=>void choosePhotos()} style={s.outline}><Text style={s.outlineText}>{photoPickerBusy?'Opening photos…':'Reattach photos'}</Text></Pressable>
+    <Pressable accessibilityRole="button" disabled={busy||photoPickerBusy} onPress={()=>{setExpectedPhotoCount(photos.length);setError('')}} style={s.textButton}><Text style={s.textButtonText}>{photos.length?`Use ${photos.length} attached ${photos.length===1?'photo':'photos'}`:'Continue without photos'}</Text></Pressable>
+  </View>:null;
+
   if(!draftReady||savedDraft||attempt)return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">
     <Text accessibilityRole="header" style={s.title}>{savedDraft?'Continue your saved request?':attempt?'Check your request status':'Restoring your request…'}</Text>
     {savedDraft?<><Text style={s.copy}>Saved on this device. You can review and edit it before posting. Photos need to be added again after reopening.</Text><Text style={s.heading}>{savedDraft.form.description||'Unfinished service request'}</Text>
       <Pressable accessibilityRole="button" onPress={()=>resumeDraft(savedDraft)} style={s.primary}><Text style={s.primaryText}>Continue saved request</Text></Pressable>
       <Pressable accessibilityRole="button" onPress={()=>void discardDraft()} style={s.textButton}><Text style={s.textButtonText}>Discard saved request and start new</Text></Pressable></>:attempt?<>
       <Text style={s.copy}>Posting was interrupted. Check whether this request was posted before trying again. Retrying continues the original request instead of creating another.</Text>
-      <Text style={s.heading}>{attempt.description}</Text><Text style={s.copy}>{attempt.serviceAddressLabel||'Remote service'}{attempt.preferredDate?` · Requested date: ${attempt.preferredDate}`:''}</Text>
+      {photoRecovery}<Text style={s.heading}>{attempt.description}</Text><Text style={s.copy}>{attempt.serviceAddressLabel||'Remote service'}{attempt.preferredDate?` · Requested date: ${attempt.preferredDate}`:''}</Text>
       <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void checkAttempt()} style={s.primary}><Text style={s.primaryText}>Check request status</Text></Pressable>
       <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void submit()} style={s.outline}><Text style={s.outlineText}>{pendingLiveRequestId?'Continue live search':'Retry posting same request'}</Text></Pressable>
       <Pressable accessibilityRole="button" onPress={()=>router.replace('/activity')} style={s.textButton}><Text style={s.textButtonText}>View activity</Text></Pressable>
@@ -711,6 +725,7 @@ export default function Request() {
 
   const canContinue =
     !busy &&
+    !photoPickerBusy &&
     !serviceLoading &&
     serviceValid &&
     (step === 1
@@ -789,6 +804,7 @@ export default function Request() {
             }}
           >
             {draftNotice?<Text style={s.copy}>{draftNotice}</Text>:null}
+            {photoRecovery}
             <Text style={s.meta}>{draftStatus||'Your request is saved on this device.'} Photos need to be added again after reopening.</Text>
             {step === 1 ? (
               <>
@@ -1179,6 +1195,8 @@ export default function Request() {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={photos.length?`Add photos (${photos.length}/10)`:"Add photos"}
+                    disabled={photoPickerBusy||busy||photos.length>=10}
+                    accessibilityState={{disabled:photoPickerBusy||busy||photos.length>=10,busy:photoPickerBusy}}
                     onPress={() => void choosePhotos()}
                     style={s.outline}
                   >
@@ -1196,13 +1214,12 @@ export default function Request() {
                       {photos.map((p, i) => (
                         <View key={p.assetId ?? p.uri} style={s.photoWrap}>
                           <Image source={{ uri: p.uri }} style={s.photo} />
-                          <Pressable accessibilityLabel="Close"
+                          <Pressable accessibilityLabel={`Remove photo ${i+1}`}
                             accessibilityRole="button"
-                            onPress={() =>
-                              setPhotos((items) =>
-                                items.filter((_, index) => index !== i),
-                              )
-                            }
+                            onPress={() => {
+                              setExpectedPhotoCount(count=>Math.max(0,count-1));
+                              setPhotos(items=>items.filter((_,index)=>index!==i));
+                            }}
                             style={s.remove}
                           >
                             <Ionicons name="close" size={14} color="#fff" />

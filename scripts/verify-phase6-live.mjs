@@ -1,3 +1,4 @@
+import {installCountryMatchingFixture} from './lib/country-matching-fixture.mjs';
 // Executes the checked-in Live wave function in disposable PostgreSQL, never production.
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
@@ -41,6 +42,10 @@ const cases=[
  ['AVAILABLE_NOW honors future available_from',"update business_availability set available_from=now()+interval '2 hours'",0,true],
  ['removed member assignment does not exclude business',`insert into business_members values('${biz}','${biz}','REMOVED');insert into service_dispatch_assignments values('${biz}',null)`,1,true],
  ['nearby capable verified provider','',1],
+ ['same coordinates in another country are excluded',"update service_requests set country='Canada'",0],
+ ['missing request country is not guessed from locality',"update service_requests set country=null",0],
+ ['missing business country is not guessed from coordinates',"update businesses set country=''",0],
+ ['known country aliases preserve eligible service',"update service_requests set country='AU'",1],
  ['matching nearby named area remains eligible',`insert into service_areas values('${biz}',true,'Carlton','Melbourne','VIC')`,1],
  ['named area cannot bypass online provider radius',`update businesses set latitude=-37.82;insert into service_areas values('${biz}',true,'Carlton','Melbourne','VIC');insert into business_members values('${biz}','${biz}','ACTIVE');insert into driver_availability values('${biz}','ONLINE',0.1)`,0],
  ['named area cannot replace missing coordinates',`update businesses set latitude=null;insert into service_areas values('${biz}',true,'Carlton','Melbourne','VIC')`,0],
@@ -69,7 +74,7 @@ try{
  if(!baseline){
   const migrations=(await fs.readdir('supabase/migrations')).filter(name=>name.endsWith('_phase6_live_matching_correctness.sql')||name.endsWith('_phase6_live_request_quote_lifecycle.sql')).sort();
   if(!migrations.length)throw new Error('Phase 6 matching migration is missing');
-  await db.exec("do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;end$$;");for(const migration of migrations)await db.exec(await fs.readFile('supabase/migrations/'+migration,'utf8'));
+  await db.exec("do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;end$$;");for(const migration of migrations)await db.exec(await fs.readFile('supabase/migrations/'+migration,'utf8'));await installCountryMatchingFixture(db);
  }
  for(const [name,sql,expected,regression] of cases){
   if(baseline&&!regression)continue;await reset();if(sql)await db.exec(sql);const actual=await release();report.tests.push({name,expected,actual,pass:actual===expected});

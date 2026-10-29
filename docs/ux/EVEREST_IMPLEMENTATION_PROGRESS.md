@@ -53,3 +53,7 @@ The prior release report says Supabase branching was unavailable on the plan. Th
 ## Consolidation — 30 October 2026 (Sydney)
 
 Reverified #113–#117 green/unmerged and production `ed013dec`. Reconciled all seven #105 conflicts on a two-parent review branch based on #117, with a combined PR targeting production integration rather than another dependency-only PR. Preserved current guest/cart, deposit-price, messaging and accessibility fixes. Combined unit/security suite passes 589 cases; local commerce acceptance adds real signed-out SDK state and an unavailable-quote amount guard. [Integration review](EVEREST_INTEGRATION_REVIEW.md) records exact decisions, backend rollout dependency and hosted/physical gates. No production mutation or financial operation.
+
+### 30 October continuation: combined release candidate
+
+PR #118 reconciles #105 and #113–#117 in one candidate. Its first published merge passed all ten workflows. Follow-up implements country authority for matching/quote/booking and product fulfilment, checkout country/error recovery, merchant availability states, and explicit photo draft recovery. Implementation, remaining geographic limits, isolated hosted blockers and unapplied migration gates are in `EVEREST_MARKETPLACE_ELIGIBILITY.md`. Final-source verification must replace pending results before release. Production is unchanged.

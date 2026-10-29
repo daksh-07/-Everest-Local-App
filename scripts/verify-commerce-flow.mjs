@@ -47,6 +47,7 @@ const merchant = {
   status: 'ACTIVE',
   verification_status: 'VERIFIED',
   accepts_orders: true,
+  country:'Australia',
   address_line: '14 Errol Street',
   suburb: 'North Melbourne',
   city: 'Melbourne',
@@ -634,7 +635,7 @@ for (const [width, theme] of layouts) {
     await page.keyboard.press('Enter');
     await page
       .getByText(
-        'Enter your street address, suburb and postcode to continue.',
+        'Enter a delivery address, including city or locality and postal code if used.',
         { exact: true },
       )
       .waitFor();
@@ -649,6 +650,7 @@ for (const [width, theme] of layouts) {
     await page
       .getByRole('textbox', { name: 'Delivery or shipping address' })
       .fill('14 Errol Street, North Melbourne VIC 3051');
+    await proceed.click();await page.getByRole('textbox',{name:'Destination country',exact:true}).waitFor();assert.equal(await page.getByRole('textbox',{name:'Destination country',exact:true}).evaluate(el=>el===document.activeElement),true);assert.equal(state.checkoutCalls,0);await page.getByRole('textbox',{name:'Destination country',exact:true}).fill('Australia');
     assert.equal(await proceed.isDisabled(), false);
     record('fulfilment validates inline and focuses the missing address');
     await snap('cart');
@@ -997,6 +999,7 @@ for (const [width, theme] of layouts) {
     0,
   );
   record('empty cart cannot start checkout');
+  merchant.accepts_orders=false;await goto('/product?id='+pid);await page.getByRole('button',{name:'Unavailable',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Unavailable',exact:true}).isDisabled(),true);record('merchant not accepting orders cannot add a product');merchant.accepts_orders=true;await goto('/cart');await page.getByText('Your cart is empty.',{exact:true}).waitFor();
   authTransition = true;
   state.authenticated = false;
   await page.evaluate(() => {

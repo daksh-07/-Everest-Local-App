@@ -155,6 +155,15 @@ Deno.serve(async req=>{
   });
  }catch(error){
   if(orderId&&!stripeSessionCreated){try{await userClient.rpc('release_my_order_reservations',{p_order_id:orderId});}catch{/* best-effort reservation cleanup */}}
+  const tagged=error as {code?:string;message?:string};
+  const eligibility:Record<string,{code:string;message:string}>={
+   MARKETPLACE_DESTINATION_REQUIRED:{code:'DESTINATION_REQUIRED',message:'Enter the destination country.'},
+   MARKETPLACE_CROSS_BORDER_UNSUPPORTED:{code:'CROSS_BORDER_UNSUPPORTED',message:'Delivery and shipping to another country are not available. Choose pickup or another business.'},
+   MARKETPLACE_FULFILMENT_UNKNOWN:{code:'FULFILMENT_UNKNOWN',message:'This business’s fulfilment location needs confirmation. Choose another business or contact the seller.'},
+   MARKETPLACE_PRODUCT_UNAVAILABLE:{code:'PRODUCT_UNAVAILABLE',message:'This product or fulfilment method is no longer available. Review your cart.'},
+  };
+  const rejected=tagged?.code==='22023'?eligibility[tagged.message??'']:undefined;
+  if(rejected&&!stripeSessionCreated)return json({error:rejected.message,code:rejected.code},422);
   console.error('checkout_failed',{message:error instanceof Error?error.message:'unknown',orderId:orderId??null,stripeSessionCreated});
   return json({error:'Checkout could not be created. No payment was confirmed.'},500);
  }

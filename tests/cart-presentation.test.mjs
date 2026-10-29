@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {cartQuantityLimit,cartNeedsAttention} from '../lib/cart-presentation.ts';
-const item={quantity:2,variant_id:null,product_variants:null,products:{status:'ACTIVE',track_stock:true,made_to_order:false,inventory:{stock_quantity:5,reserved_quantity:2}}};
+const item={quantity:2,variant_id:null,product_variants:null,products:{businesses:{status:'ACTIVE',verification_status:'VERIFIED',accepts_orders:true,country:'Australia'},status:'ACTIVE',track_stock:true,made_to_order:false,inventory:{stock_quantity:5,reserved_quantity:2}}};
 test('cart uses unreserved authoritative stock and refuses unknown stock',()=>{
  assert.equal(cartQuantityLimit(item),3);
  assert.equal(cartQuantityLimit({...item,products:{...item.products,inventory:null}}),0);
@@ -20,4 +20,8 @@ test('untracked and made-to-order products still respect cart quantity limits',(
   assert.equal(cartQuantityLimit(open),99);
   for(const quantity of [0,-1,1.5,100])assert.equal(cartNeedsAttention({...open,quantity}),true);
  }
+});
+
+test('cart does not offer purchase when merchant eligibility is missing or no longer active',()=>{
+ for(const business of [null,{...item.products.businesses,status:'PAUSED'},{...item.products.businesses,accepts_orders:false},{...item.products.businesses,country:''}])assert.equal(cartQuantityLimit({...item,products:{...item.products,businesses:business}}),0);
 });

@@ -365,3 +365,24 @@ test('checkout SQL refuses zero and excessive quantities even if corrupt cart da
 
 test('rollout also blocks legacy action-required checkouts before guessing their reservation mode',async()=>{const db=new PGlite();try{await db.exec(schema);await db.exec("insert into orders(status,payment_status) values('PENDING','REQUIRES_ACTION')");await assert.rejects(db.exec(migration),/Reconcile pending product checkouts/);await db.exec('rollback')}finally{await db.close()}});
 test('rollout refuses orphaned parent or variant reservations even with no pending order',async()=>{for(const variant of [false,true]){const db=new PGlite();try{await db.exec(schema);await db.exec(variant?`insert into product_variants(id,product_id,stock_quantity,reserved_quantity)values('${id(40)}','${id(30)}',5,1)`:`insert into inventory(product_id,stock_quantity,reserved_quantity)values('${id(30)}',5,1)`);await assert.rejects(db.exec(migration),/Reconcile legacy inventory reservations/);await db.exec('rollback')}finally{await db.close()}}});
+
+test('country rejection rolls back actual checkout order, stock reservation, payment and active-cart pointer', async () => {
+  const db=await setup();
+  try {
+    const guard=readFileSync('supabase/migrations/20261029145623_marketplace_country_matching_guard.sql','utf8');
+    await db.exec("alter table businesses add column country text default 'Australia'");
+    await db.exec(guard.slice(0,guard.indexOf('-- MATCHING FUNCTIONS:'))+guard.slice(guard.indexOf('-- Fulfilment identity,')));
+    await db.query("insert into products(id,business_id,name,price) values($1,$2,'Fixture product',10)",[id(30),id(10)]);
+    await db.query('insert into inventory values($1,5,0,null)',[id(30)]);
+    await db.query('insert into cart_items values($1,$2,$3,null,2)',[id(50),id(20),id(30)]);
+    for(const country of ['Canada','']){
+      await assert.rejects(db.query("select create_order_from_cart('country-checkout-key-123','SHIPPING',$1::jsonb)",[JSON.stringify({address_line:'Synthetic address',country})]),/MARKETPLACE_(CROSS_BORDER_UNSUPPORTED|DESTINATION_REQUIRED)/);
+      for(const table of ['orders','order_items','payments'])assert.equal((await scalar(db,'select count(*)::int n from '+table)).n,0);
+      assert.equal((await scalar(db,'select reserved_quantity from inventory')).reserved_quantity,0);
+      assert.equal((await scalar(db,'select active_checkout_order_id from carts')).active_checkout_order_id,null);
+    }
+    const {result}=await scalar(db,"select create_order_from_cart('country-checkout-key-123','SHIPPING',$1::jsonb) result",[JSON.stringify({address_line:'Synthetic address',country:'AU'})]);
+    assert.ok(result.order_id);assert.equal((await scalar(db,'select reserved_quantity from inventory')).reserved_quantity,2);
+    assert.equal((await scalar(db,'select count(*)::int n from payments')).n,1);
+  } finally {await db.close()}
+});

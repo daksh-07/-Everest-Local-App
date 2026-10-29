@@ -4,3 +4,6 @@ dist/
 .env
 .env.local
 *.log
+
+# Supabase CLI generated local state
+/supabase/.temp/
