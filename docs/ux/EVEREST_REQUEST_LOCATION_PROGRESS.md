@@ -33,3 +33,7 @@ Native binary builds, physical devices, VoiceOver/TalkBack, actual geolocation p
 This branch is stacked on PR #113; review and merge that prerequisite first, then retarget this follow-up to the production integration branch. Revert the follow-up commit to roll back; no schema rollback.
 
 Request draft recovery remains open: specify opt-in/device storage, account isolation, expiry, logout/success cleanup, stale date handling, service revalidation, pending-success reconciliation, and exclusions for photos/precise coordinates/payment details before persisting it. Do not autosubmit or restore a previously confirmed pin without review. Country-aware discovery before pagination and authenticated business/transaction acceptance remain next in the whole-product roadmap.
+
+## First published CI outcome
+
+Source `4a96ec5` passed Chromium request-location and performance recovery CI. WebKit passed several configurations but timed out waiting for a missing-country alert. This is unresolved; WebKit must not be called passed. Added failure-only field/DOM/screenshot diagnostics while preserving the same assertions. A local WebKit download succeeded, but its system libraries were unavailable and the dependency installer failed with a runtime `setgroups` restriction. CI remains the usable WebKit environment.

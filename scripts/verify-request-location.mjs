@@ -51,7 +51,7 @@ try{
   assert.equal(await country.inputValue(),width===390?'Canada':'');
   await country.fill('');await page.getByRole('textbox',{name:'Street address',exact:true}).fill('10 Fixture Street');
   await page.getByRole('button',{name:'Continue',exact:true}).click();
-  await page.getByRole('alert').filter({hasText:'Enter the country'}).waitFor();
+  try{await page.getByRole('alert').filter({hasText:'Enter the country'}).waitFor({timeout:5000})}catch(e){console.error(JSON.stringify({theme,mode,width,fields:await page.getByRole('textbox').evaluateAll(els=>els.map(el=>({label:el.getAttribute('aria-label'),value:el.value}))),body:await page.locator('body').innerText()}));await page.screenshot({path:`${out}/validation-failure.png`});throw e;}
   try{await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Country',{},{timeout:3000})}catch(e){console.error(JSON.stringify({active:await page.evaluate(()=>document.activeElement?.outerHTML),country:await country.evaluate(el=>el.outerHTML)}));throw e;}assert.equal(await country.evaluate(el=>el===document.activeElement),true,await page.evaluate(()=>document.activeElement?.outerHTML));assert.equal(lookups.length,0);
   await country.fill('Canada');await page.getByRole('textbox',{name:'Postal code (optional)',exact:true}).fill('M5V 2T6');
   held=new Promise(resolve=>{release=resolve});await page.getByRole('button',{name:'Confirm precise address',exact:true}).click();
